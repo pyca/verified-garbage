@@ -3,6 +3,7 @@ module
 -- separate module: its proofs (about 2 s, the conversions' stages) are not checked again when `Pass` changes
 
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Ends
+public import VerifiedGarbage.Impl.P256.X86_64.Ifma.Loop
 
 /-!
 # P-256 on x86-64 with AVX512_IFMA: an entry from the words of field elements
@@ -20,6 +21,9 @@ namespace VG.Proof.P256.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 open VG.Proof.Poly1305.X86_64.Avx2 (sel4)
+open VG.Proof.Bignum.X86_64.Ifma (vi_vreg qv)
+open VG.Impl.Rsa.X86_64.CrtIfma (vreg)
+open VG.Proof.Weierstrass (Unch)
 
 /-- The number whose four words are the lanes of `v`. -/
 def wv (E : Env) (v : T) : Int := v.int E 0 + 2 ^ 64 * v.int E 1 + 2 ^ 128 * v.int E 2 + 2 ^ 192 * v.int E 3
@@ -269,5 +273,341 @@ theorem convG_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) :
       hS.raw 3 3 (by decide) rfl rfl h.xx⟩
   · exact ⟨hS.car 4 0 (by decide) rfl rfl a0, hS.car 4 1 (by decide) rfl rfl a1, hS.car 4 2 (by decide) rfl rfl a2,
       hS.car 4 3 (by decide) rfl rfl a3, hS.car 5 0 (by decide) rfl rfl b0⟩
+
+/-! ### An entry kept as limbs
+
+The entries of `Q`'s table but the first are kept as `convQ` leaves them, in seven vectors of the
+working space (`storeEnt`): the five of `ta`, the first four limbs of `tb`'s first lane, and its fifth.
+`LEnt` says what the 25 quadwords of an entry at `p` stand for, as `EntOk` does of the registers.
+-/
+
+/-- The quadwords at `p`, as what a block reads through a register there. -/
+def memEnv (m : Mem) (p : Addr) : Env :=
+  ⟨fun _ _ => 0, fun _ d k => ((m.readW (p + BitVec.ofNat 64 (d + 8 * k)) 64).toNat : Int)⟩
+
+/-- The first vector of an entry kept as limbs. -/
+def taL : F5 T := ⟨.ld .rcx 0, .ld .rcx 32, .ld .rcx 64, .ld .rcx 96, .ld .rcx 128⟩
+
+/-- The second: its first lane is the four quadwords at 160 and the one at 192. -/
+def tbL : F5 T := ⟨.ld .rcx 160, .perm (.ld .rcx 160) 85, .perm (.ld .rcx 160) 170, .perm (.ld .rcx 160) 255, .ld .rcx 192⟩
+
+/-- The entry kept as limbs at `p` stands for `P`'s. -/
+def LEnt (m : Mem) (p : Addr) (P : AP (Fin pN)) : Prop := EntOk (memEnv m p) taL tbL P
+
+/-- What a lane stands for goes with its limbs. -/
+theorem Lim.limbs {bd : Int} {E E' : Env} {k k' : Nat} {v v' : F5 T} {x : Fin pN} (h : Lim bd E k v x)
+    (e : ∀ i, i < 5 → (v'.get i).int E' k' = (v.get i).int E k) : Lim bd E' k' v' x := by
+  have e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
+  have e3 := e 3 (by decide); have e4 := e 4 (by decide)
+  simp only [F5.get] at e0 e1 e2 e3 e4
+  have ev : vI E' k' v' = vI E k v := by simp only [vI, e0, e1, e2, e3, e4]
+  refine ⟨?_, by rw [ev]; exact h.hi, by rw [ev]; exact h.d⟩
+  have hc := h.c
+  unfold Carried at hc ⊢
+  rw [e0, e1, e2, e3, e4]
+  exact hc
+
+/-- An entry depends on its 200 bytes only. -/
+theorem LEnt.congr {m m' : Mem} {p : Addr} {P : AP (Fin pN)} (h : LEnt m p P)
+    (e : ∀ d k, d + 8 * k + 8 ≤ 200 → m'.readW (p + BitVec.ofNat 64 (d + 8 * k)) 64 = m.readW (p + BitVec.ofNat 64 (d + 8 * k)) 64) :
+    LEnt m' p P := by
+  have q (d k : Nat) (hd : d + 8 * k + 8 ≤ 200) : (T.ld .rcx d).int (memEnv m' p) k = (T.ld .rcx d).int (memEnv m p) k := by
+    simp only [T.int, memEnv, e d k hd]
+  have ta (k : Nat) (hk : k < 4) (i : Nat) (hi : i < 5) : (taL.get i).int (memEnv m' p) k = (taL.get i).int (memEnv m p) k := by
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+      exact q _ k (by omega)
+  have tb (i : Nat) (hi : i < 5) : (tbL.get i).int (memEnv m' p) 0 = (tbL.get i).int (memEnv m p) 0 := by
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    · exact q 160 0 (by decide)
+    · exact q 160 1 (by decide)
+    · exact q 160 2 (by decide)
+    · exact q 160 3 (by decide)
+    · exact q 192 0 (by decide)
+  exact ⟨h.zz.limbs (ta 0 (by decide)), h.x.limbs (ta 1 (by decide)), h.z.limbs (ta 2 (by decide)),
+    h.y.limbs (ta 3 (by decide)), h.zzz.limbs tb⟩
+
+/-- `B`, with the quadwords read through `rcx` and `rdx` that `f` says are limbs. -/
+def limB (B : Bnds) (f : Reg → Nat → Nat → Bool) : Bnds where
+  vl := B.vl
+  vh := B.vh
+  ml b d k := if f b d k then 0 else B.ml b d k
+  mh b d k := if f b d k then 2 ^ 52 - 1 else B.mh b d k
+
+theorem EnvOK.lim {s : State} {B : Bnds} (h : EnvOK s B) {f : Reg → Nat → Nat → Bool}
+    (hf : ∀ b d k, k < 4 → f b d k = true → 0 ≤ (envOf s).m b d k ∧ (envOf s).m b d k < 2 ^ 52) :
+    EnvOK s (limB B f) := by
+  refine ⟨h.v, fun b d k hk => ?_⟩
+  simp only [limB]
+  split
+  · rename_i hfb
+    have := hf b d k hk hfb
+    omega
+  · exact h.m b d k hk
+
+/-- The accumulator's registers and the entry's first five. -/
+def regs25 : List Loc := (List.range 25).map .reg
+
+/-- The bounds of an entry's first vector. -/
+def entA : BT := [[carriedB, carriedB, carriedB, carriedB]]
+
+/-- The quadwords of an entry's first five vectors, through `rcx` and `rdx`. -/
+def limA (b : Reg) (d _k : Nat) : Bool := (b == .rcx && (d == 0 || d == 32 || d == 64)) || (b == .rdx && (d == 0 || d == 32))
+
+/-- Those of the first lane of its second, through `rdx`. -/
+def limT (b : Reg) (d k : Nat) : Bool := b == .rdx && (d == 0 || (d == 32 && k == 0))
+
+/-- What `loadB` starts from: the accumulator, the entry's first vector and the quadwords of its second. -/
+def loadBT : List (F5 T) := stT ++ [t5 20, rawGT]
+
+theorem loadA_chk : chkSeg (loadAPieces.getD 0 []) convQT (fun xs => pure xs) regs25 = true := by decide +kernel
+
+theorem loadA_iv : ivWithin (limB stB limA) (segT (fun xs => pure xs) convQT) (stBT ++ entA) = true := by
+  decide +kernel
+
+theorem loadA_ov : ovOk (stBT ++ entA) (stBT ++ entA) [] = true := by decide +kernel
+
+theorem loadB_chk : chkSeg (loadBPieces.getD 0 []) loadBT (unpackT tops) regs30 = true := by decide +kernel
+
+theorem loadB_iv :
+    ivWithin (limB (bndsOf regs25 (stBT ++ entA)) limT) (segT (unpackT tops) loadBT) (stBT ++ entBT) = true := by
+  decide +kernel
+
+theorem loadB_ov : ovOk (stBT ++ entBT) (stBT ++ entBT) [] = true := by decide +kernel
+
+theorem loadAPieces_flat : loadAPieces.flatten = loadAPieces.getD 0 [] := by decide +kernel
+
+theorem loadBPieces_flat : loadBPieces.flatten = loadBPieces.getD 0 [] := by decide +kernel
+
+theorem stBT_app (X : BT) {j k : Nat} {b : Int × Int} (h : stBT.get j k = some b) : (stBT ++ X).get j k = some b := by
+  have hj : j < stBT.length := BT.get_lt h
+  have e : (stBT ++ X).getD j [] = stBT.getD j [] := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_left hj, ← List.getD_eq_getElem?_getD]
+  unfold BT.get at h ⊢
+  rw [e]
+  exact h
+
+/-- What is known of the accumulator goes with its limbs. -/
+theorem AccOk.of_same {iv : BT} {E E' : Env} {xs ys : List (F5 T)} (h : Same iv E' ys E xs)
+    (hiv : ∀ {j k b}, stBT.get j k = some b → iv.get j k = some b) {xn un z : Fin pN}
+    (ha : AccOk E (xs.getD 0 zero5) (xs.getD 1 zero5) (xs.getD 2 zero5) (xs.getD 3 zero5) xn un z) :
+    AccOk E' (ys.getD 0 zero5) (ys.getD 1 zero5) (ys.getD 2 zero5) (ys.getD 3 zero5) xn un z := by
+  have e := h.vI (j := 0) (k := 0) (by decide) (hiv (j := 0) (k := 0) rfl)
+  exact ⟨by rw [e]; exact ha.ul, by rw [e]; exact ha.uh, by rw [e]; exact ha.du,
+    h.car 1 1 (by decide) (hiv (j := 1) (k := 1) rfl) rfl ha.zn, h.car 2 1 (by decide) (hiv (j := 2) (k := 1) rfl) rfl ha.a,
+    h.car 2 3 (by decide) (hiv (j := 2) (k := 3) rfl) rfl ha.x, h.raw 3 1 (by decide) (hiv (j := 3) (k := 1) rfl) rfl ha.aa,
+    h.raw 3 3 (by decide) (hiv (j := 3) (k := 3) rfl) rfl ha.xx⟩
+
+/-- A quadword read through a register at `x` from `p` is the one at `x + d`. -/
+theorem ld_mem (s : State) {b : Reg} (hb : uBase b = true) {p : Addr} {x : Nat}
+    (h : s.gpr b = p + BitVec.ofNat 64 x) (d k : Nat) :
+    (T.ld b d).int (envOf s) k = (T.ld .rcx (x + d)).int (memEnv s.mem p) k := by
+  simp only [T.int, envOf, hb, ite_true, memEnv, h, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_assoc]
+
+/-- The entry's first five vectors from its limbs at `rcx`, with `rdx` 96 bytes on: `ymm20`–`ymm24`. -/
+theorem loadA_ok {e : State} (hc : Ctx par e) (hB : EnvOK e stB) {p : Addr} {P : AP (Fin pN)}
+    (hcx : e.gpr .rcx = p + BitVec.ofNat 64 0) (hdx : e.gpr .rdx = p + BitVec.ofNat 64 96) (hE : LEnt e.mem p P) :
+    WP isa (.block loadAPieces.flatten) e fun u =>
+      Ctx par u ∧ Kept e u ∧ EnvOK u (bndsOf regs25 (stBT ++ entA)) ∧
+        (∀ xn un z, AccOk (envOf e) (t5 0) (t5 5) (t5 10) (t5 15) xn un z →
+          AccOk (envOf u) (t5 0) (t5 5) (t5 10) (t5 15) xn un z) ∧
+        Ent (envOf u) 0 (t5 20) P.ezz ∧ Ent (envOf u) 1 (t5 20) P.ex ∧ Ent (envOf u) 2 (t5 20) P.ez ∧
+        Ent (envOf u) 3 (t5 20) P.ey := by
+  have lm (i : Nat) (hi : i < 5) (k : Nat) : (rawQT.get i).int (envOf e) k = (taL.get i).int (memEnv e.mem p) k := by
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    · exact ld_mem e rfl hcx 0 k
+    · exact ld_mem e rfl hcx 32 k
+    · exact ld_mem e rfl hcx 64 k
+    · exact ld_mem e rfl hdx 0 k
+    · exact ld_mem e rfl hdx 32 k
+  have car (k : Nat) (hk : k < 4) : Carried (memEnv e.mem p) k taL := by
+    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    exacts [hE.zz.c, hE.x.c, hE.z.c, hE.y.c]
+  have hB' : EnvOK e (limB stB limA) := by
+    refine hB.lim fun b d k hk hf => ?_
+    simp only [limA, Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq] at hf
+    have g (i : Nat) (hi : i < 5) : 0 ≤ (rawQT.get i).int (envOf e) k ∧ (rawQT.get i).int (envOf e) k < 2 ^ 52 := by
+      rw [lm i hi k]; exact (car k hk).get hi
+    rcases hf with ⟨rfl, (rfl | rfl) | rfl⟩ | ⟨rfl, rfl | rfl⟩
+    exacts [g 0 (by decide), g 1 (by decide), g 2 (by decide), g 3 (by decide), g 4 (by decide)]
+  rw [loadAPieces_flat]
+  refine WP.mono (cut_step' loadA_chk hc hB' loadA_iv loadA_ov (rs := stT ++ [rawQT]) rfl rfl (Nat.le_of_eq rfl)
+    (fun _ _ hm => nomatch hm)) fun u ⟨hc', hk, hE', hS⟩ => ⟨hc', hk, hE', fun xn un z h => ?_, ?_⟩
+  · exact AccOk.of_same hS (stBT_app _) h
+  · exact ⟨hS.car 4 0 (by decide) rfl rfl (hE.zz.limbs fun i hi => lm i hi 0),
+      hS.car 4 1 (by decide) rfl rfl (hE.x.limbs fun i hi => lm i hi 1),
+      hS.car 4 2 (by decide) rfl rfl (hE.z.limbs fun i hi => lm i hi 2),
+      hS.car 4 3 (by decide) rfl rfl (hE.y.limbs fun i hi => lm i hi 3)⟩
+
+/-- `loadB`'s second vector, as read. -/
+abbrev tbR : F5 T := ⟨.ld .rdx 0, .perm (.ld .rdx 0) 85, .perm (.ld .rdx 0) 170, .perm (.ld .rdx 0) 255, .ld .rdx 32⟩
+
+/-- The entry's second vector from its limbs, with `rdx` at the entry's 160: `ymm25`–`ymm29`. -/
+theorem loadB_ok {w : State} (hc : Ctx par w) (hB : EnvOK w (bndsOf regs25 (stBT ++ entA))) {p : Addr}
+    {P : AP (Fin pN)} (hdx : w.gpr .rdx = p + BitVec.ofNat 64 160) (hE : LEnt w.mem p P) :
+    WP isa (.block loadBPieces.flatten) w fun t =>
+      Ctx par t ∧ Kept w t ∧ EnvOK t (bndsOf regs30 (stBT ++ entBT)) ∧
+        (∀ xn un z, AccOk (envOf w) (t5 0) (t5 5) (t5 10) (t5 15) xn un z →
+          AccOk (envOf t) (t5 0) (t5 5) (t5 10) (t5 15) xn un z) ∧
+        (∀ k, k < 4 → ∀ x, Ent (envOf w) k (t5 20) x → Ent (envOf t) k (t5 20) x) ∧ Ent (envOf t) 0 (t5 25) P.ezzz := by
+  have lm (i : Nat) (hi : i < 5) : (tbR.get i).int (envOf w) 0 = (tbL.get i).int (memEnv w.mem p) 0 := by
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    · exact ld_mem w rfl hdx 0 0
+    · exact ld_mem w rfl hdx 0 1
+    · exact ld_mem w rfl hdx 0 2
+    · exact ld_mem w rfl hdx 0 3
+    · exact ld_mem w rfl hdx 32 0
+  have hB' : EnvOK w (limB (bndsOf regs25 (stBT ++ entA)) limT) := by
+    refine hB.lim fun b d k hk hf => ?_
+    simp only [limT, Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq] at hf
+    have g (i : Nat) (hi : i < 5) : 0 ≤ (tbR.get i).int (envOf w) 0 ∧ (tbR.get i).int (envOf w) 0 < 2 ^ 52 := by
+      rw [lm i hi]; exact hE.zzz.c.get hi
+    rcases hf with ⟨rfl, rfl | ⟨rfl, rfl⟩⟩
+    · rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+      exacts [g 0 (by decide), g 1 (by decide), g 2 (by decide), g 3 (by decide)]
+    · exact g 4 (by decide)
+  rw [loadBPieces_flat]
+  refine WP.mono (cut_step' loadB_chk hc hB' loadB_iv loadB_ov (rs := stT ++ [t5 20, tbR]) rfl rfl (Nat.le_of_eq rfl)
+    (fun _ _ hm => nomatch hm)) fun t ⟨hc', hk, hE', hS⟩ => ⟨hc', hk, hE', fun xn un z h => ?_, ?_, ?_⟩
+  · exact AccOk.of_same hS (stBT_app _) h
+  · intro k hk x hx
+    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    · exact hS.car 4 0 (by decide) rfl rfl hx
+    · exact hS.car 4 1 (by decide) rfl rfl hx
+    · exact hS.car 4 2 (by decide) rfl rfl hx
+    · exact hS.car 4 3 (by decide) rfl rfl hx
+  · exact hS.car 5 0 (by decide) rfl rfl (hE.zzz.limbs lm)
+
+/-- Two facts of one run. -/
+theorem WP.both {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : WP isa c s Q₁) (h₂ : WP isa c s Q₂) :
+    WP isa c s fun t => Q₁ t ∧ Q₂ t := by
+  obtain ⟨t₁, s₁, e₁, q₁⟩ := h₁
+  obtain ⟨t₂, s₂, e₂, q₂⟩ := h₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ e₂
+  exact ⟨t₁, s₁, e₁, q₁, q₂⟩
+
+/-- `convQ` keeps the accumulator's registers, whatever they hold. -/
+theorem convQ_regs {s₀ : State} (hc : Ctx par s₀) :
+    WP isa (.block convQPieces.flatten) s₀ fun s => ∀ r, r < 20 → ∀ k, k < 4 → qv s (vreg r) k = qv s₀ (vreg r) k := by
+  have hT : ∀ r, r < 20 → (segT (convQ tops) convQT)[r]? = some (.reg r) := by decide +kernel
+  have hL : ∀ r, r < 20 → regs30[r]? = some (.reg r) := by decide
+  rw [convQPieces_flat]
+  exact WP.mono (stage_wp convQ_chk0 hc) fun s ⟨_, _, h⟩ r hr k hk => h r _ _ (hL r hr) (hT r hr) k hk
+
+/-- The accumulator's registers zero are within the bounds a block starts from. -/
+theorem envOK_zero {t : State} (hz : ∀ r, r < 20 → ∀ k, k < 4 → qv t (vreg r) k = 0) : EnvOK t stB := by
+  refine envOK_of fun n l hl k hk b hb => ?_
+  have hn : n < 20 ∧ l = .reg n := by
+    simp only [regs20, List.getElem?_map, Option.map_eq_some_iff] at hl
+    obtain ⟨m, hm, rfl⟩ := hl
+    obtain ⟨hlt, e⟩ := List.getElem?_eq_some_iff.mp hm
+    rw [List.length_range] at hlt
+    rw [List.getElem_range] at e
+    exact ⟨hlt, by rw [e]⟩
+  obtain ⟨hn, rfl⟩ := hn
+  have e : ints t (.reg n) k = 0 := by
+    show (qv t (vreg n) k).toInt = 0
+    rw [hz n hn k hk]; rfl
+  rw [e]
+  have key : ∀ j, j < 4 → ∀ k, k < 4 →
+      (match stBT.get j k with | some b => decide (b.1 ≤ 0 ∧ 0 ≤ b.2) | none => true) = true := by decide +kernel
+  have := key (n / 5) (by omega) k hk
+  rw [hb] at this
+  exact of_decide_eq_true this
+
+
+/-! ### An entry stored -/
+
+/-- What the code that stores an entry at `o` of the working space runs with: the constants, and
+the entry's seven vectors. -/
+def parT (o : Nat) : Par := ⟨.r10, par.cst, fun _ => 0, o + 224, o, o % 32⟩
+
+/-- The first four limbs of the first lane of `ymm25`–`ymm29`. -/
+abbrev packV : T := Id.run (col tops (.reg 25) (.reg 26) (.reg 27) (.reg 28) 0)
+
+/-- Entry `a`'s code stores `ymm20`–`ymm24`, the limbs of `packV` and `ymm29`, and keeps the accumulator. -/
+def chkStore (a : Nat) : Bool :=
+  match VSym.init.run (parT (TOFF + 200 * a)) (packTPieces.flatten ++ storeEnt (TOFF + 200 * a)) with
+  | some σ => ((List.range 5).all fun i => decide (look σ.st (TOFF + 200 * a + 32 * i) = .reg (20 + i))) &&
+      decide (look σ.st (TOFF + 200 * a + 160) = packV) && decide (look σ.st (TOFF + 200 * a + 192) = .reg 29) &&
+      (List.range 20).all fun r => decide (σ.reg r = .reg r)
+  | none => false
+
+theorem store_chk : (List.range 7).all chkStore = true := by decide +kernel
+
+theorem packV_eval (s : State) {k : Nat} (hk : k < 4) : packV.eval s k = qv s (vreg (25 + k)) 0 := by
+  rw [packV, col_eq]
+  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+
+/-- An entry's vectors stored at `TOFF + 200 a` of the working space. -/
+theorem store_ok {a : Nat} (ha : a < 7) {s : State} (hc : Ctx (parT (TOFF + 200 * a)) s) :
+    WP isa (.block (packTPieces.flatten ++ storeEnt (TOFF + 200 * a))) s fun t =>
+      vm s t = t ∧ Unch (s.gpr .rdi) [(TOFF + 200 * a, 224)] s.mem t.mem ∧
+        (∀ r, r < 20 → ∀ k, k < 4 → qv t (vreg r) k = qv s (vreg r) k) ∧
+        (∀ i, i < 5 → ∀ k, k < 4 →
+          t.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (TOFF + 200 * a + 32 * i + 8 * k)) 64 = qv s (vreg (20 + i)) k) ∧
+        (∀ k, k < 4 →
+          t.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (TOFF + 200 * a + 160 + 8 * k)) 64 = qv s (vreg (25 + k)) 0) ∧
+        t.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (TOFF + 200 * a + 192 + 8 * 0)) 64 = qv s (vreg 29) 0 := by
+  have hchk := List.all_eq_true.1 store_chk a (List.mem_range.2 ha)
+  unfold chkStore at hchk
+  split at hchk
+  case h_2 => cases hchk
+  rename_i σ hσ
+  simp only [Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, List.mem_range] at hchk
+  obtain ⟨⟨⟨c1, c2⟩, c3⟩, c4⟩ := hchk
+  have hw : (parT (TOFF + 200 * a)).win < 2 ^ 62 := by show TOFF + 200 * a + 224 < 2 ^ 62; simp only [TOFF]; omega
+  refine WP.mono (srun_ok hc _ (SRel.init _ s) hσ) fun t h => ⟨h.eq, ?_, fun r hr k hk => ?_, fun i hi k hk => ?_,
+    fun k hk => ?_, ?_⟩
+  · rw [h.mem]
+    have := stores_unchP hw s σ.st fun e he => ⟨h.lo e he, (h.al e he).2⟩
+    rwa [show (parT (TOFF + 200 * a)).win - (parT (TOFF + 200 * a)).lo = 224 from Nat.add_sub_cancel_left ..] at this
+  · have := h.reg (vreg r) k hk
+    rw [vi_vreg r (by omega), c4 r hr] at this
+    exact this
+  · rw [h.mem, stores_look hw (show (TOFF + 200 * a + 32 * i) % 32 = (TOFF + 200 * a) % 32 by omega)
+      (show TOFF + 200 * a + 32 * i + 32 ≤ TOFF + 200 * a + 224 by omega) hk σ.st h.al, c1 i hi]
+    rfl
+  · rw [h.mem, stores_look hw (show (TOFF + 200 * a + 160) % 32 = (TOFF + 200 * a) % 32 by omega)
+      (show TOFF + 200 * a + 160 + 32 ≤ TOFF + 200 * a + 224 by omega) hk σ.st h.al, c2]
+    exact packV_eval s hk
+  · rw [h.mem, stores_look hw (show (TOFF + 200 * a + 192) % 32 = (TOFF + 200 * a) % 32 by omega)
+      (show TOFF + 200 * a + 192 + 32 ≤ TOFF + 200 * a + 224 by omega) (by decide) σ.st h.al, c3]
+    rfl
+
+/-- The entry stored stands for what the registers did. -/
+theorem lent_of {s : State} {m : Mem} {p : Addr} {P : AP (Fin pN)} (hE : EntOk (envOf s) (t5 20) (t5 25) P)
+    (ha : ∀ i, i < 5 → ∀ k, k < 4 → m.readW (p + BitVec.ofNat 64 (32 * i + 8 * k)) 64 = qv s (vreg (20 + i)) k)
+    (hb : ∀ k, k < 4 → m.readW (p + BitVec.ofNat 64 (160 + 8 * k)) 64 = qv s (vreg (25 + k)) 0)
+    (hl : m.readW (p + BitVec.ofNat 64 (192 + 8 * 0)) 64 = qv s (vreg 29) 0) : LEnt m p P := by
+  -- a quadword that is a limb is its number
+  have nat (x : BitVec 64) (h : 0 ≤ x.toInt) : (x.toNat : Int) = x.toInt := by
+    have := x.isLt
+    rw [BitVec.toInt_eq_toNat_cond] at h ⊢
+    split at h <;> rename_i hx
+    · simp only [hx, ite_true]
+    · omega
+  have ta (k : Nat) (hk : k < 4) (hc : Carried (envOf s) k (t5 20)) (i : Nat) (hi : i < 5) :
+      (taL.get i).int (memEnv m p) k = ((t5 20).get i).int (envOf s) k := by
+    have e : (taL.get i).int (memEnv m p) k = ((qv s (vreg (20 + i)) k).toNat : Int) := by
+      rw [← ha i hi k hk]
+      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+    have e' : ((t5 20).get i).int (envOf s) k = (qv s (vreg (20 + i)) k).toInt := by
+      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+    rw [e, e']
+    exact nat _ (e' ▸ (hc.get hi).1)
+  have tb (i : Nat) (hi : i < 5) : (tbL.get i).int (memEnv m p) 0 = ((t5 25).get i).int (envOf s) 0 := by
+    have e' : ((t5 25).get i).int (envOf s) 0 = (qv s (vreg (25 + i)) 0).toInt := by
+      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+    have e : (tbL.get i).int (memEnv m p) 0 = ((qv s (vreg (25 + i)) 0).toNat : Int) := by
+      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+      · rw [← hb 0 (by decide)]; rfl
+      · rw [← hb 1 (by decide)]; rfl
+      · rw [← hb 2 (by decide)]; rfl
+      · rw [← hb 3 (by decide)]; rfl
+      · rw [← hl]; rfl
+    rw [e, e']
+    exact nat _ (e' ▸ (hE.zzz.c.get hi).1)
+  exact ⟨hE.zz.limbs (ta 0 (by decide) hE.zz.c), hE.x.limbs (ta 1 (by decide) hE.x.c),
+    hE.z.limbs (ta 2 (by decide) hE.z.c), hE.y.limbs (ta 3 (by decide) hE.y.c), hE.zzz.limbs tb⟩
 
 end VG.Proof.P256.X86_64.Ifma

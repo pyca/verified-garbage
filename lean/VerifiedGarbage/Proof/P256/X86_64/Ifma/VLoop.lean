@@ -107,23 +107,24 @@ theorem jointStable_unch {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
       hf _ (jointStable_table c (a := i + 1) (by omega) (by omega) (by simp [jacCoords]))]
     exact h.cache3 i hi
 
-/-- What the loop in vectors writes of the working space: the vectors' slots, MXCSR saved, and the
-blocks' constants. -/
-def vW : List (Nat × Nat) := [(4512, 896), (5472, 8), (6016, 1760)]
+/-- What the loop in vectors writes of the working space: the vectors' slots, MXCSR saved, the
+blocks' constants, and `Q`'s multiples kept as limbs. -/
+def vW : List (Nat × Nat) := [(5056, 288), (5864, 8), (6432, 1760), (3616, 1424)]
 
 /-- Where the vectors' slots are among what the joint multiplication keeps in the working space. -/
 structure VLay (c : Joint.Cfg) (size : Nat) : Prop where
-  big : 5408 ≤ size
-  mx : 5480 ≤ size
-  pool : 7776 ≤ size
+  big : 5920 ≤ size
+  mx : 5872 ≤ size
+  pool : 8192 ≤ size
   live : ∀ x ∈ jointLive c, ∀ w ∈ vW, x + 8 * c.K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x
   liveB : ∀ x ∈ jointLive c, x + 8 * c.K.M.n ≤ size
   mo : ∀ w ∈ vW, c.K.M.mo + 8 * c.K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ c.K.M.mo
   stable : ∀ r ∈ jointStableRanges c, ∀ w ∈ vW, r.1 + r.2 ≤ w.1 ∨ w.1 + w.2 ≤ r.1
   stableB : ∀ r ∈ jointStableRanges c, r.1 + r.2 ≤ size
   n : c.K.M.n = 4
-  tbl : c.K.tbl + 768 ≤ 4512
-  cache : c.cache + 512 ≤ 4512
+  tbl : c.K.tbl + 768 ≤ TOFF
+  cache : 5920 ≤ c.cache
+  cacheH : c.cache + 512 ≤ 6432
   rxy : c.K.R.x ≠ c.K.R.y
   rxz : c.K.R.x ≠ c.K.R.z
   ryz : c.K.R.y ≠ c.K.R.z
@@ -133,7 +134,7 @@ structure VKeep (s t : State) : Prop where
   gpr : ∀ r, r ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .rbx] → t.gpr r = s.gpr r
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  mem : Unch (s.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s.mem t.mem
+  mem : Unch (s.gpr .rdi) [(cfg.sbase, slotsLen)] s.mem t.mem
 
 theorem VKeep.refl (s : State) : VKeep s s := ⟨fun _ _ => rfl, rfl, rfl, Unch.refl _ _ _⟩
 
@@ -171,7 +172,7 @@ theorem jointCore_unch {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
   exact hu z fun w hw => by
     have := hV.pool
     simp only [vW, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
 
 /-- The joint multiplication's invariant is kept by the loop's code. -/
 theorem jointCore_vkeep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat} {G Q A : Point C}
@@ -216,8 +217,8 @@ theorem qNeg (b : BitVec 8) : (!decide (b.toNat < 128)) = decide (128 ≤ b.toNa
 theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s : State} (hV : VLay c size)
     (h : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) A s)
-    (hc : Ctx par s) (hB : EnvOK s stB) (hj : j < 257) (hb : s.gpr .rbx = BitVec.ofNat 64 j)
-    {acc : Option (Fin pN × Fin pN × Fin pN)} (hacc : AccSt s acc) :
+    (hc : Ctx par s) (hB : EnvOK s stB) (hq : LTab c s.mem base) (hj : j < 257)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 j) {acc : Option (Fin pN × Fin pN × Fin pN)} (hacc : AccSt s acc) :
     WP isa (qPass c) s fun t =>
       JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) A t ∧ Ctx par t ∧ EnvOK t stB ∧
         AccSt t (qNext c (tmv Cv c.K.M.n base s) v j acc) ∧ LKeep s t := by
@@ -264,7 +265,8 @@ theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
     rw [tv, tv, tv] at c3
     rw [c2] at c3
     refine WP.mono_syms (qDigit_ok hn ca.field.scr hca hBa a8 (by rw [em]; omega) (by rw [em]; exact hl)
-      (by rw [em]; exact ho) hV.tbl hV.cache hV.big
+      (by rw [em]; exact ho) hV.tbl hV.cache (by have := hV.cacheH; have := hV.pool; omega)
+      (by have := hV.cacheH; omega) (by rw [ka.mem]; exact hq)
       (tw (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).x _ (by rw [tblPt_x, hn, em] <;> omega))
       (tw (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).y _ (by rw [tblPt_y, hn, em] <;> omega))
       (tw (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).z _ (by rw [tblPt_z, hn, em] <;> omega))
@@ -315,8 +317,8 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
   have hn := hV.n
   have hdi := h.field.scr.rdi
   have hnw := h.field.scr.nowrap
-  have hlo : par.lo = 4512 := rfl
-  have hwin : par.win = 5408 := rfl
+  have hlo : par.lo = 5056 := rfl
+  have hwin : par.win = 5920 := rfl
   have hbig := hV.big
   rw [gPass, gBody]
   apply WP.seq
@@ -484,6 +486,7 @@ structure VInv (c : Joint.Cfg) (base T K : Addr) (size u v : Nat) {G : Point Cv}
   gtab : GTab base T size t
   ctx : Ctx par t
   env : EnvOK t stB
+  ltab : LTab c t.mem base
   acc : AccSt t acc
   rbx : t.gpr .rbx = BitVec.ofNat 64 j
   k : t.gpr .r10 = K
@@ -509,7 +512,8 @@ theorem VInv.vkeep {c : Joint.Cfg} {base T K : Addr} {size u v j j' : Nat} {G Q 
     (hB : EnvOK t stB) (ha : AccSt t acc') (hb : t.gpr .rbx = BitVec.ofNat 64 j')
     (h10 : t.gpr .r10 = s.gpr .r10) : VInv c base T K size u v Q row E j' acc' t :=
   ⟨jointCore_vkeep hV h.core k hs, fun x hx => (live_vkeep hV h.core k x hx).trans (h.live x hx),
-    h.gtab.vkeep k, hc, hB, ha, hb, h10.trans h.k⟩
+    h.gtab.vkeep k, hc, hB, h.ltab.unch (h.core.field.scr.rdi ▸ k.mem) hV.tbl (Nat.le_refl 7) (fun w hw => by
+      rw [List.mem_singleton] at hw; subst hw; exact Or.inl (by decide)), ha, hb, h10.trans h.k⟩
 
 /-- The invariant after scalar code that keeps the registers the blocks read through. -/
 theorem VInv.skeep {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Point Cv}
@@ -592,7 +596,7 @@ theorem vq_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Point 
     {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (hj : j < 257)
     (h : VInv c base T K size u v Q row E j acc s) :
     WP isa (qPass c) s fun t => VInv c base T K size u v Q row E j (qNext c E v j acc) t ∧ VKeep s t := by
-  refine WP.mono_syms (qPass_ok hV h.core h.ctx h.env hj h.rbx h.acc) fun t ⟨_, hct, hBt, hat, kt⟩ st => ?_
+  refine WP.mono_syms (qPass_ok hV h.core h.ctx h.env h.ltab hj h.rbx h.acc) fun t ⟨_, hct, hBt, hat, kt⟩ st => ?_
   rw [qNext_congr h.live] at hat
   exact ⟨h.vkeep hV (.of_lkeep kt) st hct hBt hat ((kt.gpr .rbx (by decide)).trans h.rbx) (kt.gpr .r10 (by decide)),
     .of_lkeep kt⟩

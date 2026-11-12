@@ -34,7 +34,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass VG.Impl.W
 open VG.Impl.Rsa.X86_64.CrtIfma (vreg)
 
 /-- What `rdi` is moved by while the vectors' code runs: its slots are at `SL + EO` of the working space. -/
-def EO : Nat := 992
+def EO : Nat := 448
 
 /-- The blocks' constants, in the window method's working space. -/
 def EKB : Nat := 6400

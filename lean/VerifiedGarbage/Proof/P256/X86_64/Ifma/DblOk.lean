@@ -433,38 +433,47 @@ theorem Same.val {iv : BT} {E' E : Env} {ys xs : List (F5 T)} (h : Same iv E' ys
   subst hv
   exact h.vI hk hb
 
-/-- A piece of the vector code changes only vector registers and the spill slots. -/
-structure Kept (s₀ s : State) : Prop where
+/-- A piece of the vector code changes only vector registers and the first `w` bytes of the slots. -/
+structure KeptW (w : Nat) (s₀ s : State) : Prop where
   eq : vm s₀ s = s
-  mem : Unch (s₀.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s₀.mem s.mem
+  mem : Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem
 
-theorem Kept.refl (s : State) : Kept s s := ⟨rfl, Unch.refl _ _ _⟩
+/-- `KeptW`, for the first nine slots: what the blocks of the joint multiplication keep. -/
+abbrev Kept (s₀ s : State) : Prop := KeptW slotsLen s₀ s
 
-theorem Kept.gpr {s₀ s : State} (h : Kept s₀ s) : s.gpr = s₀.gpr := by rw [← h.eq]; rfl
+theorem KeptW.refl (w : Nat) (s : State) : KeptW w s s := ⟨rfl, Unch.refl _ _ _⟩
 
-theorem Kept.trans {s₀ s₁ s₂ : State} (h₁ : Kept s₀ s₁) (h₂ : Kept s₁ s₂) : Kept s₀ s₂ := by
+theorem Kept.refl (s : State) : Kept s s := KeptW.refl _ s
+
+theorem KeptW.gpr {w : Nat} {s₀ s : State} (h : KeptW w s₀ s) : s.gpr = s₀.gpr := by rw [← h.eq]; rfl
+
+theorem KeptW.rd {w : Nat} {s₀ s : State} (h : KeptW w s₀ s) : s.rd = s₀.rd := by rw [← h.eq]; rfl
+
+theorem KeptW.wr {w : Nat} {s₀ s : State} (h : KeptW w s₀ s) : s.wr = s₀.wr := by rw [← h.eq]; rfl
+
+theorem KeptW.trans {w : Nat} {s₀ s₁ s₂ : State} (h₁ : KeptW w s₀ s₁) (h₂ : KeptW w s₁ s₂) : KeptW w s₀ s₂ := by
   refine ⟨?_, ?_⟩
   · have e₁ := h₁.eq; have e₂ := h₂.eq
     rw [← e₂, ← e₁]; rfl
   · have := h₂.mem
     rw [h₁.gpr] at this
-    exact (h₁.mem.trans this).mono (by decide)
+    exact (h₁.mem.trans this).mono fun _ hw => (List.mem_append.mp hw).elim id id
 
-theorem Kept.of {σ : VSym} {s₀ s : State} (h : SRel par σ s₀ s)
-    (hu : Unch (s₀.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s₀.mem s.mem) : Kept s₀ s := ⟨h.eq, hu⟩
+theorem KeptW.of {w : Nat} {σ : VSym} {s₀ s : State} (h : SRel par σ s₀ s)
+    (hu : Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem) : KeptW w s₀ s := ⟨h.eq, hu⟩
 
 /-- `cut_step`, with what the next piece needs of the state. -/
-theorem cut_step' {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSeg c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
+theorem cut_step' {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
+    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
     {iv bt : BT} {ovs : List (Nat × Nat)} (hiv : ivWithin B (segT seg ins) iv = true) (hov : ovOk bt iv ovs = true)
     {rs : List (F5 T)} (hrs : Id.run (seg ins) = rs)
     (hlen : outs.length = 5 * rs.length) (hrows : iv.length ≤ rs.length)
     (hcar : ∀ j k, (j, k) ∈ ovs → Carried (envOf s₀) k (rs.getD j zero5)) :
     WP isa (.block c) s₀ fun s =>
-      Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf outs bt) ∧ Same iv (envOf s) (leaves outs) (envOf s₀) rs := by
+      Ctx par s ∧ KeptW w s₀ s ∧ EnvOK s (bndsOf outs bt) ∧ Same iv (envOf s) (leaves outs) (envOf s₀) rs := by
   subst hrs
   exact WP.mono (cut_step h hc hB hiv hov hlen hrows hcar) fun s ⟨⟨σ, hσ⟩, hu, hE, hS⟩ =>
-    ⟨ctx_step hc hσ, Kept.of hσ hu, hE, hS⟩
+    ⟨ctx_step hc hσ, KeptW.of hσ hu, hE, hS⟩
 
 theorem list3 {α : Type} (l : List α) (d : α) (h : l.length = 3) : l = [l.getD 0 d, l.getD 1 d, l.getD 2 d] := by
   match l, h with

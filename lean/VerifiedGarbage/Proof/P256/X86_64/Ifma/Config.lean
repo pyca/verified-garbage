@@ -10,9 +10,9 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 /-!
 # P-256 on x86-64 with AVX512_IFMA: the joint multiplication's layout
 
-`publicJointIfma` is `publicJointAdx` with the generator's digits elsewhere:
-its layouts are those of `publicJointAdx` where they do not name the digits,
-and the vectors' part of the working space is apart from the rest (`VLay`).
+`publicJointIfma` is `publicJointAdx` with the generator's digits, the selected
+entry's `Z²` and `Z³` and the table's elsewhere: its layouts, and the vectors'
+part of the working space apart from the rest (`VLay`).
 -/
 
 @[expose] public section
@@ -22,17 +22,22 @@ namespace VG.Proof.P256.X86_64.Ifma
 open VG VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.P256.X86_64.Ifma VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.P256.X86_64
 
+private theorem joint_ifma_lay : Lay publicJointIfma.K.M 8192 (· ∈ jointSlots publicJointIfma) := by
+  refine ⟨by decide +kernel, ?_, by decide +kernel, by decide +kernel⟩
+  have h : ∀ x ∈ jointSlots publicJointIfma, ∀ y ∈ jointSlots publicJointIfma, x ≠ y →
+      x + 8 * publicJointIfma.K.M.n ≤ y ∨ y + 8 * publicJointIfma.K.M.n ≤ x := by decide +kernel
+  exact fun x y hx hy => h x hx y hy
+
 theorem joint_ifma_layout : JointLayout publicJointIfma 8192 :=
-  ⟨joint_adx_layout.lay, Or.inl rfl, by decide +kernel, by decide +kernel, Or.inr rfl⟩
+  ⟨joint_ifma_lay, Or.inl rfl, by decide +kernel, by decide +kernel, Or.inr rfl⟩
 
 theorem joint_ifma_lookup_layout : JointLookupLayout publicJointIfma 8192 :=
   ⟨joint_ifma_layout, rfl, rfl, by decide, by decide, by decide, by decide, by decide, by decide,
     by decide, by decide, by decide, by decide⟩
 
-theorem joint_ifma_add_layout : JointAddLayout publicJointIfma 8192 :=
-  ⟨joint_ifma_lookup_layout, joint_adx_add_layout.addApart, joint_adx_add_layout.cache2Apart,
-    joint_adx_add_layout.cache3Apart, joint_adx_add_layout.accumNodup, joint_adx_add_layout.copyApart,
-    ⟨fun _ h => by cases h⟩⟩
+theorem joint_ifma_add_layout : JointAddLayout publicJointIfma 8192 := by
+  refine ⟨joint_ifma_lookup_layout, ?_, by decide, by decide, by decide, by decide, ⟨fun _ h => by cases h⟩⟩
+  constructor <;> decide +kernel
 
 theorem joint_ifma_init_layout : JointInitLayout publicJointIfma 8192 :=
   ⟨joint_ifma_layout, joint_adx_naf_layout, by decide, by decide, by decide, by decide, by decide,
@@ -60,6 +65,7 @@ theorem joint_ifma_vlay : VLay publicJointIfma 8192 where
   n := rfl
   tbl := by decide
   cache := by decide
+  cacheH := by decide
   rxy := by decide
   rxz := by decide
   ryz := by decide

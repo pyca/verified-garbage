@@ -9,11 +9,14 @@ public import VerifiedGarbage.Impl.P256.X86_64.Joint
 `vwindow` is `Joint.window` with the loop over the digits of both scalars
 in vectors (`vloop`), from the same tables: the accumulator in
 `ymm0`–`ymm19` (`Point.lean`), doubled once for each digit (`dblPieces`),
-and for each digit that is not zero the entry of the digit's point made of
-its words (`convQPieces` for a multiple of `Q`, `convGPieces` for one of the
-generator) and added (`addPieces`), or taken as the accumulator if it is the
-first (`setPieces`). The accumulator's triple is then put back in the words
-of `R` (`outPieces`, `packLane`).
+and for each digit that is not zero the entry of the digit's point added
+(`addPieces`), or taken as the accumulator if it is the first (`setPieces`).
+The entry of `Q` and that of a multiple of the generator are made of the
+point's words (`convQPieces`, `convGPieces`); those of the other odd
+multiples of `Q` are made once, before the loop, and kept as limbs in the
+working space (`tabEnt`), from which a digit's is loaded (`loadAPieces`,
+`loadBPieces`). The accumulator's triple is then put back in the words of
+`R` (`outPieces`, `packLane`).
 
 The additions are those of distinct points: where a digit's point is the
 accumulator's or its negative, `Z` becomes zero and stays zero, and then
@@ -29,16 +32,23 @@ on some processors, so the loop runs between Intel's prologue and epilogue
 namespace VG.Impl.P256.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
-open VG.Impl.Rsa.X86_64.CrtIfma (vreg)
+open VG.Impl.Rsa.X86_64.CrtIfma (vreg at_)
 
 /-- The vectors' slots, in the working space. -/
-def SL : Nat := 4512
+def SL : Nat := 5056
 
 /-- MXCSR, saved, and `0x1FBF` (`region`). -/
 def MX : Nat := 5472
 
+/-- `MX` for the joint multiplication. -/
+def MXV : Nat := 5864
+
 /-- The blocks' constants, in the working space. -/
-def KB : Nat := 6016
+def KB : Nat := 6432
+
+/-- The entries of `Q`'s odd multiples from `3 Q`, kept as limbs: 200 bytes each (`storeEnt`), and 24
+more that the last one's last vector takes. -/
+def TOFF : Nat := 3616
 
 /-- The words of the blocks' constants. -/
 def kwords : List (BitVec 64) := poolLit.flatMap fun k => [k.w0, k.w1, k.w2, k.w3].map (BitVec.ofNat 64)
@@ -69,12 +79,37 @@ def addOrSet : Prog isa :=
   .seq (.block [.alu .test .r11 (.reg .r11)])
     (.ite .e (.block (setPieces.flatten ++ [.mov32 .r11 (.imm 1)])) (.block addPieces.flatten))
 
-/-- The multiple of `Q` of the digit in `r8`, which is not zero, added. -/
+/-- An entry's seven vectors (`packTPieces`), from `o` of the working space: five of 32 bytes for `ta`,
+then one for the first four limbs of `tb`'s first lane and one whose first lane is the fifth. That last
+one is at `o + 192`, so the next entry, at `o + 200`, is written over its three other lanes. -/
+def storeEnt (o : Nat) : List Instr :=
+  ((List.range 5).map fun k => Instr.evStore (at_ .rdi (o + 32 * k)) (vreg (20 + k))) ++
+  [.evStore (at_ .rdi (o + 160)) (vreg 25), .evStore (at_ .rdi (o + 192)) (vreg 29)]
+
+/-- Entry `a` of `Q`'s table (`[2 a + 1]Q`, `1 ≤ a ≤ 7`) as limbs, at `TOFF + 200 (a - 1)`, from its
+words (`convQPieces`). -/
+def tabEnt (c : Joint.Cfg) (a : Nat) : List Instr :=
+  [.mov .rcx (.reg .rdi), .alu .add .rcx (.imm (BitVec.ofNat 32 (c.K.tbl + 24 * c.K.M.n * a))),
+    .mov .rdx (.reg .rdi), .alu .add .rdx (.imm (BitVec.ofNat 32 (c.cache + 16 * c.K.M.n * a)))] ++
+  (convQPieces.flatten ++ (packTPieces.flatten ++ storeEnt (TOFF + 200 * (a - 1))))
+
+/-- `rcx` at the limbs of the odd multiple of `Q` whose magnitude, at least 3, is in `r8`
+(`TOFF + 100 (r8 - 3)`), and `rdx` at its fourth vector. -/
+def entryT : List Instr :=
+  [.mov .rcx (.reg .r8), .shift .shl .rcx 2, .mov .rax (.reg .rcx), .shift .shl .rax 3, .alu .add .rcx (.reg .rax),
+    .shift .shl .rax 1, .alu .add .rcx (.reg .rax), .alu .add .rcx (.reg .rdi),
+    .alu .add .rcx (.imm (BitVec.ofNat 32 (TOFF - 300))), .mov .rdx (.reg .rcx), .alu .add .rdx (.imm 96)]
+
+/-- The multiple of `Q` of the digit in `r8`, which is not zero, added: `Q`'s entry from its words, any
+other's from its limbs. -/
 def qBody (c : Joint.Cfg) : Prog isa :=
   .seq (.block [.alu .cmp .r8 (.imm 128)]) <|
   .seq (.ite .b (.block (signPtr false))
     (.block ([.mov32 .rax (.imm 256), .alu .sub .rax (.reg .r8), .mov .r8 (.reg .rax)] ++ signPtr true))) <|
-  .seq (.block (entryQ c ++ convQPieces.flatten)) addOrSet
+  .seq (.block [.alu .cmp .r8 (.imm 1)]) <|
+  .seq (.ite .e (.block (entryQ c ++ convQPieces.flatten))
+    (.seq (.block (entryT ++ loadAPieces.flatten)) (.block ([.alu .add .rdx (.imm 64)] ++ loadBPieces.flatten))))
+    addOrSet
 
 /-- A digit of `Q`'s scalar: one byte, a signed odd magnitude below 16 or zero. -/
 def qPass (c : Joint.Cfg) : Prog isa :=
@@ -113,16 +148,20 @@ def vregs (n : Nat) : List Instr :=
 accumulator's rows of `(Y, Z, _, X)` are left in the first five slots, if it was set (`r11`). -/
 def vloop (c : Joint.Cfg) : Prog isa :=
   .seq (.block (fill kwords KB ++ (vregs (64 * c.K.M.n + 1) ++ zeroAcc))) <|
+  .seq (.block ((List.range 7).map fun i => tabEnt c (i + 1)).flatten) <|
   .seq (.loop (vstep c) .ne) <|
   .seq (.block [.alu .test .r11 (.reg .r11)]) (.ite .e (.block []) (.block (outPieces.flatten ++ storeOut)))
 
-/-- `c` with MXCSR `0x1FBF`, through `[rdi + MX]`: MXCSR saved in `r12`, and loaded back after `c`,
+/-- `c` with MXCSR `0x1FBF`, through `[rdi + mx]`: MXCSR saved in `r12`, and loaded back after `c`,
 which must not write `r12` (as ML-KEM's `withMxcsr`). -/
-def region (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (sc MX), .mov32 .r12 (.mem (sc MX)), .alu32 .and .r12 (.imm 0xFFFF)])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (MX + 4)) .rax, .ldmxcsr (sc (MX + 4)), .lfence])
+def regionAt (mx : Nat) (c : Prog isa) : Prog isa :=
+  .seq (.block [.stmxcsr (sc mx), .mov32 .r12 (.mem (sc mx)), .alu32 .and .r12 (.imm 0xFFFF)])
+    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (mx + 4)) .rax, .ldmxcsr (sc (mx + 4)), .lfence])
         (.seq c (.block [.lfence])))
-      (.block [.store32 (sc MX) .r12, .ldmxcsr (sc MX)]))
+      (.block [.store32 (sc mx) .r12, .ldmxcsr (sc mx)]))
+
+/-- `regionAt MX`. -/
+def region (c : Prog isa) : Prog isa := regionAt MX c
 
 /-- The number in lane `l` of five slots at `sl`, below `2 p`, reduced modulo `p` into the words at `dst`. -/
 def packLaneAt (sl : Nat) (M : Mod) (l dst : Nat) : List Instr :=
@@ -144,7 +183,7 @@ def packR (c : Joint.Cfg) : Prog isa :=
 
 /-- The digits' loop in vectors, from `R = O`: `R` is the sum, or its `Z` is zero. -/
 def vmain (c : Joint.Cfg) : Prog isa :=
-  .seq (region (.seq (vloop c) (.block [.mov .rbx (.reg .r11), .vop .vzeroupper]))) (packR c)
+  .seq (regionAt MXV (.seq (vloop c) (.block [.mov .rbx (.reg .r11), .vop .vzeroupper]))) (packR c)
 
 /-- `Joint.window` with the loop in vectors, and `Joint.run` where that leaves `Z` zero. -/
 def vwindow (c : Joint.Cfg) (double : Prog isa) : Prog isa :=
@@ -155,8 +194,12 @@ def vwindow (c : Joint.Cfg) (double : Prog isa) : Prog isa :=
   .ite .e (.seq (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))]) (Joint.run c double))
     (.block [.mov32 .rbx (.imm 0)])
 
-/-- `publicJointAdx` with the generator's digits at `5480`, which leaves the working space from `6000`
-for the blocks' constants (`KB`). -/
-def publicJointIfma : Joint.Cfg := {VG.Impl.P256.X86_64.publicJointAdx with gBits := 5480}
+/-- `publicJointAdx` with what its working space has above the table of `Q`'s odd multiples moved, for
+the entries kept as limbs (from `TOFF`), the vectors' slots (from `SL`) and the blocks' constants (from
+`KB`): the generator's digits at `5344`, past the nine slots the blocks write; the table's `Z²` and `Z³`
+at `5920`; and the selected entry's, which only `Joint.run` uses, in the first two slots, which the
+vectors' code has left by then. -/
+def publicJointIfma : Joint.Cfg :=
+  {VG.Impl.P256.X86_64.publicJointAdx with gBits := 5344, selected := 5056, cache := 5920}
 
 end VG.Impl.P256.X86_64.Ifma

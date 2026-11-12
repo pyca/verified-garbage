@@ -165,6 +165,8 @@ structure AS where
   free : List Nat
   nslots : Nat
   out : List Instr
+  /-- The register each value is wanted in, if it is free when the value is made. -/
+  want : List (Nat × Nat) := []
 
 def find (l : List (Nat × Nat)) (v : Nat) : Option Nat := (l.find? fun e => e.1 == v).map (·.2)
 
@@ -214,6 +216,12 @@ def AS.getReg (c : Cfg) (a : AS) (keep : List Nat) : AS × Nat :=
     let best := cand.foldl (fun b e => if lt b e then e else b) (cand.headD (0, 0, 0))
     a.spill c best.1
 
+/-- A register for the value `v`: the one it is wanted in, if that is free, else `getReg`'s. -/
+def AS.getRegFor (c : Cfg) (a : AS) (v : Nat) (keep : List Nat) : AS × Nat :=
+  match find a.want v with
+  | some r => if a.free.contains r then ({ a with free := a.free.erase r }, r) else a.getReg c keep
+  | none => a.getReg c keep
+
 /-- `v` in a register, loaded from its slot if it has none; its next use is at `idx`. -/
 def AS.ensure (c : Cfg) (a : AS) (v idx : Nat) (keep : List Nat) : AS :=
   match a.regOf v with
@@ -225,9 +233,9 @@ def AS.ensure (c : Cfg) (a : AS) (v idx : Nat) (keep : List Nat) : AS :=
 /-- The register of `v`, which has one. -/
 def AS.r (a : AS) (v : Nat) : VReg := vreg ((a.regOf v).getD 0)
 
-/-- A constant in a register of its own. -/
-def AS.const (c : Cfg) (a : AS) (k : K4) (keep : List Nat) : AS × Nat :=
-  let (a, r) := a.getReg c keep
+/-- A constant in a register of its own: the one the value `v` is wanted in, if it is free. -/
+def AS.const (c : Cfg) (a : AS) (k : K4) (keep : List Nat) (v : Nat := atEnd) : AS × Nat :=
+  let (a, r) := a.getRegFor c v keep
   (a.emit (.evLoad (vreg r) (c.kmem k)), r)
 
 /-- Free the registers of the values `vs`. -/
@@ -239,12 +247,12 @@ def AS.release (a : AS) (vs : List Nat) : AS :=
 /-- The register for the result of an operation that writes over `acc`:
 `acc`'s own if this is its last use (and it is not also `rest`'s), else a
 copy. -/
-def AS.over (c : Cfg) (a : AS) (acc : Nat) (keep dying rest : List Nat) : AS × Nat × List Nat :=
+def AS.over (c : Cfg) (a : AS) (acc : Nat) (keep dying rest : List Nat) (v : Nat := atEnd) : AS × Nat × List Nat :=
   if dying.contains acc ∧ ¬ rest.contains acc then
     let r := (a.regOf acc).getD 0
     (a.drop acc, r, dying.erase acc)
   else
-    let (a, r) := a.getReg c keep
+    let (a, r) := a.getRegFor c v keep
     (a.emit (.eop (.vmovdqa64 (vreg r) (a.r acc))), r, dying)
 
 /-- One operation, numbered `idx`, with the next uses `ann` of its value and
@@ -265,7 +273,7 @@ def AS.step (c : Cfg) (a : AS) (op : Op) (idx : Nat) (ann : Option Nat × List (
   -- an operation of its sources' registers into any register
   let plain (mk : VReg → Instr) : AS :=
     let a' := a.release dying
-    let (a', r) := a'.getReg c []
+    let (a', r) := a'.getRegFor c idx []
     bind (a'.emit (mk (vreg r))) r
   match op with
   | .reg _ => a
@@ -274,11 +282,11 @@ def AS.step (c : Cfg) (a : AS) (op : Op) (idx : Nat) (ann : Option Nat × List (
   | .zero => plain fun r => .eop (.bin .vpxorq r r r)
   | .slr x n k =>
     let a' := a.release dying
-    let (a', r) := a'.getReg c []
+    let (a', r) := a'.getRegFor c idx []
     let a' := a'.emit (.eop (.shift .vpsllq (vreg r) (a.r x) (BitVec.ofNat 8 n)))
     bind (a'.emit (.eop (.shift .vpsrlq (vreg r) (vreg r) (BitVec.ofNat 8 k)))) r
   | .sel m x y =>
-    let (a, r, dying) := a.over c x srcs dying [y, m]
+    let (a, r, dying) := a.over c x srcs dying [y, m] idx
     let a := a.emit (.eop (.vpternlogq (vreg r) (a.r y) (a.r m) 0xD8))
     bind (a.release dying) r
   | .add x y => plain fun r => .eop (.bin .vpaddq r (a.r x) (a.r y))
@@ -288,31 +296,31 @@ def AS.step (c : Cfg) (a : AS) (op : Op) (idx : Nat) (ann : Option Nat × List (
   | .sra x n => plain fun r => .eop (.vpsraq r (a.r x) (BitVec.ofNat 8 n))
   | .perm x o => plain fun r => .eop (.vpermq r (a.r x) (BitVec.ofNat 8 o))
   | .addc x k =>
-    let (a, t) := a.const c k srcs
+    let (a, t) := a.const c k srcs idx
     let a := a.emit (.eop (.bin .vpaddq (vreg t) (a.r x) (vreg t)))
     bind (a.release dying) t
   | .andc x k =>
-    let (a, t) := a.const c k srcs
+    let (a, t) := a.const c k srcs idx
     let a := a.emit (.eop (.bin .vpandq (vreg t) (a.r x) (vreg t)))
     bind (a.release dying) t
   | .blend x y m =>
     let (a, t) := a.const c (K4.lanes m) srcs
-    let (a, r, dying) := a.over c x srcs dying [y]
+    let (a, r, dying) := a.over c x srcs dying [y] idx
     let a := a.emit (.eop (.vpternlogq (vreg r) (a.r y) (vreg t) 0xD8))
     bind ({ a with free := t :: a.free }.release dying) r
   | .madd h acc x y =>
     let (a, r, dying) := match acc with
-      | some z => a.over c z srcs dying [x, y]
+      | some z => a.over c z srcs dying [x, y] idx
       | none =>
-        let (a, r) := a.getReg c srcs
+        let (a, r) := a.getRegFor c idx srcs
         (a.emit (.eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))), r, dying)
     let a := a.emit (.eop (.vpmadd52 h (vreg r) (a.r x) (a.r y)))
     bind (a.release dying) r
   | .maddc h acc x k =>
     let (a, r, dying) := match acc with
-      | some z => a.over c z srcs dying [x]
+      | some z => a.over c z srcs dying [x] idx
       | none =>
-        let (a, r) := a.getReg c srcs
+        let (a, r) := a.getRegFor c idx srcs
         (a.emit (.eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))), r, dying)
     let a := a.emit (.evMadd52Load h (vreg r) (a.r x) (c.kmem k))
     bind (a.release dying) r
@@ -356,6 +364,20 @@ def allocGo (c : Cfg) (cuts : List (Nat × List Nat)) :
       allocGo c cuts rest (idx + 1) (a'.step c op idx ann, a.out.reverse :: ps, e.2.map a.loc :: ls)
     | none => allocGo c cuts rest (idx + 1) (a.step c op idx ann, ps, ls)
 
+/-- The value an operation writes over, if it is that value's last use: the operation's result is
+then in its register. -/
+def Op.over : Op → Option Nat
+  | .madd _ (some z) _ _ | .maddc _ (some z) _ _ => some z
+  | .sel _ x _ | .blend x _ _ => some x
+  | _ => none
+
+/-- The registers the values are wanted in: those of `outs`, and for a value an operation writes
+over, the register its result is wanted in. -/
+def wants (ops : List Op) (outs : List (Nat × Nat)) : List (Nat × Nat) :=
+  ops.zipIdx.reverse.foldl (fun w (op, idx) => match find w idx, op.over with
+    | some r, some z => if (find w z).isNone then (z, r) :: w else w
+    | _, _ => w) outs
+
 /-- The code of a block, in pieces: each value of `outs` is left in the
 register given with it; a new piece starts before each operation of `cuts`,
 and with the pieces come the places, there, of the values given with it (a
@@ -370,7 +392,7 @@ def allocCuts (c : Cfg) (ops : List Op) (cuts : List (Nat × List Nat)) (outs : 
   let live : List (Nat × Nat × Nat) := oa.zipIdx.filterMap fun ((op, an), idx) => match op, an.1 with
     | .reg r, some n => some (idx, r, n)
     | _, _ => none
-  let a : AS := ⟨live, [], (List.range 32).filter fun r => !(live.any fun e => e.2.1 == r), 0, []⟩
+  let a : AS := ⟨live, [], (List.range 32).filter fun r => !(live.any fun e => e.2.1 == r), 0, [], wants ops outs⟩
   let (a, ps, ls) := allocGo c cuts oa 0 (a, [], [])
   let a := outs.foldl (fun a o => a.ensure c o.1 atEnd ov) a
   let ms := outs.filterMap fun o =>
