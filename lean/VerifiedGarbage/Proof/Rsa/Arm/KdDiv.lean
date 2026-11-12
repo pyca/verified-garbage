@@ -522,4 +522,66 @@ theorem prepB_ok {v : State} {B : BitVec 32} {Z w N r m t nm u : Nat} (h : Ws v 
     exact ((K1.mono).trans K2.mono).trans (keep_write _ _ (by simp) (by simp only [sJ]; omega))
   · exact (R1.mono (by decide)).trans ((R2.mono (by decide)).trans (R3.mono (by decide)))
 
+/-! ## The division -/
+
+/-- The header words the division changes. -/
+abbrev divSlots : List Nat := [sP, sD, sD1, sV, sMk, sQ, sU0, sU2, VG.Impl.Rsa.Arm.Keys.sC, sJ]
+
+/-- `divW a r m t nm u`: `[r] := [a] mod M` for `M = [m]` of `w / 2` words, its top word not
+zero, through `[t]`, `[nm]` and `[u]`, with `[0]` zero; word `w` of `[r]` zero. -/
+theorem divW_ok {s : State} {B : BitVec 32} {Z w N a r m t nm u : Nat} (h : Ws s B Z w N) (ha : a < N)
+    (hr : r < N) (hm : m < N) (ht : t < N) (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hra : r ≠ a)
+    (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r) (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r)
+    (htn : t ≠ nm) (hnu : nm ≠ u) (hnm' : nm ≠ m) (hr0 : r ≠ 0) (ht0 : t ≠ 0) (hu0 : u ≠ 0) (hn0 : nm ≠ 0)
+    (hw6 : 6 ≤ w) (h16 : slot s.mem B 16 = w) {M : Nat} (hM : num s.mem B w m = M)
+    (hMl : M < 2 ^ (32 * (w / 2))) (hT0 : 0 < w32 s.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)))
+    (hz : num s.mem B w 0 = 0) :
+    WP isa (divW a r m t nm u) s fun v => Ws v B Z w N ∧ num v.mem B w r = num s.mem B w a % M ∧
+      w32 v.mem (State.addr B) (arr w r + 4 * w) = 0 ∧ Keep B w [r, t, u, nm] divSlots s.mem v.mem ∧
+      Rest divRegs s v := by
+  have := h.wle
+  have gm := h.fit64 hm
+  have g0 := h.fit64 (j := 0) (by omega)
+  have gn := h.fit64 hnm
+  simp only [S] at gm g0 gn
+  have hM0 : 0 < M := by
+    rw [← hM]; simp only [num]
+    rw [show w = (w / 2 - 1) + 1 + (w - w / 2) by omega, val32_append, val32_succ]
+    have := Nat.mul_le_mul_left (2 ^ (32 * (w / 2 - 1))) hT0
+    have := Nat.two_pow_pos (32 * (w / 2 - 1))
+    have e : w / 2 - 1 + 1 + (w - w / 2) = w := by omega
+    rw [e] at *
+    omega
+  rw [divW]
+  simp only [VG.Impl.Rsa.Arm.Keys.seqs, prep]
+  rw [WP.seq_iff]
+  refine prepA_ok h ha hr hm hnm hN hra hr0 hmr.symm hn0 hnm' hnr hM hM0 hz fun v W V N' K R => ?_
+  have Mv : num v.mem B w m = M := by rw [K.num (by simp; exact ⟨hmr.symm, hnm'⟩) (by simp) gm]; exact hM
+  have Zv : num v.mem B w 0 = 0 := by rw [K.num (by simp; exact ⟨hr0, hn0⟩) (by simp) g0]; exact hz
+  have Tv : 0 < w32 v.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) := by
+    rw [K.word (by simp only [S]; omega) (by simp; exact ⟨hmr.symm, hnm'⟩) (by simp) gm]; exact hT0
+  have hv16 : slot v.mem B 16 = w := by rw [K.slot (by decide) (by simp)]; exact h16
+  refine WP.mono (prepB_ok (t := t) (u := u) W hr hm hnm hN hw6 hv16 Mv hMl Tv Zv N' V
+    (by simp only [num]; exact val32_lt _ _ _ _)) fun x0 ⟨I0, K0, R0⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (loop_ok I0 (by omega) hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0
+    (by omega)) fun x1 I1 => ?_
+  refine WP.mono (stepD_ok I1 hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0 (by omega))
+    fun x2 ⟨W2, _, _, V2, K2, R2⟩ => ?_
+  simp only [Nat.mul_zero, Nat.pow_zero, Nat.mod_one, Nat.div_one, Nat.one_mul, Nat.zero_add] at V2
+  rw [val32_succ] at V2
+  have hlt := val32_lt x2.mem (State.addr B) (arr w r) w
+  have hXM : num s.mem B w a % M < 2 ^ (32 * w) :=
+    Nat.lt_of_lt_of_le (Nat.mod_lt _ hM0) (Nat.le_of_lt (Nat.lt_of_lt_of_le hMl
+      (Nat.pow_le_pow_right (by decide) (by omega))))
+  generalize 2 ^ (32 * w) = P at hlt hXM V2
+  have hw0 : w32 x2.mem (State.addr B) (arr w r + 4 * w) = 0 := by
+    rcases Nat.eq_zero_or_pos (w32 x2.mem (State.addr B) (arr w r + 4 * w)) with e | e
+    · exact e
+    · have := Nat.le_mul_of_pos_right P e; omega
+  refine ⟨W2, ?_, hw0, ?_, ?_⟩
+  · simp only [num]; rw [hw0, Nat.mul_zero, Nat.add_zero] at V2; exact V2
+  · exact ((K.mono).trans K0.mono).trans K2.mono
+  · exact (R.mono (by decide)).trans (R0.trans R2)
+
 end VG.Proof.Rsa.Arm.KeyDiv
