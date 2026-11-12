@@ -323,9 +323,10 @@ theorem chunkW_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (h : SA s0 s) (h
   exact WP.mono (setW_ok s4 (d' := aP) (by decide)
     (by rw [k4.num (by decide) (by decide) (fit _ (by decide)), h3.p]) hB.p_lt) fun t ⟨ht, et, _⟩ => ⟨ht, et⟩
 
-theorem midW_eq : midW = seqs ([.block (ctx ++ bitOf sPodd aP), VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ] ++
-    (chunkW ++ [VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR2 aDD aDQ aDT aT1, copy aDD aQ,
-      .block (clrLow aDD ++ VG.Impl.Rsa.Arm.KeyDiv.fixTop aDD), VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR3 aDD aDQ aDT aT1])) :=
+theorem midW_eq : midW = seqs (([.block (ctx ++ bitOf sPodd aP), VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ] :
+    List (Prog isa)) ++ (chunkW ++ ([VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR2 aDD aDQ aDT aT1, copy aDD aQ,
+      .block (clrLow aDD ++ VG.Impl.Rsa.Arm.KeyDiv.fixTop aDD), VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR3 aDD aDQ aDT aT1] :
+        List (Prog isa)))) :=
   rfl
 
 /-- After the first division by words. -/
