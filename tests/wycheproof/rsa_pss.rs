@@ -57,8 +57,8 @@ fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
         BigUint::from_be_bytes(&k.exponent1.0),
         BigUint::from_be_bytes(&k.exponent2.0),
         BigUint::from_be_bytes(&k.coefficient.0),
-    )
-    .unwrap_or_else(|e| panic!("{name}: {e}"));
+    );
+    let private = private.unwrap_or_else(|e| panic!("{name}: {e}"));
     let public = PublicKey::new(
         BigUint::from_be_bytes(n),
         BigUint::from_be_bytes(&k.public_exponent.0),
@@ -111,11 +111,11 @@ fn rsa_pss_test() {
         let (accepted, rejected) = (Count::default(), Count::default());
         let keys = |group: &harness::TestGroup<VerifyGroup, SigCase>| {
             let p = &group.params.public_key;
-            PublicKey::new(
+            let key = PublicKey::new(
                 BigUint::from_be_bytes(trim_zeros(&p.modulus.0)),
                 BigUint::from_be_bytes(&p.public_exponent.0),
-            )
-            .unwrap_or_else(|e| panic!("{name}: {e}"))
+            );
+            key.unwrap_or_else(|e| panic!("{name}: {e}"))
         };
         file.par_tests_with(keys, |group, key, test| {
             let p = &group.params;
@@ -177,9 +177,8 @@ fn check_signatures(
         let id = test.tc_id;
         let d = digest(*h, &test.case.msg.0);
         for s_len in [0, h.digest_len()] {
-            let sig = private
-                .sign_pss(&d, *h, *h, s_len)
-                .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+            let sig = private.sign_pss(&d, *h, *h, s_len);
+            let sig = sig.unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
             assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
             assert!(
                 public
@@ -200,9 +199,8 @@ fn check_signatures(
         // with it, and not with MGF1 over the hash function itself.
         let i = HASHES.iter().position(|(_, x)| x == h).unwrap();
         let g = HASHES[(i + 1) % HASHES.len()].1;
-        let sig = private
-            .sign_pss(&d, *h, g, 16)
-            .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+        let sig = private.sign_pss(&d, *h, g, 16);
+        let sig = sig.unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
         assert!(
             public
                 .verify_pss(&sig, &d, *h, g, SaltLength::Len(16))

@@ -83,17 +83,18 @@ def pLenArg : Nat := if full then 7 else 5
 def sG : Nat := 144
 
 /-- `[m] = [x] mod [m']` by word steps, `m'` of `p`'s length (under the guard, `q`'s too). -/
-def wordMod (x r m : Nat) (wide : Bool := false) : Prog isa :=
-  WordModRt.wordMod (lay full) (pLenArg full) x r m aT wide
+def wordMod (x r m : Nat) (top : Option Nat := none) : Prog isa :=
+  WordModRt.wordMod (lay full) (pLenArg full) x r m aT top
 
-/-- `[x] < [m]` and `e [x] ≡ 1 (mod [m])`: the product `e x` (`e`'s two words) by word steps. -/
+/-- `[x] < [m]` and `e [x] ≡ 1 (mod [m])`: the product `e x` (`e`'s two words) by word steps, over
+its `W' + 2` words (`x < m`, of `p`'s length). -/
 def eWord (x m : Nat) : List (Prog isa) :=
-  ltA full x m ++ [WordModRt.mulShort (lay full) aY x aE, wordMod full aY aA m] ++ eqA full aA aOne
+  ltA full x m ++ [WordModRt.mulShort (lay full) aY x aE, wordMod full aY aA m (some 2)] ++ eqA full aA aOne
 
-/-- `qInv < p` and `q qInv mod p = 1`: the product `q qInv` (`2 w` words in `aY` and `aX`)
-reduced by word steps into `aA`. -/
+/-- `qInv < p` and `q qInv mod p = 1`: the product `q qInv`, over the primes' `w / 2` words (the
+guard's), reduced by word steps into `aA` from its `w` words in `aY`. -/
 def qInvWord : List (Prog isa) := ltA full aQI aP ++
-  [WordModRt.mulWide (lay full) aY aQ aQI, wordMod full aY aA aP true] ++ eqA full aA aOne
+  [WordModRt.mulHalf (lay full) aY aQ aQI, wordMod full aY aA aP] ++ eqA full aA aOne
 
 /-- The three product checks by word steps, under the guard. -/
 def wordProducts : Prog isa := seqs (eWord full aDP aM1 ++ eWord full aDQ aM2 ++ qInvWord full)

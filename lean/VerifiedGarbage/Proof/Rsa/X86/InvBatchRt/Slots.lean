@@ -112,6 +112,7 @@ theorem slots_ok {s : State} (h : RtWs L s B Z len N) (hroom : 16 ≤ N)
   rw [show VG.Impl.Rsa.X86.Keys.hdr = 160 from rfl] at hf
   have hw := kw_bound h.lenLe
   have hpos := h.ws.wpos
+  have ke := kw_eq len
   have e52 : slotBase = 52 := rfl
   have e96 : halfSlot = 96 := rfl
   unfold slots
@@ -130,7 +131,7 @@ theorem slots_ok {s : State} (h : RtWs L s B Z len N) (hroom : 16 ≤ N)
     h₁.keep (((K₂.mono (by decide)).trans (U₃.keeps.mono (by decide))).trans (U₄.keeps _) : Keeps [.eax] u₁ u)
       (by decide) (by decide) (O₄.mono (Nat.zero_le _) (by omega))
   have F : Unch B (slotWords cached) s.mem u₁.mem := F₁
-  refine k u ⟨hu, ⟨fun j d hd => ?_, ?_, by omega⟩, hroom⟩ K ?_
+  refine k u ⟨hu, ⟨fun j d hd => ?_, ?_, by omega, by omega⟩, hroom⟩ K ?_
   · obtain ⟨hj, rfl⟩ := slot_some hd
     have hi := cached_idx j hj
     rw [O₄.w32 (by omega) (by omega)]

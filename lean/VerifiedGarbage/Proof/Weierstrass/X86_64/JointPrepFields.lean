@@ -21,6 +21,7 @@ structure JointPrepLayout (c : Joint.Cfg) (size u v : Nat) : Prop where
   peer : c.K.bits+64*c.K.M.n+8≤size
   separate : c.gBits+jointGSpan c≤c.K.bits ∨ c.K.bits+64*c.K.M.n+8≤c.gBits
   keepV : v+8*c.K.M.n≤c.gBits ∨ c.gBits+jointGSpan c≤v
+  recode : c.recodeB=true → c.gw=9
   field : ∀ x∈winRo c.K,∀ w∈jointPrepRanges c,x+8*c.K.M.n≤w.1 ∨ w.1+w.2≤x
   modulus : ∀ w∈jointPrepRanges c,c.K.M.mo+8*c.K.M.n≤w.1 ∨ w.1+w.2≤c.K.M.mo
 
@@ -85,6 +86,6 @@ theorem jointPrepFields_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
       JointGenerator c C base T size row t ∧ KeepRegs (nafPrepClobN c.K.M.n) s t ∧
       Unch base (jointPrepRanges c) s.mem t.mem :=
   jointPrepFieldsOf_ok hL hF hi he
-    (jointPrep_ok hL.n hi.scr hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV)
+    (jointPrep_ok hL.n hi.scr hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV hL.recode)
 
 end VG.Proof.Weierstrass.X86_64

@@ -18,17 +18,18 @@ open VG VG.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.InvBatchRt VG.Proof.Rsa.X86
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
 
-theorem rv_arr (w j b : Nat) : rv w { arr := j, byte := b } = 160 + j * (4 * w + 8) + b := by
+theorem rv_arr (w j b : Nat) (n : Nat := w / 2) : rv w { arr := j, byte := b } n = 160 + j * (4 * w + 8) + b := by
   simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset]; omega
 
-theorem rv_half1 (w : Nat) (x : Ref) (hx : x.half = 0) : rv w { x with half := 1 } = rv w x + 2 * w := by
+theorem rv_half1 (w : Nat) (x : Ref) (hx : x.half = 0) (n : Nat := w / 2) :
+    rv w { x with half := 1 } n = rv w x n + 4 * n := by
   simp only [rv, hx]; omega
 
-theorem rv_byte (w : Nat) (x : Ref) (d : Nat) : rv w { x with byte := x.byte + d } = rv w x + d := by
+theorem rv_byte (w : Nat) (x : Ref) (d : Nat) (n : Nat := w / 2) : rv w { x with byte := x.byte + d } n = rv w x n + d := by
   simp only [rv]; omega
 
-theorem rv_a (len j : Nat) : rv (kw len) (a j) = 160 + j * (8 * nw len + 8) := by
-  have := rv_arr (kw len) j 0
+theorem rv_a (len j : Nat) (n : Nat := kw len / 2) : rv (kw len) (a j) n = 160 + j * (8 * nw len + 8) := by
+  have := rv_arr (kw len) j 0 n
   have ke := kw_eq len
   rw [show 4 * kw len + 8 = 8 * nw len + 8 by omega] at this
   simp only [a]; omega
@@ -39,7 +40,7 @@ theorem rv_half1' (len j : Nat) : rv (kw len) { arr := j, half := 1 } = rv (kw l
   simp only [a] at this ⊢; omega
 
 /-- The arrays fit: `[16]` begins inside the working space. -/
-theorem Bx.fits16 {s : State} (h : Bx L s B Z len N) : 160 + 16 * (8 * nw len + 8) ≤ Z := by
+theorem Bx.fits16 {s : State} {n : Nat} (h : Bx L s B Z len N n) : 160 + 16 * (8 * nw len + 8) ≤ Z := by
   have := h.fits
   have ke := kw_eq len
   simp only [VG.Impl.Rsa.X86.InvBatchRt.offset] at this

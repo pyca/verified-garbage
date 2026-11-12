@@ -213,14 +213,19 @@ the window a word down. -/
 def step (r m t nm u : Nat) : Prog isa := seqs [.block (estA r), .block estB, clearT t, prodT m t, subT r t u,
   selT t nm, subBack r t u, .block [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]]
 
+/-- The window's first offset: at word `w - dw`, or at word `t` for a dividend
+below `2^(32 (t + dw))` (`top = some t`). -/
+def winStart : Option Nat → List Instr
+  | none => [.mov .r0 (.shifted .r9 .lsr 1), .dp .sub .r0 .r9 (.reg .r0), .mov .r0 (.shifted .r0 .lsl 2),
+    .str .r0 .r8 sJ]
+  | some t => [.mov .r0 (.imm (BitVec.ofNat 32 (4 * t))), .str .r0 .r8 sJ]
+
 /-- `[r] := [a]`, word `w` of `[r]` zero, `[nm] := -[m]`, `P`, `d`, `d₁`, `v`,
-and the window at word `w - dw`. -/
-def prep (a r m nm : Nat) : Prog isa := seqs [
+and the window at its first offset (`winStart top`). -/
+def prep (a r m nm : Nat) (top : Option Nat) : Prog isa := seqs [
   copy r a,
   .block (ptr .r0 r ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2), .mov .r1 (.imm 0), .str .r1 .r0 0]),
-  sub3 nm 0 m, norm m, recip,
-  .block [.mov .r0 (.shifted .r9 .lsr 1), .dp .sub .r0 .r9 (.reg .r0), .mov .r0 (.shifted .r0 .lsl 2),
-    .str .r0 .r8 sJ]]
+  sub3 nm 0 m, norm m, recip, .block (winStart top)]
 
 /-- `[m]`'s top word (`w / 2 - 1`) made not zero, `1` if it is zero: a divisor copied
 from a number that may be shorter than `w / 2` words. -/
@@ -232,8 +237,8 @@ def fixTop (m : Nat) : List Instr :=
 /-- `[r] := [a] mod [m]`, for `[m]` of `w / 2` words, its top word not zero,
 through `[t]`, `[nm]` and `[u]`. The steps run while the window's offset, counted
 down, does not underflow. -/
-def divW (a r m t nm u : Nat) : Prog isa :=
-  seqs [prep a r m nm, .loop (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne,
+def divW (a r m t nm u : Nat) (top : Option Nat := none) : Prog isa :=
+  seqs [prep a r m nm top, .loop (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne,
     step r m t nm u]
 
 /-! ## Balanced keys -/
@@ -257,19 +262,23 @@ def shape4 (oP oQ oDP oDQ : Nat) : List Instr :=
 
 /-! ## Products -/
 
-/-- Row `i` (`4 i` at 72) of `[o] += x_i [y]` over the `w - i` words from word
-`i`, the carry out dropped; then the next row. A block ends after the load of
+/-- The rows' end: the offset of row `n` (`w / 2` for `none`) against the next's. -/
+def rowsEnd : Option Nat → List Instr
+  | none => [.mov .r1 (.shifted .r9 .lsl 1), .cmp .r0 (.reg .r1)]
+  | some n => [.cmp .r0 (.imm (BitVec.ofNat 32 (4 * n)))]
+
+/-- Row `i` (`4 i` at 72) of `[o] += x_i [y]` over the `w / 2 + 1` words from word
+`i`, for `[y]` of `w / 2` words; then the next row. A block ends after the load of
 the offset, as for `estA`. -/
-def mulRow (o x y : Nat) : Prog isa :=
+def mulRow (o x y : Nat) (n : Option Nat) : Prog isa :=
   .seq (.block (ptr .r0 o ++ [.ldr .r2 .r8 sJ]))
     (.seq (.block ([.dp .add .r0 .r0 (.reg .r2)] ++ ptr .r12 y ++
-      [.mov .r3 (.shifted .r2 .lsr 2), .dp .sub .lr .r9 (.reg .r3)] ++ ptr .r1 x ++
+      [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1)] ++ ptr .r1 x ++
       [.dp .add .r1 .r1 (.reg .r2), .ldr .r1 .r1 0, .mov .r11 (.imm 0)]))
-    (.seq row (.block (ctx ++ [.ldr .r0 .r8 sJ, .dp .add .r0 .r0 (.imm 4), .str .r0 .r8 sJ,
-      .mov .r1 (.shifted .r9 .lsl 1), .cmp .r0 (.reg .r1)]))))
+    (.seq row (.block (ctx ++ [.ldr .r0 .r8 sJ, .dp .add .r0 .r0 (.imm 4), .str .r0 .r8 sJ] ++ rowsEnd n))))
 
-/-- `[o] := [x] [y] mod 2^(32 w)`, for `[x]` of `w / 2` words. -/
-def mulLo (o x y : Nat) : Prog isa :=
-  seqs [copy o 0, .block [.mov .r0 (.imm 0), .str .r0 .r8 sJ], .loop (mulRow o x y) .ne]
+/-- `[o] := [x] [y]`, for `[x]` of `n` words (`w / 2` for `none`) and `[y]` of `w / 2`. -/
+def mulLo (o x y : Nat) (n : Option Nat := none) : Prog isa :=
+  seqs [copy o 0, .block [.mov .r0 (.imm 0), .str .r0 .r8 sJ], .loop (mulRow o x y n) .ne]
 
 end VG.Impl.Rsa.Arm.KeyDiv

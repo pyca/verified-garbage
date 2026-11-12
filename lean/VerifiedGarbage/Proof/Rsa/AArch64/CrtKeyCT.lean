@@ -35,14 +35,14 @@ from `CrtKeyCTReduce.lean` into the CRT checks and their main routine.
 namespace VG.Proof.Rsa.AArch64
 
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys
-open VG.Impl.Rsa.AArch64.CheckKey (sP sPlen sQ sQlen sQI aX aR aM aA aRem aT aOne aE ltA mulE mulXR wmodOne lenQ)
+open VG.Impl.Rsa.AArch64.CheckKey (sP sPlen sQ sQlen sQI aX aR aM aA aRem aT aOne aE ltA mulE mulPQ wmodOne lenQ)
 open VG.Impl.Rsa.AArch64.CheckCrtKey (aQ hiTail loTail cntTail reduceTop topE topQ modChecks)
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.MlKem.AArch64 (Keep)
 
 /-- `qInv < p` and `q qInv ≡ 1 (mod p)`. -/
 theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++
-    (loadA aR sQ sQlen ++ (mulXR ++ wmodOne topQ lenQ)))))) (Two GK) :=
+    (loadA aR sQ sQlen ++ (mulPQ ++ wmodOne topQ lenQ)))))) (Two GK) :=
   ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ld_ct (by decide) (by decide) (by decide) CkP.pP CkP.pl
     (by decide) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, L.pcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))))
@@ -51,10 +51,10 @@ theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI 
     (by taint_decide) (by taint_decide) (by taint_decide))
   (ct_app (by simp [ltA]) (by simp [loadA]) (ltA_ckct (a := aX) (b := aM) (js := [aX]) (by decide) (by decide)
     (by decide) (by taint_decide))
-  (ct_app (by simp [loadA]) (by simp [mulXR]) (toGKb (ld_ct (by decide) (by decide) (by decide) CkP.pQ CkP.ql
+  (ct_app (by simp [loadA]) (by simp [mulPQ]) (toGKb (ld_ct (by decide) (by decide) (by decide) CkP.pQ CkP.ql
     (js := [aX]) (by decide) (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, L.qcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide)) (js' := [aX, aR]) (by decide))
-  (ct_app (by simp [mulXR]) (by simp [wmodOne]) (mulXR_ckct (by taint_decide) (by taint_decide))
+  (ct_app (by simp [mulPQ]) (by simp [wmodOne]) (mulPQ_ckct (by taint_decide))
     (wmodOne_ckct (fun p => (p.ql + 7) / 8) (fun p => (wW p.cap - 2) / 2) (fun p s h => by
         obtain ⟨I, m₀, c, rfl, hs, L, -⟩ := h
         exact topQ_ok hs.args.ql (by simp only [CkIn.pub]; have := L.ql2; have := L.k2; omega)

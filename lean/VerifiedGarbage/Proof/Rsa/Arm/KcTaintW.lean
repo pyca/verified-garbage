@@ -82,16 +82,16 @@ theorem chunk4_taint :
 theorem mulVQ_taint : MulTaint aVQ aP aQ :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem mulT_taint : MulTaint aT aQ aQI :=
+theorem mulT_taint : MulTaint aT aQI aQ :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem mulDP_taint : MulTaint aA aDP aE :=
+theorem mulDP_taint : MulTaint aA aE aDP (some 2) :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem mulDQ_taint : MulTaint aA aDQ aE :=
+theorem mulDQ_taint : MulTaint aA aE aDQ (some 2) :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
-theorem divA_taint : DivTaint aA aVR aVD aVT aY aX :=
+theorem divA_taint : DivTaint aA aVR aVD aVT aY aX (some 2) :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩

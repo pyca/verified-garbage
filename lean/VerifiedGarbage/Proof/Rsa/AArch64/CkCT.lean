@@ -278,27 +278,6 @@ theorem mulE_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
   exact WP.mono (mulE_ok h'.ws L.w1 rfl (hb aX (by simp))) fun _ ⟨_, o, k⟩ =>
     GK.arr ⟨I, m₀, c, rfl, h', L, hmw⟩ (by decide) (Nat.le_refl _) o k (by decide)
 
-theorem mulXR_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base aA .x8 ++ [movi .x7 0])) zeroAcc)
-      hc₁).isSome = true)
-    {hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base aX .x5 ++ base aR .x9 ++ base aA .x8 ++
-      [mov .x11 .x5] ++ VG.Impl.Rsa.AArch64.CheckKey.narrow ++ [mov .x13 .x12, movi .x7 0])) VG.Impl.Rsa.AArch64.Crt.mulRows) hc₂).isSome = true) :
-    RelCT isa (Two (GKb [aX, aR])) (seqs mulXR) (Two GK) := by
-  have e : seqs mulXR = .seq (zeroA aA) (.seq (.block (ws ++ (base aX .x5 ++ base aR .x9 ++ base aA .x8 ++
-      [mov .x11 .x5] ++ VG.Impl.Rsa.AArch64.CheckKey.narrow ++ [mov .x13 .x12, movi .x7 0]))) VG.Impl.Rsa.AArch64.Crt.mulRows) := by
-    simp only [mulXR, seqs, List.append_assoc]
-  rw [e]
-  refine ct_carry (Θ := GKb [aX, aR]) (Ψ := GK)
-    ((zeroA_ckct (by decide) ht₁).mono (fun _ _ h => two_mono (fun _ _ h => h.1) h) fun _ _ _ => trivial)
-    (fun _ _ h => zeroA_okb (by decide) (by decide) h)
-    ((ws_ct (Ψ := fun _ _ => True) CkP.B CkP.Z (fun p => wW p.cap) (fun _ _ h => h.1.ws) ht₂ fun _ _ h =>
-      WP.mono h.2 fun _ _ => trivial).mono (fun _ _ h => h) fun _ _ _ => trivial) fun p s h => ?_
-  rw [← e]
-  obtain ⟨⟨I, m₀, c, rfl, h', L, hmw⟩, hb⟩ := h
-  exact WP.mono (mulXR_ok h'.ws L.w1 rfl (hb aX (by simp)) rfl (hb aR (by simp))) fun _ ⟨_, o, k⟩ =>
-    GK.arr ⟨I, m₀, c, rfl, h', L, hmw⟩ (by decide) (Nat.le_refl _) o k (by decide)
-
 /-- The registers `mulPQ`'s rows need pinned. -/
 def ckPqVal (p : CkP) : Reg → BitVec 64
   | .x0 => p.B

@@ -31,7 +31,7 @@ namespace VG.Impl.Rsa.AArch64.CheckCrtKey
 
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
 open VG.Impl.Rsa.AArch64.CheckKey (sD sE sElen sDlen sP sPlen sQ sQlen sDP sDQ sQI aX aR aM aA aRem aT aOne aE
-  ltA mulE mulXR)
+  ltA mulE)
 
 /-- The quotient's register of `reduceTop`. -/
 def aQ : Nat := 9

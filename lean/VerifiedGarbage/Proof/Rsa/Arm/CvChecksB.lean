@@ -166,7 +166,7 @@ theorem checksB_ok [InvLaw] {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X�
   have vQ : VG.Proof.Rsa.Arm.Inv.nk t0.mem (cvB s0) (cvW s0) 0 kq = cvQ s0 := by
     rw [m0]; exact val32_of_lt kqw h.u lenQ
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (InvLaw.inverseK_ok g0 (by decide) (by decide)) fun t1a ⟨g1, k1a, r1a, inv⟩ => ?_
+  refine WP.mono (InvLaw.inverseK_ok g0 (by decide) (by decide) (by omega)) fun t1a ⟨g1, k1a, r1a, inv⟩ => ?_
   rw [vM, vQ] at inv
   rw [m0] at k1a
   have R01 : Rest (.r6 :: .r7 :: .r8 :: .r9 :: opRegs) s t1a := (r0.mono (by simp)).trans (r1a.mono (by simp))

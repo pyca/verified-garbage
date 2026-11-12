@@ -21,11 +21,11 @@ returned as 0 or 1 at the end.
 
 * `d < n`, `dP < p - 1`, `dQ < q - 1` and `qInv < p`: the borrow of a
   subtraction (`ltA`).
-* `p q = n`: the product (`mulXR`, rows of `w` words), compared with `n`
+* `p q = n`: the product (`mulPQ`, over the factors' lengths), compared with `n`
   (`eqA`).
 * `d e ≡ 1 (mod p - 1)` and the others: the product `x` of `d`, `dP` or
   `dQ` and `e` (`mulE`, `e` below `2^33` a word), or of `q` and `qInv`
-  (`mulXR`), is reduced modulo `m` (`p - 1`, `q - 1` or `p`) and the
+  (`mulPQ`), is reduced modulo `m` (`p - 1`, `q - 1` or `p`) and the
   remainder compared with 1. The checkers choose their bounded reductions.
 
 `p < n` and `q < n` need no computation: `p` and `q` are shorter than `n`,
@@ -109,13 +109,6 @@ def mulE : List (Prog isa) := [
   zeroA aA,
   .block (ws ++ base aE .x1 ++ base aX .x9 ++ base aA .x8 ++ [ld .x1 .x1] ++ narrow ++ [movi .x7 0]),
   mulAddRow]
-
-/-- `[aA] := [aX] [aR]`, `w` rows of `w` words. -/
-def mulXR : List (Prog isa) := [
-  zeroA aA,
-  .block (ws ++ base aX .x5 ++ base aR .x9 ++ base aA .x8 ++ [mov .x11 .x5] ++ narrow ++
-    [mov .x13 .x12, movi .x7 0]),
-  Crt.mulRows]
 
 /-- `[aA] := [aX] [aR]` for `[aX] < 256^p_len` and `[aR] < 256^q_len`: `⌈p_len / 8⌉` rows of
 `⌈q_len / 8⌉` words. -/
