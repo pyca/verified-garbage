@@ -93,13 +93,26 @@ quadword standing for the return address, then the buffer
 (`VG.Spec.Hmac.Instance.initAnyKeyScratch` words). -/
 def anyFrame (I : Spec.Hmac.Instance) : Nat := 8 + 8 * I.initAnyKeyScratch
 
+/-- The words of working space HMAC's `init` for a key of at most a block
+(`Hash.hmacInit`) uses, of the instance's `scratch` it is given as
+`init_scratch`: the streaming functions' (`so + 48` bytes, of which the
+compression function it calls uses `so`), then our caller's registers. -/
+def initWords (H : Hash) : Nat := H.stream.W + 6
+
+theorem initWords_eq (H : Hash) : initWords H = (H.P.so + 48) / 8 + 6 := rfl
+
+/-- The bytes of the frame in which HMAC's `init` for a key of at most a
+block keeps its working space: a quadword standing for the return address,
+then `initWords` words. -/
+def initFrame (H : Hash) : Nat := 8 + 8 * initWords H
+
 /-- HMAC's `init` for a key of any length, `vg_hmac_<hash>_init`: for a key
-of at most a block, `init_scratch` (`Hash.hmacInit`) in a frame holding its
-working space; for a longer key (cold), `Hash.hmacInitAny`, in a frame
-holding its larger working space, which it wipes. -/
+of at most a block, `init_scratch` (`Hash.hmacInit`) in a frame holding the
+working space it uses; for a longer key (cold), `Hash.hmacInitAny`, in a
+frame holding its larger working space, which it wipes. -/
 def initCode (H : Hash) (I : Spec.Hmac.Instance) : Prog isa :=
   Impl.Pbkdf2.Md.X86_64.initEntry I.S.H.blockSize
-    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit)
+    (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
     (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny)
 
 /-- The bytes of the frame in which PBKDF2's `pbkdf2` (of instance `I`) keeps
@@ -141,9 +154,9 @@ structure MdHash where
   /-- The two branches of `initCode`, each verified against its contract:
   what `hmacInitF` is made of, for `MdHash.initScrubbed`, which clears after
   each. -/
-  hmacShortF : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit)
-    (I.initContract X86_64.abi (16 + hmacFrame I))
-  hmacShortFSp : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit).all
+  hmacShortF : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
+    (I.initContract X86_64.abi (16 + initFrame H))
+  hmacShortFSp : (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit).all
     (fun i => !isa.writesSp i) = true
   hmacAnyF : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny)
@@ -198,6 +211,15 @@ theorem hmacInit_of (hs : ∃ s, (Proof.Hmac.Instance.initScratchContract I X86_
   simp only [Proof.Hmac.Instance.initScratchContract, ← hSH, ← hW] at hs ⊢
   exact hmacInit_verified hH C K hs
 
+omit hW in
+/-- `hmacInit_of`, with the working space `init` uses (`initWords`). -/
+theorem hmacInitW_of (hs : ∃ s, (Proof.Hmac.initScratchContract I.S (initWords H) X86_64.abi 16).pre s) :
+    Verified X86_64.target H.hmacInit (Proof.Hmac.initScratchContract I.S (initWords H) X86_64.abi 16) := by
+  rw [← hSH] at hs ⊢
+  refine hmacInit_verifiedW hH C K ?_ hs
+  show 8 * ((H.P.so + 48) / 8) + 48 ≤ 8 * ((H.P.so + 48) / 8 + 6)
+  omega
+
 theorem hmacFin_of (hs : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract I X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacFin (Proof.Hmac.Instance.finalizeScratchContract I X86_64.abi 16) := by
   simp only [Proof.Hmac.Instance.finalizeScratchContract, ← hSH, ← hW] at hs ⊢
@@ -249,37 +271,44 @@ theorem hmacInitAnyF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (Proof.Hmac.Insta
       rw [← hSH, hH.hS]; have := hH.N_le; have := hH.B_le
       show H.P.N + H.P.B < 2 ^ 64; omega_arith)) hsat rfl
 
-theorem hmacShortF_of (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I X86_64.abi 16).pre s) (hs : I.scratch < 511)
-    (hsat : ∃ s, (I.initContract X86_64.abi (16 + hmacFrame I)).pre s) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit)
-      (I.initContract X86_64.abi (16 + hmacFrame I)) :=
+omit hW in
+theorem hmacShortF_of (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S (initWords H) X86_64.abi 16).pre s)
+    (hsat : ∃ s, (I.initContract X86_64.abi (16 + initFrame H)).pre s) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
+      (I.initContract X86_64.abi (16 + initFrame H)) :=
+  have : initWords H < 263 := by rw [initWords_eq]; have := hH.hso; omega
   X86_64.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
-    (n := I.scratch) (pre := Spec.Hmac.initPre I.S X86_64.abi.ptrBits)
+    (n := initWords H) (pre := Spec.Hmac.initPre I.S X86_64.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S X86_64.abi.ptrBits) (wa := true) (stack := 16)
-    (bytes := hmacFrame I) (hmacInit_of hH C K hSH hW hsI) (by exact (by decide : 4 < 6))
-    (by simp only [hmacFrame, Elem.size]; omega_arith) (by simp only [hmacFrame]; omega_arith) (hmacInit_sp C K)
+    (bytes := initFrame H) (hmacInitW_of hH C K hSH hsI) (by exact (by decide : 4 < 6))
+    (by simp only [initFrame, Elem.size]; omega_arith) (by simp only [initFrame]; omega_arith) (hmacInit_sp C K)
     (Callees.hmacInitXD K C) hsat rfl
 
 theorem hmacInitF_of (A : Any.AnyOK (core H)) (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I X86_64.abi 16).pre s)
-    (hs : I.scratch < 511) (hsIF : ∃ s, (I.initContract X86_64.abi (16 + hmacFrame I)).pre s)
+    (hsW : ∃ s, (Proof.Hmac.initScratchContract I.S (initWords H) X86_64.abi 16).pre s)
+    (hsIF : ∃ s, (I.initContract X86_64.abi (16 + initFrame H)).pre s)
     (hsA : ∃ s, (Any.anyScratchContract I.S I.initAnyKeyScratch).pre s) (ha : I.initAnyKeyScratch < 511)
     (hR : Proof.Hmac.ReprLocal I.S) (hB : I.S.H.blockSize + 1 < 2 ^ 31)
     (hsat : ∃ s, (I.initAnyKeyContract X86_64.abi (24 + anyFrame I)).pre s) :
     Verified X86_64.target (initCode H I) (I.initAnyKeyContract X86_64.abi (24 + anyFrame I)) :=
-  initEntry_verified (hmacShortF_of hH C K hSH hW hsI hs hsIF)
+  have : initWords H ≤ I.scratch := by
+    have h := C.fitI
+    change 8 * ((H.P.so + 48) / 8) + 48 ≤ 8 * H.W at h
+    rw [initWords_eq, ← hW]; omega
+  initEntry_verified (hmacShortF_of hH C K hSH hsW hsIF)
     (hmacInitAnyF_of hH C K hSH hW A hsI hsA ha hR hsat) (by omega_arith)
-    (by simp only [hmacFrame, anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega_arith) hB hsat
+    (by simp only [initFrame, anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega_arith) hB hsat
 
 omit hH hSH hW in
 theorem hmacShortFSp_of :
-    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit).all
+    (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit).all
       (fun i => !isa.writesSp i) = true :=
   X86_64.withStackScratch_spSafe_of (r := .r8) (hmacInit_sp C K)
 
 omit hH hSH hW in
 theorem hmacInitFSp_of (A : Any.AnyOK (core H)) :
     (initCode H I).all (fun i => !isa.writesSp i) = true := by
-  have hs : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit).all
+  have hs : (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit).all
       (fun i => !isa.writesSp i) = true := X86_64.withStackScratch_spSafe_of (r := .r8) (hmacInit_sp C K)
   simp only [initCode, Impl.Pbkdf2.Md.X86_64.initEntry, Code.iteCold, Code.all, hmacInitAnySp_of K A, hs,
     Bool.and_true]
@@ -314,6 +343,16 @@ theorem pbkdf2F_of (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I X86_
 
 end MdHash
 
+theorem satW_of {H : Hash} {I : Spec.Hmac.Instance} {w : Nat} (hw : initWords H = w)
+    (h : ∃ s, (Proof.Hmac.initScratchContract I.S w X86_64.abi 16).pre s) :
+    ∃ s, (Proof.Hmac.initScratchContract I.S (initWords H) X86_64.abi 16).pre s := by
+  rw [hw]; exact h
+
+theorem satIF_of {H : Hash} {I : Spec.Hmac.Instance} {w : Nat} (hw : initWords H = w)
+    (h : ∃ s, (I.initContract X86_64.abi (24 + 8 * w)).pre s) :
+    ∃ s, (I.initContract X86_64.abi (16 + initFrame H)).pre s := by
+  rw [show 16 + initFrame H = 24 + 8 * w by simp only [initFrame, hw]; omega]; exact h
+
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
 need of it and the satisfiability of the shared contracts. -/
 def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H)) (K : Callees H)
@@ -326,7 +365,9 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (A : Any.AnyOK (core H)) (hsA : ∃ s, (Any.anyScratchContract I.S I.initAnyKeyScratch).pre s)
     (ha : I.initAnyKeyScratch < 511) (hR : Proof.Hmac.ReprLocal I.S)
     (hsAF : ∃ s, (I.initAnyKeyContract X86_64.abi (24 + anyFrame I)).pre s)
-    (hsIF : ∃ s, (I.initContract X86_64.abi (16 + hmacFrame I)).pre s) (hB : I.S.H.blockSize + 1 < 2 ^ 31)
+    (w : Nat) (hw : initWords H = w)
+    (hsW : ∃ s, (Proof.Hmac.initScratchContract I.S w X86_64.abi 16).pre s)
+    (hsIF : ∃ s, (I.initContract X86_64.abi (24 + 8 * w)).pre s) (hB : I.S.H.blockSize + 1 < 2 ^ 31)
     (hsFF : ∃ s, (I.finalizeContract X86_64.abi (16 + hmacFrame I)).pre s)
     (hp : I.pbkdf2Scratch < 509)
     (hsPF : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame I)).pre s)
@@ -344,9 +385,9 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   hmacFinSp := hmacFin_sp C K
   iterateSp := iterate_sp C K
   pbkdf2Sp := pbkdf2_sp C K
-  hmacInitF := MdHash.hmacInitF_of hH C K hSH hW A hsI hs hsIF hsA ha hR hB hsAF
+  hmacInitF := MdHash.hmacInitF_of hH C K hSH hW A hsI (satW_of hw hsW) (satIF_of hw hsIF) hsA ha hR hB hsAF
   hmacInitFSp := MdHash.hmacInitFSp_of C K A
-  hmacShortF := MdHash.hmacShortF_of hH C K hSH hW hsI hs hsIF
+  hmacShortF := MdHash.hmacShortF_of hH C K hSH (satW_of hw hsW) (satIF_of hw hsIF)
   hmacShortFSp := MdHash.hmacShortFSp_of C K
   hmacAnyF := MdHash.hmacInitAnyF_of hH C K hSH hW A hsI hsA ha hR hsAF
   hmacAnyFSp := MdHash.hmacInitAnySp_of K A

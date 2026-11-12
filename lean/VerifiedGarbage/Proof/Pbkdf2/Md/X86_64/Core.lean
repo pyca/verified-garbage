@@ -404,6 +404,14 @@ theorem hmacInit_verified (hsat : ∃ s, (Proof.Hmac.initScratchContract hH.SH H
     Verified X86_64.target H.hmacInit (Proof.Hmac.initScratchContract hH.SH H.W X86_64.abi 16) :=
   (hmacInit_ok hH C K hsat).of_implies (initImp _ _ hsat)
 
+/-- HMAC's `init`, verified against the shared contract with `sc` words of
+working space: any that hold what it uses (`Stream.buf` bytes). -/
+theorem hmacInit_verifiedW {sc : Nat} (hfit : H.stream.buf ≤ 8 * sc)
+    (hsat : ∃ s, (Proof.Hmac.initScratchContract hH.SH sc X86_64.abi 16).pre s) :
+    Verified X86_64.target H.hmacInit (Proof.Hmac.initScratchContract hH.SH sc X86_64.abi 16) :=
+  (HmacInit.verified hH (HmacInit.bothOk hH (HmacInit.Checks.of_core C.hinit)) (HmacInit.Checks.of_core C.hinit)
+    hfit (core_hmacInit K.iMx K.b.bMx C.hinitMx) (initImp _ _ hsat).sat_left).of_implies (initImp _ _ hsat)
+
 /-- HMAC's `finalize`, verified against the shared contract. -/
 theorem hmacFin_verified (hsat : ∃ s, (Proof.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacFin (Proof.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16) :=
