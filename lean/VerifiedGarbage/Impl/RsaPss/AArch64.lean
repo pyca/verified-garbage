@@ -367,6 +367,31 @@ def privArgs : List Instr :=
       .str .x .x9 .x16 88, ld .x0 sOut, mov .x1 .x23, ld .x2 sN, mov .x3 .x23, ld .x4 sE, ld .x5 sEl,
       .addImm .x .x6 .x20 oEm, mov .x7 .x23]
 
+/-! ### Signing with the key's precomputed values
+
+`vg_rsa_pss_sign_precomputed` takes `pre` and `pre_len` after `mgf1` (our
+stack arguments 16 and 17), for `vg_rsa_private_checked_precomputed`'s stack
+arguments 12 and 13: the words after the twelve of `vg_rsa_private_checked`'s,
+which are the slots of the caller's `x19` and `x20`. Those registers are
+restored from their slots before the call, which preserves them, and the
+slots then hold `pre` and `pre_len`; the restores at the end leave them
+out. -/
+
+/-- `x19` and `x20` restored from their slots. -/
+def reload : List Instr := [ld .x19 96, ld .x20 104]
+
+/-- `x19` and `x20` restored, and `pre` and `pre_len` in their slots. -/
+def preArgs : List Instr := reload ++ [arg .x9 16] ++ st .x9 96 ++ [arg .x9 17] ++ st .x9 104
+
+/-- The arguments of `vg_rsa_private_checked_precomputed`. -/
+def privArgsP : List Instr := privArgs ++ preArgs
+
+/-- Zeros to `out` and 0 returned, `x19` and `x20` restored. -/
+def signFailP : Prog isa := .seq signFail (.block reload)
+
+/-- The registers of `saved` but `x19` and `x20` restored. -/
+def restoreP : List Instr := .addSp .x16 0 :: (saved.drop 2).map fun (r, d) => .ldr .x r .x16 d
+
 /-- After the checks: `EM` at `scratch + oEm`. -/
 def signEnc : Prog isa :=
   seqs [.block dbRegs, clearY, copyDigest H, copySaltY H, .block (signLen H), ctHash f H, clearEm,

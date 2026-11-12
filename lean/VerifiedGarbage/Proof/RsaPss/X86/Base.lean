@@ -97,8 +97,7 @@ theorem ro {σ : State} (ok : L.Ok σ) {o n : Nat} (h : o + n ≤ oRsa) {R : Reg
 
 theorem wr {σ s : State} (hs : L.St σ s) {o n : Nat} (h : o + n ≤ oRsa) : InRegions s.wr (sa scr o) n := by
   obtain ⟨k, hk, hR⟩ := hg.sub
-  exact ⟨_, by rw [hs.wr, hs.ok.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-    (List.mem_append_left _ hR)), Offset.contains_base _ (by omega) (by have := hg.fit; unfold oRsa at *; omega)⟩
+  exact ⟨_, by rw [hs.wr]; exact hs.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR)), Offset.contains_base _ (by omega) (by have := hg.fit; unfold oRsa at *; omega)⟩
 
 theorem rd {σ s : State} (hs : L.St σ s) {o n : Nat} (h : o + n ≤ oRsa) :
     InRegions (s.rd ++ s.wr) (sa scr o) n :=

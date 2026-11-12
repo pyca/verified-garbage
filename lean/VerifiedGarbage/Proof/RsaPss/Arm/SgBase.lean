@@ -64,6 +64,18 @@ structure EP where
   au : BitVec 32
   af : BitVec 32
   T : State → Prop
+  /-- Given the key's precomputed values: `pre` among the buffers read, the
+  bytes of our stack arguments, and our arguments after `mgf1`. -/
+  X : List Region := []
+  A : Nat := 80
+  xargs : List (BitVec 32) := []
+  /-- The key's precomputed values, their length in words, and what of them
+  the function may leak (the modulus' values). -/
+  pre : BitVec 32 := 0
+  prl : Nat := 0
+  preL : List Nat := []
+  /-- What the entry state holds of them. -/
+  PX : State → Prop := fun _ => True
 
 namespace EP
 
@@ -93,9 +105,9 @@ abbrev argv : List (BitVec 32) :=
 abbrev lay : Lay where
   B := P.B
   F := frameBytes
-  A := 80
-  argv := P.argv D
-  ro := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.DIG D, P.SALT, P.HTAB, P.TAB]
+  A := P.A
+  argv := P.argv D ++ P.xargs
+  ro := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.DIG D, P.SALT] ++ P.X ++ [P.HTAB, P.TAB]
   rw := [P.OUT, P.SCR]
   C := 3440
 
@@ -118,6 +130,8 @@ structure In (D : Nat) (P : EP) (σ : State) : Prop where
   eB : Spec.Rsa.bytesAt σ.mem (State.addr P.e) P.el = P.eB
   htabT : P.HT σ
   tabT : P.T σ
+  A80 : 80 ≤ P.A
+  pxT : P.PX σ
 
 namespace In
 
@@ -259,7 +273,9 @@ theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below).symm)
         (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega_arith)
       htabT := hHT
-      tabT := hT }
+      tabT := hT
+      A80 := Nat.le_refl _
+      pxT := trivial }
   rw [ep_lay]
   refine ok_entered (by decide) (by decide) rfl hsp hsa hrd hwr ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr

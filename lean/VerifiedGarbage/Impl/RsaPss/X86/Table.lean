@@ -135,16 +135,19 @@ def signEncT : Prog isa :=
 variable (privN : String) (privC : Prog isa)
 
 /-- The checks, the encoding and the private-key operation, for the hash
-function `H`. -/
-def signTail : Prog isa :=
+function `H`, with the call's arguments `pa` (`privArgs`, or `privArgsP` for
+`vg_rsa_private_checked_precomputed`). -/
+def signTail (pa : List Instr := privArgs) : Prog isa :=
   seqs [.block (signChk ++ params H),
-    .ite .ne signFail (seqs [signEncT f H g, .block privArgs, .call privN privC])]
+    .ite .ne signFail (seqs [signEncT f H g, .block pa, .call privN privC])]
 
 /-- The inner frame's body: the tail for the table's hash function. -/
-def signBodyT : Prog isa := .seq (.block (idxLoad 22)) (byLen (fun i => signTail f (ofIdx i) g privN privC) idxs)
+def signBodyT (pa : List Instr := privArgs) : Prog isa :=
+  .seq (.block (idxLoad 22)) (byLen (fun i => signTail f (ofIdx i) g privN privC pa) idxs)
 
-/-- `vg_rsa_pss_sign`, calling a checked private operation by its name. -/
-def sign : Prog isa := wrap frameBytes (signBodyT f g privN privC)
+/-- `vg_rsa_pss_sign`, calling a checked private operation by its name with
+the arguments `pa`. -/
+def sign (pa : List Instr := privArgs) : Prog isa := wrap frameBytes (signBodyT f g privN privC pa)
 
 /-! ## Verifying -/
 

@@ -33,7 +33,7 @@ variable (h : PssHash)
 
 /-- A state of a body is one the body may start from. -/
 theorem St.ok_self {L : Lay} {σ s : State} (hs : L.St σ s) : L.Ok s :=
-  { sp := hs.sp, rd := hs.rd.trans hs.ok.rd, wr := hs.wr.trans hs.ok.wr, BC := hs.ok.BC, fit := hs.ok.fit,
+  { sp := hs.sp, rd := hs.rd ▸ hs.ok.rd, wr := hs.wr ▸ hs.ok.wr, argsW := hs.wr ▸ hs.ok.argsW, BC := hs.ok.BC, fit := hs.ok.fit,
     stk := hs.ok.stk, ret := hs.ok.ret, wro := hs.ok.wro, wrw := hs.ok.wrw, fits := hs.ok.fits,
     args := fun _ hj => hs.arg hj }
 

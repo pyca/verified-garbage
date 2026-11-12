@@ -40,20 +40,28 @@ section
 variable {s u : State} (h : Sim s u)
 include h
 
-theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.kSe : VG.Proof.RsaPss.RISCV64.Sg.kS u =
-    VG.Proof.RsaPss.RISCV64.Sg.kS s := by
+theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.kSe {pc : Bool} : VG.Proof.RsaPss.RISCV64.Sg.kS pc u =
+    VG.Proof.RsaPss.RISCV64.Sg.kS pc s := by
   simp only [VG.Proof.RsaPss.RISCV64.Sg.kS, h.1.sp]
 
-theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.preS {D : Nat} (P : PreS D s) : PreS D u := by
+theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.preXS (X : PreXS s) : PreXS u := by
+  have e1 := h.g (r := .a0); have e2 := h.g (r := .a1); have e3 := h.g (r := .a2); have e4 := h.g (r := .a3)
+  have e6 := h.g (r := .a6); have e7 := h.g (r := .a7)
+  have ea := h.arg; have ek := h.kSe (pc := true); have esp := h.1.sp; have em := h.1.mem
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals (try simp only [oR, scR, preR, HypS, e1, e2, e3, e4, e6, e7, ea, ek, esp, em])
+  exacts [X.oP, X.sP, X.kP, X.wP, X.pl, X.sp3, X.alP, fun _ => X.hyp rfl]
+
+theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.preS {pc : Bool} {D : Nat} (P : PreS pc D s) : PreS pc D u := by
   have e0 := h.g (r := .a0); have e1 := h.g (r := .a1); have e2 := h.g (r := .a2); have e3 := h.g (r := .a3)
   have e4 := h.g (r := .a4); have e5 := h.g (r := .a5); have e6 := h.g (r := .a6); have e7 := h.g (r := .a7)
-  have ea := h.arg; have eA := h.addr; have ek := h.kSe
+  have ea := h.arg; have eA := h.addr; have ek := h.kSe (pc := pc)
   have esp := h.1.sp; have erd := h.1.rd; have ewr := h.1.wr
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals (try simp only [oR, nR, eR, pR, qR, dpR, dqR, qiR, dgR, sR, scR, tHR, tGR, aR, e0, e1, e2, e3, e4, e5,
-    e6, e7, ea, eA, ek, esp, erd, ewr])
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hp => h.preXS (P.px hp)⟩
+  all_goals (try simp only [oR, nR, eR, pR, qR, dpR, dqR, qiR, dgR, sR, scR, tHR, tGR, aR, preR, rdS, e0, e1, e2, e3,
+    e4, e5, e6, e7, ea, eA, ek, esp, erd, ewr])
   exacts [P.spal, P.sp1, P.sp2, P.hrd, P.hwr, P.on, P.oe, P.op, P.oq, P.odp, P.odq, P.oqi, P.odg, P.osl, P.os, P.oth,
     P.otg, P.oa, P.ns, P.es, P.ps, P.qs, P.dps, P.dqs, P.qis, P.dgs, P.sls, P.sth, P.stg, P.sa, P.ko, P.kn, P.ke,
     P.kp, P.kq, P.kdp, P.kdq, P.kqi, P.kdg, P.ksl, P.ks, P.kth, P.ktg, P.ka, P.wo, P.wn, P.we, P.wp, P.wq, P.wdp,
@@ -73,11 +81,12 @@ theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.postS {Hs Gs : Spec.Mgf1.Hash} {s' : 
   have ek : kk u = kk s := by simp only [kk, e3]
   rw [← ek]; exact r
 
-theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.pubS {a : State} (p : PubS a s) : PubS a u := by
+theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.pubS {pc : Bool} {a : State} (p : PubS pc a s) : PubS pc a u := by
   have e2 := h.g (r := .a2); have e3 := h.g (r := .a3); have e4 := h.g (r := .a4); have e5 := h.g (r := .a5)
   have ea := h.arg; have em := h.1.mem
   exact ⟨h.1.sp.trans p.sp, fun r hr => (h.1.gpr r (by revert r; decide)).trans (p.g r hr),
-    fun i hi => (ea i).trans (p.args i hi), by simp only [e2, e3, em]; exact p.n, by simp only [e4, e5, em]; exact p.e⟩
+    fun i hi => (ea i).trans (p.args i hi), by simp only [e2, e3, em]; exact p.n, by simp only [e4, e5, em]; exact p.e,
+    fun hp => by rw [ea, ea]; exact p.args2 hp, fun hp => by simp only [ea, e3, em]; exact p.leak hp⟩
 
 theorem _root_.VG.Proof.RsaPss.RISCV64.Sim.tabMS {H : Impl.Hmac.Stream.RISCV64.Hash} {hH : Proof.Hmac.Stream.RISCV64.HashOK H} {M : MdL H hH}
     {dN : String} {f : MdFns} {j : Nat} (T : TabM M dN f j Ss s (stackArg s j)) :
@@ -97,14 +106,14 @@ end
 /-! ## The index -/
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem idxA_wp {t : State} (h : Sim s t) :
     WP isa (.block [.addSp .t5 (8 * 14), .load .d .t5 .t5 0]) t fun u => Sim s u ∧ u.gpr .t5 = stackArg s 14 :=
   WP.of_syms (wp_addSp (imm := 8 * 14) fun u₁ o₁ e₁ => wp_ld (a := stackArgAddr s 14)
     (by rw [e₁, BitVec.add_zero, h.1.sp]; rfl) (arg_al P (by decide))
-    ⟨aR s, by rw [o₁.rd, h.1.rd, P.hrd]; simp, in_aR (by decide)⟩
+    ⟨aR pc s, by rw [o₁.rd, h.1.rd, P.hrd]; cases pc <;> simp, in_aR (by decide)⟩
     (fun u₂ o₂ e₂ => wp_nil fun y => ⟨⟨(h.1.trans (o₁.trans o₂)).mono fun r hr => by revert r; decide,
       y.trans h.2⟩, by rw [e₂, o₁.mem, h.1.mem]; rfl⟩))
 
@@ -116,7 +125,7 @@ theorem idxB_wp {t : State} (h : Sim s t) (h5 : t.gpr .t5 = stackArg s 14) :
       have e : (stackArg s 14 + BitVec.ofNat 64 40).toNat = (stackArg s 14).toNat + 40 := by
         rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := P.wth; omega
       rw [e]; have := P.al14; omega)
-    ⟨tHR s, by rw [h.1.rd, P.hrd]; simp,
+    ⟨tHR s, by rw [h.1.rd, P.hrd]; cases pc <;> simp,
       Offset.contains_base (stackArg s 14) (by decide) (by decide)⟩
     (fun u o e => wp_nil fun y => ⟨⟨(h.1.trans o).mono fun r hr => by revert r; decide, y.trans h.2⟩,
       by rw [e, h.1.mem]⟩) (by decide))
@@ -132,46 +141,59 @@ theorem tabM_entryS {vs : List MVar} (hc : Coh vs)
     (hh : Abi.tableHeld 64 s.mem (stackArg s 14) (FnTable.words isa s (tableOf v))) :
     TabM v.M (digName v) (fnsOf vs) 14 Ss s (stackArg s 14) := by
   refine tabM_of (by decide) rfl (arg_al P (by decide)) P.al14
-    (show (stackArg s 14).toNat + 40 ≤ 2 ^ 64 by have := P.wth; omega) (A := aR s)
-    (by rw [P.hrd]; simp) (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
-    (by rw [P.hrd]; iterate 9 apply List.mem_cons_of_mem
-        exact List.mem_cons_self ..) (P.kth.sub_left kR_sub) (P.sth.sub_left (sc_sub P)) hc hpw hv hh
+    (show (stackArg s 14).toNat + 40 ≤ 2 ^ 64 by have := P.wth; omega) (A := aR pc s)
+    (by rw [P.hrd]; cases pc <;> simp) (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
+    (by rw [P.hrd]; exact List.mem_append_right _ (List.mem_cons_self ..)) (P.kth.sub_left kR_sub)
+    (P.sth.sub_left (sc_sub P)) hc hpw hv hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by split <;> omega)
 
 theorem tabS_entryS {gs : List MVar} (hc : MdHashTable.RISCV64.Coh gs)
     (hpw : (MdHashTable.RISCV64.names gs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : MVar} (hw : w ∈ gs)
     (hh : Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s (MdHashTable.RISCV64.tableOf w))) :
     TabS w.w.H (MdHashTable.RISCV64.fns3 gs) 15 Ss s (stackArg s 15) := by
-  refine MdHashTable.RISCV64.tabS_of (by decide) rfl (arg_al P (by decide)) P.al15 P.wtg (A := aR s)
-    (by rw [P.hrd]; simp) (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
-    (by rw [P.hrd]; iterate 10 apply List.mem_cons_of_mem
-        exact List.mem_cons_self ..) (P.ktg.sub_left kR_sub) (P.stg.sub_left (sc_sub P)) hc hpw hw hh
+  refine MdHashTable.RISCV64.tabS_of (by decide) rfl (arg_al P (by decide)) P.al15 P.wtg (A := aR pc s)
+    (by rw [P.hrd]; cases pc <;> simp) (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
+    (by rw [P.hrd]; exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
+    (P.ktg.sub_left kR_sub) (P.stg.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by split <;> omega)
 
 end
 
 theorem signFor_shape {H H' : Impl.Hmac.Stream.RISCV64.Hash} (hb : H.b = H'.b) (hN : H.N = H'.N) (hD : H.D = H'.D)
-    (be : Bool) (f : MdFns) (g : Impl.RsaOaep.RISCV64.Fns) : signFor H be f g = signFor H' be f g := by
+    (be : Bool) (f : MdFns) (g : Impl.RsaOaep.RISCV64.Fns) (pc : Bool) : signFor H be f g pc = signFor H' be f g pc := by
   obtain ⟨b, N, D, _, _, _, _, _, _, _⟩ := H
   obtain ⟨b', N', D', _, _, _, _, _, _, _⟩ := H'
   simp only at hb hN hD
   subst hb hN hD
   rfl
 
-theorem shape_codeS {v : MVar} (hv : Shape v) (f : MdFns) (g : Impl.RsaOaep.RISCV64.Fns) :
-    signFor (ofIdx (idx v)) (beOf (idx v)) f g = signFor v.w.H v.M.be f g := by
+theorem shape_codeS {v : MVar} (hv : Shape v) (f : MdFns) (g : Impl.RsaOaep.RISCV64.Fns) (pc : Bool) :
+    signFor (ofIdx (idx v)) (beOf (idx v)) f g pc = signFor v.w.H v.M.be f g pc := by
   rw [hv.2.2.2.2, signFor_shape hv.2.1.symm hv.2.2.1.symm hv.2.2.2.1.symm]
 
 /-! ## Correctness -/
 
-/-- The code, from an entry state meeting the contract. -/
-theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : State)
-    (h : (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre s) :
-    ∃ t s', Exec isa (sign (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) s t s' ∧ abiPreserved s s' ∧
-      (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).post s s' := by
-  obtain ⟨⟨TH, hTH, hhH⟩, ⟨TG, hTG, hhG⟩, hpw⟩ := spec_tabS h
+section
+variable {pc : Bool} {vs : List MVar} {gs : List MVar} (hok : OK vs gs) {Pre : State → Prop}
+  (hTab : ∀ {s}, Pre s →
+    (∃ T ∈ tables vs, Abi.tableHeld 64 s.mem (stackArg s 14) (FnTable.words isa s T)) ∧
+      (∃ T ∈ MdHashTable.RISCV64.tables gs, Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s T)) ∧
+      (((tables vs).map (fun T : FnTable => T.fns)).flatten ++
+        ((MdHashTable.RISCV64.tables gs).map (fun T : FnTable => T.fns)).flatten).Pairwise
+        (fun f g => f ≠ g → s.syms f ≠ s.syms g))
+  (hPre : ∀ {s} {H : Spec.Mgf1.Hash}, Pre s → Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H →
+    PreS pc H.len s)
+include hok hTab hPre
+
+/-- The code, from an entry state meeting a precondition that gives the
+tables and `PreS`: `Post` for the tables' hash functions. -/
+theorem signG_wp (s : State) (h : Pre s) :
+    ∃ Hs Gs, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some Hs ∧
+      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 15) = some Gs ∧
+      WP isa (signG (fnsOf vs) (MdHashTable.RISCV64.fns3 gs) pc) s (Post Hs Gs s) := by
+  obtain ⟨⟨TH, hTH, hhH⟩, ⟨TG, hTG, hhG⟩, hpw⟩ := hTab h
   obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hTH
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hTG
   obtain ⟨hcv, hcg, hsh, -⟩ := hok
@@ -180,22 +202,31 @@ theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : Sta
   obtain ⟨hmH, hiH⟩ := held_tableOf hhH
   have hH := hashAt_tableOf hiH
   have hG := MdHashTable.RISCV64.hashAt_tableOf (MdHashTable.RISCV64.held_tableOf hhG).2
-  have P : PreS v.w.l.G.len s := preS_of h hH
+  have P : PreS pc v.w.l.G.len s := hPre h hH
   have T := tabM_entryS P hcv hpwH hv hhH
   have TG := tabS_entryS P hcg hpwG hw hhG
   have hS := hsh v hv
-  have key : WP isa (sign (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) s (Post v.w.l.G w.w.l.G s) := by
-    refine WP.seq (WP.mono (idxLoad_wp P) fun u ⟨hu, e5⟩ => ?_)
-    refine byIdx_ok (I := idx v) (idx_lt hS) (F := fun u => Sim s u ∧ u.gpr .t5 = BitVec.ofNat 64 (idx v))
-      (fun _ h => h.2) (fun t t' ⟨h, e⟩ o y => ⟨h.trans ⟨o.mono fun r hr => by revert r; decide, y⟩,
-        by rw [o.get .t5, e]⟩)
-      (fun u ⟨hu, _⟩ => ?_) hS.1 (fun x hx => (idx_certs x hx).1) u ⟨hu, by rw [e5, hiH]⟩
-    rw [shape_codeS hS]
-    exact WP.mono (code_ok (hu.preS P) v.w.l.ok v.w.l.fits (hu.tabMS T) v.w.l.hash v.w.l.len v.w.l.valid w.w.l.ok
-      w.w.l.fits (hu.tabSS TG) w.w.l.hash w.w.l.len w.w.l.valid) fun s' q => hu.postS q
+  refine ⟨v.w.l.G, w.w.l.G, hH, hG, ?_⟩
+  refine WP.seq (WP.mono (idxLoad_wp P) fun u ⟨hu, e5⟩ => ?_)
+  refine byIdx_ok (I := idx v) (idx_lt hS) (F := fun u => Sim s u ∧ u.gpr .t5 = BitVec.ofNat 64 (idx v))
+    (fun _ h => h.2) (fun t t' ⟨h, e⟩ o y => ⟨h.trans ⟨o.mono fun r hr => by revert r; decide, y⟩,
+      by rw [o.get .t5, e]⟩)
+    (fun u ⟨hu, _⟩ => ?_) hS.1 (fun x hx => (idx_certs x hx).1) u ⟨hu, by rw [e5, hiH]⟩
+  rw [shape_codeS hS]
+  exact WP.mono (code_ok (hu.preS P) v.w.l.ok v.w.l.fits (hu.tabMS T) v.w.l.hash v.w.l.len v.w.l.valid w.w.l.ok
+    w.w.l.fits (hu.tabSS TG) w.w.l.hash w.w.l.len w.w.l.valid) fun s' q => hu.postS q
+
+end
+
+/-- The code, from an entry state meeting the contract. -/
+theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : State)
+    (h : (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre s) :
+    ∃ t s', Exec isa (sign (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) s t s' ∧ abiPreserved s s' ∧
+      (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).post s s' := by
+  obtain ⟨Hs, Gs, hH, hG, key⟩ := signG_wp hok spec_tabS preS_of s h
   obtain ⟨t, s', he, habi, hr⟩ := key
   refine ⟨t, s', he, habi, ?_⟩
-  have e : stackBytes = 3471 + 1 := rfl
+  have e : stackBytes false = 3471 + 1 := rfl
   unfold signSpec
   rw [e]
   sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, 
@@ -213,38 +244,60 @@ theorem idxA_taint {α : Type} {Φ : α → State → Prop} (h : Pins Φ []) :
     RelCT isa (Two Φ) (.block [.addSp .t5 (8 * 14), .load .d .t5 .t5 0]) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
-theorem code_constantTime {vs : List MVar} {gs : List MVar} (hok : OK vs gs) :
-    ConstantTime isa (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre
-      (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pub (sign (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) := by
+section
+variable {pc : Bool} {vs : List MVar} {gs : List MVar} (hok : OK vs gs) {Pre : State → Prop}
+  {Pub : State → State → Prop}
+  (hTab : ∀ {s}, Pre s →
+    (∃ T ∈ tables vs, Abi.tableHeld 64 s.mem (stackArg s 14) (FnTable.words isa s T)) ∧
+      (∃ T ∈ MdHashTable.RISCV64.tables gs, Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s T)) ∧
+      (((tables vs).map (fun T : FnTable => T.fns)).flatten ++
+        ((MdHashTable.RISCV64.tables gs).map (fun T : FnTable => T.fns)).flatten).Pairwise
+        (fun f g => f ≠ g → s.syms f ≠ s.syms g))
+  (hPre : ∀ {s} {H : Spec.Mgf1.Hash}, Pre s → Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H →
+    PreS pc H.len s)
+  (hPub : ∀ {s₁ s₂}, Pub s₁ s₂ → PubS pc s₁ s₂ ∧
+      (∀ f ∈ ((tables vs).map (fun T : FnTable => T.fns)).flatten ++
+          ((MdHashTable.RISCV64.tables gs).map (fun T : FnTable => T.fns)).flatten,
+        s₁.syms f = s₂.syms f) ∧
+      (∀ T ∈ tables vs, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 14) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 14) (FnTable.words isa s₂ T))) ∧
+      ∀ T ∈ MdHashTable.RISCV64.tables gs, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 15) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T)))
+include hok hTab hPre hPub
+
+/-- The code is constant time, for a contract that gives the tables, `PreS`
+and `PubS`. -/
+theorem code_constantTimeG :
+    ConstantTime isa Pre Pub (signG (fnsOf vs) (MdHashTable.RISCV64.fns3 gs) pc) := by
   refine RelCT.constantTime (Q := fun _ _ => True) fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ => ?_
-  obtain ⟨⟨TH, hTH, hhH₁⟩, ⟨TG, hTG, hhG₁⟩, hpw₁⟩ := spec_tabS h₁
+  obtain ⟨⟨TH, hTH, hhH₁⟩, ⟨TG, hTG, hhG₁⟩, hpw₁⟩ := hTab h₁
   obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hTH
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hTG
-  obtain ⟨p, hsy, iffH, iffG⟩ := pubS_of hp
+  obtain ⟨p, hsy, iffH, iffG⟩ := hPub hp
   have hhH₂ := (iffH _ hTH).mp hhH₁
   have hhG₂ := (iffG _ hTG).mp hhG₁
-  have hpw₂ := (spec_tabS h₂).2.2
+  have hpw₂ := (hTab h₂).2.2
   obtain ⟨hcv, hcg, hsh, -⟩ := hok
   have hS := hsh v hv
   let W := vtOf vs gs v w
   let D := v.w.l.G.len
-  have ent : ∀ {s : State}, (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre s →
+  have ent : ∀ {s : State}, Pre s →
       Abi.tableHeld 64 s.mem (stackArg s 14) (FnTable.words isa s (tableOf v)) →
       Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s (MdHashTable.RISCV64.tableOf w)) →
       (names vs ++ MdHashTable.RISCV64.names gs).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) →
-      PreST D W s ∧ s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (idx v) :=
+      PreST pc D W s ∧ s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (idx v) :=
     fun {s} h hh hg hpw => by
       have hH := hashAt_tableOf (held_tableOf hh).2
-      have P : PreS D s := preS_of h hH
+      have P : PreS pc D s := hPre h hH
       exact ⟨⟨P, tabM_entryS P hcv (hpw.sublist (List.sublist_append_left _ _)) hv hh,
         tabS_entryS P hcg (hpw.sublist (List.sublist_append_right _ _)) hw hg⟩, (held_tableOf hh).2⟩
   obtain ⟨P₁, i₁⟩ := ent h₁ hhH₁ hhG₁ hpw₁
   obtain ⟨P₂, i₂⟩ := ent h₂ hhH₂ hhG₂ hpw₂
-  have hk : ∀ {s : State}, PreST D W s → 1 ≤ kk s := fun P => Nat.le_trans (by decide) P.1.k1
-  let Φ₀ := fun (a s : State) => PreST D W s ∧ PubST W a s ∧
+  have hk : ∀ {s : State}, PreST pc D W s → 1 ≤ kk s := fun P => Nat.le_trans (by decide) P.1.k1
+  let Φ₀ := fun (a s : State) => PreST pc D W s ∧ PubST pc W a s ∧
     s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (idx v)
   let Φ := fun (a u : State) => ∃ s, Φ₀ a s ∧ Sim s u ∧ u.gpr .t5 = BitVec.ofNat 64 (idx v)
-  have hct : RelCT isa (Two Φ₀) (sign (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) fun _ _ => True := by
+  have hct : RelCT isa (Two Φ₀) (signG (fnsOf vs) (MdHashTable.RISCV64.fns3 gs) pc) fun _ _ => True := by
     refine RelCT.seq (two_post (Ψ := Φ) ?_ fun a s hs => WP.mono (idxLoad_wp hs.1.1) fun u ⟨h, e⟩ =>
       ⟨s, hs, h, by rw [e, hs.2.2]⟩) ?_
     · let Ψ := fun (a u : State) => ∃ s, Φ₀ a s ∧ Sim s u ∧ u.gpr .t5 = stackArg a 14
@@ -269,7 +322,14 @@ theorem code_constantTime {vs : List MVar} {gs : List MVar} (hok : OK vs gs) :
         hk ⟨k₁.preS x₁.1.1, k₁.tabMS x₁.1.2.1, k₁.tabSS x₁.1.2.2⟩⟩, fun n hn => by rw [k₁.2]; exact x₁.2.1.2 n hn⟩
     · exact ⟨⟨k₂.preS x₂.1.1, k₂.tabMS x₂.1.2.1, k₂.tabSS x₂.1.2.2⟩, ⟨k₂.pubS x₂.2.1.1.1,
         hk ⟨k₂.preS x₂.1.1, k₂.tabMS x₂.1.2.1, k₂.tabSS x₂.1.2.2⟩⟩, fun n hn => by rw [k₂.2]; exact x₂.2.1.2 n hn⟩
-  exact hct s₁ s₂ t₁ t₂ s₁' s₂' ⟨s₁, ⟨P₁, ⟨⟨pubS_refl s₁, hk P₁⟩, fun _ _ => rfl⟩, i₁⟩,
+  exact hct s₁ s₂ t₁ t₂ s₁' s₂' ⟨s₁, ⟨P₁, ⟨⟨pubS_refl pc s₁, hk P₁⟩, fun _ _ => rfl⟩, i₁⟩,
     ⟨P₂, ⟨⟨p, hk P₂⟩, fun n hn => (hsy n (vt_names hv hw n hn)).symm⟩, i₂⟩⟩ e₁ e₂
+
+end
+
+theorem code_constantTime {vs : List MVar} {gs : List MVar} (hok : OK vs gs) :
+    ConstantTime isa (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre
+      (signSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pub (sign (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) :=
+  code_constantTimeG hok spec_tabS preS_of pubS_of
 
 end VG.Proof.RsaPss.RISCV64.Sg
