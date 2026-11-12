@@ -41,9 +41,7 @@ fn cases(text: &str) -> Vec<BTreeMap<String, String>> {
         }
         current.insert(key.to_string(), value.to_string());
     }
-    if current.contains_key("Z") {
-        out.push(current);
-    }
+    out.extend(Some(current).filter(|c| c.contains_key("Z")));
     out
 }
 fn hex(s: &str) -> Vec<u8> {

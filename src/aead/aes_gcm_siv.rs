@@ -90,16 +90,14 @@ impl AesGcmSiv {
             schedule: CacheAligned([0; 240]),
             rounds: key.len() / 4 + 6,
         });
-        if let Ok(k) = &mut k {
-            // SAFETY: `key` is valid for reads of `key.len()` bytes, which is
-            // 16 or 32, and `k.schedule` for reads and writes of 240 bytes.
-            // They are distinct objects, so they do not overlap, nor do they
-            // overlap the return address on the stack or the stack below it,
-            // and neither wraps around the end of the address space. The
-            // dispatcher calls only an implementation the CPU has the features
-            // of.
-            unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut k.schedule.0) };
-        }
+        let Ok(s) = &mut k else { return k };
+        // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
+        // or 32, and `s.schedule` for reads and writes of 240 bytes. They are
+        // distinct objects, so they do not overlap, nor do they overlap the
+        // return address on the stack or the stack below it, and neither
+        // wraps around the end of the address space. The dispatcher calls
+        // only an implementation the CPU has the features of.
+        unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut s.schedule.0) };
         k
     }
 

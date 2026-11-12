@@ -58,9 +58,8 @@ fn prime_vectors() -> Vec<Vector> {
 /// any refill.
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     buf.fill(2);
-    if tape == 0 {
-        buf[..v.seed.len()].copy_from_slice(&v.seed);
-    }
+    let seed = if tape == 0 { &v.seed[..] } else { &[] };
+    buf[..seed.len()].copy_from_slice(seed);
 }
 
 const KNOWN_ANSWER_FILLS: usize = 1;
