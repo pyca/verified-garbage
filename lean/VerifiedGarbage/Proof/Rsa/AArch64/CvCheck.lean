@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
+public import VerifiedGarbage.Proof.Rsa.AArch64.WDiv
+import VerifiedGarbage.Proof.Rsa.AArch64.CvTail
 import VerifiedGarbage.Proof.Rsa.AArch64.NCalc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
@@ -501,18 +503,108 @@ theorem invSetup_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : 
       ot o₃ (Nat.le_refl _) (by decide) (by decide), ot o₂ (by omega_arith) (by decide) (by decide),
       ot o₁ (Nat.le_refl _) (by decide) (by decide)]
 
-/-- `invPart`: `qInv` into `aX₂` and `gcd(q, p) = 1` and'ed into `sMask`,
-for a mask that is set only if `p` is odd and above 1. -/
-theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
+/-- `wordGuard` passes for `I`'s lengths and `n`'s first byte. -/
+def CvIn.G (I : CvIn) : Prop := guardVal I.k I.pl I.ql (Mem.read (fun _ => I.nb[0]?.getD 0) 0 1) = 0
+
+instance (I : CvIn) : Decidable I.G := inferInstanceAs (Decidable (_ = _))
+
+/-- The doublings `inverseAtS` leaves to `qTail` when the guard passes. -/
+def CvIn.E (I : CvIn) : Nat := if I.G then 15 * ((max I.pl I.ql + 7) / 8) + 10 else 0
+
+/-- `n`'s first byte, as `wordGuard` reads it. -/
+theorem cv_byte {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) :
+    s.mem.read I.pN 1 = Mem.read (fun _ => I.nb[0]?.getD 0) 0 1 := by
+  have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega
+  have := h.n.val 0 hn0
+  rw [show I.pN + BitVec.ofNat 64 0 = I.pN by simp] at this
+  simp only [Mem.read, this, List.getElem?_eq_getElem hn0, Option.getD_some]
+
+/-- `guarded a b`: `a` if `I.G`, `b` otherwise, from the state after the
+guard (the memory unchanged). -/
+theorem cvGuarded_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {a b : Prog isa}
+    {Q : State → Prop}
+    (ha : I.G → ∀ t, CvS I m₀ t → t.mem = s.mem → Keep [.x3, .x4, .x9, .x13, .x14, .x15, .x16] s t → WP isa a t Q)
+    (hb : ¬ I.G → ∀ t, CvS I m₀ t → t.mem = s.mem → Keep [.x3, .x4, .x9, .x13, .x14, .x15, .x16] s t →
+      WP isa b t Q) :
+    WP isa (guarded a b) s Q := by
+  have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega
+  unfold guarded
+  refine WP.seq (WP.mono (wordGuard_ok (b := s.mem.read I.pN 1) h.ws.scr h.ws.x0 h.ws.h256 (by decide) (by decide)
+    h.args.k h.args.pl h.args.ql h.args.n rfl (by simpa using h.n.rd 0 hn0)) fun s₁ ⟨⟨h9, m₁⟩, k₁⟩ => ?_)
+  have h₁ := h.step (rs := []) (by rw [m₁]; exact Frm.refl _ _ _) (by simp) (by simp) k₁ (by decide)
+  rw [cv_byte h L] at h9
+  refine WP.ite (s₁.gpr .x9 == 0) (VG.Proof.MlKem.AArch64.eval_zero _ _) (fun hb' => ?_) (fun hb' => ?_)
+  · exact ha (by unfold CvIn.G; rw [← h9]; simpa using hb') s₁ h₁ m₁ k₁
+  · exact hb (fun hG => by unfold CvIn.G at hG; rw [← h9] at hG; simp [hG] at hb') s₁ h₁ m₁ k₁
+
+/-- The inverse, without its doublings when the guard passes. -/
+theorem cvInvG_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I)
+    (hUn : wv s.mem I.B (slot (wk I.k) aU) (wk I.k) < 2 ^ (64 * ((max I.pl I.ql + 7) / 8)))
+    (hMn : wv s.mem I.B (slot (wk I.k) aP) (wk I.k) < 2 ^ (64 * ((max I.pl I.ql + 7) / 8)))
+    (hVM : wv s.mem I.B (slot (wk I.k) aV) (wk I.k) = wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) :
+    WP isa (guarded (inverseAtS (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT) (inverseAt (nCalc sPl sQl) aU aV aX₁ aX₂ aP aT))
+      s fun t =>
+      t.gpr .x0 = I.B ∧
+      Frm I.B [ar (wk I.k) aU, ar (wk I.k) aV, ar (wk I.k) aX₁, ar (wk I.k) aX₂, ar (wk I.k) aT] s.mem t.mem ∧
+      Keep (.x3 :: .x4 :: .x9 :: .x13 :: .x14 :: .x15 :: .x16 :: .x11 :: .x12 :: stepRegs) s t ∧
+      (wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 → 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k) →
+        wv t.mem I.B (slot (wk I.k) aV) (wk I.k) =
+          Nat.gcd (wv s.mem I.B (slot (wk I.k) aU) (wk I.k)) (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
+        ((wv s.mem I.B (slot (wk I.k) aP) (wk I.k) : Nat) : Int) ∣
+          (wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) : Int) * 2 ^ I.E * wv s.mem I.B (slot (wk I.k) aU) (wk I.k) -
+            wv t.mem I.B (slot (wk I.k) aV) (wk I.k) ∧
+        wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) := by
+  have hL1 := L.pl1; have hL2 := L.pl2; have hL3 := L.ql1; have hL4 := L.ql2; have hk2 := L.k2
+  refine cvGuarded_ok h L (fun hG t ht hm k => ?_) (fun hG t ht hm k => ?_)
+  · rw [← hm] at hUn hMn hVM
+    refine WP.mono (InvLaw.inverseAtS_ok ht.ws (n := (max I.pl I.ql + 7) / 8)
+      (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by omega) (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
+      (fun u hu h0 _ _ hm' => nCalc_ok hu h0 ht.ws.h256 (by omega) (by omega) (by rw [hm']; exact ht.args.pl)
+        (by rw [hm']; exact ht.args.ql)) hUn hMn hVM) fun u ⟨u0, f, ku, v⟩ =>
+      ⟨u0, by rw [← hm]; exact f, (k.trans ku).mono (by decide), fun hp hp1 => ?_⟩
+    rw [hm] at v
+    obtain ⟨v1, v2, v3⟩ := v hp hp1
+    unfold CvIn.E
+    rw [ite_eq_left hG, show 15 * ((max I.pl I.ql + 7) / 8) + 10 = 5 * (3 * ((max I.pl I.ql + 7) / 8) + 2) by omega]
+    exact ⟨v1, v2, v3⟩
+  · rw [← hm] at hUn hMn hVM
+    refine WP.mono (InvLaw.inverseAt_ok ht.ws (n := (max I.pl I.ql + 7) / 8)
+      (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by omega) (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
+      (fun u hu h0 _ _ hm' => nCalc_ok hu h0 ht.ws.h256 (by omega) (by omega) (by rw [hm']; exact ht.args.pl)
+        (by rw [hm']; exact ht.args.ql)) hUn hMn hVM) fun u ⟨u0, f, ku, v⟩ =>
+      ⟨u0, by rw [← hm]; exact f, (k.trans ku).mono (by decide), fun hp hp1 => ?_⟩
+    rw [hm] at v
+    obtain ⟨v1, v2, v3⟩ := v hp hp1
+    unfold CvIn.E
+    rw [ite_eq_right hG, Int.pow_zero, Int.mul_one]
+    exact ⟨v1, v2, v3⟩
+
+/-- `m ∣ y a - g` gives `m ∣ (y mod m) a - g`. -/
+theorem dvd_mod_of_dvd {p y a g : Nat} (h : (p : Int) ∣ (y : Int) * a - g) :
+    (p : Int) ∣ ((y % p : Nat) : Int) * a - g := by
+  have e' : ((y % p : Nat) : Int) + p * ((y / p : Nat) : Int) = y := by exact_mod_cast Nat.mod_add_div y p
+  have : ((y % p : Nat) : Int) * a - g = ((y : Int) * a - g) - p * (((y / p : Nat) : Int) * a) := by
+    rw [← e', Int.add_mul, Int.mul_assoc]; omega
+  rw [this]
+  exact Int.dvd_sub h ⟨_, rfl⟩
+
+/-- `invGcd`: `invPart` but `qTail`, `x₂ 2^E` the inverse. -/
+theorem cvInvA_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
     (hc : mword s.mem I.B = mask c)
     (hcP : c = true → wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 ∧ 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k))
     (hPl : wv s.mem I.B (slot (wk I.k) aP) (wk I.k) < 256 ^ I.pl)
     (hQl : wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) < 256 ^ I.ql) :
-    WP isa (seqs invPart) s fun t =>
+    WP isa (seqs invGcd) s fun t =>
       CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k))
         (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) = 1)) ∧
       (c = true → ((wv s.mem I.B (slot (wk I.k) aP) (wk I.k) : Nat) : Int) ∣
-          (wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) : Int) * wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) -
+          (wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) : Int) * 2 ^ I.E * wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) -
             Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k)) (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
         wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
       ∀ j, j = aP ∨ j = aQ ∨ j = aD → wv t.mem I.B (slot (wk I.k) j) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) := by
@@ -540,7 +632,7 @@ theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s)
   have ot : ∀ {m m' : Mem} {j i Ln : Nat}, Outside I.B (slot (wk I.k) j) Ln m m' → Ln ≤ 8 * (wk I.k + 2) → i ≠ j →
       i < 16 → wv m' I.B (slot (wk I.k) i) (wk I.k) = wv m I.B (slot (wk I.k) i) (wk I.k) :=
     fun o hL hij hi => outside_arr o hL hij (by omega_arith) hi hZ hn
-  simp only [invPart]
+  simp only [invGcd]
   refine wp_seqs_append (by simp [invSetup]) (by simp) (WP.mono (invSetup_ok h L)
     fun s₇ ⟨h₇, m₇, vU0, vU₇, vV₇, vX₁, vX₂, p₇⟩ => ?_)
   have vP₇ := p₇ aP (.inl rfl)
@@ -549,15 +641,8 @@ theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s)
   simp only [List.cons_append, List.nil_append]
   -- The inverse, at the primes' width.
   have hL1 := L.pl1; have hL2 := L.pl2; have hL3 := L.ql1; have hL4 := L.ql2; have hk2 := L.k2
-  refine WP.seq (WP.mono (InvLaw.inverseAt_ok h₇.ws (n := (max I.pl I.ql + 7) / 8)
-    (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega)
-    (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
-    (fun t ht h0 _ _ hm => nCalc_ok ht h0 h₇.ws.h256 (by omega) (by omega) (by rw [hm]; exact h₇.args.pl)
-      (by rw [hm]; exact h₇.args.ql))
-    (by rw [vU₇]; exact fits_nmax hQl (by omega)) (by rw [vP₇]; exact fits_nmax hPl (by omega)) vV₇)
-    fun s₈ ⟨_, f₈, k₈, hv₈⟩ => ?_)
+  refine WP.seq (WP.mono (cvInvG_ok h₇ L (by rw [vU₇]; exact fits_nmax hQl (by omega))
+    (by rw [vP₇]; exact fits_nmax hPl (by omega)) vV₇) fun s₈ ⟨_, f₈, k₈, hv₈⟩ => ?_)
   have h₈ := h₇.step f₈ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
@@ -772,5 +857,80 @@ theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
     rw [f6 i hi16 (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)
       (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide),
       back i hi16 (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)]
+
+/-- `invPart`: `qInv` into `aX₂` and `gcd(q, p) = 1` and'ed into `sMask`,
+for a mask that is set only if `p` is odd and above 1, and, when the guard
+passes too, `p` of `n` words with its top bit set. -/
+theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
+    (hc : mword s.mem I.B = mask c)
+    (hcP : c = true → wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 ∧ 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k))
+    (hcG : c = true → I.G → 2 ^ (64 * (wk I.k / 2) - 1) ≤ wv s.mem I.B (slot (wk I.k) aP) (wk I.k) ∧
+      wv s.mem I.B (slot (wk I.k) aP) (wk I.k) < 2 ^ (64 * (wk I.k / 2)))
+    (hPl : wv s.mem I.B (slot (wk I.k) aP) (wk I.k) < 256 ^ I.pl)
+    (hQl : wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) < 256 ^ I.ql) :
+    WP isa (seqs invPart) s fun t =>
+      CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k))
+        (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) = 1)) ∧
+      (c = true → ((wv s.mem I.B (slot (wk I.k) aP) (wk I.k) : Nat) : Int) ∣
+          (wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) : Int) * wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) -
+            Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k)) (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
+        wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
+      ∀ j, j = aP ∨ j = aQ ∨ j = aD → wv t.mem I.B (slot (wk I.k) j) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) := by
+  have hn := h.ws.scr.nowrap
+  have hZ := h.ws.hZ
+  have k1 := L.k1
+  have k2 := L.k2
+  unfold invPart
+  refine wp_seqs_append (by simp [invGcd]) (by simp) (WP.mono (cvInvA_ok h L hc hcP hPl hQl)
+    fun s₁ ⟨h₁, m₁, v₁, p₁⟩ => ?_)
+  simp only [seqs]
+  have P₁ := p₁ aP (.inl rfl)
+  refine cvGuarded_ok h₁ L (fun hG t ht hm k => ?_) (fun hG t ht hm _ => WP.block_nil ?_)
+  · -- The tail: `x₂ 2^K mod p`.
+    obtain ⟨g16, g2, gpq, _⟩ := guard_zero (by omega) (by have := L.pl2; omega) (by have := L.ql2; omega) hG
+    have hw2 : wk I.k % 2 = 0 := by unfold wk; omega
+    have hw8 : 8 ≤ wk I.k := by unfold wk; omega
+    have hnE : (max I.pl I.ql + 7) / 8 = wk I.k / 2 := by unfold wk; omega
+    refine WP.mono (qTail_ok ht.ws hw2 hw8) fun u ⟨_, fu, ku, vu⟩ => ?_
+    have mt : ∀ {m m' : Mem}, Frm I.B [ar (wk I.k) aX₂, ar (wk I.k) aC, ar (wk I.k) aT] m m' →
+        mword m' I.B = mword m I.B := fun f => f.word_eq (fun r hr => by
+      simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only <;>
+        exact .inl (hdr_lt_slot _ _ (show Public.sMask < 32 by decide))) (by unfold Public.sMask sFn; omega_arith)
+    have oj : ∀ {m m' : Mem} {j : Nat}, Frm I.B [ar (wk I.k) aX₂, ar (wk I.k) aC, ar (wk I.k) aT] m m' →
+        j < 16 → j ≠ aX₂ → j ≠ aC → j ≠ aT → wv m' I.B (slot (wk I.k) j) (wk I.k) = wv m I.B (slot (wk I.k) j) (wk I.k) :=
+      fun f hj h1 h2 h3 => f.wv_eq (fun r hr => by
+        simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> dsimp only
+        · have := slot_sep (w := wk I.k) h1; omega_arith
+        · have := slot_sep (w := wk I.k) h2; omega_arith
+        · have := slot_sep (w := wk I.k) h3; omega_arith) (by have := h.ws.sl hj; omega_arith)
+    refine ⟨ht.step fu (fun r hr => by
+        simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
+        simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> dsimp only <;> exact h.ws.sl (by decide)) ku (by decide),
+      by rw [mt fu, hm]; exact m₁, fun hcT => ?_, fun j hj => ?_⟩
+    · obtain ⟨d1, d2⟩ := v₁ hcT
+      obtain ⟨lo, hi⟩ := hcG hcT hG
+      rw [← P₁] at lo hi d1 d2
+      rw [← hm] at d1 d2 lo hi
+      have hX := vu d2 lo hi
+      rw [hX, hm]
+      rw [hm, P₁] at d2
+      unfold CvIn.E at d1
+      rw [ite_eq_left hG, hnE] at d1
+      rw [hm, P₁] at d1
+      rw [P₁]
+      exact ⟨dvd_mod_of_dvd (by push_cast; exact d1), Nat.mod_lt _ (by have := hcP hcT; omega)⟩
+    · have hj16 : j < 16 := by rcases hj with rfl | rfl | rfl <;> decide
+      rw [oj fu hj16 (by rcases hj with rfl | rfl | rfl <;> decide) (by rcases hj with rfl | rfl | rfl <;> decide)
+        (by rcases hj with rfl | rfl | rfl <;> decide), hm, p₁ j hj]
+  · -- No tail.
+    refine ⟨ht, by rw [hm]; exact m₁, fun hcT => ?_, fun j hj => by rw [hm, p₁ j hj]⟩
+    obtain ⟨d1, d2⟩ := v₁ hcT
+    unfold CvIn.E at d1
+    rw [ite_eq_right hG, Int.pow_zero, Int.mul_one] at d1
+    rw [hm]; exact ⟨d1, d2⟩
 
 end VG.Proof.Rsa.AArch64

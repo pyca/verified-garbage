@@ -68,8 +68,8 @@ theorem cvMain_ct [InvLaw] : RelCT isa (Two GM) main fun _ _ => True := by
   rw [main_eq]
   exact (ct_app (by simp) (by simp [loadA]) (ct_one head_ct)
     (ct_app (by simp [loadA]) (by simp [pqCheck]) loads_ct
-    (ct_app (by simp [pqCheck]) (by simp [invPart, invSetup]) pqCheck_ct
-    (ct_app (by simp [invPart, invSetup]) (by simp) invPart_ct
+    (ct_app (by simp [pqCheck]) (by simp [invPart]) pqCheck_ct
+    (ct_app (by simp [invPart]) (by simp) invPart_ct
     (ct_app (by simp) (by simp) (ct_one (wordChoice_ct (.inl rfl)))
     (ct_app (by simp) (by simp)
       (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))

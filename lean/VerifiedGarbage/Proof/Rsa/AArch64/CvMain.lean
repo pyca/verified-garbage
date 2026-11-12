@@ -281,7 +281,14 @@ theorem cvMain_ok [InvLaw] {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa
     factors_of hNo hlo hPl hQl L.pl2 L.ql2
   -- `qInv` and `gcd(q, p) = 1`.
   refine wp_seqs_append (by simp [invPart]) (by simp) (WP.mono (cvInv_ok h₃ L m₃ (fun hc => by
-    rw [vP₃]; have := hf (of_decide_eq_true hc); exact ⟨this.1, this.2.1⟩) (by rw [vP₃]; exact hPl)
+    rw [vP₃]; have := hf (of_decide_eq_true hc); exact ⟨this.1, this.2.1⟩) (fun hc hG => by
+      rw [vP₃]
+      obtain ⟨g16, g2, gpq, gb⟩ := guard_zero (by omega) (by have := L.pl2; omega) (by have := L.ql2; omega) hG
+      have hn0 : 0 < I.nb.length := by rw [L.nl]; omega
+      have hb0 : 128 ≤ (I.nb[0]'hn0).toNat := by
+        rw [read_one] at gb; simpa [List.getElem?_eq_getElem hn0] using gb
+      obtain ⟨⟨lo, hi⟩, -⟩ := guard_factors L.nl (by omega) L.pbl L.qbl g16 g2 gpq hb0 (of_decide_eq_true hc)
+      exact ⟨Nat.le_trans lo (Nat.sub_le _ _), hi⟩) (by rw [vP₃]; exact hPl)
     (by rw [vQ₃]; exact hQl)) fun s₄ ⟨h₄, m₄, i₄, p₄⟩ => ?_)
   rw [vP₃, vQ₃] at m₄ i₄
   have vP₄ : wv s₄.mem I.B (slot (wk I.k) aP) (wk I.k) = I.P := by rw [p₄ aP (.inl rfl), vP₃]
