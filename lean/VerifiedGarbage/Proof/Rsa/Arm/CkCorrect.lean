@@ -27,7 +27,7 @@ open VG.Proof.Rsa.Arm.CrtValues (reg)
 /-- The numbers on the stack: their pointers' words and arrays. -/
 abbrev insK : List (Nat × Nat) := [(0, aD), (2, aP), (4, aQ), (6, aDP), (8, aDQ), (10, aQI)]
 
-theorem code_eq : VG.Impl.Rsa.Arm.CheckKey.code = fn (4 * 12) (insK.map fun p => (4 * p.1, p.2)) keyBody := rfl
+theorem code_eq : VG.Impl.Rsa.Arm.CheckKey.code = fn (4 * 12) (insK.map fun p => (4 * p.1, p.2)) (keyBodyS 12 20) := rfl
 
 theorem ck_pre (s : State) (h : (Spec.Rsa.checkKeyContract abi 0).pre s) : FnPre 14 12 insK s := by
   sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, reduceClassify, Loc.val,
@@ -120,7 +120,7 @@ theorem ck_ok {σ : State} (pre : FnPre 14 12 insK σ) (l1 : (stackArg σ 7).toN
           (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 10)) (stackArg σ 3).toNat) then 1 else 0 := by
   have kb := pre.kb
   rw [code_eq]
-  refine WP.mono (fn_ok pre (by decide) (ck_hv σ) (ck_hA pre) fun s _ hs _ => keyBody_post hs)
+  refine WP.mono (fn_ok pre (by decide) (ck_hv σ) (ck_hA pre) fun s m hs hm => keyBodyS_post m hs hm)
     fun u ⟨pres, c, hc, hr⟩ => ⟨pres, ?_⟩
   rw [hr, key_result (g := geo 12 σ) (VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _)
     (by show 0 < fK σ; omega) (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hp)

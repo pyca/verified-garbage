@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
@@ -30,6 +32,11 @@ abbrev chunk1 : List (Prog isa) := eqA aVQ aN ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
   ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
   ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++ ltA aQI aP
+
+/-- `shape`, from `n_len` in `r11` and the stack arguments. -/
+theorem shape_taint :
+    ∃ hc, (VG.Taint.check taint (argTaint [.r11] (4 * 14)) (.block (shape 12 20)) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem startW_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8, .r11]) startW hc).isSome = true :=
   ⟨_, by taint_decide⟩
