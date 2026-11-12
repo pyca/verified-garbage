@@ -25,6 +25,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 
+variable {pc : Bool}
+
 /-! ## The messages -/
 
 theorem add_ofNat_inj (p : Addr) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
@@ -173,7 +175,7 @@ theorem shl5 (i dst : Nat) (scr : Addr) :
   omega
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 theorem keep_init {m m' : Mem} {X : Nat} (hX : X ≤ callX)

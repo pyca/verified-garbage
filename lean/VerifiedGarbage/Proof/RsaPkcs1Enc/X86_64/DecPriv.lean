@@ -62,11 +62,11 @@ def privWr (s : State) : List Region :=
   [⟨s.gpr .rdi, (s.gpr .r8).toNat⟩, ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩]
 
 /-- What the callee's entry state's stack arguments are. -/
-theorem priv_args {s t : State} (h : Setup s t) (rd wr : List Region) {i : Nat} (hi : i < 14) :
+theorem priv_args {s t : State} (h : CallAt s t) (rd wr : List Region) {i : Nat} (hi : i < 14) :
     stackArg (t.callEntry.withRegions rd wr) i = stackArg s (i + 3) :=
   (stackArg_entry h.rsp _ _ (by omega_arith)).trans (h.args i hi)
 
-theorem priv_pre {s t : State} (hp : DPre s) (h : Setup s t) :
+theorem priv_pre {s t : State} (hp : DPre s) (h : CallAt s t) :
     privK.pre (t.callEntry.withRegions (privRd s) (privWr s)) := by
   have e : ∀ {i : Nat}, i < 14 → stackArg (t.callEntry.withRegions (privRd s) (privWr s)) i = stackArg s (i + 3) :=
     fun hi => priv_args h _ _ hi
@@ -117,7 +117,7 @@ theorem priv_pre {s t : State} (hp : DPre s) (h : Setup s t) :
     hp.hdpl, hp.hqil, hp.hdql, hp.hsl⟩
 
 
-theorem priv_covers {s t : State} (hp : DPre s) (h : Setup s t) :
+theorem priv_covers {s t : State} (hp : DPre s) (h : CallAt s t) :
     Covers (privRd s ++ privWr s) (t.rd ++ t.wr) ∧ Covers (privWr s) t.wr := by
   have hk2 := hp.k2
   have hsi := hp.hsi
@@ -135,14 +135,14 @@ theorem priv_covers {s t : State} (hp : DPre s) (h : Setup s t) :
   have hrd : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [h.rd]; exact hx)
   simp only [privRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, hrd ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨s.gpr .r9, (stackArg s 0).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 11, (stackArg s 12).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
-  · exact ⟨_, hrd ⟨stackArg s 13, (stackArg s 14).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨s.gpr .r9, (stackArg s 0).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 11, (stackArg s 12).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 13, (stackArg s 14).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_arith⟩
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; omega_arith⟩
 
 /-- Memory changed by a call from the frame, within regions the function
@@ -213,14 +213,30 @@ theorem slot_apart {s : State} (hp : DPre s) {d n : Nat} (hd : d + n ≤ frameBy
       simp only [below, fb_eq, off, BitVec.add_sub_cancel], fb_eq, off_off]
     exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
 
-theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
-    WP isa (.call v.name v.code) t fun t' => PostPriv s t' ∧ (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+/-- What a call of the private-key operation leaves, but the slots: the
+frame's words are kept. -/
+structure PostCall (s t t' : State) : Prop where
+  rsp : t'.gpr .rsp = fb s
+  rd : t'.rd = s.rd
+  wr : t'.wr = ⟨fb s, frameBytes⟩ :: s.wr
+  mem : Frame (wrs s) s.mem t'.mem
+  keep : ∀ {d : Nat}, d + 8 ≤ frameBytes → word t'.mem (fb s) d = word t.mem (fb s) d
+  res : Spec.Rsa.writtenOutcome t'.mem (s.gpr .rdi) (kOf s) ((t'.gpr .rax).setWidth 32) (privOut s)
+
+/-- A call of code that does what `vg_rsa_private_checked` does (`k`, with
+its postcondition), given what it reads (`rds`, `privRd` and more). -/
+theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
+    (hcorr : ∀ s, k.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hk : ∀ a b, k.post a b → privK.post a b) (hsp : code.all (fun i => !isa.writesSp i) = true)
+    (hdp : code.x86_64Depth ≤ privStack) {s t : State} (hp : DPre s) (h : CallAt s t) {rds : List Region}
+    (hpre : k.pre (t.callEntry.withRegions rds (privWr s)))
+    (hc : Covers (rds ++ privWr s) (t.rd ++ t.wr)) (hw : Covers (privWr s) t.wr) :
+    WP isa (.call name code) t fun t' => PostCall s t t' ∧ (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
       t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
-  obtain ⟨hc, hw⟩ := priv_covers hp h
-  have hdp := v.depth
   have e2 : privStack = 3256 := rfl
-  refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega_arith) (priv_pre hp h) hc hw ?_
+  refine WP.call_sp_mx (k := k) hcorr (SpSafe.of_all hsp) (by omega_arith) hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
+  replace hpost := hk _ _ hpost
   rw [h.rsp] at hf
   have hf' : Frame (privWr s ++ [below (fb s) (8 + privStack)]) t.mem s'.mem :=
     Frame.below_mono hf (by omega_arith) (by have := (fb_toNat hp).2.2; omega_arith)
@@ -230,7 +246,7 @@ theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
   have hfE : Frame (wrs s) s.mem t.callEntry.mem :=
     frame_call (frame_of_outside h.out) (callEntry_frame h.rsp) fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨stkR s, List.mem_cons_self .., below_sub s (by omega_arith)⟩
-  have e : ∀ {i : Nat}, i < 14 → stackArg (t.callEntry.withRegions (privRd s) (privWr s)) i = stackArg s (i + 3) :=
+  have e : ∀ {i : Nat}, i < 14 → stackArg (t.callEntry.withRegions rds (privWr s)) i = stackArg s (i + 3) :=
     fun hi => priv_args h _ _ hi
   have bo : ∀ {p : Addr} {len : Nat}, (stkR s).Disjoint ⟨p, len⟩ → (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨p, len⟩ →
       (mlR s).Disjoint ⟨p, len⟩ → (⟨p, len⟩ : Region).Disjoint (scrR s) → len ≤ 2 ^ 64 →
@@ -259,12 +275,7 @@ theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
   have hkeep : ∀ {d : Nat}, d + 8 ≤ frameBytes → word s'.mem (fb s) d = word t.mem (fb s) d := fun hd =>
     hf'.readW (Region.contains_self _ _) (slot_apart hp (by omega_arith)) (by decide)
   refine ⟨⟨(hcs .rsp (by decide)).trans h.rsp, hrd.trans h.rd, hwr.trans h.wr,
-    frame_call (frame_of_outside h.out) hf' fun r hr => ?_,
-    ⟨(hkeep (by decide)).trans h.slots.sOut, (hkeep (by decide)).trans h.slots.sML,
-      (hkeep (by decide)).trans h.slots.sN, (hkeep (by decide)).trans h.slots.sK,
-      (hkeep (by decide)).trans h.slots.sE, (hkeep (by decide)).trans h.slots.sEl,
-      (hkeep (by decide)).trans h.slots.sD, (hkeep (by decide)).trans h.slots.sDl,
-      (hkeep (by decide)).trans h.slots.sIn, (hkeep (by decide)).trans h.slots.sScr⟩, ?_⟩, hcs, hmx⟩
+    frame_call (frame_of_outside h.out) hf' fun r hr => ?_, hkeep, ?_⟩, hcs, hmx⟩
   · simp only [privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨outR s, by simp, by rw [outR, hsi']; exact fun _ h => h⟩
@@ -273,5 +284,18 @@ theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
   · simp only [privOut, nB, eB, cB, pB, qB, dpB, dqB, qiB, kOf]
     rw [hl, hp.hqil, hp.hdql] at hpost
     exact hpost
+
+/-- The call of `vg_rsa_private_checked` (or the code `v`). -/
+theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
+    WP isa (.call v.name v.code) t fun t' => PostPriv s t' ∧ (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+      t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
+  obtain ⟨hc, hw⟩ := priv_covers hp h.call
+  refine WP.mono (privWith_call v.ok (fun _ _ h => h) v.spSafe v.depth hp h.call (priv_pre hp h.call) hc hw)
+    fun t' ⟨c, hcs, hmx⟩ => ⟨⟨c.rsp, c.rd, c.wr, c.mem, ?_, c.res⟩, hcs, hmx⟩
+  exact ⟨(c.keep (by decide)).trans h.slots.sOut, (c.keep (by decide)).trans h.slots.sML,
+    (c.keep (by decide)).trans h.slots.sN, (c.keep (by decide)).trans h.slots.sK,
+    (c.keep (by decide)).trans h.slots.sE, (c.keep (by decide)).trans h.slots.sEl,
+    (c.keep (by decide)).trans h.slots.sD, (c.keep (by decide)).trans h.slots.sDl,
+    (c.keep (by decide)).trans h.slots.sIn, (c.keep (by decide)).trans h.slots.sScr⟩
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

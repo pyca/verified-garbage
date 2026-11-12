@@ -211,7 +211,7 @@ theorem copyLoop_ok {s t₁ t₀ : State} (hp : DPre s) {R : BitVec 64} {EM : Li
   have hjd : j < (stackArg s 2).toNat := hj
   have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 1) (0 + j)) 1 :=
     ⟨⟨stackArg s 1, (stackArg s 2).toNat⟩, List.mem_append_left _ (by
-      rw [hI.keep.2.1, h.ctx.rd, hp.hrd]; simp),
+      rw [hI.keep.2.1, h.ctx.rd]; exact hp.hrd _ (by simp)),
       by rw [Nat.zero_add]; exact Offset.contains_base _ (by omega_arith) (by have := hp.wD; omega_arith)⟩
   have hb : u.mem (off (stackArg s 1) (0 + j)) = s.mem (stackArg s 1 + BitVec.ofNat 64 j) := by
     rw [Nat.zero_add]

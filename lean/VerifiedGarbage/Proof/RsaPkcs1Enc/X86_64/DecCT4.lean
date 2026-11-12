@@ -28,6 +28,8 @@ open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 open VG.Proof.Sha256.X86_64 (Compress)
 
+variable {X : State → State → Prop}
+
 variable {v : Compress}
 
 def JHD (s t : State) : Prop := ∃ R EM, HD s R EM t
@@ -40,17 +42,17 @@ def JSC (s t : State) : Prop := ∃ R EM, SC s R EM t
 
 /-! ## `DH` and `KDK` -/
 
-theorem hashD_two : RelCT isa (Two (At JDB)) (hashD (HH v)) (Two (At JHD)) :=
+theorem hashD_two : RelCT isa (Two (At X JDB)) (hashD (HH v)) (Two (At X JHD)) :=
   two_then (two_weak (fun _ _ ⟨R, EM, h⟩ => ⟨⟨R, EM, h.ctx⟩, trivial⟩) hashD_ct)
     fun _ _ hp ⟨_, _, h⟩ => WP.mono (hashD_step hp h) fun _ h' => ⟨_, _, h'⟩
 
-theorem kdkMac_two : RelCT isa (Two (At JHD)) (kdkMac (HH v)) (Two (At JKD)) :=
+theorem kdkMac_two : RelCT isa (Two (At X JHD)) (kdkMac (HH v)) (Two (At X JKD)) :=
   two_then (two_weak (fun _ _ ⟨R, EM, h⟩ => ⟨⟨R, EM, h.ctx⟩, trivial⟩) kdkMac_ct)
     fun _ _ hp ⟨_, _, h⟩ => WP.mono (kdkMac_step hp h) fun _ h' => ⟨_, _, h'⟩
 
 /-! ## `CL` and `AM` -/
 
-theorem clLoop_ct : RelCT isa (Two (At fun s t => Cx s t ∧ True)) (clLoop (HH v)) fun _ _ => True := by
+theorem clLoop_ct : RelCT isa (Two (At X fun s t => Cx s t ∧ True)) (clLoop (HH v)) fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := fun s t => Cx s t ∧ GW (fun _ => 8) 0 s t.mem ∧ True) [.rsp]
     (rsp_pin fun _ _ h => h.1) (by taint_decide) fun s t hp ⟨⟨R, EM, hc⟩, _⟩ =>
       WP.mono (clInit_run hp hc) fun _ ⟨hc', hI, hNB, _⟩ => ⟨⟨R, EM, hc'⟩, ⟨Nat.succ_pos 7, hI, hNB⟩, trivial⟩) ?_
@@ -59,7 +61,7 @@ theorem clLoop_ct : RelCT isa (Two (At fun s t => Cx s t ∧ True)) (clLoop (HH 
     (fun s hp R EM t i hc hi hI _ => incr8_ok hp hc hi hI) (by taint_decide) (by taint_decide) (by taint_decide)
     (by taint_decide)
 
-theorem clLoop_two : RelCT isa (Two (At JKD)) (clLoop (HH v)) (Two (At JCL)) :=
+theorem clLoop_two : RelCT isa (Two (At X JKD)) (clLoop (HH v)) (Two (At X JCL)) :=
   two_then (two_weak (fun _ _ ⟨R, EM, h⟩ => ⟨⟨R, EM, h.ctx⟩, trivial⟩) clLoop_ct)
     fun _ _ hp ⟨_, _, h⟩ => WP.mono (clLoop_step hp h) fun _ h' => ⟨_, _, h'⟩
 
@@ -70,7 +72,7 @@ theorem nb_le {s : State} (hp : DPre s) : 0 < nbOf s ∧ nbOf s ≤ 32 := by
   have hk64 : 64 ≤ kOf s := hk1
   unfold nbOf; omega
 
-theorem amLoop_ct : RelCT isa (Two (At JCL)) (amLoop (HH v)) fun _ _ => True := by
+theorem amLoop_ct : RelCT isa (Two (At X JCL)) (amLoop (HH v)) fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := fun s t => Cx s t ∧ GW nbOf 0 s t.mem ∧ True) [.rsp]
     (rsp_pin fun _ _ ⟨R, EM, h⟩ => ⟨R, EM, h.ctx⟩) (by taint_decide) fun s t hp ⟨R, EM, h⟩ =>
       WP.mono (amInit_run hp h.ctx) fun _ ⟨hc', hI, hNB, _⟩ =>
@@ -82,12 +84,12 @@ theorem amLoop_ct : RelCT isa (Two (At JCL)) (amLoop (HH v)) fun _ _ => True := 
     (fun s hp R EM t i hc hi hI hNB => incrNB_ok hp hc hi hI hNB) (by taint_decide) (by taint_decide)
     (by taint_decide) (by taint_decide)
 
-theorem amLoop_two : RelCT isa (Two (At JCL)) (amLoop (HH v)) (Two (At JAM)) :=
+theorem amLoop_two : RelCT isa (Two (At X JCL)) (amLoop (HH v)) (Two (At X JAM)) :=
   two_then amLoop_ct fun _ _ hp ⟨_, _, h⟩ => WP.mono (amLoop_step hp h) fun _ h' => ⟨_, _, h'⟩
 
 /-! ## The mask, `AL` and the scan -/
 
-theorem maskPart_ct : RelCT isa (Two (At JAM)) maskPart fun _ _ => True := by
+theorem maskPart_ct : RelCT isa (Two (At X JAM)) maskPart fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := fun s t => t.gpr .r8 = BitVec.ofNat 64 0 ∧
       t.gpr .r9 = BitVec.ofNat 64 (kOf s - 11)) [.rsp]
     (rsp_pin fun _ _ ⟨R, EM, h⟩ => ⟨R, EM, h.ctx⟩) (by taint_decide) fun s t hp ⟨R, EM, h⟩ =>
@@ -104,7 +106,7 @@ theorem maskPart_ct : RelCT isa (Two (At JAM)) maskPart fun _ _ => True := by
       · exact const_pin _
       · intro a s S; dsimp only; rw [S.k])) (by taint_decide)
 
-theorem maskPart_two : RelCT isa (Two (At JAM)) maskPart (Two (At JMK)) :=
+theorem maskPart_two : RelCT isa (Two (At X JAM)) maskPart (Two (At X JMK)) :=
   two_then maskPart_ct fun _ _ hp ⟨_, _, h⟩ => WP.mono (maskPart_step hp h) fun _ h' => ⟨_, _, h'⟩
 
 theorem alInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t) :
@@ -113,7 +115,7 @@ theorem alInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
   xrun [alInit, scr, List.cons_append, List.nil_append, ea_sp, hc.rsp, hs.ld (d := oScr) (by decide),
     hc.slots.sScr, sx (d := sCL) (by decide)]
 
-theorem alPart_ct : RelCT isa (Two (At JMK)) alPart fun _ _ => True := by
+theorem alPart_ct : RelCT isa (Two (At X JMK)) alPart fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := fun s t => t.gpr .rsi = scA s sCL ∧ t.gpr .rcx = BitVec.ofNat 64 0) [.rsp]
     (rsp_pin fun _ _ ⟨R, EM, h⟩ => ⟨R, EM, h.am.ctx⟩) (by taint_decide) fun s t hp ⟨R, EM, h⟩ =>
       alInit_run hp h.am.ctx) ?_
@@ -129,7 +131,7 @@ theorem alPart_ct : RelCT isa (Two (At JMK)) alPart fun _ _ => True := by
       · exact scA_pin _
       · exact const_pin _)) (by taint_decide)
 
-theorem alPart_two : RelCT isa (Two (At JMK)) alPart (Two (At JAL)) :=
+theorem alPart_two : RelCT isa (Two (At X JMK)) alPart (Two (At X JAL)) :=
   two_then alPart_ct fun _ _ hp ⟨_, _, h⟩ => WP.mono (alPart_step hp h) fun _ h' => ⟨_, _, h'⟩
 
 theorem scanInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t) :
@@ -140,7 +142,7 @@ theorem scanInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
   xrun [scanInit, ea_sp, hc.rsp, hs.ld (d := oOut) (by decide), hs.ld (d := oK) (by decide), hc.slots.sOut,
     hc.slots.sK, h8]
 
-theorem scanPart_ct : RelCT isa (Two (At JAL)) scanPart fun _ _ => True := by
+theorem scanPart_ct : RelCT isa (Two (At X JAL)) scanPart fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := fun s t => t.gpr .rdi = s.gpr .rdi ∧ t.gpr .r9 = BitVec.ofNat 64 (kOf s) ∧
       t.gpr .rcx = BitVec.ofNat 64 2) [.rsp]
     (rsp_pin fun _ _ ⟨R, EM, h⟩ => ⟨R, EM, h.mkd.am.ctx⟩) (by taint_decide) fun s t hp ⟨R, EM, h⟩ =>
@@ -160,7 +162,7 @@ theorem scanPart_ct : RelCT isa (Two (At JAL)) scanPart fun _ _ => True := by
       · intro a s S; dsimp only; rw [S.k]
       · exact const_pin _)) (by taint_decide)
 
-theorem scanPart_two : RelCT isa (Two (At JAL)) scanPart (Two (At JSC)) :=
+theorem scanPart_two : RelCT isa (Two (At X JAL)) scanPart (Two (At X JSC)) :=
   two_then scanPart_ct fun _ _ hp ⟨_, _, h⟩ => WP.mono (scanPart_step hp h) fun _ h' => ⟨_, _, h'⟩
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec
