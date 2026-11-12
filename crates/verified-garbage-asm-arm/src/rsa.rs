@@ -33711,3 +33711,51 @@ ldr r12, [sp], #56
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mont_mul.rs"]
+pub(crate) mod vg_rsa_mont_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mont_mul_umaal.rs"]
+pub(crate) mod vg_rsa_mont_mul_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed_umaal.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search.rs"]
+pub(crate) mod vg_rsa_prime_search;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search_umaal.rs"]
+pub(crate) mod vg_rsa_prime_search_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked.rs"]
+pub(crate) mod vg_rsa_private_checked;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_checked_umaal.rs"]
+pub(crate) mod vg_rsa_private_checked_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt.rs"]
+pub(crate) mod vg_rsa_private_crt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_private_crt_umaal.rs"]
+pub(crate) mod vg_rsa_private_crt_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precomputed_checked.rs"]
+pub(crate) mod vg_rsa_public_precomputed_checked;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precomputed_checked_umaal.rs"]
+pub(crate) mod vg_rsa_public_precomputed_checked_umaal;
