@@ -190,13 +190,15 @@ def divKc (r d' : Nat) : List (Prog isa) :=
 
 /-- The checks and the values for a balanced key: `p q = n` by `p q mod 2^(32 w)`
 (`KeyDiv.mulLo`, exact there) in place of the division of `n` by `p` (the check of
-the remainder always passes), the inverse as for any key, then (array 0, which
-`inverse` uses, zero again for `KeyDiv`) `d mod (p - 1)` and `d mod (q - 1)` by words. -/
+the remainder always passes), then `checks`' inverse and set-up as for any key, and
+(array 0, which `inverse` uses, zero again for `KeyDiv`) `d mod (p - 1)` and
+`d mod (q - 1)` by words. -/
 def midW : Prog isa := seqs ([
   .block (ctx ++ bitOf sPodd aP), KeyDiv.mulLo aDR aP aQ, eqS sE1 aDR aDQ aT1, eqS sE2 aZero aZero aT1] ++
   invSetup ++ [
   .block primeWidth, inverse, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
+  copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT),
   copy 0 aZero] ++ divKc aDR2 aP ++ divKc aDR3 aQ)
 
 /-- The checks and the values for any key: `n` divided by `p`. -/

@@ -62,7 +62,7 @@ theorem shape_ok {σ s : State} (h : FnBase nA iS ins σ s) (h11 : s.gpr .r11 = 
       t.z = decide (Balanced iS σ) → Q t) :
     WP isa (.block (shape 12 20)) s Q := by
   have kb := h.pre.kb
-  unfold shape
+  unfold shape VG.Impl.Rsa.Arm.KeyDiv.shape
   refine wp_dp (op2_imm (by decide)) fun s1 u1 => ?_
   refine wp_mov (op2_lsr (by decide)) fun s2 u2 => ?_
   have b2 := h.of_rest ((u1.rest (ws := [.r0, .r1, .r2, .r3]) (by simp)).trans (u2.rest (by simp)))

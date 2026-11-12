@@ -142,69 +142,78 @@ theorem val32_top_word {mem : Mem} {base : Addr} {d k n : Nat} (hkn : k + 1 ≤ 
     rw [Nat.mul_one, Nat.mul_add, ← Nat.mul_assoc] at *
     omega
 
-/-- `fixTop m`: `[m]`'s top word (`w / 2 - 1`) made not zero. -/
-theorem Stg.fixTop_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
-    (h : Stg g s0 A live c s) {m : Nat} (hm : m ∈ live) (hMl : A m < 2 ^ (32 * (g.w / 2))) (hw2 : 2 ≤ g.w) :
-    WP isa (.block (KeyDiv.fixTop m)) s (Stg g s0 (upd A m (fixT (g.w / 2) (A m))) live c) := by
-  have W := h.ws
+end VG.Proof.Rsa.Arm.KeyCheck
+
+namespace VG.Proof.Rsa.Arm.KeyDiv
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys
+open VG.Proof.Rsa.Arm.Keys
+open VG.Proof.X25519.Arm
+open VG.Proof.Rsa (fixT)
+open VG.Proof.Rsa.Arm.KeyCheck (zero_bit)
+
+/-- `fixTop m`: `[m]`'s top word (`w / 2 - 1`) made not zero: its value is `fixT`'s. -/
+theorem fixTopW_ok {s : State} {B : BitVec 32} {Z w N m : Nat} (W : Ws s B Z w N) (hmN : m < N)
+    (hN : N ≤ 256) {M : Nat} (hnum : num s.mem B w m = M) (hMl : M < 2 ^ (32 * (w / 2))) (hw2 : 2 ≤ w) :
+    WP isa (.block (VG.Impl.Rsa.Arm.KeyDiv.fixTop m)) s fun v => Ws v B Z w N ∧ Keep B w [m] [] s.mem v.mem ∧
+      num v.mem B w m = fixT (w / 2) M ∧ Rest [.r0, .r1, .r2, .r3] s v ∧
+      w32 v.mem (State.addr B) (arr w m + 4 * w) = w32 s.mem (State.addr B) (arr w m + 4 * w) := by
   have := W.wle
   have nw := W.nowrap
-  have fm := W.arr_fit (h.live_lt m hm)
-  have gm := W.fit64 (h.live_lt m hm)
+  have fm := W.arr_fit hmN
+  have gm := W.fit64 hmN
   simp only [S] at fm gm
-  rw [KeyDiv.fixTop]
-  refine KeyDiv.topPtr_ok W (r := .r0) (t := .r1) (by decide) (by decide) (by decide) (j := m) (i := 1)
-    (by have := h.live_lt m hm; simp only [nArr] at this; omega) (by omega) (by decide) (by omega)
+  rw [VG.Impl.Rsa.Arm.KeyDiv.fixTop]
+  refine topPtr_ok W (r := .r0) (t := .r1) (by decide) (by decide) (by decide) (j := m) (i := 1)
+    (by omega) (by omega) (by decide) (by omega)
     fun u p1 r1 m1 W1 => ?_
-  generalize eX : arr g.w m + 4 * (g.w / 2 - 1) = X at p1
-  have aX : State.addr (g.B + BitVec.ofNat 32 X) = off (State.addr g.B) X := W.addr (by omega)
-  have rX : InRegions (u.rd ++ u.wr) (off (State.addr g.B) X) 4 := W1.read (by omega)
-  have wX : InRegions u.wr (off (State.addr g.B) X) 4 := W1.write (by omega)
-  generalize ex : u.mem.readW (off (State.addr g.B) X) 32 = x
+  generalize eX : arr w m + 4 * (w / 2 - 1) = X at p1
+  have aX : State.addr (B + BitVec.ofNat 32 X) = off (State.addr B) X := W.addr (by omega)
+  have rX : InRegions (u.rd ++ u.wr) (off (State.addr B) X) 4 := W1.read (by omega)
+  have wX : InRegions u.wr (off (State.addr B) X) 4 := W1.write (by omega)
+  generalize ex : u.mem.readW (off (State.addr B) X) 32 = x
   refine WP.mono (WP.keep [.r2, .r3] (Q := fun v =>
-      v.mem = u.mem.writeW (off (State.addr g.B) X) (x + (((0 - x ||| x) >>> 31) ^^^ 1))) (by
+      v.mem = u.mem.writeW (off (State.addr B) X) (x + (((0 - x ||| x) >>> 31) ^^^ 1))) (by
     krun [p1, aX, rX, wX, ex]) (by decide)) fun v ⟨mv, kv⟩ => ?_
   rw [zero_bit] at mv
-  have hA : (State.addr g.B).toNat + g.Z ≤ 2 ^ 32 := by simp only [State.addr, BitVec.toNat_setWidth]; omega
+  have hA : (State.addr B).toNat + Z ≤ 2 ^ 32 := by simp only [State.addr, BitVec.toNat_setWidth]; omega
   have mu : u.mem = s.mem := m1
-  have K : Keep g.B g.w [m] [] s.mem v.mem := by
+  have K : Keep B w [m] [] s.mem v.mem := by
     rw [mv, mu, ← eX]
-    exact Keep.of_arr (d := 4 * (g.w / 2 - 1)) (writeW32_outside _ _ _ (by omega)) (by simp only [S]; omega)
+    exact Keep.of_arr (d := 4 * (w / 2 - 1)) (writeW32_outside _ _ _ (by omega)) (by simp only [S]; omega)
       (by simp)
   -- The value: the low words `L`, the top word, and none above it.
-  have hnum := h.arrs.get hm
   simp only [num] at hnum
-  have split : ∀ mem : Mem, val32 mem (State.addr g.B) (arr g.w m) g.w =
-      val32 mem (State.addr g.B) (arr g.w m) (g.w / 2 - 1) + 2 ^ (32 * (g.w / 2 - 1)) *
-        (w32 mem (State.addr g.B) X + 2 ^ 32 * val32 mem (State.addr g.B) (X + 4) (g.w - g.w / 2)) := fun mem => by
-    have e := val32_append mem (State.addr g.B) (arr g.w m) (g.w / 2 - 1) (g.w - g.w / 2 + 1)
-    rw [show g.w / 2 - 1 + (g.w - g.w / 2 + 1) = g.w by omega, val32] at e
+  have split : ∀ mem : Mem, val32 mem (State.addr B) (arr w m) w =
+      val32 mem (State.addr B) (arr w m) (w / 2 - 1) + 2 ^ (32 * (w / 2 - 1)) *
+        (w32 mem (State.addr B) X + 2 ^ 32 * val32 mem (State.addr B) (X + 4) (w - w / 2)) := fun mem => by
+    have e := val32_append mem (State.addr B) (arr w m) (w / 2 - 1) (w - w / 2 + 1)
+    rw [show w / 2 - 1 + (w - w / 2 + 1) = w by omega, val32] at e
     rw [e, eX]
-  have hL := val32_lt s.mem (State.addr g.B) (arr g.w m) (g.w / 2 - 1)
-  have hP : (2 : Nat) ^ (32 * (g.w / 2)) = 2 ^ (32 * (g.w / 2 - 1)) * 2 ^ 32 := by
+  have hL := val32_lt s.mem (State.addr B) (arr w m) (w / 2 - 1)
+  have hP : (2 : Nat) ^ (32 * (w / 2)) = 2 ^ (32 * (w / 2 - 1)) * 2 ^ 32 := by
     rw [← Nat.pow_add]; congr 1; omega
   have sS := split s.mem
   rw [hnum] at sS
-  have hH : val32 s.mem (State.addr g.B) (X + 4) (g.w - g.w / 2) = 0 := by
+  have hH : val32 s.mem (State.addr B) (X + 4) (w - w / 2) = 0 := by
     have hMl' := hMl
     rw [hP] at hMl'
-    generalize val32 s.mem (State.addr g.B) (X + 4) (g.w - g.w / 2) = H at sS
-    generalize (2 : Nat) ^ (32 * (g.w / 2 - 1)) = P at sS hMl' hL
+    generalize val32 s.mem (State.addr B) (X + 4) (w - w / 2) = H at sS
+    generalize (2 : Nat) ^ (32 * (w / 2 - 1)) = P at sS hMl' hL
     rcases Nat.eq_zero_or_pos H with e | e
     · exact e
     · have := Nat.mul_le_mul_left (P * 2 ^ 32) e
       rw [Nat.mul_one] at this
       rw [Nat.mul_add, ← Nat.mul_assoc] at sS
       omega
-  have new : num v.mem g.B g.w m = fixT (g.w / 2) (A m) := by
-    have oL : val32 v.mem (State.addr g.B) (arr g.w m) (g.w / 2 - 1) =
-        val32 s.mem (State.addr g.B) (arr g.w m) (g.w / 2 - 1) := by
+  have new : num v.mem B w m = fixT (w / 2) M := by
+    have oL : val32 v.mem (State.addr B) (arr w m) (w / 2 - 1) =
+        val32 s.mem (State.addr B) (arr w m) (w / 2 - 1) := by
       rw [mv, mu]; exact Outside.val32 (writeW32_outside _ _ _ (by omega)) (Or.inl (by omega)) (by omega)
-    have oH : val32 v.mem (State.addr g.B) (X + 4) (g.w - g.w / 2) =
-        val32 s.mem (State.addr g.B) (X + 4) (g.w - g.w / 2) := by
+    have oH : val32 v.mem (State.addr B) (X + 4) (w - w / 2) =
+        val32 s.mem (State.addr B) (X + 4) (w - w / 2) := by
       rw [mv, mu]; exact Outside.val32 (writeW32_outside _ _ _ (by omega)) (Or.inr (by omega)) (by omega)
-    have hx' : x.toNat = w32 s.mem (State.addr g.B) X := by rw [← ex, mu]
-    have oW : w32 v.mem (State.addr g.B) X = x.toNat + if x.toNat = 0 then 1 else 0 := by
+    have hx' : x.toNat = w32 s.mem (State.addr B) X := by rw [← ex, mu]
+    have oW : w32 v.mem (State.addr B) X = x.toNat + if x.toNat = 0 then 1 else 0 := by
       rw [mv, w32_write_self]
       by_cases e : x = 0
       · subst e; rfl
@@ -216,21 +225,37 @@ theorem Stg.fixTop_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     rw [hH, Nat.mul_zero, Nat.add_zero] at sS
     unfold fixT
     rw [sS]
-    have hdiv : (val32 s.mem (State.addr g.B) (arr g.w m) (g.w / 2 - 1) +
-        2 ^ (32 * (g.w / 2 - 1)) * w32 s.mem (State.addr g.B) X) / 2 ^ (32 * (g.w / 2 - 1)) =
-        w32 s.mem (State.addr g.B) X := by
+    have hdiv : (val32 s.mem (State.addr B) (arr w m) (w / 2 - 1) +
+        2 ^ (32 * (w / 2 - 1)) * w32 s.mem (State.addr B) X) / 2 ^ (32 * (w / 2 - 1)) =
+        w32 s.mem (State.addr B) X := by
       rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hL, Nat.zero_add]
     rw [hdiv]
-    by_cases e : w32 s.mem (State.addr g.B) X = 0
+    by_cases e : w32 s.mem (State.addr B) X = 0
     · simp only [e, ↓reduceIte, Nat.mul_one, Nat.zero_add, Nat.mul_zero, Nat.add_zero]
     · simp only [e, ↓reduceIte, Nat.add_zero]
-  refine h.next (W1.rest kv) K (by simpa using h.live_lt m hm) (by decide)
-    ((r1.mono (ws' := [.r0, .r1, .r2, .r3]) (by decide)).trans (kv.mono (by decide))) (by decide) (h.arrs_write K new (fun j _ =>
-      (Decidable.em (j = m)).imp_right fun n => by simpa using n) (by decide)) h.live_lt ?_ (h.mask_keep K (by decide))
+  refine ⟨W1.rest kv, K, new, (r1.mono (ws' := [.r0, .r1, .r2, .r3]) (by decide)).trans (kv.mono (by decide)), ?_⟩
+  rw [mv, mu]
+  exact Outside.w32 (writeW32_outside _ _ _ (by omega)) (Or.inr (by omega)) (by omega)
+
+end VG.Proof.Rsa.Arm.KeyDiv
+
+namespace VG.Proof.Rsa.Arm.KeyCheck
+open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.KeyCheck
+open VG.Proof.Rsa.Arm.Keys
+open VG.Proof.X25519.Arm
+
+/-- `fixTop m`: `[m]`'s top word (`w / 2 - 1`) made not zero. -/
+theorem Stg.fixTop_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {m : Nat} (hm : m ∈ live) (hMl : A m < 2 ^ (32 * (g.w / 2))) (hw2 : 2 ≤ g.w) :
+    WP isa (.block (KeyDiv.fixTop m)) s (Stg g s0 (upd A m (fixT (g.w / 2) (A m))) live c) := by
+  refine WP.mono (VG.Proof.Rsa.Arm.KeyDiv.fixTopW_ok h.ws (h.live_lt m hm) (by decide) (h.arrs.get hm) hMl hw2)
+    fun v ⟨Wv, K, new, R, top⟩ => ?_
+  refine h.next Wv K (by simpa using h.live_lt m hm) (by decide) R (by decide)
+    (h.arrs_write K new (fun j _ => (Decidable.em (j = m)).imp_right fun n => by simpa using n) (by decide))
+    h.live_lt ?_ (h.mask_keep K (by decide))
   by_cases hv : m = aVD
   · subst hv
-    rw [mv, mu, ← h.vdTop]
-    exact Outside.w32 (writeW32_outside _ _ _ (by omega)) (Or.inr (by omega)) (by omega)
+    rw [top, h.vdTop]
   · exact h.vd_keep K (by simpa using hv) (by decide)
 
 end VG.Proof.Rsa.Arm.KeyCheck
