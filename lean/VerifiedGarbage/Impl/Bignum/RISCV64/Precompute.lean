@@ -16,10 +16,9 @@ The working space (`scratch`) is laid out as `Impl/Bignum/Layout.lean`'s,
 with `n` in array 0, `x` in array 1, the accumulator in array 2 and the
 temporary in array 3; the callee-saved registers it uses are saved in its
 header's words 16–24. `R² mod n = 2^(128 w) mod n` is computed (`lz`, then
-`r2Words`) from `x = 2^(64 (w - 1))`, below a valid `n`, by `w + 1` word
-steps of long division, `x := x 2^64 mod n`, for any top word of `n`, with
-`z`, the leading zeros of `n`'s top word (`lz`), to normalize the estimates
-of their quotients. `r2`, which other functions use, starts from
+`r2Words`) by long division of `2^(128 w)` by `n`, 63 bits a step, for any
+top word of `n`, with `z`, the leading zeros of `n`'s top word (`lz`), to
+normalize the estimates of the quotients. `r2`, which other functions use, starts from
 `2^(64 (w - 1))`, makes `64 + w` modular doublings to `2^w R mod n` (the
 double into the accumulator, then `MontMul.lean`'s `subMod64` and
 `selectAcc64` into `x`) and six Montgomery squares (`MontMul.tail`), with
@@ -155,25 +154,36 @@ def lz : Prog isa :=
       .li .t5 63])
     (countLoop .t5 lzStep)
 
-/-! ## `R² mod n` by word steps of long division
+/-! ## `R² mod n` by steps of long division
 
-For `vg_rsa_public_precompute`: `x := 2^(64 (w - 1))` (`r2Top`), below a
-valid `n`, then `w + 1` steps `x := x 2^64 mod n`, each a step of long
-division (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D), as PPC64LE's
-(`Impl/Bignum/PPC64LE/Precompute.lean`): its quotient is estimated from the
-top words of `x P` and `n P` for `P = 2^z`, `z` the leading zeros of `n`'s
-top word (`lz`), so that the divisor's top word `d' = ⌊n P / 2^(64 (w - 1))⌋`
-has its top bit set, for any `n` (`normTail`):
+For `vg_rsa_public_precompute`: `R² mod n = 2^(128 w) mod n` by steps of
+long division (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D) of `X = 2^(128 w)`
+by `n`, 63 bits at a time, as for any dividend (`WordDiv.divW`): its digits
+are the 63-bit chunks of `X`, most significant first, and each step makes the
+next number `V = r 2^63 + c` from the remainder `r` and the next chunk `c`.
+The remainder is kept lazily, in `[0, 2 n)` rather than reduced (so that
+`V < n 2^64`, as the estimate needs), and reduced once, at the end
+(`finish`). A step estimates the quotient `q = ⌊V / n⌋` from the top words of
+`V P` and `n P` for `P = 2^z`, `z` the leading zeros of `n`'s top word
+(`lz`), so that the divisor's top word `d' = ⌊n P / 2^(64 (w - 1))⌋` has its
+top bit set, for any `n` (`normTail`):
 `q̂ = min(⌊(u₂ 2^64 + u₁) / d'⌋, 2^64 - 1)`, by division by the reciprocal
 `v = ⌊(2^128 - 1) / d'⌋ - 2^64` (Möller and Granlund, "Improved division by
 invariant integers", IEEE Trans. Computers 60(2), 2011, Algorithm 4), as
 AArch64's (`Impl/Bignum/AArch64/R2Div.lean`), `v` computed once by
-restoring division (`recip`). Then `t = x 2^64 - q̂ n` in place of `x`, over
-its `w + 1` words (`mulSub`), and `n` added to `t` twice while it is
-negative (`addBack`). The arithmetic is branch-free, by masks, and every
-count depends only on `w`.
+restoring division (`recip`), corrected by a third word to `q ≤ q̂ ≤ q + 1`
+(`quot3`) and lowered by one (`dec`), so that `q - 1 ≤ q̂ ≤ q` and the
+remainder `t = V - q̂ n` is in `[0, 2 n)` without adding `n` back. `t` is
+written in place of `V`, shifted up by 63 bits, with the next chunk below
+it, as the next `V` (`mulSub`). The arithmetic is branch-free, by masks, and
+every count depends only on `w`.
 
-Registers: `a7` `n`, `a2` `x`, `a6` the temporary (`P`, `d'` and `v` in its
+The number `V` is `w + 1` words in array 1 (`a2`). From the top bits of
+`X`, `V = 2^(65 w - 63 c)`, `S = w + 1 + c` steps (`stepCount`, for
+`c = ⌈(w + 1) / 63⌉`) with zero chunks make `V = r 2^63`, `r ≡ X` modulo `n`
+and `r < 2 n`, and `finish` makes `x = r mod n`.
+
+Registers: `a7` `n`, `a2` `V`, `a6` the temporary (`P`, `d'` and `v` in its
 words 0–2), `t0` `w`, `a4` zero, `a1` the steps left. -/
 
 /-- After `lz` (`a1 = z`): `P = 2^z`, `d' = T P + ⌊L P / 2^64⌋` and
@@ -204,10 +214,11 @@ def recip : Prog isa :=
   .seq (.block recipHead) (.seq (countLoop .t5 divBit) (.block [.store .d .s4 .a6 16]))
 
 /-- `u₂ = x₂ P + ⌊x₁ P / 2^64⌋` (`t4`) and `u₁ = x₁ P + ⌊x₀ P / 2^64⌋` (`t5`),
-the top two words of `x P`, from `x`'s top three words `x₂`, `x₁`, `x₀`;
-`d'` (`s2`), `v` (`s3`), and `e = d' - u₂` (`a3`). -/
+the top two words of `x P`, from the top three words `x₂`, `x₁`, `x₀` of
+`x = ⌊V / 2^64⌋` (`V`'s words 1 to `w`, at `a2 + 8`); `d'` (`s2`), `v`
+(`s3`), and `e = d' - u₂` (`a3`). -/
 def quotHead : List Instr :=
-  [.shift .sll .d .t3 .t0 3, .add .t3 .t3 .a2, .addi .t3 .t3 (-24), .load .d .t4 .t3 16, .load .d .t5 .t3 8,
+  [.shift .sll .d .t3 .t0 3, .add .t3 .t3 .a2, .addi .t3 .t3 (-16), .load .d .t4 .t3 16, .load .d .t5 .t3 8,
     .load .d .t6 .t3 0, .load .d .s0 .a6 0, .load .d .s2 .a6 8, .load .d .s3 .a6 16, .mul .t4 .t4 .s0,
     .mulhu .s1 .t5 .s0, .add .t4 .t4 .s1, .mul .t5 .t5 .s0, .mulhu .s1 .t6 .s0, .add .t5 .t5 .s1,
     .sub .a3 .s2 .t4]
@@ -253,74 +264,91 @@ q̂ D`, and `q̂` one less while `t` is negative, twice (the second time only
 `q̂`). -/
 def quot3 : List Instr := quot3Head ++ quot3Fix ++ [.shift .srl .d .a3 .t4 63, .sub .s1 .s1 .a3]
 
-/-- The pointers into `x` (`t3`) and `n` (`t4`), `w` (`t5`), and the carry
-`c` (`s0`), the borrow `b` (`s4`) and `x`'s previous word (`t6`) := 0. -/
-def mulSubHead : List Instr :=
-  [.addi .t3 .a2 0, .addi .t4 .a7 0, .addi .t5 .t0 0, .li .s0 0, .li .s4 0, .li .t6 0]
+/-- `q̂ := q̂ - 1` unless it is 0: `q̂ - 1 ≤ ⌊V / n⌋ ≤ q̂` from `quot3`'s
+`⌊V / n⌋ ≤ q̂ ≤ ⌊V / n⌋ + 1`. -/
+def dec : List Instr := [.sltu .s4 .a4 .s1, .sub .s1 .s1 .s4]
+
+/-- The pointers into `V` (`t3`) and `n` (`t4`), `w` (`t5`), and the carry
+`c` (`s0`) and the borrow `b` (`s4`) := 0; `t6`, the next chunk shifted up
+a bit, is set before. -/
+def mulSubHead : List Instr := [.addi .t3 .a2 0, .addi .t4 .a7 0, .addi .t5 .t0 0, .li .s0 0, .li .s4 0]
 
 /-- A word of `mulSub`: `p = n_i q̂ + c` (the low word `s3`, the high word the
-next `c`), and `t_i = x_{i-1} - p - b` stored over `x_i`, whose old value
-(`a0`) is the next `x_{i-1}`. -/
+next `c`), `t_i = V_i - p - b` (`s3`), and `V_i := ⌊t_{i-1} / 2⌋ + 2^63 t_i
+mod 2^64` from the previous `t_{i-1}` (`t6`), which `t_i` becomes. -/
 def mulSubWord : List Instr :=
   [.load .d .s2 .t4 0, .mul .s3 .s2 .s1, .mulhu .s2 .s2 .s1, .add .s3 .s3 .s0, .sltu .s0 .s3 .s0,
-    .add .s0 .s2 .s0, .load .d .a0 .t3 0, .sltu .s2 .t6 .s3, .sub .s3 .t6 .s3, .sltu .a3 .s3 .s4,
-    .sub .s3 .s3 .s4, .logic .or .s4 .s2 .a3, .store .d .s3 .t3 0, .addi .t6 .a0 0, .addi .t3 .t3 8,
-    .addi .t4 .t4 8]
+    .add .s0 .s2 .s0, .load .d .a0 .t3 0, .sltu .s2 .a0 .s3, .sub .s3 .a0 .s3, .sltu .a3 .s3 .s4,
+    .sub .s3 .s3 .s4, .logic .or .s4 .s2 .a3, .shift .srl .d .a0 .t6 1, .shift .sll .d .a3 .s3 63,
+    .logic .or .a0 .a0 .a3, .store .d .a0 .t3 0, .addi .t6 .s3 0, .addi .t3 .t3 8, .addi .t4 .t4 8]
 
-/-- The top word: `t_w = x_{w-1} - c - b`. -/
+/-- The top word: `t_w = V_w - c - b`, and `V_w := ⌊t_{w-1} / 2⌋ + 2^63 t_w
+mod 2^64`. -/
 def mulSubTop : List Instr :=
-  [.sltu .s2 .t6 .s0, .sub .s3 .t6 .s0, .sltu .a3 .s3 .s4, .sub .s3 .s3 .s4, .store .d .s3 .t3 0]
+  [.load .d .a0 .t3 0, .sub .s3 .a0 .s0, .sub .s3 .s3 .s4, .shift .srl .d .a0 .t6 1,
+    .shift .sll .d .a3 .s3 63, .logic .or .a0 .a0 .a3, .store .d .a0 .t3 0]
 
-/-- `mulSub` after its head: the `w` words and the top word. -/
-def mulSubRest : Prog isa := .seq (countLoop .t5 mulSubWord) (.block mulSubTop)
+/-- `V := t 2^63 + ⌊t₆ / 2⌋` modulo `2^(64 (w + 1))` for `t = V - q̂ n`
+modulo `2^(64 (w + 1))`, after `mulSubHead`, `q̂` in `s1`. -/
+def mulSub : Prog isa := .seq (countLoop .t5 mulSubWord) (.block mulSubTop)
 
-/-- `t := x 2^64 - q̂ n` modulo `2^(64 (w + 1))`, in `x`'s first `w + 1` words,
-for `q̂` in `s1`. -/
-def mulSub : Prog isa := .seq (.block mulSubHead) mulSubRest
+/-- A step of the division: `q̂` (`quot`, `quot3`, `dec`), `mid`, which sets
+`t6` to the next chunk shifted up a bit, and `V := (V - q̂ n) 2^63 + ⌊t₆ / 2⌋`
+(`mulSub`). -/
+def step (mid : List Instr) : Prog isa :=
+  .seq (.block (quot ++ quot3 ++ dec ++ mid ++ mulSubHead)) mulSub
 
-/-- `mulSubHead`, but `x`'s previous word `u` loaded from `t2`: the word
-below `x` in a division. -/
-def mulSubHeadU : List Instr :=
-  [.addi .t3 .a2 0, .addi .t4 .a7 0, .addi .t5 .t0 0, .li .s0 0, .li .s4 0, .load .d .t6 .t2 0]
+/-- `c = ⌈(w + 1) / 63⌉ = 1 + [w > 62] + [w > 125]` into `s0` (for
+`w < 189`), and the steps `S = w + 1 + c` into `a1`. -/
+def stepCount : List Instr :=
+  [.li .s0 62, .sltu .s0 .s0 .t0, .li .s1 125, .sltu .s1 .s1 .t0, .add .s0 .s0 .s1, .addi .s0 .s0 1,
+    .add .a1 .t0 .s0, .addi .a1 .a1 1]
 
-/-- `t := x 2^64 + u - q̂ n` modulo `2^(64 (w + 1))`, `u` the word at `t2`. -/
-def mulSubU : Prog isa := .seq (.block mulSubHeadU) mulSubRest
+/-- A word of `finish`'s first pass: `R`'s word `i`, `⌊V_i / 2^63⌋ + 2
+(V_{i+1} mod 2^63)`, from `V`'s word `i` (`s2`) and the next (which `s2`
+becomes), in place of `V_i`, and the borrow (`s4`) of `R - n` over it. -/
+def finWord1 : List Instr :=
+  [.load .d .s3 .t3 8, .shift .srl .d .s2 .s2 63, .shift .sll .d .a0 .s3 1,
+    .logic .or .s2 .s2 .a0, .store .d .s2 .t3 0, .load .d .a0 .t4 0, .sltu .s0 .s2 .a0, .sub .s2 .s2 .a0,
+    .sltu .a3 .s2 .s4, .logic .or .s4 .s0 .a3, .addi .s2 .s3 0, .addi .t3 .t3 8, .addi .t4 .t4 8]
 
-/-- The mask of `t`'s sign (its word `w`) into `s4`, and the pointers into
-`t` (`t3`) and `n` (`t4`). -/
-def addBackHead : List Instr :=
-  [.shift .sll .d .t3 .t0 3, .add .t3 .t3 .a2, .load .d .s4 .t3 0, .shift .srl .d .s4 .s4 63,
-    .sub .s4 .a4 .s4, .addi .t3 .a2 0, .addi .t4 .a7 0]
+/-- A word of `finish`'s second pass: `x_i := R_i - (n_i & mask) - b`. -/
+def finWord2 : List Instr :=
+  [.load .d .s2 .t3 0, .load .d .s3 .t4 0, .logic .and .s3 .s3 .s1,
+    .sltu .s0 .s2 .s3, .sub .s2 .s2 .s3, .sltu .a3 .s2 .s4, .sub .s2 .s2 .s4, .logic .or .s4 .s0 .a3,
+    .store .d .s2 .t3 0, .addi .t3 .t3 8, .addi .t4 .t4 8]
 
-/-- A word of `addBack`: `t_i := t_i + (n_i & mask) + c`, the carry `c` in
-`s1`. -/
-def addBackWord : List Instr :=
-  [.load .d .s2 .t3 0, .load .d .s3 .t4 0, .logic .and .s3 .s3 .s4, .add .s2 .s2 .s3, .sltu .s0 .s2 .s3,
-    .add .s2 .s2 .s1, .sltu .s1 .s2 .s1, .logic .or .s1 .s1 .s0, .store .d .s2 .t3 0, .addi .t3 .t3 8,
-    .addi .t4 .t4 8]
+/-- `R`'s top word `⌊V_w / 2^63⌋` in place of `V_w`, the mask (`s1`) of
+`R ≥ n` (no borrow out of `R - n`), and the second pass's pointers. -/
+def finMid : List Instr :=
+  [.shift .srl .d .s2 .s2 63, .store .d .s2 .t3 0, .sltu .s4 .s2 .s4, .logicImm .xor .s4 .s4 1,
+    .sub .s1 .a4 .s4, .addi .t3 .a2 0, .addi .t4 .a7 0, .addi .t5 .t0 0, .li .s4 0]
 
-/-- `t := t + n` modulo `2^(64 (w + 1))` if `t` is negative: `n` and-ed with
-the mask, added to `t`'s low `w` words, then the carry (`s1`) into its word
-`w`. -/
-def addBack : Prog isa :=
-  .seq (.block (addBackHead ++ [.addi .t5 .t0 0, .li .s1 0])) (.seq (countLoop .t5 addBackWord)
-    (.block [.load .d .s2 .t3 0, .add .s2 .s2 .s1, .store .d .s2 .t3 0]))
+/-- `x := R mod n`, for `R = ⌊V / 2^63⌋ < 2 n`: `R` (`w + 1` words) in place
+of `V`, with the borrow of `R - n` (`finWord1`), then `n` subtracted from `R`
+if there was none, by a mask (`finWord2`). -/
+def finish : Prog isa :=
+  .seq (.block [.addi .t3 .a2 0, .addi .t4 .a7 0, .addi .t5 .t0 0, .li .s4 0, .load .d .s2 .a2 0])
+    (.seq (countLoop .t5 finWord1) (.seq (.block finMid) (.seq (countLoop .t5 finWord2)
+      (.block [.load .d .s2 .t3 0, .sub .s2 .s2 .s4, .store .d .s2 .t3 0]))))
 
-/-- `x := x 2^64 mod n`. -/
-def wordStep : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSub addBack)
+/-- `V := 2^(65 w - 63 c) = ⌊2^(128 w) / 2^(63 (S - 1))⌋` in `w + 1` words
+(`w` zeroed, word `w` from `a4 = 0`, then the bit `e = 65 w - 63 c` set in
+word `⌊e / 64⌋`), and `S` (`stepCount`). -/
+def r2Init : Prog isa :=
+  .seq (.block [.addi .t3 .a2 0]) (.seq zeroWords
+    (.block ([.store .d .a4 .t3 0] ++ stepCount ++ [.shift .sll .d .s1 .t0 6, .add .s1 .s1 .t0,
+      .shift .sll .d .s2 .s0 6, .sub .s2 .s2 .s0, .sub .s1 .s1 .s2, .shift .srl .d .s2 .s1 6,
+      .shift .sll .d .s2 .s2 3, .add .s2 .s2 .a2, .logicImm .and .s1 .s1 63, .li .s3 1,
+      .shiftReg .sll .d .s3 .s3 .s1, .store .d .s3 .s2 0])))
 
-/-- `x := (x 2^64 + u) mod n`, for `u` the word at `t2`: a step of long
-division, `wordStep` with the word below `x` in place of zero. -/
-def wordStepU : Prog isa := .seq (.block (quot ++ quot3)) (.seq mulSubU addBack)
+/-- The `S` steps, with zero chunks, counted by `a1`. -/
+def r2Steps : Prog isa := .loop (.seq (step [.li .t6 0]) (.block [.addi .a1 .a1 (-1)])) (.nonzero .a1)
 
-/-- `w + 1` of `wordStep`, counted by `a1`. -/
-def wordSteps : Prog isa :=
-  .seq (.block [.addi .a1 .t0 1]) (.loop (.seq wordStep (.block [.addi .a1 .a1 (-1)])) (.nonzero .a1))
-
-/-- After `lz`: `x := R² mod n` in array 1, for `n` of `w ≥ 3` words with its
-top word not zero: `normTail`, `recip`, `x := 2^(64 (w - 1))` (`r2Top`) and
-`w + 1` word steps: `2^(64 (w - 1) + 64 (w + 1)) = R²`. -/
-def r2Words : Prog isa := .seq (.block normTail) (.seq recip (.seq r2Top wordSteps))
+/-- After `lz`: `x := R² mod n` in array 1, for `n` of `w ≥ 4` words with its
+top word not zero: `normTail`, `recip`, then the division of `2^(128 w)`
+(`r2Init`, `r2Steps`, `finish`). -/
+def r2Words : Prog isa := .seq (.block normTail) (.seq recip (.seq r2Init (.seq r2Steps finish)))
 
 /-- `w` words from `t4` to `t3`, both advanced past them. -/
 def copyWords : Prog isa :=

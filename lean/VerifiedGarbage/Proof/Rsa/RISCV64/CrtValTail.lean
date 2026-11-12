@@ -388,7 +388,8 @@ theorem placed_val {m m0 : Mem} {B : Addr} {d w Q n : Nat} (hQ : Q + n ≤ w) (h
 
 /-- `tail`: `y := y 2^(5 (3 v + 2)) mod m` in array 3, for `y < 2^(64 v)`,
 exact for `m` (array 8) of exactly `v = w / 2` words. -/
-theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8 ≤ w) (hw2 : w % 2 = 0) :
+theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8 ≤ w) (hwl : w ≤ 128)
+    (hw2 : w % 2 = 0) :
     WP isa tail s fun t => Ws t B Z w nArr ∧ Keys.Frame B w [aDR, 3, aTD, aTT] [] s.mem t.mem ∧
       Keep dwRegs s t ∧
       (num s.mem B w 3 < 2 ^ (64 * (w / 2)) → InW w (num s.mem B w 8) →
@@ -458,10 +459,10 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8
   have nR : num t6.mem B w aDR = num t3.mem B w aDR := by
     rw [f6.num (by decide) (by simp) (fit _ (by decide)), f5.num (by decide) (by simp) (fit _ (by decide)),
       f4.num (by decide) (by simp) (fit _ (by decide))]
-  have r0 : wordsVal t6.mem B (arr w 3) (w / 2) = 0 := by
-    simpa using wordsVal_zero_part (a := 0) (c := w / 2) n3 (by omega)
+  have r0 : wordsVal t6.mem B (arr w 3) (w / 2 + 1) = 0 := by
+    simpa using wordsVal_zero_part (a := 0) (c := w / 2 + 1) n3 (by omega)
   refine WP.mono (divW_ok w6 (a := aDR) (r := 3) (m := aTD) (t := aTT) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw hw2 r0 p6')
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw (by omega) hw2 r0 p6')
     fun t ⟨w7, f7, k7, x7, top7, hi7⟩ => ?_
   refine ⟨w7, ?_, ?_, fun hy hin => ?_⟩
   · exact (F3.mono (by simp) (by simp)).trans ((f4.mono (by simp) (by simp)).trans ((f5.mono (by simp) (by simp)).trans

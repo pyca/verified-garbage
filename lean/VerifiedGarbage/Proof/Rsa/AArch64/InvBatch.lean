@@ -22,6 +22,10 @@ public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
+public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
+import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
 import Mathlib.Algebra.Order.Ring.Abs
@@ -4400,5 +4404,449 @@ instance invLaw : InvLaw where
   inverse_ok := inverse_ok
   inverseAt_ok := inverseAt_ok
   inverseAtS_ok := inverseAtS_ok
+
+end VG.Proof.Rsa.AArch64
+
+/-! ## The GCD of `vg_rsa_recover_primes_det`: gcd-only batches, and the instance of `GcdLaw` -/
+
+namespace VG.Proof.Rsa.AArch64
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.Rsa.AArch64.InvBatch
+open VG.Impl.Rsa.AArch64.RecoverDet
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Divstep (sgn)
+
+/-- The state between gcd-only batches, after `k` of them from `s₀`: `LInv` without `a`, `b` and `-m⁻¹`. -/
+structure LInvG (C : ICfg) (s₀ : State) (k : Nat) (s : State) : Prop where
+  scr : Scr s C.B C.Z
+  x0 : s.gpr .x0 = C.B
+  x11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (C.w + 2))
+  x12 : s.gpr .x12 = BitVec.ofNat 64 C.n
+  f : sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iV) (C.n + 1)) = (C.st k).f
+  g : sgn (C.n + 1) (wv s.mem C.B (slot C.w C.iU) (C.n + 1)) = (C.st k).g
+  d : laneOf s .v18 0 = BitVec.ofInt 64 (C.st k).d
+  m : wv s.mem C.B (slot C.w C.iM) C.n = C.p
+  frm : Frm C.B [(slot C.w C.iU, 8 * (C.w + 2)), (slot C.w C.iV, 8 * (C.w + 2))] s₀.mem s.mem
+  keep : Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17] s₀ s
+  x1s : laneOf s .v19 0 = s₀.gpr .x1
+  x2s : laneOf s .v19 1 = s₀.gpr .x2
+
+/-- A gcd-only batch keeps `LInvG`, one batch on. -/
+theorem batchG_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 * C.n + 2) (hI : LInvG C s₀ k s) :
+    WP isa (batchG C.iV C.iU) s fun t => LInvG C s₀ (k + 1) t ∧ t.gpr .x15 = s.gpr .x15 - 1#64 := by
+  have hn' := hI.scr.nowrap
+  have hnL : C.n + 1 ≤ C.w + 2 := by have := hC.nw; omega
+  have hnL' : C.n ≤ C.w + 2 := by have := hC.nw; omega
+  have hn8 : 8 * (C.n + 1) ≤ 8 * (C.w + 2) := by omega
+  have sl : ∀ {j : Nat}, j < 16 → slot C.w j + 8 * (C.w + 2) ≤ 2 ^ 64 := fun hj => by
+    have := slot_lt (w := C.w) hj; have := hC.hZ; omega
+  have hpC : (C.pf : Int) < 2 ^ (64 * C.n + 1) := by
+    have := hC.pC; have : C.pf < 2 ^ (64 * C.n + 1) := by
+      unfold ICfg.pf; rw [Nat.pow_succ]; omega_arith
+    exact_mod_cast this
+  have hxC : (C.x : Int) < 2 ^ (64 * C.n + 1) := by exact_mod_cast hC.xC
+  obtain ⟨fodd, dbnd, bf, bg, buv, bqr, ef, eg, ed⟩ :=
+    Rsa.Divstep.batch64fg (n := C.n) (k := k) (p := C.pf) (m := C.mi.toNat) (x := C.x)
+      (by unfold ICfg.pf; omega_arith) (by omega_arith) (by omega_arith) hpC hxC (by have := hC.n21; omega_arith)
+  have hL : (1 : Nat) ≤ C.n + 1 := by omega
+  have low : ∀ {j : Nat} {y : Int}, sgn (C.n + 1) (wv s.mem C.B (slot C.w j) (C.n + 1)) = y →
+      ((word s.mem C.B (slot C.w j)).toNat : Int) % 2 ^ 64 = y % 2 ^ 64 := fun {j y} h => by
+    rw [← h, Divstep.sgn_mod64 hL (wv_lt _ _ _ _), wv_mod64 _ _ _ hL]
+    exact Int.emod_eq_of_lt (by omega) (by have := (word s.mem C.B (slot C.w j)).isLt; omega)
+  have apartFG : ∀ {j L : Nat}, j ≠ C.iV → j ≠ C.iU → L ≤ C.w + 2 →
+      ∀ r ∈ [(slot C.w C.iV, 8 * (C.n + 1)), (slot C.w C.iU, 8 * (C.n + 1))],
+        slot C.w j + 8 * L ≤ r.1 ∨ r.1 + r.2 ≤ slot C.w j :=
+    fun {j L} ha hb hL' r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact slot_apart (w := C.w) ha (by omega) hn8
+      · exact slot_apart (w := C.w) hb (by omega) hn8
+  unfold batchG
+  simp only [seqs]
+  -- `x19`–`x28` into their lanes.
+  refine WP.seq (WP.mono (WP.keep [] (show WP isa (.block (insOf hiKs)) s _ from
+    insOf_ok hiKs s (by decide) (by decide)) (by decide) (by decide) (by decide +kernel))
+    fun s₁ ⟨⟨g₁, m₁, _, _, _, l₁, o₁⟩, k₁⟩ => ?_)
+  have e₁ : ∀ r, s₁.gpr r = s.gpr r := fun r => by rw [g₁]
+  have lo₁ : ∀ v l, l < 2 → v ∉ [VReg.v20, .v21, .v22, .v23, .v24] → laneOf s₁ v l = laneOf s v l :=
+    fun v l hl hv => o₁ v l hl (hiKs_other v l hl hv)
+  have I1 : Scr s₁ C.B C.Z := hI.scr.congr k₁.wr
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono (batchHead_ok I1 ((e₁ _).trans hI.x0) ((e₁ _).trans hI.x11)
+    ((e₁ _).trans hI.x12) hC.nw hC.w24 hC.hZ hC.hV hC.hU (d := (C.st k).d) (f := (C.st k).f) (g := (C.st k).g)
+    dbnd fodd
+    (by rw [lo₁ _ _ (by decide) (by decide)]; exact hI.d) (by rw [m₁]; exact low hI.f) (by rw [m₁]; exact low hI.g))
+    fun s₂ ⟨l1, _, l3, l4, l5, l6, lv, h11, h12, h15, hm₂, k₂⟩ =>
+      WP.mono (coefMasks4_ok s₂) fun s₃ ⟨⟨c4, c5, c6, c7, n9, n10, n19, n20, hm₃, v₃⟩, k₃⟩ => ?_))
+  have mem₃ : s₃.mem = s.mem := hm₃.trans (hm₂.trans m₁)
+  have k13 := k₂.trans k₃
+  have x0₃ : s₃.gpr .x0 = C.B := (k13.gpr .x0 (by decide)).trans ((e₁ _).trans hI.x0)
+  have x11₃ : s₃.gpr .x11 = BitVec.ofNat 64 (8 * (C.w + 2)) := (k₃.gpr .x11 (by decide)).trans (h11.trans ((e₁ _).trans hI.x11))
+  have x12₃ : s₃.gpr .x12 = BitVec.ofNat 64 C.n := (k₃.gpr .x12 (by decide)).trans (h12.trans ((e₁ _).trans hI.x12))
+  refine WP.seq (WP.mono (fgStage_ok (hI.scr.congr ((k₁.trans k13).wr)) x0₃ x11₃ x12₃ hC.n1 hC.nw hC.w24 hC.hZ
+    hC.hV hC.hU hC.dUV.symm buv bqr (c4.trans l3) (c5.trans l4) (c6.trans l5) (c7.trans l6) n9 n10 n19 n20
+    (by rw [mem₃]; exact hI.f) (by rw [mem₃]; exact hI.g) bf bg ef eg) fun s₄ ⟨f₄, g₄, fr₄, k₄, v₄⟩ => ?_)
+  have l4s : ∀ v l, v ≠ .v16 → v ≠ .v17 → v ≠ .v18 → laneOf s₄ v l = laneOf s₁ v l := fun v l a b c => by
+    unfold laneOf; rw [v₄, v₃, lv v a b c]
+  have K := (k₁.trans k13).trans k₄
+  have hs₄ : Scr s₄ C.B C.Z := hI.scr.congr K.wr
+  -- `x19`–`x28` back.
+  refine WP.mono (WP.vfix (show WP isa (.block (umovOf hiKs)) s₄ _ from umovOf_ok hiKs s₄ (by decide) (by decide))
+    (by decide)) fun t ⟨⟨mt, rdt, wrt, spt, rest, oth⟩, vt⟩ => ?_
+  have lnT : ∀ v l, laneOf t v l = laneOf s₄ v l := fun v l => by unfold laneOf; rw [vt]
+  have kk := keep_hi (s₀ := s₀) (s₄ := s₄) (s₅ := s₄) (Keep.refl _ _) rest oth rdt wrt spt vt
+    (fun _ _ _ _ _ => rfl)
+    (fun k hk => by
+      obtain ⟨-, h16, h17, h18, -, -⟩ := hiKs_lane _ hk
+      rw [l4s _ _ h16 h17 h18, l₁ _ hk]; exact hI.keep.gpr _ (hiKs_regs _ hk))
+    (fun r hr hh => (K.gpr r (by simpa using batch_regs_front r hr hh)).trans (hI.keep.gpr r hr))
+    (K.rd.trans hI.keep.rd) (K.wr.trans hI.keep.wr) (K.sp.trans hI.keep.sp)
+    (fun r hr => by
+      obtain ⟨p16, p17, p18, -, -, phi⟩ := pres_lane r hr
+      rw [show (s₄.v r).extractLsb' 0 64 = laneOf s₄ r 0 from rfl, l4s r 0 p16 p17 p18,
+        lo₁ _ _ (by decide) phi]
+      exact hI.keep.vcs r hr)
+  have q4 : ∀ r : Reg, r ∈ [.x0, .x11, .x12, .x15] → t.gpr r = s₃.gpr r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact (oth _ (by decide)).trans (k₄.gpr _ (by decide))
+  refine ⟨⟨hs₄.congr wrt, (q4 _ (by decide)).trans x0₃, (q4 _ (by decide)).trans x11₃, (q4 _ (by decide)).trans x12₃,
+    by rw [mt]; exact f₄, by rw [mt]; exact g₄, ?_, ?_, ?_, kk, ?_, ?_⟩, ?_⟩
+  · rw [lnT, show laneOf s₄ .v18 0 = laneOf s₂ .v18 0 by unfold laneOf; rw [v₄, v₃], l1]
+    exact congrArg _ ed.symm
+  · rw [mt, fr₄.wv_eq (apartFG hC.dVM.symm hC.dUM.symm hnL')
+      (Nat.le_trans (Nat.add_le_add_left (by omega) _) (sl hC.hM)), mem₃]
+    exact hI.m
+  · rw [mt]
+    refine (hI.frm.trans (by rw [mem₃]; exact Frm.refl _ _ _)).trans (Frm.widen fr₄ fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨(slot C.w C.iV, 8 * (C.w + 2)), by simp, Nat.le_refl _, by dsimp only; omega⟩
+    · exact ⟨(slot C.w C.iU, 8 * (C.w + 2)), by simp, Nat.le_refl _, by dsimp only; omega⟩
+  · rw [lnT, l4s _ _ (by decide) (by decide) (by decide), lo₁ _ _ (by decide) (by decide)]; exact hI.x1s
+  · rw [lnT, l4s _ _ (by decide) (by decide) (by decide), lo₁ _ _ (by decide) (by decide)]; exact hI.x2s
+  · rw [q4 _ (by decide), k₃.gpr .x15 (by decide), h15, e₁]
+
+/-- The `3 n + 2` gcd-only batches, counted by `x15`. -/
+theorem batchesG_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} (hI : LInvG C s₀ 0 s)
+    (h15 : s.gpr .x15 = BitVec.ofNat 64 (3 * C.n + 2)) :
+    WP isa (.loop (batchG C.iV C.iU) (.nonzero .x .x15)) s (LInvG C s₀ (3 * C.n + 2)) :=
+  wp_countdown (N := 3 * C.n + 2) (by have := hC.n21; omega_arith) (by omega_arith) (LInvG C s₀)
+    (fun _ hj _ hI' _ => batchG_ok hC hj hI') hI h15
+
+/-- The gcd-only start's last block: `d = 1` into `v18`, `f`'s word 0 or'ed with 1, and `x15 := 3 n + 2`. -/
+theorem initLastG_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
+    (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
+    (hZ : slot w 16 ≤ Z) {iF : Nat} (hF : iF < 16) :
+    WP isa (.block (([movi .x3 1, .vop (.ins .d2 .v18 0 .x3)] : List Instr) ++ base iF .x16 ++
+      ([ld .x4 .x16, .logic .orr .x .x4 .x4 .x3, st .x4 .x16] : List Instr) ++ batchCount)) s fun t =>
+      (t.mem = s.mem.writeW (off B (slot w iF)) (word s.mem B (slot w iF) ||| 1#64) ∧ laneOf t .v18 0 = 1#64 ∧
+        (∀ r, r ≠ .v18 → t.v r = s.v r) ∧ t.gpr .x15 = BitVec.ofNat 64 (3 * n + 2)) ∧
+      Keep [.x3, .x4, .x15, .x16] s t := by
+  have hn' := hs.nowrap
+  have sF := Nat.le_trans (slot_lt (w := w) hF) hZ
+  have bv : ∀ j r, (Code.block (base j r) : Prog isa).allInstrs (fun i => (vdstOf i).isNone) = true := fun j r => by
+    simp only [Code.allInstrs_eq, instrs, base_vnone]
+  simp only [List.append_assoc]
+  refine WP.block_append_iff.mpr (WP.mono (WP.keep [.x3] (Q := fun t => laneOf t .v18 0 = 1#64 ∧
+      (∀ r, r ≠ .v18 → t.v r = s.v r) ∧ t.mem = s.mem ∧ t.gpr .x3 = 1#64)
+    (by
+      brun [exec_ins, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.v_write]
+      simp only [↓reduceIte, laneOf, RegUpd.v_write, RegUpd.v_setV, Nat.mul_zero,
+        extract_setLane64 _ _ (show (0 : Nat) < 2 by decide) (show (0 : Nat) < 2 by decide)]
+      exact ⟨rfl, fun r h => by simp only [h, ite_false]⟩) (by decide) (by decide) (by decide +kernel))
+    fun s₁ ⟨⟨l0, lv, m₁, h3₁⟩, k₁⟩ => ?_)
+  refine WP.block_append_iff.mpr (WP.mono (WP.vfix (base_ok iF .x16 ((k₁.gpr .x0 (by decide)).trans h0)
+    ((k₁.gpr .x11 (by decide)).trans h11)) (bv _ _)) fun s₂ ⟨⟨⟨h16₂, m₂, _⟩, k₂⟩, v₂⟩ => ?_)
+  have k12 := k₁.trans k₂
+  have wF : word s₂.mem B (slot w iF) = word s.mem B (slot w iF) := by rw [m₂, m₁]
+  refine WP.mono (WP.keep [.x4, .x15] (Q := fun t => t.mem = s₂.mem.writeW (off B (slot w iF))
+      (word s.mem B (slot w iF) ||| 1#64) ∧ t.v = s₂.v ∧ t.gpr .x15 = BitVec.ofNat 64 (3 * n + 2))
+    (by
+      unfold batchCount
+      brun [h16₂, (hs.congr k12.wr).ld (show slot w iF + 8 ≤ Z by omega_arith),
+        (hs.congr k12.wr).st (show slot w iF + 8 ≤ Z by omega_arith), wF, (k₂.gpr .x3 (by decide)).trans h3₁,
+        RegUpd.v_write, (k12.gpr .x12 (by decide)).trans h12]
+      simp only [off, BitVec.ofNat_add_ofNat]
+      congr 1; omega_arith) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨m₃, v₃, h15⟩, k₃⟩ =>
+    ⟨⟨by rw [m₃, m₂, m₁], by rw [laneOf, v₃, v₂, ← laneOf]; exact l0,
+      fun r hr => by rw [v₃, v₂, lv r hr], h15⟩, (k12.trans k₃).mono (by decide)⟩
+
+/-- The gcd-only start leaves `LInvG` before any batch: `f = m` (word 0 or'ed with 1), `g = a + (m if a is
+even)`, `d = 1`, `x1`, `x2` in the lanes of `v19`, and the batches counted in `x15`. -/
+theorem batchInitG_ok {C : ICfg} (hC : C.Ok) {s : State} {a : Nat} (hs : Scr s C.B C.Z) (h0 : s.gpr .x0 = C.B)
+    (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (C.w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 C.n)
+    (hV : wv s.mem C.B (slot C.w C.iV) C.n = C.p) (hM : wv s.mem C.B (slot C.w C.iM) C.n = C.p)
+    (hU : wv s.mem C.B (slot C.w C.iU) C.n = a) (hx : C.x = Rsa.Divstep.oddInput C.p a) :
+    WP isa (seqs (batchInitG C.iV C.iU C.iM)) s fun t =>
+      LInvG C s 0 t ∧ t.gpr .x15 = BitVec.ofNat 64 (3 * C.n + 2) := by
+  have hn' := hs.nowrap
+  have hn1 := hC.n1; have hnw := hC.nw; have hw := hC.w24; have hZ := hC.hZ
+  have sl : ∀ j < 16, slot C.w j + 8 * (C.w + 2) ≤ C.Z := fun j hj => Nat.le_trans (slot_lt (w := C.w) hj) hZ
+  have sV := sl _ hC.hV; have sU := sl _ hC.hU; have sM := sl _ hC.hM
+  simp only [batchInitG, seqs]
+  refine WP.seq (WP.mono (initHead_ok hs h0 h11 h12 hn1 hnw hw hZ hC.hV hC.hU hC.dUV.symm)
+    fun s₁ ⟨⟨m₁, l0, l1, lv, h8, h5, h10, h15, h7, h14, hc⟩, k₁⟩ => ?_)
+  have sepUM := slot_apart (w := C.w) (a := 8 * C.n) (b := 8 * C.n) hC.dUM (by omega_arith) (by omega_arith)
+  have o₁ : ∀ {j : Nat}, j < 16 → wv s₁.mem C.B (slot C.w j) C.n = wv s.mem C.B (slot C.w j) C.n := fun {j} hj => by
+    rw [m₁, (writeW_outside _ C.B _ (by omega_arith)).wv (top_apart j C.iU hnw) (by have := sl _ hj; omega_arith),
+      (writeW_outside _ C.B _ (by omega_arith)).wv (top_apart j C.iV hnw) (by have := sl _ hj; omega_arith)]
+  -- `g += m` if `a` is even.
+  refine WP.seq (WP.mono (WP.vfix (addMIP_ok (N := C.n) (hs.congr k₁.wr) h10 h8 h5 h14 h15 hc hn1 (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by rcases sepUM with h | h <;> omega_arith) (.inl (Nat.le_refl _)))
+    (by decide +kernel)) fun s₂ ⟨⟨e₂, h5', o₂, k₂⟩, v₂⟩ => ?_)
+  rw [o₁ hC.hM, o₁ hC.hU, hM, hU] at e₂
+  have k12 := k₁.trans k₂
+  have g7 : s₂.gpr .x7 = 0 := (k₂.gpr .x7 (by decide)).trans h7
+  refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s₂.mem.writeW (off C.B (slot C.w C.iU + 8 * C.n))
+      (BitVec.ofNat 64 s₂.c.toNat) ∧ t.v = s₂.v)
+    (by brun [g7, h5', (hs.congr k12.wr).st (show slot C.w C.iU + 8 * C.n + 8 ≤ C.Z by omega_arith), RegUpd.v_write]
+        rw [zero_add64, zero_add64])
+    (by decide) (by decide) (by decide +kernel)) fun s₃ ⟨⟨m₃, v₃⟩, k₃⟩ => ?_)
+  have par : (word s.mem C.B (slot C.w C.iU)).toNat % 2 = a % 2 := by
+    rw [← wv_mod64 _ _ _ hn1, hU, Nat.mod_mod_of_dvd _ (by decide)]
+  have gU : wv s₃.mem C.B (slot C.w C.iU) (C.n + 1) = C.x := by
+    rw [m₃, wv_writeW_top _ _ _ _ _ (by omega_arith), hx, Rsa.Divstep.oddInput, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by cases s₂.c <;> decide)]
+    rw [par] at e₂
+    by_cases h : a % 2 = 0
+    · simp only [h, decide_true, ite_true] at e₂ ⊢
+      rw [e₂, Nat.add_comm]
+    · simp only [h, decide_false, Bool.false_eq_true, ite_false, Nat.zero_add, Nat.add_zero] at e₂ ⊢
+      exact e₂
+  have k13 := k12.trans k₃
+  refine WP.mono (initLastG_ok (hs.congr k13.wr) ((k13.gpr .x0 (by decide)).trans h0)
+    ((k13.gpr .x11 (by decide)).trans h11) ((k13.gpr .x12 (by decide)).trans h12) hZ hC.hV)
+    fun t ⟨⟨m₄, l0', lv', h15'⟩, k₄⟩ => ?_
+  have k14 := k13.trans k₄
+  have hZ' : slot C.w 16 + C.B.toNat ≤ 2 ^ 64 := by omega_arith
+  have o₄ : Outside C.B (slot C.w C.iV) 8 s₃.mem t.mem := by rw [m₄]; exact writeW_outside _ C.B _ (by omega_arith)
+  have sVU := slot_apart (w := C.w) (a := 8 * (C.n + 1)) (b := 8 * C.n + 8) hC.dUV.symm (by omega_arith) (by omega_arith)
+  have sVU0 := slot_apart (w := C.w) (a := 8 * (C.n + 1)) (b := 8 * C.n) hC.dUV.symm (by omega_arith) (by omega_arith)
+  have V21 : wv s₂.mem C.B (slot C.w C.iV) (C.n + 1) = wv s₁.mem C.B (slot C.w C.iV) (C.n + 1) :=
+    o₂.wv (by rcases sVU0 with h | h <;> omega_arith) (by omega_arith)
+  have fV₃ : wv s₃.mem C.B (slot C.w C.iV) (C.n + 1) = C.p := by
+    rw [m₃, (writeW_outside _ C.B _ (by omega_arith)).wv
+      (by rcases sVU with h | h <;> omega_arith) (by omega_arith), V21, m₁,
+      (writeW_outside _ C.B _ (by omega_arith)).wv (by rcases sVU with h | h <;> omega_arith) (by omega_arith),
+      wv_writeW_top _ _ _ _ _ (by omega_arith), hV]
+    rfl
+  have fV : wv t.mem C.B (slot C.w C.iV) (C.n + 1) = C.pf := by
+    rw [m₄, wv_or1 _ _ (by omega_arith), fV₃]; rfl
+  have gU' : wv t.mem C.B (slot C.w C.iU) (C.n + 1) = C.x := by
+    rw [wv_out o₄ hC.dUV.symm (by omega_arith) (by omega_arith) hZ' hC.hU, gU]
+  have hpN : C.pf < 2 ^ (64 * C.n + 1) := by have := hC.pC; unfold ICfg.pf; rw [Nat.pow_succ]; omega_arith
+  have v19 : t.v .v19 = s₁.v .v19 := by rw [lv' _ (by decide), v₃, v₂]
+  have M₃ : wv s₃.mem C.B (slot C.w C.iM) C.n = C.p := by
+    rw [m₃, (writeW_outside _ C.B _ (by omega_arith)).wv (top_apart C.iM C.iU hnw) (by omega_arith),
+      o₂.wv (by rcases sepUM with h | h <;> omega_arith) (by omega_arith), o₁ hC.hM, hM]
+  refine ⟨⟨hs.congr k14.wr, (k14.gpr .x0 (by decide)).trans h0, (k14.gpr .x11 (by decide)).trans h11,
+    (k14.gpr .x12 (by decide)).trans h12,
+    by rw [fV, sgn_small hpN]; simp only [ICfg.st, Divstep.invRunS],
+    by rw [gU', sgn_small hC.xC]; simp only [ICfg.st, Divstep.invRunS],
+    by rw [l0']; simp only [ICfg.st, Divstep.invRunS]; decide,
+    by rw [wv_out o₄ hC.dVM (by omega_arith) (by omega_arith) hZ' hC.hM, M₃], ?_, k14.mono (by decide),
+    by rw [laneOf, v19, ← laneOf, l0], by rw [laneOf, v19, ← laneOf, l1]⟩, h15'⟩
+  have rU : (slot C.w C.iU, 8 * (C.w + 2)) ∈ [(slot C.w C.iU, 8 * (C.w + 2)), (slot C.w C.iV, 8 * (C.w + 2))] := by simp
+  have rV : (slot C.w C.iV, 8 * (C.w + 2)) ∈ [(slot C.w C.iU, 8 * (C.w + 2)), (slot C.w C.iV, 8 * (C.w + 2))] := by simp
+  have f01 : Frm C.B [(slot C.w C.iU, 8 * (C.w + 2)), (slot C.w C.iV, 8 * (C.w + 2))] s.mem s₁.mem := by
+    rw [m₁]
+    exact (Frm.of_outside (Outside.mono (o' := slot C.w C.iV) (n' := 8 * (C.w + 2))
+      (writeW_outside _ C.B _ (by omega_arith)) (by omega_arith) (by omega_arith)) rV).trans
+      (Frm.of_outside (Outside.mono (o' := slot C.w C.iU) (n' := 8 * (C.w + 2))
+      (writeW_outside _ C.B _ (by omega_arith)) (by omega_arith) (by omega_arith)) rU)
+  have f2 : Frm C.B [(slot C.w C.iU, 8 * (C.w + 2)), (slot C.w C.iV, 8 * (C.w + 2))] s₁.mem s₂.mem :=
+    Frm.of_outside (Outside.mono (o' := slot C.w C.iU) (n' := 8 * (C.w + 2)) o₂ (Nat.le_refl _) (by omega_arith)) rU
+  have f3 : Frm C.B [(slot C.w C.iU, 8 * (C.w + 2)), (slot C.w C.iV, 8 * (C.w + 2))] s₂.mem s₃.mem := by
+    rw [m₃]; exact Frm.of_outside (Outside.mono (o' := slot C.w C.iU) (n' := 8 * (C.w + 2))
+      (writeW_outside _ C.B _ (by omega_arith)) (by omega_arith) (by omega_arith)) rU
+  have f4 : Frm C.B [(slot C.w C.iU, 8 * (C.w + 2)), (slot C.w C.iV, 8 * (C.w + 2))] s₃.mem t.mem :=
+    Frm.of_outside (Outside.mono (o' := slot C.w C.iV) (n' := 8 * (C.w + 2)) o₄ (by omega_arith) (by omega_arith)) rV
+  exact ((f01.trans f2).trans f3).trans f4
+
+/-- The gcd-only batches at the width `n` in `x12` (`x11` the stride of arrays of `w` words), for
+`[v] = [m] = p` and `[u] = a`: `x1`, `x2` kept, only the arrays `u` and `v` changed, and for an odd
+`p > 1`, `[v] = gcd(p, a)`. -/
+theorem gcdB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)
+    (h0 : s.gpr .x0 = B) (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
+    (hn1 : 1 ≤ n) (hnw : n ≤ w) (hw : w < 2 ^ 24) (hn21 : n < 2 ^ 21) (hZ : slot w 16 ≤ Z)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT)
+    (hVM : wv s.mem B (slot w iV) n = wv s.mem B (slot w iM) n) :
+    WP isa (gcdB iV iU iM) s fun t =>
+      Scr t B Z ∧ t.gpr .x0 = B ∧ t.gpr .x1 = s.gpr .x1 ∧ t.gpr .x2 = s.gpr .x2 ∧
+      t.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .x12 = BitVec.ofNat 64 n ∧
+      Frm B [(slot w iU, 8 * (w + 2)), (slot w iV, 8 * (w + 2))] s.mem t.mem ∧
+      Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17] s t ∧
+      (wv s.mem B (slot w iM) n % 2 = 1 → 1 < wv s.mem B (slot w iM) n →
+        wv t.mem B (slot w iV) n = Nat.gcd (wv s.mem B (slot w iM) n) (wv s.mem B (slot w iU) n)) := by
+  set p := wv s.mem B (slot w iM) n with hp
+  set a := wv s.mem B (slot w iU) n with ha
+  have pC : p < 2 ^ (64 * n) := wv_lt _ _ _ _
+  have aC : a < 2 ^ (64 * n) := wv_lt _ _ _ _
+  have hn' := hs.nowrap
+  obtain ⟨mi, hmi⟩ := minv_exists (q := p + (1 - p % 2)) (by omega_arith)
+  let C : ICfg := ⟨B, Z, w, n, iU, iV, iX₁, iX₂, iM, iT, p, mi, Rsa.Divstep.oddInput p a⟩
+  have hC : C.Ok := ⟨hn1, hnw, hw, hn21, hZ, hU, hV, hX₁, hX₂, hM, hT, dUV, dUX₁, dUX₂, dUM, dUT, dVX₁, dVX₂, dVM,
+    dVT, dX, dX₁M, dX₁T, dX₂M, dX₂T, dMT, pC,
+    by
+      have := Rsa.Divstep.oddInput_lt (m := p) (x := a) pC aC
+      show Rsa.Divstep.oddInput p a < 2 ^ (64 * n + 1)
+      rw [Nat.pow_succ]; omega_arith,
+    by exact_mod_cast hmi⟩
+  have sV := Nat.le_trans (slot_lt (w := w) hV) hZ
+  have hZ' : slot w 16 + B.toNat ≤ 2 ^ 64 := by omega_arith
+  have eCn : C.n = n := rfl
+  have eCw : C.w = w := rfl
+  have eCp : C.p = p := rfl
+  unfold gcdB
+  refine wp_seqs_append (by simp [batchInitG]) (by simp)
+    (WP.mono (batchInitG_ok (C := C) hC hs h0 h11 h12 hVM rfl rfl rfl) fun s₁ ⟨hI₁, h15⟩ => ?_)
+  simp only [seqs]
+  refine WP.seq (WP.mono (batchesG_ok hC hI₁ h15) fun s₂ hI₂ => ?_)
+  -- The sign of `f`, and `f := |f|`.
+  refine WP.seq (WP.mono (signMask_ok hI₂.scr C.iV hI₂.x0 hI₂.x11 hI₂.x12 hnw hw hV hZ)
+    fun s₃ ⟨⟨h15₃, _, m₃, v₃⟩, k₃⟩ => ?_)
+  rw [signMask_mask] at h15₃
+  refine WP.seq (WP.mono (cnegP_ok (hI₂.scr.congr k₃.wr) ((k₃.gpr .x0 (by decide)).trans hI₂.x0)
+    ((k₃.gpr .x11 (by decide)).trans hI₂.x11) ((k₃.gpr .x12 (by decide)).trans hI₂.x12) hnw hw hZ hV h15₃)
+    fun s₄ ⟨e₄, o₄, k₄, v₄⟩ => ?_)
+  have k34 := k₃.trans k₄
+  -- `x1`, `x2` back.
+  refine WP.mono (WP.keep [.x1, .x2] (Q := fun t => t.gpr .x1 = (s₄.v .v19).extractLsb' 0 64 ∧
+      t.gpr .x2 = (s₄.v .v19).extractLsb' 64 64 ∧ t.mem = s₄.mem)
+    (by brun [exec_umov_x, exec_movi0, RegUpd.v_write, RegUpd.gpr_setV, RegUpd.mem_setV, Nat.mul_zero,
+      Nat.mul_one]) (by decide) (by decide) (by decide +kernel))
+    fun t ⟨⟨t1, t2, mt⟩, kt⟩ => ?_
+  have k4t := k34.trans kt
+  have vv : s₄.v = s₂.v := by rw [v₄, v₃]
+  have K := hI₂.keep.trans k4t
+  refine ⟨hI₂.scr.congr k4t.wr, (k4t.gpr .x0 (by decide)).trans hI₂.x0,
+    by rw [t1, vv]; exact hI₂.x1s, by rw [t2, vv]; exact hI₂.x2s,
+    (k4t.gpr .x11 (by decide)).trans hI₂.x11, (k4t.gpr .x12 (by decide)).trans hI₂.x12, ?_,
+    K.mono (by decide), fun h1 h2 => ?_⟩
+  · rw [mt]
+    refine hI₂.frm.trans ((by rw [m₃]; exact Frm.refl _ _ _ : Frm B _ s₂.mem s₃.mem).trans ?_)
+    exact Frm.of_outside (Outside.mono (o' := slot w iV) (n' := 8 * (w + 2)) o₄ (Nat.le_refl _)
+      (by show slot w iV + 8 * (n + 1) ≤ slot w iV + 8 * (w + 2); omega)) (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+  -- The value.
+  have G : C.Good := ⟨h1, h2⟩
+  have hL : 1 ≤ C.n + 1 := by omega_arith
+  have hpf : C.pf = C.p := by unfold ICfg.pf; have := G.1; omega_arith
+  have hm' : ((C.p : Int) * C.mi.toNat + 1) % 2 ^ 64 = 0 := by
+    have := hC.hm; rw [show C.p + (1 - C.p % 2) = C.p by have := G.1; omega_arith] at this; exact this
+  have est : C.st (3 * C.n + 2) =
+      Divstep.invRunS 59 C.p C.mi.toNat (Rsa.Divstep.oddInput C.p a) (3 * C.n + 2) := by
+    unfold ICfg.st; rw [hpf]
+  obtain ⟨-, rf0, -⟩ := Rsa.Divstep.invRunS59_result (mi := C.mi.toNat) G.1 hm' hC.pC aC
+  rw [← est] at rf0
+  have hf := hI₂.f
+  set f := (C.st (3 * C.n + 2)).f with hfdef
+  have gp : Nat.gcd C.p a ≤ C.p := Nat.gcd_le_left _ (by omega_arith)
+  have fabs : |f| = (Nat.gcd C.p a : Int) := by rw [← Int.natCast_natAbs, rf0]
+  have fabs' : |f| < 2 ^ (64 * C.n) := by
+    rw [fabs]; have : (C.p : Int) < 2 ^ (64 * C.n) := by exact_mod_cast pC
+    omega_arith
+  have half : (2 : Int) ^ (64 * C.n) * 2 ≤ 2 ^ (64 * (C.n + 1) - 1) := by
+    have : 2 ^ (64 * C.n) * 2 ≤ 2 ^ (64 * (C.n + 1) - 1) := by
+      rw [← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+    exact_mod_cast this
+  have wsucc : ∀ (m : Mem) (j : Nat), wv m C.B (slot C.w j) (C.n + 1) =
+      wv m C.B (slot C.w j) C.n + 2 ^ (64 * C.n) * (word m C.B (slot C.w j + 8 * C.n)).toNat := fun m j => by
+    rw [wv]
+  have hneg : (2 ^ 63 ≤ (word s₂.mem C.B (slot C.w C.iV + 8 * C.n)).toNat) ↔ f < 0 := by
+    rw [← hf, wsucc]
+    exact (Divstep.sgn_neg_iff (wv_lt _ _ _ _) (BitVec.isLt _)).symm
+  rw [m₃] at e₄
+  have V₄ := Divstep.sgn_cneg hL (wv_lt _ _ _ _) (wv_lt _ _ _ _) (by rw [hf]; omega_arith) e₄
+  rw [hf] at V₄
+  have V₄' : sgn (C.n + 1) (wv s₄.mem C.B (slot C.w C.iV) (C.n + 1)) = |f| := by
+    rw [V₄]
+    by_cases h : f < 0
+    · rw [ite_eq_left (decide_eq_true (hneg.mpr h)), abs_of_neg h]
+    · rw [ite_eq_right (by simp only [decide_eq_true_eq]; exact fun h' => h (hneg.mp h')), abs_of_nonneg (by omega_arith)]
+  obtain ⟨-, V₄n⟩ := small_of_sgn (wsucc _ _) (wv_lt _ _ _ _) (BitVec.isLt _) V₄' (abs_nonneg _) fabs'
+  rw [mt]
+  have := V₄n.trans fabs
+  exact_mod_cast this
+
+/-- The GCD at the header's width `w`: by gcd-only batches (`gcdB_ok`) for `w < 2^21`, else bit by bit
+(`inverseBits_ok`): `[v] = gcd(a, m)` for `[u] = a` and the odd `[m] = [v] > 1`; only the arrays `u`, `v`,
+`x₁`, `x₂` and `t` change. -/
+theorem gcdW_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (h : Ws s B Z w)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hU0 : word s.mem B (slot w iU + 8 * w) = 0)
+    (hVM : wv s.mem B (slot w iV) w = wv s.mem B (slot w iM) w) (hX1 : wv s.mem B (slot w iX₁) w = 1)
+    (hX2 : wv s.mem B (slot w iX₂) w = 0) :
+    WP isa (.seq (.block (ws ++ ([.lsr .x .x3 .x12 21] : List Instr)))
+        (.ite (.zero .x .x3) (gcdB iV iU iM) (inverseBits iU iV iX₁ iX₂ iM iT))) s fun t =>
+      t.gpr .x0 = B ∧ Frm B [ar w iU, ar w iV, ar w iX₁, ar w iX₂, ar w iT] s.mem t.mem ∧
+      Keep (.x11 :: .x12 :: stepRegs) s t ∧
+      (wv s.mem B (slot w iM) w % 2 = 1 → 1 < wv s.mem B (slot w iM) w →
+        wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w)) := by
+  have hs := h.scr
+  have hw1 := h.w1
+  have hw := h.w2
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono h.ws_ok fun s₁ ⟨⟨h12₁, h11₁, m₁, _⟩, k₁⟩ =>
+    WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = s₁.gpr .x12 >>> 21 ∧ t.mem = s₁.mem)
+      (by brun) (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨⟨h3₂, m₂⟩, k₂⟩ => ?_))
+  have k12 := k₁.trans k₂
+  have hm₂ : s₂.mem = s.mem := by rw [m₂, m₁]
+  have hs₂ : Scr s₂ B Z := hs.congr k12.wr
+  have h0₂ : s₂.gpr .x0 = B := (k12.gpr .x0 (by decide)).trans h.x0
+  have e3 : (s₂.gpr .x3).toNat = w / 2 ^ 21 := by
+    rw [h3₂, h12₁, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
+  refine WP.ite (decide (w < 2 ^ 21)) (by
+      show some (s₂.read .x .x3 == 0) = _
+      congr 1
+      have : s₂.read .x .x3 = s₂.gpr .x3 := rfl
+      rw [this]
+      by_cases hw21 : w < 2 ^ 21
+      · rw [decide_eq_true hw21, beq_iff_eq]
+        apply BitVec.eq_of_toNat_eq; rw [e3]; simp; omega_arith
+      · rw [decide_eq_false hw21]
+        apply Bool.eq_false_iff.mpr
+        intro hb
+        rw [beq_iff_eq] at hb
+        have := congrArg BitVec.toNat hb
+        rw [e3] at this
+        simp at this
+        omega_arith) (fun hb => ?_) (fun hb => ?_)
+  · -- Batches of divsteps.
+    have hw21 : w < 2 ^ 21 := by simpa using hb
+    refine WP.mono (gcdB_ok hs₂ h0₂ ((k₂.gpr .x11 (by decide)).trans h11₁) ((k₂.gpr .x12 (by decide)).trans h12₁)
+      (by omega_arith) (Nat.le_refl _) hw hw21 h.hZ hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T
+      dX₂M dX₂T dMT (by rw [hm₂]; exact hVM)) fun t ⟨_, t0, t1, t2, _, _, fr, kt, val⟩ => ?_
+    rw [hm₂] at fr val
+    refine ⟨t0, Frm.widen fr fun r hr => ?_, ?_, fun h1 h2 => by rw [val h1 h2, Nat.gcd_comm]⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨ar w iU, by simp, Nat.le_refl _, Nat.le_refl _⟩
+      · exact ⟨ar w iV, by simp, Nat.le_refl _, Nat.le_refl _⟩
+    · have k := k12.trans kt
+      exact keep_restore (k.mono (by decide)) (by rw [t1, k12.gpr .x1 (by decide)])
+        (by rw [t2, k12.gpr .x2 (by decide)])
+  · -- Bit by bit.
+    have h₂ : Ws s₂ B Z w := h.congr (rs := []) (by rw [hm₂]; exact Frm.refl _ _ _) (by simp) k12 (by decide)
+    refine WP.mono (inverseBits_ok h₂ hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T
+      dX₂M dX₂T dMT (by rw [hm₂]; exact hU0) (by rw [hm₂]; exact hVM) (by rw [hm₂]; exact hX1)
+      (by rw [hm₂]; exact hX2) ((k₂.gpr .x12 (by decide)).trans h12₁) ((k₂.gpr .x11 (by decide)).trans h11₁))
+      fun t ⟨t0, fr, kt, val⟩ => ?_
+    rw [hm₂] at fr val
+    refine ⟨t0, Frm.widen fr fun r hr => ?_, (k12.trans kt).mono (by decide), fun h1 h2 => (val h1 h2).1⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact ⟨ar w iU, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega_arith) _⟩
+    · exact ⟨ar w iV, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega_arith) _⟩
+    · exact ⟨ar w iX₁, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega_arith) _⟩
+    · exact ⟨ar w iX₂, by simp, Nat.le_refl _, Nat.add_le_add_left (show 8 * w ≤ 8 * (w + 2) by omega_arith) _⟩
+    · exact ⟨ar w iT, by simp, Nat.le_refl _, Nat.le_refl _⟩
+
+instance gcdLaw : GcdLaw gcdB := ⟨gcdW_ok⟩
 
 end VG.Proof.Rsa.AArch64

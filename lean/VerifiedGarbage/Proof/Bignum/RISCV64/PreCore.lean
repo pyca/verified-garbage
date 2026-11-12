@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
-import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Words
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Lazy
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
@@ -236,7 +236,7 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
     refine WP.seq (WP.mono (r2Words_ok (hs₂.congr kz.2.2) (by rw [gz .a2 (by decide), g .a2 (by decide), ha2])
       (by rw [gz .a6 (by decide), g .a6 (by decide), ha6])
       (by rw [gz .a7 (by decide), g .a7 (by decide), ha7]) (by rw [gz .t0 (by decide), g .t0 (by decide), ht0])
-      (by rw [hz, mz]) (by omega_arith) hw' (by omega_arith) hN₂
+      (by rw [hz, mz]) (by omega_arith) (by omega_arith) (by omega_arith) hN₂
       (by rw [mz, m₂, hv₁]; exact hf.1)) fun s₃ ⟨⟨hx₃, out₃⟩, k₃⟩ => ?_)
     rw [mz] at hx₃ out₃
     have k13 := (k12.trans kz).trans k₃
