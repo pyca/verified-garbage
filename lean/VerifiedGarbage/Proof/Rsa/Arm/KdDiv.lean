@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Rsa.Arm.KeyDiv
 
 open VG VG.Arm VG.Impl.Rsa.Arm.KeyDiv VG.Proof.Rsa.Arm.Keys VG.Proof.Mont
-open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_cmp op2_imm)
+open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_cmp wp_dp wp_mov wp_str op2_imm op2_lsl op2_lsr op2_reg dpVal)
+open VG.Impl.Rsa.Arm.Keys (copy ptr sub3)
 
 /-! ## The arithmetic of the fold -/
 
@@ -283,5 +284,88 @@ theorem loop_ok {s0 x : State} {B : BitVec 32} {Z w N r m t nm u z M X j : Nat}
     refine ⟨?_, st 0 rfl⟩
     change some (!y3.z) = some false
     rw [hz3, r0v]; decide
+
+/-! ## The preparation -/
+
+theorem shl2_val {w : Nat} (_hw : w ≤ 1024) : BitVec.ofNat 32 w <<< 2 = BitVec.ofNat 32 (4 * w) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+  omega
+
+/-- The low `k` words of a number of `n` words. -/
+theorem val32_low (mem : Mem) (base : Addr) (d : Nat) {k n : Nat} (h : k ≤ n) :
+    val32 mem base d k = val32 mem base d n % 2 ^ (32 * k) := by
+  obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le h
+  rw [val32_append, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (val32_lt _ _ _ _)]
+
+/-- `-M` modulo a shorter power: `(2^(32 n) - M) mod 2^(32 k) = 2^(32 k) - M` for `0 < M < 2^(32 k)`. -/
+theorem neg_low {M k n : Nat} (hkn : k ≤ n) (hM0 : 0 < M) (hM : M < 2 ^ (32 * k)) :
+    (2 ^ (32 * n) - M) % 2 ^ (32 * k) = 2 ^ (32 * k) - M := by
+  obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le hkn
+  rw [Nat.mul_add, Nat.pow_add]
+  have hE := Nat.two_pow_pos (32 * e)
+  obtain ⟨E, hE'⟩ : ∃ E, 2 ^ (32 * e) = E + 1 := ⟨2 ^ (32 * e) - 1, by omega⟩
+  rw [hE', Nat.mul_add, Nat.mul_one, show 2 ^ (32 * k) * E + 2 ^ (32 * k) - M = (2 ^ (32 * k) - M) + 2 ^ (32 * k) * E
+    by omega, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
+
+/-- The preparation's first half: `[r] := [a]` with word `w` zero, and `[nm] := -[m]`. -/
+theorem prepA_ok {s : State} {B : BitVec 32} {Z w N a r m nm : Nat} (h : Ws s B Z w N) (ha : a < N) (hr : r < N)
+    (hm : m < N) (hnm : nm < N) (hN : N ≤ 256) (hra : r ≠ a) (hr0 : r ≠ 0) (hrm : r ≠ m) (hn0 : nm ≠ 0)
+    (hnm' : nm ≠ m) (hnr : nm ≠ r) {M : Nat} (hM : num s.mem B w m = M) (hM0 : 0 < M)
+    (hz : num s.mem B w 0 = 0) {rest : Prog isa} {Q : State → Prop}
+    (k : ∀ v, Ws v B Z w N → val32 v.mem (State.addr B) (arr w r) (w + 1) = num s.mem B w a →
+      num v.mem B w nm = 2 ^ (32 * w) - M → Keep B w [r, nm] [] s.mem v.mem → Rest opRegs s v →
+      WP isa rest v Q) :
+    WP isa (.seq (copy r a) (.seq (.block (ptr .r0 r ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2),
+      .mov .r1 (.imm 0), .str .r1 .r0 0])) (.seq (sub3 nm 0 m) rest))) s Q := by
+  have := h.wle
+  have nw := h.nowrap
+  have fr := h.arr_fit hr
+  have gr := h.fit64 hr
+  have g0 := h.fit64 (j := 0) (by omega)
+  have gm := h.fit64 hm
+  simp only [S] at fr gr g0 gm
+  rw [WP.seq_iff]
+  refine WP.mono (copy_ok h hr ha hN hra) fun v1 ⟨W1, K1, C1, R1, _⟩ => ?_
+  rw [WP.seq_iff]
+  refine ptr_ok W1 (r := .r0) (by decide) (j := r) (by omega) fun v2 p2 r2 m2 W2 => ?_
+  refine wp_dp (op2_lsl (by decide)) fun v3 u3 => ?_
+  refine wp_mov (op2_imm (by decide)) fun v4 u4 => ?_
+  have a4 : State.addr (v4.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr w r + 4 * w) := by
+    rw [u4.other _ (by decide), u3.gpr, dpVal, p2, W2.r9, shl2_val (by omega), BitVec.add_zero, add_ofNat_assoc]
+    exact h.addr (by omega)
+  refine wp_str (by decide) a4 (by rw [u4.wr, u3.wr, r2.wr, R1.wr]; exact h.write (by omega))
+    fun v5 u5 => WP.block_nil ?_
+  have W5 : Ws v5 B Z w N := ((W2.of_upd u3 (by decide) (by decide) (by decide)).of_upd u4 (by decide) (by decide)
+    (by decide)).of_mupd u5
+  have m5 : v5.mem = v1.mem.writeW (off (State.addr B) (arr w r + 4 * w)) (0 : BitVec 32) := by
+    rw [u5.mem, u4.gpr, u4.mem, u3.mem, m2]
+  have K5 : Keep B w [r] [] s.mem v5.mem := by
+    rw [m5]; exact K1.trans (Keep.of_arr (d := 4 * w) (writeW32_outside _ _ _ (by omega)) (by simp only [S]; omega)
+      (by simp))
+  have V5 : val32 v5.mem (State.addr B) (arr w r) (w + 1) = num s.mem B w a := by
+    rw [val32_succ, m5, w32_write_self, Outside.val32 (writeW32_outside _ _ _ (by omega)) (by omega) (by omega)]
+    simp only [num] at C1 ⊢
+    rw [C1]; rfl
+  have R5 : Rest opRegs s v5 :=
+    R1.trans ((r2.mono (by simp)).trans ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (u5.rest _))))
+  rw [WP.seq_iff]
+  refine WP.mono (sub3_ok W5 hnm (by omega) hm hN hn0 hnm') fun v6 ⟨W6, K6, E6, b6, R6⟩ => ?_
+  have Z5 : num v5.mem B w 0 = 0 := by rw [K5.num (by simpa using hr0) (by simp) g0]; exact hz
+  have M5 : num v5.mem B w m = M := by rw [K5.num (by simpa using hrm) (by simp) gm]; exact hM
+  rw [Z5, M5] at E6
+  have hb : (v6.gpr .r11).toNat = 1 := by
+    rcases Nat.lt_or_ge (v6.gpr .r11).toNat 1 with h0 | h1
+    · have : (v6.gpr .r11).toNat = 0 := by omega
+      rw [this] at E6; omega
+    · omega
+  rw [hb, Nat.mul_one] at E6
+  refine k v6 W6 ?_ (by omega) ((K5.mono).trans K6.mono) (R5.trans R6)
+  rw [Outs.val32 K6 (fun q hq => ?_) (by omega)]
+  · exact V5
+  · simp only [ranges, List.mem_map, List.mem_cons, List.not_mem_nil, or_false,
+      List.map_nil, List.append_nil] at hq
+    obtain ⟨y, rfl, rfl⟩ := hq
+    have := arr_disj (w := w) hnr; simp only [S] at this ⊢; omega
 
 end VG.Proof.Rsa.Arm.KeyDiv
