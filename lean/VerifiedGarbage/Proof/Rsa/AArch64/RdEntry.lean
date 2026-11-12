@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import Mathlib.Algebra.Group.Nat.Defs
-public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Bignum.Octets
