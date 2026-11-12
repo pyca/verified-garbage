@@ -1426,6 +1426,16 @@ vg_rsa_keygen_key:
 	add x15, x15, x12
 	add x15, x15, #2
 261:
+	mov v20.d[0], x19
+	mov v20.d[1], x20
+	mov v21.d[0], x21
+	mov v21.d[1], x22
+	mov v22.d[0], x23
+	mov v22.d[1], x24
+	mov v23.d[0], x25
+	mov v23.d[1], x26
+	mov v24.d[0], x27
+	mov v24.d[1], x28
 	add x2, x11, #0
 	add x2, x2, x2
 	add x2, x2, x11
@@ -2372,11 +2382,17 @@ vg_rsa_keygen_key:
 	sub x15, x15, #1
 	umov x4, v16.d[0]
 	umov x5, v16.d[1]
+	umov x6, v17.d[0]
+	umov x7, v17.d[1]
 	movz x13, #0, lsl #0
 	lsr x9, x4, #63
 	sub x9, x13, x9
 	lsr x10, x5, #63
 	sub x10, x13, x10
+	lsr x19, x6, #63
+	sub x19, x13, x19
+	lsr x20, x7, #63
+	sub x20, x13, x20
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -2386,372 +2402,305 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-262:
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
+	movz x13, #0, lsl #0
+	movz x25, #0, lsl #0
+	mul x26, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x26, x26, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x26, x26, x13
+	sbc x13, x21, x22
+	mul x27, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x27, x27, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x27, x27, x25
+	sbc x25, x21, x22
+	add x14, x12, #0
+262:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x1, x1, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	mul x24, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x24, x24, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	extr x22, x1, x26, #59
+	str x22, [x16, #0]
+	add x26, x1, #0
+	extr x22, x24, x27, #59
+	str x22, [x17, #0]
+	add x27, x24, #0
 	add x16, x16, #8
 	add x17, x17, #8
-	add x8, x8, #8
 	sub x14, x14, #1
 	cbnz x14, 262b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	extr x22, x13, x26, #59
+	str x22, [x16, #0]
+	extr x22, x25, x27, #59
+	str x22, [x17, #0]
+	umov x28, v18.d[1]
 	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
 	add x16, x16, x16
 	add x16, x16, x11
 	add x16, x16, x0
 	add x16, x16, #256
 	add x17, x11, #0
 	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
 	add x8, x11, #0
 	add x8, x8, x8
+	add x8, x8, x8
+	add x8, x8, x8
+	add x8, x8, x11
 	add x8, x8, x0
 	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-263:
+	sub x14, x12, #1
+	mov v25.d[0], x30
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
+	mul x22, x4, x2
+	madd x22, x5, x3, x22
+	mul x26, x22, x28
+	mul x22, x6, x2
+	madd x22, x7, x3, x22
+	mul x27, x22, x28
+	movz x28, #0, lsl #0
+	movz x23, #0, lsl #0
+	movz x30, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x25, #0, lsl #0
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	cbz x14, 263f
+265:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	str x1, [x16, #0]
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 263b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-264:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 264b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-265:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 265b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	umov x4, v16.d[0]
-	umov x5, v16.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-266:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
+	b 264f
+263:
+264:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	adds x1, x1, x23
+	adc x13, x13, x28
+	str x1, [x16, #0]
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	adds x24, x24, x30
+	adc x25, x25, x28
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 266b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-267:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 267b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-268:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 268b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-269:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 269b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-270:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 270b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-271:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 271b
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	str x13, [x16, #0]
+	str x25, [x17, #0]
+	umov x30, v25.d[0]
+	umov x19, v20.d[0]
+	umov x20, v20.d[1]
+	umov x21, v21.d[0]
+	umov x22, v21.d[1]
+	umov x23, v22.d[0]
+	umov x24, v22.d[1]
+	umov x25, v23.d[0]
+	umov x26, v23.d[1]
+	umov x27, v24.d[0]
+	umov x28, v24.d[1]
 	cbnz x15, 261b
 	add x16, x11, #0
 	add x16, x16, x16
@@ -2772,14 +2721,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-272:
+266:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 272b
+	cbnz x14, 266b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -2790,14 +2739,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-273:
+267:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 273b
+	cbnz x14, 267b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -2834,7 +2783,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-274:
+268:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -2844,7 +2793,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 274b
+	cbnz x14, 268b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -2884,7 +2833,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-275:
+269:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -2894,7 +2843,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 275b
+	cbnz x14, 269b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -2931,7 +2880,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-276:
+270:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2940,12 +2889,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 276b
+	cbnz x14, 270b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-277:
+271:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2954,7 +2903,7 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 277b
+	cbnz x14, 271b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -2969,7 +2918,7 @@ vg_rsa_keygen_key:
 	lsl x15, x12, #4
 	sub x15, x15, x12
 	add x15, x15, #10
-278:
+272:
 	add x5, x11, #0
 	add x5, x5, x5
 	add x5, x5, x11
@@ -2999,14 +2948,14 @@ vg_rsa_keygen_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-279:
+273:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 279b
+	cbnz x14, 273b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -3014,7 +2963,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-280:
+274:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3023,12 +2972,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 280b
+	cbnz x14, 274b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-281:
+275:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3037,11 +2986,22 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 281b
+	cbnz x14, 275b
 	sub x15, x15, #1
-	cbnz x15, 278b
+	cbnz x15, 272b
 	umov x1, v19.d[0]
 	umov x2, v19.d[1]
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
 247:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
@@ -3056,11 +3016,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-282:
+276:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 282b
+	cbnz x14, 276b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3090,7 +3050,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x11
 	add x17, x17, x0
 	add x17, x17, #256
-283:
+277:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -3100,7 +3060,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 283b
+	cbnz x14, 277b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3113,13 +3073,13 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-284:
+278:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 284b
+	cbnz x14, 278b
 	lsl x6, x12, #6
-285:
+279:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	adds x3, x7, x7
@@ -3130,13 +3090,13 @@ vg_rsa_keygen_key:
 	add x16, x16, x16
 	add x16, x16, x0
 	add x16, x16, #256
-286:
+280:
 	ldr x3, [x16, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 286b
+	cbnz x14, 280b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -3145,13 +3105,13 @@ vg_rsa_keygen_key:
 	add x16, x16, x0
 	add x16, x16, #256
 	add x14, x12, #1
-287:
+281:
 	ldr x3, [x16, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 287b
+	cbnz x14, 281b
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
@@ -3173,7 +3133,7 @@ vg_rsa_keygen_key:
 	add x13, x13, x13
 	add x13, x13, x0
 	add x13, x13, #256
-288:
+282:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3182,7 +3142,7 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 288b
+	cbnz x14, 282b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	str x3, [x13, #0]
@@ -3204,7 +3164,7 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x3, #1, lsl #0
 	subs x3, x15, x3
-289:
+283:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	csel x4, x3, x4, hs
@@ -3212,7 +3172,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 289b
+	cbnz x14, 283b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x16
@@ -3226,15 +3186,15 @@ vg_rsa_keygen_key:
 	orr x3, x3, x4
 	str x3, [x16, #0]
 	sub x6, x6, #1
-	cbnz x6, 285b
+	cbnz x6, 279b
 	ldr x3, [x0, #240]
-	cbz x3, 290f
+	cbz x3, 284f
 	sub x3, x3, #1
-	cbz x3, 292f
+	cbz x3, 286f
 	ldr x3, [x0, #240]
 	movz x4, #1, lsl #0
 	and x3, x3, x4
-	cbnz x3, 294f
+	cbnz x3, 288f
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3249,11 +3209,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-296:
+290:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 296b
+	cbnz x14, 290b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3279,11 +3239,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-297:
+291:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 297b
+	cbnz x14, 291b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3301,13 +3261,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-298:
+292:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 298b
+	cbnz x14, 292b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3321,11 +3281,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-299:
+293:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 299b
+	cbnz x14, 293b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3357,7 +3317,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2100:
+294:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -3365,7 +3325,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2100b
+	cbnz x14, 294b
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	subs x3, x9, x4
@@ -3398,11 +3358,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2101:
+295:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2101b
+	cbnz x14, 295b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3423,13 +3383,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2102:
+296:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2102b
+	cbnz x14, 296b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3442,13 +3402,13 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2103:
+297:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2103b
+	cbnz x14, 297b
 	lsl x6, x12, #6
-2104:
+298:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	adds x3, x7, x7
@@ -3460,13 +3420,13 @@ vg_rsa_keygen_key:
 	add x16, x16, x11
 	add x16, x16, x0
 	add x16, x16, #256
-2105:
+299:
 	ldr x3, [x16, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2105b
+	cbnz x14, 299b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -3475,13 +3435,13 @@ vg_rsa_keygen_key:
 	add x16, x16, x0
 	add x16, x16, #256
 	add x14, x12, #1
-2106:
+2100:
 	ldr x3, [x16, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2106b
+	cbnz x14, 2100b
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
@@ -3505,7 +3465,7 @@ vg_rsa_keygen_key:
 	add x13, x13, x13
 	add x13, x13, x0
 	add x13, x13, #256
-2107:
+2101:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3514,7 +3474,7 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2107b
+	cbnz x14, 2101b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	str x3, [x13, #0]
@@ -3536,7 +3496,7 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x3, #1, lsl #0
 	subs x3, x15, x3
-2108:
+2102:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	csel x4, x3, x4, hs
@@ -3544,7 +3504,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2108b
+	cbnz x14, 2102b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x16
@@ -3559,7 +3519,7 @@ vg_rsa_keygen_key:
 	orr x3, x3, x4
 	str x3, [x16, #0]
 	sub x6, x6, #1
-	cbnz x6, 2104b
+	cbnz x6, 298b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3569,11 +3529,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2109:
+2103:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2109b
+	cbnz x14, 2103b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3588,13 +3548,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2110:
+2104:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2110b
+	cbnz x14, 2104b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3608,11 +3568,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2111:
+2105:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2111b
+	cbnz x14, 2105b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3645,14 +3605,14 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2112:
+2106:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2112b
+	cbnz x14, 2106b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	add x10, x15, #0
@@ -3688,11 +3648,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2113:
+2107:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2113b
+	cbnz x14, 2107b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3710,13 +3670,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2114:
+2108:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2114b
+	cbnz x14, 2108b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x14, x12, #0
@@ -3735,7 +3695,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x11
 	add x17, x17, x0
 	add x17, x17, #256
-2115:
+2109:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -3745,7 +3705,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2115b
+	cbnz x14, 2109b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3756,11 +3716,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2116:
+2110:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2116b
+	cbnz x14, 2110b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3776,13 +3736,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2117:
+2111:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2117b
+	cbnz x14, 2111b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3794,11 +3754,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2118:
+2112:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2118b
+	cbnz x14, 2112b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3821,17 +3781,17 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2119:
+2113:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2119b
+	cbnz x14, 2113b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	lsr x3, x12, #21
-	cbz x3, 2120f
+	cbz x3, 2114f
 	lsl x6, x12, #7
-2122:
+2116:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	add x16, x11, #0
@@ -3849,14 +3809,14 @@ vg_rsa_keygen_key:
 	sub x15, x7, x3
 	add x9, x15, #0
 	subs x3, x7, x7
-2123:
+2117:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2123b
+	cbnz x14, 2117b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	and x15, x15, x9
@@ -3870,7 +3830,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x11
 	add x17, x17, x0
 	add x17, x17, #256
-2124:
+2118:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x5, x3, x4
@@ -3882,7 +3842,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2124b
+	cbnz x14, 2118b
 	add x14, x12, #0
 	add x16, x11, #0
 	add x16, x16, x16
@@ -3897,7 +3857,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x11
 	add x17, x17, x0
 	add x17, x17, #256
-2125:
+2119:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x5, x3, x4
@@ -3909,7 +3869,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2125b
+	cbnz x14, 2119b
 	movz x7, #0, lsl #0
 	add x15, x9, #0
 	add x14, x12, #0
@@ -3927,7 +3887,7 @@ vg_rsa_keygen_key:
 	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-2126:
+2120:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	and x4, x4, x15
@@ -3937,7 +3897,7 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2126b
+	cbnz x14, 2120b
 	add x15, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
@@ -3960,7 +3920,7 @@ vg_rsa_keygen_key:
 	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-2127:
+2121:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	and x4, x4, x15
@@ -3970,7 +3930,7 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2127b
+	cbnz x14, 2121b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	add x14, x12, #0
@@ -3994,7 +3954,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x5
 	add x5, x5, x0
 	add x5, x5, #256
-2128:
+2122:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -4004,7 +3964,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2128b
+	cbnz x14, 2122b
 	add x14, x12, #0
 	add x16, x11, #0
 	add x16, x16, x16
@@ -4014,7 +3974,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2129:
+2123:
 	ldr x3, [x16, #0]
 	ldr x4, [x16, #8]
 	extr x3, x4, x3, #1
@@ -4022,7 +3982,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2129b
+	cbnz x14, 2123b
 	add x8, x11, #0
 	add x8, x8, x8
 	add x8, x8, x11
@@ -4048,7 +4008,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x5
 	add x5, x5, x0
 	add x5, x5, #256
-2130:
+2124:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -4058,7 +4018,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2130b
+	cbnz x14, 2124b
 	adc x3, x7, x7
 	str x3, [x5, #0]
 	add x14, x12, #0
@@ -4074,7 +4034,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2131:
+2125:
 	ldr x3, [x16, #0]
 	ldr x4, [x16, #8]
 	extr x3, x4, x3, #1
@@ -4082,11 +4042,11 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2131b
+	cbnz x14, 2125b
 	sub x6, x6, #1
-	cbnz x6, 2122b
-	b 2121f
-2120:
+	cbnz x6, 2116b
+	b 2115f
+2114:
 	mov v19.d[0], x1
 	mov v19.d[1], x2
 	add x16, x11, #0
@@ -4128,7 +4088,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x5
 	add x5, x5, x0
 	add x5, x5, #256
-2132:
+2126:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -4138,7 +4098,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2132b
+	cbnz x14, 2126b
 	adc x3, x7, x7
 	str x3, [x5, #0]
 	add x8, x11, #0
@@ -4151,11 +4111,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2133:
+2127:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2133b
+	cbnz x14, 2127b
 	add x8, x11, #0
 	add x8, x8, x8
 	add x8, x8, x11
@@ -4165,11 +4125,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2134:
+2128:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2134b
+	cbnz x14, 2128b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -4225,7 +4185,17 @@ vg_rsa_keygen_key:
 	add x15, x12, x12
 	add x15, x15, x12
 	add x15, x15, #2
-2135:
+2129:
+	mov v20.d[0], x19
+	mov v20.d[1], x20
+	mov v21.d[0], x21
+	mov v21.d[1], x22
+	mov v22.d[0], x23
+	mov v22.d[1], x24
+	mov v23.d[0], x25
+	mov v23.d[1], x26
+	mov v24.d[0], x27
+	mov v24.d[1], x28
 	add x2, x11, #0
 	add x2, x2, x2
 	add x2, x2, x11
@@ -5172,11 +5142,17 @@ vg_rsa_keygen_key:
 	sub x15, x15, #1
 	umov x4, v16.d[0]
 	umov x5, v16.d[1]
+	umov x6, v17.d[0]
+	umov x7, v17.d[1]
 	movz x13, #0, lsl #0
 	lsr x9, x4, #63
 	sub x9, x13, x9
 	lsr x10, x5, #63
 	sub x10, x13, x10
+	lsr x19, x6, #63
+	sub x19, x13, x19
+	lsr x20, x7, #63
+	sub x20, x13, x20
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -5186,191 +5162,103 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2136:
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2136b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
 	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2137:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2137b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
+	movz x25, #0, lsl #0
+	mul x26, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x26, x26, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x26, x26, x13
+	sbc x13, x21, x22
+	mul x27, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x27, x27, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x27, x27, x25
+	sbc x25, x21, x22
 	add x14, x12, #0
-2138:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
+2130:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x1, x1, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	mul x24, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x24, x24, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	extr x22, x1, x26, #59
+	str x22, [x16, #0]
+	add x26, x1, #0
+	extr x22, x24, x27, #59
+	str x22, [x17, #0]
+	add x27, x24, #0
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2138b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-2139:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2139b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	umov x4, v16.d[0]
-	umov x5, v16.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2140:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2140b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
+	cbnz x14, 2130b
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	extr x22, x13, x26, #59
+	str x22, [x16, #0]
+	extr x22, x25, x27, #59
+	str x22, [x17, #0]
+	umov x28, v18.d[1]
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -5385,174 +5273,195 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x8
 	add x8, x8, x8
 	add x8, x8, x11
-	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2141:
+	sub x14, x12, #1
+	mov v25.d[0], x30
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
+	mul x22, x4, x2
+	madd x22, x5, x3, x22
+	mul x26, x22, x28
+	mul x22, x6, x2
+	madd x22, x7, x3, x22
+	mul x27, x22, x28
+	movz x28, #0, lsl #0
+	movz x23, #0, lsl #0
+	movz x30, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x25, #0, lsl #0
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	cbz x14, 2131f
+2133:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	str x1, [x16, #0]
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2141b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-2142:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
+	cbnz x14, 2133b
+	b 2132f
+2131:
+2132:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	adds x1, x1, x23
+	adc x13, x13, x28
+	str x1, [x16, #0]
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	adds x24, x24, x30
+	adc x25, x25, x28
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2142b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-2143:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2143b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-2144:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2144b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-2145:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2145b
-	cbnz x15, 2135b
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	str x13, [x16, #0]
+	str x25, [x17, #0]
+	umov x30, v25.d[0]
+	umov x19, v20.d[0]
+	umov x20, v20.d[1]
+	umov x21, v21.d[0]
+	umov x22, v21.d[1]
+	umov x23, v22.d[0]
+	umov x24, v22.d[1]
+	umov x25, v23.d[0]
+	umov x26, v23.d[1]
+	umov x27, v24.d[0]
+	umov x28, v24.d[1]
+	cbnz x15, 2129b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -5572,14 +5481,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-2146:
+2134:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2146b
+	cbnz x14, 2134b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -5590,14 +5499,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-2147:
+2135:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2147b
+	cbnz x14, 2135b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -5634,7 +5543,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-2148:
+2136:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -5644,7 +5553,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2148b
+	cbnz x14, 2136b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -5684,7 +5593,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-2149:
+2137:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -5694,7 +5603,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2149b
+	cbnz x14, 2137b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -5731,7 +5640,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2150:
+2138:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -5740,12 +5649,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2150b
+	cbnz x14, 2138b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2151:
+2139:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -5754,7 +5663,7 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2151b
+	cbnz x14, 2139b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -5769,7 +5678,7 @@ vg_rsa_keygen_key:
 	lsl x15, x12, #4
 	sub x15, x15, x12
 	add x15, x15, #10
-2152:
+2140:
 	add x5, x11, #0
 	add x5, x5, x5
 	add x5, x5, x11
@@ -5799,14 +5708,14 @@ vg_rsa_keygen_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2153:
+2141:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2153b
+	cbnz x14, 2141b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -5814,7 +5723,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2154:
+2142:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -5823,12 +5732,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2154b
+	cbnz x14, 2142b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2155:
+2143:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -5837,12 +5746,23 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2155b
+	cbnz x14, 2143b
 	sub x15, x15, #1
-	cbnz x15, 2152b
+	cbnz x15, 2140b
 	umov x1, v19.d[0]
 	umov x2, v19.d[1]
-2121:
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+2115:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -5856,11 +5776,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2156:
+2144:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2156b
+	cbnz x14, 2144b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -5890,7 +5810,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2157:
+2145:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -5898,7 +5818,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2157b
+	cbnz x14, 2145b
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	subs x3, x9, x4
@@ -5920,11 +5840,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2158:
+2146:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2158b
+	cbnz x14, 2146b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -5943,15 +5863,15 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2159:
+2147:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2159b
-	b 295f
-294:
+	cbnz x14, 2147b
+	b 289f
+288:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -5966,11 +5886,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2160:
+2148:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2160b
+	cbnz x14, 2148b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -5997,11 +5917,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2161:
+2149:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2161b
+	cbnz x14, 2149b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -6020,13 +5940,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2162:
+2150:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2162b
+	cbnz x14, 2150b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -6039,13 +5959,13 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2163:
+2151:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2163b
+	cbnz x14, 2151b
 	lsl x6, x12, #6
-2164:
+2152:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	adds x3, x7, x7
@@ -6057,13 +5977,13 @@ vg_rsa_keygen_key:
 	add x16, x16, x11
 	add x16, x16, x0
 	add x16, x16, #256
-2165:
+2153:
 	ldr x3, [x16, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2165b
+	cbnz x14, 2153b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -6072,13 +5992,13 @@ vg_rsa_keygen_key:
 	add x16, x16, x0
 	add x16, x16, #256
 	add x14, x12, #1
-2166:
+2154:
 	ldr x3, [x16, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2166b
+	cbnz x14, 2154b
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
@@ -6104,7 +6024,7 @@ vg_rsa_keygen_key:
 	add x13, x13, x13
 	add x13, x13, x0
 	add x13, x13, #256
-2167:
+2155:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -6113,7 +6033,7 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2167b
+	cbnz x14, 2155b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	str x3, [x13, #0]
@@ -6135,7 +6055,7 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x3, #1, lsl #0
 	subs x3, x15, x3
-2168:
+2156:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	csel x4, x3, x4, hs
@@ -6143,7 +6063,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2168b
+	cbnz x14, 2156b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x16
@@ -6158,7 +6078,7 @@ vg_rsa_keygen_key:
 	orr x3, x3, x4
 	str x3, [x16, #0]
 	sub x6, x6, #1
-	cbnz x6, 2164b
+	cbnz x6, 2152b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -6168,11 +6088,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2169:
+2157:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2169b
+	cbnz x14, 2157b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -6187,13 +6107,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2170:
+2158:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2170b
+	cbnz x14, 2158b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -6204,11 +6124,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2171:
+2159:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2171b
+	cbnz x14, 2159b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -6226,13 +6146,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2172:
+2160:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2172b
+	cbnz x14, 2160b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -6244,11 +6164,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2173:
+2161:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2173b
+	cbnz x14, 2161b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -6271,17 +6191,17 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2174:
+2162:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2174b
+	cbnz x14, 2162b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	lsr x3, x12, #21
-	cbz x3, 2175f
+	cbz x3, 2163f
 	lsl x6, x12, #7
-2177:
+2165:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	add x16, x11, #0
@@ -6299,14 +6219,14 @@ vg_rsa_keygen_key:
 	sub x15, x7, x3
 	add x9, x15, #0
 	subs x3, x7, x7
-2178:
+2166:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2178b
+	cbnz x14, 2166b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	and x15, x15, x9
@@ -6320,7 +6240,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x11
 	add x17, x17, x0
 	add x17, x17, #256
-2179:
+2167:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x5, x3, x4
@@ -6332,7 +6252,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2179b
+	cbnz x14, 2167b
 	add x14, x12, #0
 	add x16, x11, #0
 	add x16, x16, x16
@@ -6347,7 +6267,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x11
 	add x17, x17, x0
 	add x17, x17, #256
-2180:
+2168:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x5, x3, x4
@@ -6359,7 +6279,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2180b
+	cbnz x14, 2168b
 	movz x7, #0, lsl #0
 	add x15, x9, #0
 	add x14, x12, #0
@@ -6377,7 +6297,7 @@ vg_rsa_keygen_key:
 	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-2181:
+2169:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	and x4, x4, x15
@@ -6387,7 +6307,7 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2181b
+	cbnz x14, 2169b
 	add x15, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
@@ -6410,7 +6330,7 @@ vg_rsa_keygen_key:
 	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-2182:
+2170:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	and x4, x4, x15
@@ -6420,7 +6340,7 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2182b
+	cbnz x14, 2170b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	add x14, x12, #0
@@ -6446,7 +6366,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x5
 	add x5, x5, x0
 	add x5, x5, #256
-2183:
+2171:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -6456,7 +6376,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2183b
+	cbnz x14, 2171b
 	add x14, x12, #0
 	add x16, x11, #0
 	add x16, x16, x16
@@ -6466,7 +6386,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2184:
+2172:
 	ldr x3, [x16, #0]
 	ldr x4, [x16, #8]
 	extr x3, x4, x3, #1
@@ -6474,7 +6394,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2184b
+	cbnz x14, 2172b
 	add x8, x11, #0
 	add x8, x8, x8
 	add x8, x8, x11
@@ -6502,7 +6422,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x5
 	add x5, x5, x0
 	add x5, x5, #256
-2185:
+2173:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -6512,7 +6432,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2185b
+	cbnz x14, 2173b
 	adc x3, x7, x7
 	str x3, [x5, #0]
 	add x14, x12, #0
@@ -6528,7 +6448,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2186:
+2174:
 	ldr x3, [x16, #0]
 	ldr x4, [x16, #8]
 	extr x3, x4, x3, #1
@@ -6536,11 +6456,11 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2186b
+	cbnz x14, 2174b
 	sub x6, x6, #1
-	cbnz x6, 2177b
-	b 2176f
-2175:
+	cbnz x6, 2165b
+	b 2164f
+2163:
 	mov v19.d[0], x1
 	mov v19.d[1], x2
 	add x16, x11, #0
@@ -6584,7 +6504,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x5
 	add x5, x5, x0
 	add x5, x5, #256
-2187:
+2175:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -6594,7 +6514,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2187b
+	cbnz x14, 2175b
 	adc x3, x7, x7
 	str x3, [x5, #0]
 	add x8, x11, #0
@@ -6607,11 +6527,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2188:
+2176:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2188b
+	cbnz x14, 2176b
 	add x8, x11, #0
 	add x8, x8, x8
 	add x8, x8, x11
@@ -6621,11 +6541,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2189:
+2177:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2189b
+	cbnz x14, 2177b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -6683,7 +6603,17 @@ vg_rsa_keygen_key:
 	add x15, x12, x12
 	add x15, x15, x12
 	add x15, x15, #2
-2190:
+2178:
+	mov v20.d[0], x19
+	mov v20.d[1], x20
+	mov v21.d[0], x21
+	mov v21.d[1], x22
+	mov v22.d[0], x23
+	mov v22.d[1], x24
+	mov v23.d[0], x25
+	mov v23.d[1], x26
+	mov v24.d[0], x27
+	mov v24.d[1], x28
 	add x2, x11, #0
 	add x2, x2, x2
 	add x2, x2, x11
@@ -7630,11 +7560,17 @@ vg_rsa_keygen_key:
 	sub x15, x15, #1
 	umov x4, v16.d[0]
 	umov x5, v16.d[1]
+	umov x6, v17.d[0]
+	umov x7, v17.d[1]
 	movz x13, #0, lsl #0
 	lsr x9, x4, #63
 	sub x9, x13, x9
 	lsr x10, x5, #63
 	sub x10, x13, x10
+	lsr x19, x6, #63
+	sub x19, x13, x19
+	lsr x20, x7, #63
+	sub x20, x13, x20
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -7644,191 +7580,103 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2191:
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2191b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
 	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2192:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2192b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
+	movz x25, #0, lsl #0
+	mul x26, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x26, x26, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x26, x26, x13
+	sbc x13, x21, x22
+	mul x27, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x27, x27, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x27, x27, x25
+	sbc x25, x21, x22
 	add x14, x12, #0
-2193:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
+2179:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x1, x1, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	mul x24, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x24, x24, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	extr x22, x1, x26, #59
+	str x22, [x16, #0]
+	add x26, x1, #0
+	extr x22, x24, x27, #59
+	str x22, [x17, #0]
+	add x27, x24, #0
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2193b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-2194:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2194b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	umov x4, v16.d[0]
-	umov x5, v16.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2195:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2195b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
+	cbnz x14, 2179b
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	extr x22, x13, x26, #59
+	str x22, [x16, #0]
+	extr x22, x25, x27, #59
+	str x22, [x17, #0]
+	umov x28, v18.d[1]
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -7846,175 +7694,194 @@ vg_rsa_keygen_key:
 	add x8, x8, x8
 	add x8, x8, x11
 	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x8
+	add x8, x8, x11
 	add x8, x8, x0
 	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2196:
+	sub x14, x12, #1
+	mov v25.d[0], x30
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
+	mul x22, x4, x2
+	madd x22, x5, x3, x22
+	mul x26, x22, x28
+	mul x22, x6, x2
+	madd x22, x7, x3, x22
+	mul x27, x22, x28
+	movz x28, #0, lsl #0
+	movz x23, #0, lsl #0
+	movz x30, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x25, #0, lsl #0
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	cbz x14, 2180f
+2182:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	str x1, [x16, #0]
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2196b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-2197:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
+	cbnz x14, 2182b
+	b 2181f
+2180:
+2181:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	adds x1, x1, x23
+	adc x13, x13, x28
+	str x1, [x16, #0]
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	adds x24, x24, x30
+	adc x25, x25, x28
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2197b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-2198:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2198b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-2199:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2199b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-2200:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2200b
-	cbnz x15, 2190b
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	str x13, [x16, #0]
+	str x25, [x17, #0]
+	umov x30, v25.d[0]
+	umov x19, v20.d[0]
+	umov x20, v20.d[1]
+	umov x21, v21.d[0]
+	umov x22, v21.d[1]
+	umov x23, v22.d[0]
+	umov x24, v22.d[1]
+	umov x25, v23.d[0]
+	umov x26, v23.d[1]
+	umov x27, v24.d[0]
+	umov x28, v24.d[1]
+	cbnz x15, 2178b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -8034,14 +7901,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-2201:
+2183:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2201b
+	cbnz x14, 2183b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -8052,14 +7919,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-2202:
+2184:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2202b
+	cbnz x14, 2184b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -8098,7 +7965,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-2203:
+2185:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -8108,7 +7975,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2203b
+	cbnz x14, 2185b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -8150,7 +8017,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-2204:
+2186:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -8160,7 +8027,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2204b
+	cbnz x14, 2186b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -8199,7 +8066,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2205:
+2187:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -8208,12 +8075,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2205b
+	cbnz x14, 2187b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2206:
+2188:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -8222,7 +8089,7 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2206b
+	cbnz x14, 2188b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -8237,7 +8104,7 @@ vg_rsa_keygen_key:
 	lsl x15, x12, #4
 	sub x15, x15, x12
 	add x15, x15, #10
-2207:
+2189:
 	add x5, x11, #0
 	add x5, x5, x5
 	add x5, x5, x11
@@ -8269,14 +8136,14 @@ vg_rsa_keygen_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2208:
+2190:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2208b
+	cbnz x14, 2190b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -8284,7 +8151,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2209:
+2191:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -8293,12 +8160,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2209b
+	cbnz x14, 2191b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2210:
+2192:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -8307,12 +8174,23 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2210b
+	cbnz x14, 2192b
 	sub x15, x15, #1
-	cbnz x15, 2207b
+	cbnz x15, 2189b
 	umov x1, v19.d[0]
 	umov x2, v19.d[1]
-2176:
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+2164:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8326,11 +8204,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2211:
+2193:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2211b
+	cbnz x14, 2193b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8363,14 +8241,14 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2212:
+2194:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2212b
+	cbnz x14, 2194b
 	sub x4, x7, #1
 	csel x15, x4, x7, hs
 	str x15, [x0, #248]
@@ -8387,11 +8265,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2213:
+2195:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2213b
+	cbnz x14, 2195b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8421,7 +8299,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2214:
+2196:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -8429,7 +8307,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2214b
+	cbnz x14, 2196b
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	subs x3, x9, x4
@@ -8498,11 +8376,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2215:
+2197:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2215b
+	cbnz x14, 2197b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8527,7 +8405,7 @@ vg_rsa_keygen_key:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2216:
+2198:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -8539,7 +8417,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2216b
+	cbnz x14, 2198b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -8547,9 +8425,9 @@ vg_rsa_keygen_key:
 	ldr x3, [x16, #8]
 	adc x3, x3, x7
 	str x3, [x16, #8]
-295:
-	b 293f
-292:
+289:
+	b 287f
+286:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8563,11 +8441,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2217:
+2199:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2217b
+	cbnz x14, 2199b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8599,7 +8477,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2218:
+2200:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -8607,7 +8485,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2218b
+	cbnz x14, 2200b
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	subs x3, x9, x4
@@ -8627,11 +8505,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2219:
+2201:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2219b
+	cbnz x14, 2201b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8644,12 +8522,12 @@ vg_rsa_keygen_key:
 	add x16, x16, #256
 	movz x3, #1, lsl #0
 	str x3, [x16, #0]
-293:
-	b 291f
-290:
+287:
+	b 285f
+284:
 	movz x3, #0, lsl #0
 	str x3, [x0, #248]
-291:
+285:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8663,11 +8541,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2220:
+2202:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2220b
+	cbnz x14, 2202b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8716,19 +8594,19 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2221:
+2203:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2221b
+	cbnz x14, 2203b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	ldr x3, [x0, #248]
 	and x15, x15, x3
-	cbnz x15, 2222f
+	cbnz x15, 2204f
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8738,11 +8616,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2224:
+2206:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2224b
+	cbnz x14, 2206b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8753,13 +8631,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2225:
+2207:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2225b
+	cbnz x14, 2207b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8773,11 +8651,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2226:
+2208:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2226b
+	cbnz x14, 2208b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8804,14 +8682,14 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2227:
+2209:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2227b
+	cbnz x14, 2209b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	add x10, x15, #0
@@ -8835,11 +8713,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2228:
+2210:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2228b
+	cbnz x14, 2210b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -8851,13 +8729,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2229:
+2211:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2229b
+	cbnz x14, 2211b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x14, x12, #0
@@ -8876,7 +8754,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x11
 	add x17, x17, x0
 	add x17, x17, #256
-2230:
+2212:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -8886,7 +8764,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2230b
+	cbnz x14, 2212b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8897,11 +8775,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2231:
+2213:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2231b
+	cbnz x14, 2213b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8917,13 +8795,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2232:
+2214:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2232b
+	cbnz x14, 2214b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -8935,11 +8813,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2233:
+2215:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2233b
+	cbnz x14, 2215b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -8962,11 +8840,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2234:
+2216:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2234b
+	cbnz x14, 2216b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	lsr x12, x12, #1
@@ -9011,7 +8889,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x5
 	add x5, x5, x0
 	add x5, x5, #256
-2235:
+2217:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -9021,7 +8899,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2235b
+	cbnz x14, 2217b
 	adc x3, x7, x7
 	str x3, [x5, #0]
 	add x8, x11, #0
@@ -9034,11 +8912,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2236:
+2218:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2236b
+	cbnz x14, 2218b
 	add x8, x11, #0
 	add x8, x8, x8
 	add x8, x8, x11
@@ -9048,11 +8926,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2237:
+2219:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2237b
+	cbnz x14, 2219b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -9108,7 +8986,17 @@ vg_rsa_keygen_key:
 	add x15, x12, x12
 	add x15, x15, x12
 	add x15, x15, #2
-2238:
+2220:
+	mov v20.d[0], x19
+	mov v20.d[1], x20
+	mov v21.d[0], x21
+	mov v21.d[1], x22
+	mov v22.d[0], x23
+	mov v22.d[1], x24
+	mov v23.d[0], x25
+	mov v23.d[1], x26
+	mov v24.d[0], x27
+	mov v24.d[1], x28
 	add x2, x11, #0
 	add x2, x2, x2
 	add x2, x2, x11
@@ -10055,11 +9943,17 @@ vg_rsa_keygen_key:
 	sub x15, x15, #1
 	umov x4, v16.d[0]
 	umov x5, v16.d[1]
+	umov x6, v17.d[0]
+	umov x7, v17.d[1]
 	movz x13, #0, lsl #0
 	lsr x9, x4, #63
 	sub x9, x13, x9
 	lsr x10, x5, #63
 	sub x10, x13, x10
+	lsr x19, x6, #63
+	sub x19, x13, x19
+	lsr x20, x7, #63
+	sub x20, x13, x20
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -10069,191 +9963,103 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2239:
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2239b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
 	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2240:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2240b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
+	movz x25, #0, lsl #0
+	mul x26, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x26, x26, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x26, x26, x13
+	sbc x13, x21, x22
+	mul x27, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x27, x27, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x27, x27, x25
+	sbc x25, x21, x22
 	add x14, x12, #0
-2241:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
+2221:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	umulh x21, x4, x2
+	and x22, x2, x9
+	sub x21, x21, x22
+	umulh x23, x5, x3
+	and x22, x3, x10
+	sub x23, x23, x22
+	mul x22, x5, x3
+	adds x1, x1, x22
+	adc x21, x21, x23
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	mul x24, x6, x2
+	umulh x21, x6, x2
+	and x22, x2, x19
+	sub x21, x21, x22
+	umulh x23, x7, x3
+	and x22, x3, x20
+	sub x23, x23, x22
+	mul x22, x7, x3
+	adds x24, x24, x22
+	adc x21, x21, x23
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	extr x22, x1, x26, #59
+	str x22, [x16, #0]
+	add x26, x1, #0
+	extr x22, x24, x27, #59
+	str x22, [x17, #0]
+	add x27, x24, #0
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2241b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-2242:
-	ldr x3, [x16, #0]
-	ldr x4, [x16, #8]
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2242b
-	ldr x3, [x16, #0]
-	lsr x4, x3, #63
-	movz x13, #0, lsl #0
-	sub x4, x13, x4
-	extr x3, x4, x3, #59
-	str x3, [x17, #0]
-	umov x4, v16.d[0]
-	umov x5, v16.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2243:
-	ldr x2, [x16, #0]
-	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x8, x8, #8
-	sub x14, x14, #1
-	cbnz x14, 2243b
-	umov x4, v17.d[0]
-	umov x5, v17.d[1]
-	movz x13, #0, lsl #0
-	lsr x9, x4, #63
-	sub x9, x13, x9
-	lsr x10, x5, #63
-	sub x10, x13, x10
+	cbnz x14, 2221b
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	extr x22, x13, x26, #59
+	str x22, [x16, #0]
+	extr x22, x25, x27, #59
+	str x22, [x17, #0]
+	umov x28, v18.d[1]
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -10268,174 +10074,195 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x8
 	add x8, x8, x8
 	add x8, x8, x11
-	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-	add x14, x12, #1
-	movz x13, #0, lsl #0
-2244:
+	sub x14, x12, #1
+	mov v25.d[0], x30
 	ldr x2, [x16, #0]
 	ldr x3, [x17, #0]
-	mul x6, x4, x2
-	umulh x7, x4, x2
-	and x2, x2, x9
-	sub x7, x7, x2
-	mul x2, x5, x3
-	umulh x1, x5, x3
-	and x3, x3, x10
-	sub x1, x1, x3
-	lsr x3, x13, #63
-	sub x3, x3, #1
-	adds x6, x6, x2
-	adc x7, x7, x1
-	adds x6, x6, x13
-	sbc x13, x7, x3
-	str x6, [x8, #0]
+	mul x22, x4, x2
+	madd x22, x5, x3, x22
+	mul x26, x22, x28
+	mul x22, x6, x2
+	madd x22, x7, x3, x22
+	mul x27, x22, x28
+	movz x28, #0, lsl #0
+	movz x23, #0, lsl #0
+	movz x30, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x25, #0, lsl #0
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #0]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	cbz x14, 2222f
+2224:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x26, x22
+	mul x22, x26, x22
+	adds x22, x22, x23
+	adc x23, x21, x28
+	adds x1, x1, x22
+	adc x13, x13, x28
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	ldr x22, [x8, #8]
+	umulh x21, x27, x22
+	mul x22, x27, x22
+	adds x22, x22, x30
+	adc x30, x21, x28
+	adds x24, x24, x22
+	adc x25, x25, x28
+	str x1, [x16, #0]
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2244b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-2245:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
+	cbnz x14, 2224b
+	b 2223f
+2222:
+2223:
+	ldr x2, [x16, #8]
+	ldr x3, [x17, #8]
+	mul x1, x4, x2
+	mul x22, x5, x3
+	adds x1, x1, x22
+	umulh x21, x4, x2
+	umulh x22, x5, x3
+	adc x21, x21, x22
+	and x22, x2, x9
+	sub x21, x21, x22
+	and x22, x3, x10
+	sub x21, x21, x22
+	lsr x22, x13, #63
+	sub x22, x22, #1
+	adds x1, x1, x13
+	sbc x13, x21, x22
+	adds x1, x1, x23
+	adc x13, x13, x28
+	str x1, [x16, #0]
+	mul x24, x6, x2
+	mul x22, x7, x3
+	adds x24, x24, x22
+	umulh x21, x6, x2
+	umulh x22, x7, x3
+	adc x21, x21, x22
+	and x22, x2, x19
+	sub x21, x21, x22
+	and x22, x3, x20
+	sub x21, x21, x22
+	lsr x22, x25, #63
+	sub x22, x22, #1
+	adds x24, x24, x25
+	sbc x25, x21, x22
+	adds x24, x24, x30
+	adc x25, x25, x28
+	str x24, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2245b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-2246:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2246b
-	umov x5, v18.d[1]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	ldr x3, [x8, #0]
-	mul x1, x3, x5
-	lsl x6, x12, #3
-	add x6, x8, x6
-	ldr x3, [x6, #0]
-	lsr x3, x3, #63
-	movz x7, #0, lsl #0
-	sub x3, x7, x3
-	str x3, [x6, #8]
-	add x9, x11, #0
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x9
-	add x9, x9, x11
-	add x9, x9, x0
-	add x9, x9, #256
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x2, x7, x7
-2247:
-	ldr x3, [x17, #0]
-	mul x4, x1, x3
-	umulh x3, x1, x3
-	adcs x4, x4, x2
-	adc x2, x3, x7
-	ldr x3, [x16, #0]
-	adds x4, x4, x3
-	str x4, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2247b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x16, x16, #8
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-2248:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2248b
-	cbnz x15, 2238b
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x4
+	and x23, x23, x5
+	sub x13, x13, x22
+	sub x13, x13, x23
+	lsr x22, x2, #63
+	lsr x23, x3, #63
+	movz x21, #0, lsl #0
+	sub x22, x21, x22
+	sub x23, x21, x23
+	and x22, x22, x6
+	and x23, x23, x7
+	sub x25, x25, x22
+	sub x25, x25, x23
+	str x13, [x16, #0]
+	str x25, [x17, #0]
+	umov x30, v25.d[0]
+	umov x19, v20.d[0]
+	umov x20, v20.d[1]
+	umov x21, v21.d[0]
+	umov x22, v21.d[1]
+	umov x23, v22.d[0]
+	umov x24, v22.d[1]
+	umov x25, v23.d[0]
+	umov x26, v23.d[1]
+	umov x27, v24.d[0]
+	umov x28, v24.d[1]
+	cbnz x15, 2220b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -10455,14 +10282,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-2249:
+2225:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2249b
+	cbnz x14, 2225b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -10473,14 +10300,14 @@ vg_rsa_keygen_key:
 	add x14, x12, #1
 	movz x7, #0, lsl #0
 	adds x3, x15, x15
-2250:
+2226:
 	ldr x3, [x16, #0]
 	eor x3, x3, x15
 	adcs x3, x3, x7
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2250b
+	cbnz x14, 2226b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -10517,7 +10344,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-2251:
+2227:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -10527,7 +10354,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2251b
+	cbnz x14, 2227b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -10567,7 +10394,7 @@ vg_rsa_keygen_key:
 	add x5, x5, x11
 	add x5, x5, x0
 	add x5, x5, #256
-2252:
+2228:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -10577,7 +10404,7 @@ vg_rsa_keygen_key:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2252b
+	cbnz x14, 2228b
 	ldr x3, [x5, #0]
 	adc x3, x3, x7
 	str x3, [x5, #0]
@@ -10614,7 +10441,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2253:
+2229:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -10623,12 +10450,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2253b
+	cbnz x14, 2229b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2254:
+2230:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -10637,7 +10464,7 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2254b
+	cbnz x14, 2230b
 	add x16, x11, #0
 	add x16, x16, x16
 	add x16, x16, x11
@@ -10652,7 +10479,7 @@ vg_rsa_keygen_key:
 	lsl x15, x12, #4
 	sub x15, x15, x12
 	add x15, x15, #10
-2255:
+2231:
 	add x5, x11, #0
 	add x5, x5, x5
 	add x5, x5, x11
@@ -10682,14 +10509,14 @@ vg_rsa_keygen_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2256:
+2232:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2256b
+	cbnz x14, 2232b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -10697,7 +10524,7 @@ vg_rsa_keygen_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2257:
+2233:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -10706,12 +10533,12 @@ vg_rsa_keygen_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2257b
+	cbnz x14, 2233b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2258:
+2234:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -10720,11 +10547,22 @@ vg_rsa_keygen_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2258b
+	cbnz x14, 2234b
 	sub x15, x15, #1
-	cbnz x15, 2255b
+	cbnz x15, 2231b
 	umov x1, v19.d[0]
 	umov x2, v19.d[1]
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
 	add x8, x11, #0
 	add x8, x8, x8
 	add x8, x8, x11
@@ -10740,11 +10578,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2259:
+2235:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2259b
+	cbnz x14, 2235b
 	add x12, x3, #0
 	add x8, x11, #0
 	add x8, x8, x8
@@ -10763,11 +10601,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2260:
+2236:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2260b
+	cbnz x14, 2236b
 	add x12, x3, #0
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
@@ -10782,11 +10620,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2261:
+2237:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2261b
+	cbnz x14, 2237b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -10816,7 +10654,7 @@ vg_rsa_keygen_key:
 	add x17, x17, x17
 	add x17, x17, x0
 	add x17, x17, #256
-2262:
+2238:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -10824,7 +10662,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2262b
+	cbnz x14, 2238b
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	subs x3, x9, x4
@@ -10845,11 +10683,11 @@ vg_rsa_keygen_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2263:
+2239:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2263b
+	cbnz x14, 2239b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -10865,13 +10703,13 @@ vg_rsa_keygen_key:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2264:
+2240:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2264b
+	cbnz x14, 2240b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -10880,6 +10718,534 @@ vg_rsa_keygen_key:
 	add x8, x8, x8
 	add x8, x8, x11
 	add x8, x8, x8
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2241:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2241b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+	movz x3, #0, lsl #0
+	str x3, [x16, #0]
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	movz x9, #0, lsl #0
+	add x14, x12, #0
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x17
+	add x17, x17, x0
+	add x17, x17, #256
+2242:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	eor x3, x3, x4
+	orr x9, x9, x3
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2242b
+	movz x7, #0, lsl #0
+	movz x4, #1, lsl #0
+	subs x3, x9, x4
+	sub x4, x7, #1
+	csel x15, x7, x4, hs
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	ldr x3, [x16, #0]
+	movz x4, #1, lsl #0
+	and x4, x15, x4
+	orr x3, x3, x4
+	str x3, [x16, #0]
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2243:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2243b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x0
+	add x17, x17, #256
+	add x14, x12, #0
+2244:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2244b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2245:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2245b
+	lsl x6, x12, #6
+2246:
+	movz x7, #0, lsl #0
+	add x14, x12, #0
+	adds x3, x7, x7
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+2247:
+	ldr x3, [x16, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2247b
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x14, x12, #1
+2248:
+	ldr x3, [x16, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2248b
+	movz x7, #0, lsl #0
+	add x14, x12, #0
+	subs x3, x7, x7
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x17
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x0
+	add x17, x17, #256
+	add x13, x11, #0
+	add x13, x13, x13
+	add x13, x13, x13
+	add x13, x13, x13
+	add x13, x13, x0
+	add x13, x13, #256
+2249:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x13, x13, #8
+	sub x14, x14, #1
+	cbnz x14, 2249b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	str x3, [x13, #0]
+	sub x4, x7, #1
+	csel x15, x4, x7, hs
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x0
+	add x17, x17, #256
+	add x14, x12, #1
+	movz x3, #1, lsl #0
+	subs x3, x15, x3
+2250:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	csel x4, x3, x4, hs
+	str x4, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2250b
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+	ldr x3, [x16, #0]
+	movz x4, #1, lsl #0
+	and x4, x4, x15
+	orr x3, x3, x4
+	str x3, [x16, #0]
+	sub x6, x6, #1
+	cbnz x6, 2246b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x8
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2251:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2251b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x17
+	add x17, x17, x0
+	add x17, x17, #256
+	add x14, x12, #0
+2252:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2252b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x8
+	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2253:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2253b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x17
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x0
+	add x17, x17, #256
+	add x14, x12, #0
+2254:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2254b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x8
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2255:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2255b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+	movz x3, #0, lsl #0
+	str x3, [x16, #0]
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	movz x9, #0, lsl #0
+	add x14, x12, #0
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x17
+	add x17, x17, x0
+	add x17, x17, #256
+2256:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	eor x3, x3, x4
+	orr x9, x9, x3
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2256b
+	movz x7, #0, lsl #0
+	movz x4, #1, lsl #0
+	subs x3, x9, x4
+	sub x4, x7, #1
+	csel x15, x7, x4, hs
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	ldr x3, [x16, #0]
+	movz x4, #1, lsl #0
+	and x4, x15, x4
+	orr x3, x3, x4
+	str x3, [x16, #0]
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2257:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2257b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x0
+	add x17, x17, #256
+	add x14, x12, #0
+2258:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2258b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x0
+	add x8, x8, #256
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2259:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2259b
+	lsl x6, x12, #6
+2260:
+	movz x7, #0, lsl #0
+	add x14, x12, #0
+	adds x3, x7, x7
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+2261:
+	ldr x3, [x16, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2261b
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x14, x12, #1
+2262:
+	ldr x3, [x16, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2262b
+	movz x7, #0, lsl #0
+	add x14, x12, #0
+	subs x3, x7, x7
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x11
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x17
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x0
+	add x17, x17, #256
+	add x13, x11, #0
+	add x13, x13, x13
+	add x13, x13, x13
+	add x13, x13, x13
+	add x13, x13, x0
+	add x13, x13, #256
+2263:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x13, x13, #8
+	sub x14, x14, #1
+	cbnz x14, 2263b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	str x3, [x13, #0]
+	sub x4, x7, #1
+	csel x15, x4, x7, hs
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+	add x17, x11, #0
+	add x17, x17, x17
+	add x17, x17, x11
+	add x17, x17, x0
+	add x17, x17, #256
+	add x14, x12, #1
+	movz x3, #1, lsl #0
+	subs x3, x15, x3
+2264:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	csel x4, x3, x4, hs
+	str x4, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2264b
+	add x16, x11, #0
+	add x16, x16, x16
+	add x16, x16, x0
+	add x16, x16, #256
+	ldr x3, [x16, #0]
+	movz x4, #1, lsl #0
+	and x4, x4, x15
+	orr x3, x3, x4
+	str x3, [x16, #0]
+	sub x6, x6, #1
+	cbnz x6, 2260b
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x8, x11, #0
+	add x8, x8, x8
+	add x8, x8, x8
+	add x8, x8, x11
+	add x8, x8, x8
+	add x8, x8, x11
 	add x8, x8, x0
 	add x8, x8, #256
 	movz x7, #0, lsl #0
@@ -10890,534 +11256,6 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	sub x14, x14, #1
 	cbnz x14, 2265b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	movz x3, #0, lsl #0
-	str x3, [x16, #0]
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	movz x9, #0, lsl #0
-	add x14, x12, #0
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-2266:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	eor x3, x3, x4
-	orr x9, x9, x3
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2266b
-	movz x7, #0, lsl #0
-	movz x4, #1, lsl #0
-	subs x3, x9, x4
-	sub x4, x7, #1
-	csel x15, x7, x4, hs
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	ldr x3, [x16, #0]
-	movz x4, #1, lsl #0
-	and x4, x15, x4
-	orr x3, x3, x4
-	str x3, [x16, #0]
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2267:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2267b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-2268:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2268b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2269:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2269b
-	lsl x6, x12, #6
-2270:
-	movz x7, #0, lsl #0
-	add x14, x12, #0
-	adds x3, x7, x7
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-2271:
-	ldr x3, [x16, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2271b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x14, x12, #1
-2272:
-	ldr x3, [x16, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2272b
-	movz x7, #0, lsl #0
-	add x14, x12, #0
-	subs x3, x7, x7
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x17
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x13, x11, #0
-	add x13, x13, x13
-	add x13, x13, x13
-	add x13, x13, x13
-	add x13, x13, x0
-	add x13, x13, #256
-2273:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 2273b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	str x3, [x13, #0]
-	sub x4, x7, #1
-	csel x15, x4, x7, hs
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-	movz x3, #1, lsl #0
-	subs x3, x15, x3
-2274:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	csel x4, x3, x4, hs
-	str x4, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2274b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	ldr x3, [x16, #0]
-	movz x4, #1, lsl #0
-	and x4, x4, x15
-	orr x3, x3, x4
-	str x3, [x16, #0]
-	sub x6, x6, #1
-	cbnz x6, 2270b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2275:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2275b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-2276:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2276b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2277:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2277b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x17
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-2278:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2278b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2279:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2279b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	movz x3, #0, lsl #0
-	str x3, [x16, #0]
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	movz x9, #0, lsl #0
-	add x14, x12, #0
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-2280:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	eor x3, x3, x4
-	orr x9, x9, x3
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2280b
-	movz x7, #0, lsl #0
-	movz x4, #1, lsl #0
-	subs x3, x9, x4
-	sub x4, x7, #1
-	csel x15, x7, x4, hs
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	ldr x3, [x16, #0]
-	movz x4, #1, lsl #0
-	and x4, x15, x4
-	orr x3, x3, x4
-	str x3, [x16, #0]
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2281:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2281b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #0
-2282:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2282b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2283:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2283b
-	lsl x6, x12, #6
-2284:
-	movz x7, #0, lsl #0
-	add x14, x12, #0
-	adds x3, x7, x7
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-2285:
-	ldr x3, [x16, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2285b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x14, x12, #1
-2286:
-	ldr x3, [x16, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2286b
-	movz x7, #0, lsl #0
-	add x14, x12, #0
-	subs x3, x7, x7
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x11
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x17
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x13, x11, #0
-	add x13, x13, x13
-	add x13, x13, x13
-	add x13, x13, x13
-	add x13, x13, x0
-	add x13, x13, #256
-2287:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 2287b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	str x3, [x13, #0]
-	sub x4, x7, #1
-	csel x15, x4, x7, hs
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	add x17, x11, #0
-	add x17, x17, x17
-	add x17, x17, x11
-	add x17, x17, x0
-	add x17, x17, #256
-	add x14, x12, #1
-	movz x3, #1, lsl #0
-	subs x3, x15, x3
-2288:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	csel x4, x3, x4, hs
-	str x4, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2288b
-	add x16, x11, #0
-	add x16, x16, x16
-	add x16, x16, x0
-	add x16, x16, #256
-	ldr x3, [x16, #0]
-	movz x4, #1, lsl #0
-	and x4, x4, x15
-	orr x3, x3, x4
-	str x3, [x16, #0]
-	sub x6, x6, #1
-	cbnz x6, 2284b
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x8, x11, #0
-	add x8, x8, x8
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x8
-	add x8, x8, x11
-	add x8, x8, x0
-	add x8, x8, #256
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2289:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2289b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x9, x11, #0
@@ -11436,14 +11274,14 @@ vg_rsa_keygen_key:
 	lsr x12, x12, #1
 	add x13, x12, #0
 	movz x7, #0, lsl #0
-2290:
+2266:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2291:
+2267:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -11455,7 +11293,7 @@ vg_rsa_keygen_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2291b
+	cbnz x14, 2267b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -11465,7 +11303,7 @@ vg_rsa_keygen_key:
 	str x3, [x16, #8]
 	add x8, x8, #8
 	sub x13, x13, #1
-	cbnz x13, 2290b
+	cbnz x13, 2266b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -11540,21 +11378,21 @@ vg_rsa_keygen_key:
 	ldr x15, [x0, #248]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2292:
+2268:
 	and x5, x2, x6
-	cbz x5, 2293f
-	b 2294f
-2293:
+	cbz x5, 2269f
+	b 2270f
+2269:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2294:
+2270:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2292b
+	cbnz x9, 2268b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -11571,21 +11409,21 @@ vg_rsa_keygen_key:
 	ldr x15, [x0, #248]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2295:
+2271:
 	and x5, x2, x6
-	cbz x5, 2296f
-	b 2297f
-2296:
+	cbz x5, 2272f
+	b 2273f
+2272:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2297:
+2273:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2295b
+	cbnz x9, 2271b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x0, #256
@@ -11595,21 +11433,21 @@ vg_rsa_keygen_key:
 	ldr x15, [x0, #248]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2298:
+2274:
 	and x5, x2, x6
-	cbz x5, 2299f
-	b 2300f
-2299:
+	cbz x5, 2275f
+	b 2276f
+2275:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2300:
+2276:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2298b
+	cbnz x9, 2274b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -11621,21 +11459,21 @@ vg_rsa_keygen_key:
 	ldr x15, [x0, #248]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2301:
+2277:
 	and x5, x2, x6
-	cbz x5, 2302f
-	b 2303f
-2302:
+	cbz x5, 2278f
+	b 2279f
+2278:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2303:
+2279:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2301b
+	cbnz x9, 2277b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -11650,21 +11488,21 @@ vg_rsa_keygen_key:
 	ldr x15, [x0, #248]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2304:
+2280:
 	and x5, x2, x6
-	cbz x5, 2305f
-	b 2306f
-2305:
+	cbz x5, 2281f
+	b 2282f
+2281:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2306:
+2282:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2304b
+	cbnz x9, 2280b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -11678,21 +11516,21 @@ vg_rsa_keygen_key:
 	ldr x15, [x0, #248]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2307:
+2283:
 	and x5, x2, x6
-	cbz x5, 2308f
-	b 2309f
-2308:
+	cbz x5, 2284f
+	b 2285f
+2284:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2309:
+2285:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2307b
+	cbnz x9, 2283b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -11708,83 +11546,83 @@ vg_rsa_keygen_key:
 	ldr x15, [x0, #248]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2310:
+2286:
 	and x5, x2, x6
-	cbz x5, 2311f
-	b 2312f
-2311:
+	cbz x5, 2287f
+	b 2288f
+2287:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2312:
+2288:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2310b
+	cbnz x9, 2286b
 	ldr x3, [x0, #248]
 	movz x4, #1, lsl #0
 	and x0, x3, x4
-	b 2223f
-2222:
+	b 2205f
+2204:
 	ldr x1, [x0, #128]
 	ldr x2, [x0, #144]
 	movz x3, #0, lsl #0
-2313:
+2289:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2313b
+	cbnz x2, 2289b
 	ldr x1, [x0, #136]
 	ldr x2, [x0, #144]
 	movz x3, #0, lsl #0
-2314:
+2290:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2314b
+	cbnz x2, 2290b
 	ldr x1, [x0, #168]
 	ldr x2, [x0, #184]
 	movz x3, #0, lsl #0
-2315:
+2291:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2315b
+	cbnz x2, 2291b
 	ldr x1, [x0, #192]
 	ldr x2, [x0, #184]
 	movz x3, #0, lsl #0
-2316:
+2292:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2316b
+	cbnz x2, 2292b
 	ldr x1, [x0, #200]
 	ldr x2, [x0, #184]
 	movz x3, #0, lsl #0
-2317:
+2293:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2317b
+	cbnz x2, 2293b
 	ldr x1, [x0, #208]
 	ldr x2, [x0, #184]
 	movz x3, #0, lsl #0
-2318:
+2294:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2318b
+	cbnz x2, 2294b
 	ldr x1, [x0, #216]
 	ldr x2, [x0, #184]
 	movz x3, #0, lsl #0
-2319:
+2295:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2319b
+	cbnz x2, 2295b
 	movz x0, #2, lsl #0
-2223:
+2205:
 	ret
 	.p2align 6

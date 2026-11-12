@@ -256,6 +256,15 @@ divsteps). -/
 
 open InvBatch
 
+/-- `x19`–`x28` into the lanes of `v20`–`v24` (callee-saved, the fused
+batch's), and back. -/
+def hiRegs : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
+def hiV : List VReg := [.v20, .v21, .v22, .v23, .v24]
+def saveHi : List Instr :=
+  (List.range 10).map fun i => .vop (.ins .d2 (hiV.getD (i / 2) .v20) (i % 2) (hiRegs.getD i .x19))
+def restoreHi : List Instr :=
+  (List.range 10).map fun i => .umov .x (hiRegs.getD i .x19) (hiV.getD (i / 2) .v20) (i % 2)
+
 /-- `x14 := n + 1`. -/
 def cntL : Instr := .addImm .x .x14 .x12 1
 
@@ -269,28 +278,6 @@ def zeroTop (j : Nat) : List Instr := topAt j .x16 ++ [movi .x3 0, st .x3 .x16]
 def signMask (j : Nat) : List Instr :=
   topAt j .x16 ++ [ld .x3 .x16, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x15 .x7 .x3]
 
-/-- `[o] := x4 [x] + x5 [y]` modulo `2^(64 (n + 1))`, the coefficients
-from the lanes of `cv`. -/
-def rowP (cv : VReg) (iX iY iO : Nat) : Prog isa :=
-  .seq (.block ([.umov .x .x4 cv 0, .umov .x .x5 cv 1] ++ coefMasks ++ base iX .x16 ++ base iY .x17 ++
-      base iO .x8 ++ ([cntL, movi .x13 0] : List Instr)))
-    (countLoop .x14 rowBody)
-
-/-- `[o] := [s] >> 59`, `n + 1` words. -/
-def shrP (iS iO : Nat) : Prog isa :=
-  .seq (.block (base iS .x16 ++ base iO .x17 ++ ([mov .x14 .x12] : List Instr)))
-    (.seq (countLoop .x14 shr59Body) (.block shrTop))
-
-/-- `[o] := ([a] + k m) / 2^64` for `k = a₀ (-m⁻¹) mod 2^64`, `[a]` of `n + 1`
-words sign-extended to `n + 2`. -/
-def mredP (iA iM iO : Nat) : List (Prog isa) := [
-  .block ([.umov .x .x5 .v18 1] ++ base iA .x8 ++ ([ld .x3 .x8, .mul .x .x1 .x3 .x5, .lsl .x .x6 .x12 3,
-    .add .x .x6 .x8 .x6, ld .x3 .x6, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x3 .x7 .x3, st .x3 .x6 8] : List Instr) ++
-    base iM .x9),
-  mulAddRow,
-  .block (base iA .x16 ++ ([next .x16] : List Instr) ++ base iO .x17 ++ ([cntL] : List Instr)),
-  countLoop .x14 copyBody]
-
 /-- A batch's start: `d` and the low words of `f` and `g`, `59` divsteps,
 `d` and the matrix into `v18`, `v16`, `v17`, and the batch counted. -/
 def batchHead (iF iG : Nat) : List Instr :=
@@ -298,12 +285,33 @@ def batchHead (iF iG : Nat) : List Instr :=
   [.vop (.ins .d2 .v18 0 .x1), .vop (.ins .d2 .v16 0 .x4), .vop (.ins .d2 .v16 1 .x5),
     .vop (.ins .d2 .v17 0 .x6), .vop (.ins .d2 .v17 1 .x7)] ++ unpackW ++ [.subImm .x .x15 .x15 1]
 
+/-- `(f, g) := (u f + v g, q f + r g) / 2^59` in one pass. -/
+def fgPass (iF iG : Nat) : Prog isa :=
+  .seq (.block (base iF .x16 ++ base iG .x17 ++ ([ld .x2 .x16, ld .x3 .x17, movi .x13 0, movi .x25 0] : List Instr) ++
+      fgRow .x4 .x5 .x9 .x10 .x13 .x26 ++ fgRow .x6 .x7 .x19 .x20 .x25 .x27 ++ ([mov .x14 .x12] : List Instr)))
+    (.seq (countLoop .x14 fgBody)
+      (.block (topFix .x13 .x4 .x5 ++ topFix .x25 .x6 .x7 ++
+        [.extr .x .x22 .x13 .x26 59, st .x22 .x16, .extr .x .x22 .x25 .x27 59, st .x22 .x17])))
+
+/-- `(a, b) := ((u a + v b + k₁ m) / 2^64, (q a + r b + k₂ m) / 2^64)` in one
+pass, `kᵢ` the multiples of `m` that clear the low words: words `0`, then
+`1` to `n - 1`, then `n` (`m`'s `n` words only); `x30` kept in `v25`
+meanwhile. -/
+def dePass (iA iB iM : Nat) : Prog isa :=
+  .seq (.block ([.umov .x .x28 .v18 1] ++ base iA .x16 ++ base iB .x17 ++ base iM .x8 ++ [.subImm .x .x14 .x12 1]))
+  (.seq (.block [.vop (.ins .d2 .v25 0 .x30)])
+  (.seq (.block (([ld .x2 .x16, ld .x3 .x17, .mul .x .x22 .x4 .x2, .madd .x .x22 .x5 .x3 .x22, .mul .x .x26 .x22 .x28,
+        .mul .x .x22 .x6 .x2, .madd .x .x22 .x7 .x3 .x22, .mul .x .x27 .x22 .x28,
+        movi .x28 0, movi .x23 0, movi .x30 0, movi .x13 0, movi .x25 0] : List Instr) ++
+      deRow .x4 .x5 .x9 .x10 .x26 .x23 .x13 .x1 0 ++ deRow .x6 .x7 .x19 .x20 .x27 .x30 .x25 .x24 0))
+  (.seq (.ite (.zero .x .x14) (.block []) (countLoop .x14 deBody))
+  (.seq (.block (deTop ++ topFix .x13 .x4 .x5 ++ topFix .x25 .x6 .x7 ++ [st .x13 .x16, st .x25 .x17]))
+    (.block [.umov .x .x30 .v25 0])))))
+
 /-- A batch: `(f, g) := (u f + v g, q f + r g) / 2^59` and
 `(a, b) := (mredRaw (u a + v b), mredRaw (q a + r b))`. -/
-def batch (iF iG iA iB iT iM : Nat) : Prog isa := seqs ([
-  .block (batchHead iF iG),
-  rowP .v16 iF iG iT, rowP .v17 iF iG iG, shrP iT iF, shrP iG iG,
-  rowP .v16 iA iB iT, rowP .v17 iA iB iB] ++ mredP iT iM iA ++ mredP iB iM iB)
+def batch (iF iG iA iB iM : Nat) : Prog isa := seqs [
+  .block saveHi, .block (batchHead iF iG ++ coefMasks4), fgPass iF iG, dePass iA iB iM, .block restoreHi]
 
 /-- The start: `x1`, `x2` saved, `f = m` (its word `n` cleared),
 `g = a + (m if a is even)`, `a = 0`, `b = 1`, `-m⁻¹` and `d = 1` into
@@ -352,22 +360,24 @@ def dblP (iA iM iT iS : Nat) : Prog isa :=
 def batchFinish (iF iG iA iM iT : Nat) : List (Prog isa) :=
   [.block (signMask iF), cnegP iF, cnegP iA] ++ addIfNeg iA iM ++ addIfNeg iA iM ++ csubP iA iM iT ++
   [.seq (.block dblCount) (.loop (.seq (dblP iA iM iT iG) (.block [.subImm .x .x15 .x15 1])) (.nonzero .x .x15)),
-   .block [.umov .x .x1 .v19 0, .umov .x .x2 .v19 1]]
+   .block [.umov .x .x1 .v19 0, .umov .x .x2 .v19 1,
+      .vop (.movi0 .v16), .vop (.movi0 .v17), .vop (.movi0 .v18), .vop (.movi0 .v19), .vop (.movi0 .v20), .vop (.movi0 .v21), .vop (.movi0 .v22), .vop (.movi0 .v23), .vop (.movi0 .v24), .vop (.movi0 .v25), .vop (.movi0 .v26)]]
 
 /-- The batched inverse at the width in `x12`. -/
 def inverseB (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
-  seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
+  seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iM) (.nonzero .x .x15)] ++
     batchFinish iV iU iX₂ iM iT)
 
 /-- `batchFinish` without the doublings: `v := |f|`, `x₂ := ±a mod m`, and
 `x1`, `x2` restored; the caller multiplies `x₂` by `2^(5 B)`. -/
 def batchFinishS (iF iA iM iT : Nat) : List (Prog isa) :=
   [.block (signMask iF), cnegP iF, cnegP iA] ++ addIfNeg iA iM ++ addIfNeg iA iM ++ csubP iA iM iT ++
-  [.block [.umov .x .x1 .v19 0, .umov .x .x2 .v19 1]]
+  [.block [.umov .x .x1 .v19 0, .umov .x .x2 .v19 1,
+      .vop (.movi0 .v16), .vop (.movi0 .v17), .vop (.movi0 .v18), .vop (.movi0 .v19), .vop (.movi0 .v20), .vop (.movi0 .v21), .vop (.movi0 .v22), .vop (.movi0 .v23), .vop (.movi0 .v24), .vop (.movi0 .v25), .vop (.movi0 .v26)]]
 
 /-- `inverseB` without the doublings (`batchFinishS`). -/
 def inverseBS (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
-  seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iT iM) (.nonzero .x .x15)] ++
+  seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iM) (.nonzero .x .x15)] ++
     batchFinishS iV iX₂ iM iT)
 
 /-- `inverse u v x₁ x₂ m t`: `[v] = gcd(a, m)` and `[x₂] a ≡ [v] (mod m)`
