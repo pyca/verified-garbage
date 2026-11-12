@@ -30,35 +30,45 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 
+variable {pc : Bool}
+
 /-- `PostAt` is kept by code writing registers `Post` does not keep. -/
-theorem PostAt.only {s t u : State} (h : DPre s) (hp : PostAt s t) {rs : List Reg} (o : Only rs t u)
+theorem PostAt.only {s t u : State} (h : DPre pc s) (hp : PostAt s t) {rs : List Reg} (o : Only rs t u)
     (hrs : ∀ r ∈ rs, r ∉ kept := by decide) (h7 : Reg.s7 ∉ rs := by decide) : PostAt s u :=
   let ⟨_, _, P⟩ := hp
   ⟨_, _, P.keep h o.keep (ws := []) (by rw [o.mem]; exact Frame.refl _ _) (fun r hr => nomatch hr) hrs h7⟩
 
 section
-variable {e : Env}
+variable {e : Env pc}
 
 /-- After the frame's allocation. -/
 def PEnt (s u : State) : Prop := u = allocd frameBytes s
 
-theorem setup_ct : RelCT isa (Rel e PEnt) (.block setup) (Rel e AtCall) :=
-  rel_step [] (by taint_decide)
-    (fun a b ha hb => ⟨by rw [ha, hb]; show e.s₁.sp - _ = e.s₂.sp - _; rw [e.S.sp], fun _ h => nomatch h⟩)
-    fun _ _ h hu => hu ▸ setup_ok h
+theorem setup_ct : RelCT isa (Rel e PEnt) (.block (setup pc)) (Rel e (AtCall pc)) := by
+  have hpin : ∀ a b, PEnt e.s₁ a → PEnt e.s₂ b → AgreeOn [] a b := fun a b ha hb =>
+    ⟨by rw [ha, hb]; show e.s₁.sp - _ = e.s₂.sp - _; rw [e.S.sp], fun _ h => nomatch h⟩
+  cases pc
+  · exact rel_step [] (by taint_decide) hpin fun _ _ h hu => hu ▸ setup_ok h
+  · exact rel_step [] (by taint_decide) hpin fun _ _ h hu => hu ▸ setup_ok h
 
 omit e in
-theorem bytes_call {s u : State} (A : AtCall s u) {p : Addr} {n : Nat} (hd : Region.Disjoint ⟨p, n⟩ (kR s))
+theorem bytes_call {s u : State} (A : AtCall pc s u) {p : Addr} {n : Nat} (hd : Region.Disjoint ⟨p, n⟩ (kR s))
     (hl : n ≤ 2 ^ 64) : Spec.Rsa.bytesAt u.mem p n = Spec.Rsa.bytesAt s.mem p n :=
   bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
 
-theorem priv_pub {u₁ u₂ : State} (A₁ : AtCall e.s₁ u₁) (A₂ : AtCall e.s₂ u₂) :
-    (Proof.Rsa.privateCheckedContract RISCV64.abi Impl.Rsa.RISCV64.Priv.frameBytes).pub (callE e.s₁ u₁)
-      (callE e.s₂ u₂) := by
-  have m : ∀ {s u : State}, (callE s u).mem = u.mem := fun {_ _} => rfl
-  refine Rsa.RISCV64.Priv.pub_of (by rw [show (callE e.s₁ u₁).sp = fb e.s₁ from A₁.sp,
-    show (callE e.s₂ u₂).sp = fb e.s₂ from A₂.sp, e.fb_eq]) (fun r hr => ?_)
-    (fun i hi => by rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, e.arg (by omega)]) ?_ ?_
+/-- The public data at the call, from the entry states'. -/
+theorem priv_facts {u₁ u₂ : State} (A₁ : AtCall pc e.s₁ u₁) (A₂ : AtCall pc e.s₂ u₂) :
+    (callE pc e.s₁ u₁).sp = (callE pc e.s₂ u₂).sp ∧
+    (∀ r ∈ argRegs, (callE pc e.s₁ u₁).gpr r = (callE pc e.s₂ u₂).gpr r) ∧
+    (∀ i < nCallArgs pc, stackArg (callE pc e.s₁ u₁) i = stackArg (callE pc e.s₂ u₂) i) ∧
+    Spec.Rsa.bytesAt (callE pc e.s₁ u₁).mem ((callE pc e.s₁ u₁).gpr .a2) ((callE pc e.s₁ u₁).gpr .a3).toNat =
+      Spec.Rsa.bytesAt (callE pc e.s₂ u₂).mem ((callE pc e.s₂ u₂).gpr .a2) ((callE pc e.s₂ u₂).gpr .a3).toNat ∧
+    Spec.Rsa.bytesAt (callE pc e.s₁ u₁).mem ((callE pc e.s₁ u₁).gpr .a4) ((callE pc e.s₁ u₁).gpr .a5).toNat =
+      Spec.Rsa.bytesAt (callE pc e.s₂ u₂).mem ((callE pc e.s₂ u₂).gpr .a4) ((callE pc e.s₂ u₂).gpr .a5).toNat := by
+  have m : ∀ {s u : State}, (callE pc s u).mem = u.mem := fun {_ _} => rfl
+  refine ⟨by rw [show (callE pc e.s₁ u₁).sp = fb e.s₁ from A₁.sp,
+    show (callE pc e.s₂ u₂).sp = fb e.s₂ from A₂.sp, e.fb_eq], fun r hr => ?_,
+    fun i hi => by rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, e.S.arg _ (nCall_nA hi)], ?_, ?_⟩
   · rw [callE_gpr _ _ (fun h => by revert r; decide), callE_gpr _ _ (fun h => by revert r; decide)]
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -79,14 +89,53 @@ theorem priv_pub {u₁ u₂ : State} (A₁ : AtCall e.s₁ u₁) (A₂ : AtCall 
       bytes_call A₁ e.h₁.ke.symm (by have := e.h₁.we; omega), bytes_call A₂ e.h₂.ke.symm (by have := e.h₂.we; omega),
       e.S.e]
 
-theorem priv_ct : RelCT isa (Rel e AtCall) privCall (Rel e AtRet) := by
-  refine rel_post ?_ fun s u h A => call_ok h A fun v hv => hv
-  unfold privCall
-  exact RelCT.callEx (k := Rsa.RISCV64.Priv.fnContract) Rsa.RISCV64.Priv.code_correct Rsa.RISCV64.Priv.code_ct
-    fun u₁ u₂ ⟨A₁, A₂⟩ => ⟨callRd e.s₁, callWr e.s₁, callRd e.s₂, callWr e.s₂,
-      Rsa.RISCV64.Priv.pre_of_preP (preP_entry e.h₁ A₁), Rsa.RISCV64.Priv.pre_of_preP (preP_entry e.h₂ A₂),
-      priv_pub A₁ A₂, (call_covers e.h₁ A₁).1, (call_covers e.h₁ A₁).2, (call_covers e.h₂ A₂).1,
-      (call_covers e.h₂ A₂).2⟩
+omit e in
+/-- With `pc`, what the call may leak of `pre`, as on entry. -/
+theorem pre_leak {s t : State} (X : PreX s) (A : AtCall true s t) :
+    Spec.Rsa.privatePrecomputedLeak (callE true s t).mem (stackArg (callE true s t) 12)
+        ((callE true s t).gpr .a3).toNat =
+      Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 15) (s.gpr .a4).toNat := by
+  have pwl : Spec.Rsa.precomputedWords (s.gpr .a4).toNat ≤ (stackArg s 16).toNat := by
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+  simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide),
+    callE_gpr (pc := true) s t (r := .a3), A.a3]
+  congr 1
+  have subPre : Region.Sub ⟨stackArg s 15, 8 * Spec.Rsa.precomputedWords (s.gpr .a4).toNat⟩ (preR s) :=
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+  exact VG.Proof.Rsa.RISCV64.Priv.words_of_frame A.mem (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+
+theorem priv_rel : RelCT isa (Rel e (AtCall pc)) (privCall pc) fun _ _ => True := by
+  cases pc with
+  | false =>
+    exact RelCT.callEx (k := Rsa.RISCV64.Priv.fnContract) Rsa.RISCV64.Priv.code_correct Rsa.RISCV64.Priv.code_ct
+      fun u₁ u₂ ⟨A₁, A₂⟩ => by
+        obtain ⟨hsp, hr, ha, hn, he⟩ := priv_facts A₁ A₂
+        exact ⟨callRd false e.s₁, callWr e.s₁, callRd false e.s₂, callWr e.s₂,
+          Rsa.RISCV64.Priv.pre_of_preP (preP_entry e.h₁ A₁), Rsa.RISCV64.Priv.pre_of_preP (preP_entry e.h₂ A₂),
+          Rsa.RISCV64.Priv.pub_of hsp hr ha hn he, (call_covers e.h₁ A₁).1, (call_covers e.h₁ A₁).2,
+          (call_covers e.h₂ A₂).1, (call_covers e.h₂ A₂).2⟩
+  | true =>
+    exact RelCT.callEx (k := Rsa.RISCV64.Priv.fnContractP) Rsa.RISCV64.Priv.codeP_correct Rsa.RISCV64.Priv.codeP_ct
+      fun u₁ u₂ ⟨A₁, A₂⟩ => by
+        obtain ⟨hsp, hr, ha, hn, he⟩ := priv_facts A₁ A₂
+        have X₁ := e.x₁ rfl
+        have X₂ := e.x₂ rfl
+        exact ⟨callRd true e.s₁, callWr e.s₁, callRd true e.s₂, callWr e.s₂,
+          Rsa.RISCV64.Priv.pre_of_prePX (preP_entry e.h₁ A₁) (preX_entry e.h₁ X₁ A₁),
+          Rsa.RISCV64.Priv.pre_of_prePX (preP_entry e.h₂ A₂) (preX_entry e.h₂ X₂ A₂),
+          Rsa.RISCV64.Priv.pub_ofP hsp hr ha hn he
+            (by rw [pre_leak X₁ A₁, pre_leak X₂ A₂, e.S.leak rfl]),
+          (call_covers e.h₁ A₁).1, (call_covers e.h₁ A₁).2, (call_covers e.h₂ A₂).1, (call_covers e.h₂ A₂).2⟩
+
+theorem priv_ct : RelCT isa (Rel e (AtCall pc)) (privCall pc) (Rel e AtRet) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨ht, -⟩ := priv_rel _ _ _ _ _ _ hp e₁ e₂
+  obtain ⟨_, u₁, x₁, y₁⟩ := call_ok e.h₁ e.x₁ hp.1 (Q := AtRet e.s₁) fun v hv => hv
+  obtain ⟨_, u₂, x₂, y₂⟩ := call_ok e.h₂ e.x₂ hp.2 (Q := AtRet e.s₂) fun v hv => hv
+  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
+  exact ⟨ht, y₁, y₂⟩
 
 /-! ## `D` -/
 

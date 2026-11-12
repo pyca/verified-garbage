@@ -63,11 +63,11 @@ theorem Same.refl (t : State) : Same t t := ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ 
 theorem maskInit_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block maskInit) t fun u => Same t u ∧ u.gpr .x9 = slot t Q oK - BitVec.ofNat 64 11 ∧
       u.gpr .x8 = 0 := by
-  have h120 := h 120 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [maskInit, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, Size.bits,
     BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp, oK, Option.map_some,
-    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, h120]
+    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl⟩
 
 theorem dbl (p : Nat) (h1 : 1 ≤ p) (h : p * 2 < 2 ^ 34) :
@@ -141,12 +141,12 @@ theorem alBody_ok {t : State} (h0 : InRegions (t.rd ++ t.wr) (t.gpr .x11 + BitVe
 theorem alInit_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block alInit) t fun u => Same t u ∧ u.gpr .x11 = slot t Q oScr + BitVec.ofNat 64 sCL ∧
       u.gpr .x12 = BitVec.ofNat 64 128 ∧ u.gpr .x13 = 0 ∧ u.gpr .x8 = t.gpr .x8 ∧ u.gpr .x9 = t.gpr .x9 := by
-  have h168 := h 168 (by decide)
+  have h184 := h 184 (by decide)
   apply WP.of_runBlock
   simp only [alInit, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, sCL, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write,
-    reduceCtorEq, ite_false, h168]
+    reduceCtorEq, ite_false, h184]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl,
     trivial⟩
 

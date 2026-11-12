@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecSetup
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPre
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivVerified
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -22,80 +23,87 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 
+variable {pc : Bool}
+
 /-- `out`, of `k` bytes. -/
 abbrev outR (s : State) : Region := ⟨s.gpr .r3, (s.gpr .r7).toNat⟩
 
-theorem outR_eq {s : State} (h : DPre s) : outR s = oR s := by simp only [outR, oR, h.h4]
+theorem outR_eq {s : State} (h : DPre pc s) : outR s = oR s := by simp only [outR, oR, h.h4]
 
 /-- The input, of `k` bytes. -/
 abbrev inR (s : State) : Region := ⟨stackArg s 1, (s.gpr .r7).toNat⟩
 
-theorem inR_eq {s : State} (h : DPre s) : inR s = iR s := by simp only [inR, iR, h.hi]
+theorem inR_eq {s : State} (h : DPre pc s) : inR s = iR s := by simp only [inR, iR, h.hi]
 
 /-- The regions the call reads and writes. -/
-abbrev callRd (s : State) : List Region := [nR s, eR s, inR s, pR s, qR s, dpR s, dqR s, qiR s, psaR s]
+abbrev callRd (pc : Bool) (s : State) : List Region :=
+  [nR s, eR s, inR s, pR s, qR s, dpR s, dqR s, qiR s] ++ (if pc then [preR s] else []) ++ [psaR pc s]
 
 abbrev callWr (s : State) : List Region := [outR s, sR s]
 
 /-- The call's narrowed entry state. -/
-abbrev callE (s t : State) : State := t.callEntry.withRegions (callRd s) (callWr s)
+abbrev callE (pc : Bool) (s t : State) : State := t.callEntry.withRegions (callRd pc s) (callWr s)
 
-theorem callE_gpr (s t : State) {r : Reg} (hr : r ∉ linkRegs := by decide) : (callE s t).gpr r = t.gpr r :=
+theorem callE_gpr (s t : State) {r : Reg} (hr : r ∉ linkRegs := by decide) : (callE pc s t).gpr r = t.gpr r :=
   State.callEntry_gpr t hr
 
-theorem callE_stackArg {s t : State} (A : AtPriv s t) {i : Nat} (hi : i < 12) :
-    stackArg (callE s t) i = stackArg s (3 + i) := by
-  show t.mem.readW (stackArgAddr (callE s t) i) 64 = _
-  rw [stackArgAddr, show (callE s t).sp = fb s from A.sp, show 32 + 8 * (8 + i) = 96 + 8 * i by omega]
+theorem callE_stackArg {s t : State} (A : AtPriv pc s t) {i : Nat} (hi : i < nCallArgs pc) :
+    stackArg (callE pc s t) i = stackArg s (3 + i) := by
+  show t.mem.readW (stackArgAddr (callE pc s t) i) 64 = _
+  rw [stackArgAddr, show (callE pc s t).sp = fb s from A.sp, show 32 + 8 * (8 + i) = 96 + 8 * i by omega]
   exact A.psa i hi
 
-theorem callE_addr {s t : State} (A : AtPriv s t) :
-    stackArgAddr (callE s t) 0 = fb s + BitVec.ofNat 64 96 := by
-  rw [stackArgAddr, show (callE s t).sp = fb s from A.sp]
+theorem callE_addr {s t : State} (A : AtPriv pc s t) :
+    stackArgAddr (callE pc s t) 0 = fb s + BitVec.ofNat 64 96 := by
+  rw [stackArgAddr, show (callE pc s t).sp = fb s from A.sp]
 
-theorem preP_entry {s t : State} (h : DPre s) (A : AtPriv s t) : Rsa.PPC64LE.Priv.PreP false (callE s t) := by
+theorem lt_nCall {i : Nat} (hi : i < 12) : i < nCallArgs pc := by
+  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] <;> omega
+
+theorem preP_entry {s t : State} (h : DPre pc s) (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (callE pc s t) := by
   have hk := h.k2
   have fbt := fb_toNat h
   have kbt := kb_toNat h
   unfold stackBytes frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at kbt
   unfold frameBytes at fbt
-  have sa := fun i hi => callE_stackArg A (i := i) hi
-  have hsp : (callE s t).sp = fb s := A.sp
-  have ps : Region.Sub (psaR s) (kR s) := frame_sub s (by decide)
-  have hK : Rsa.PPC64LE.Priv.kR (callE s t) = ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := by
+  have sa := fun i (hi : i < 12) => callE_stackArg A (i := i) (lt_nCall hi)
+  have hsp : (callE pc s t).sp = fb s := A.sp
+  have pl := psa_le (pc := pc)
+  have ps : Region.Sub (psaR pc s) (kR s) := psa_sub s
+  have hK : Rsa.PPC64LE.Priv.kR (callE pc s t) = ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := by
     simp only [Rsa.PPC64LE.Priv.kR, Rsa.PPC64LE.Priv.fb, hsp, fb_eq, BitVec.add_sub_cancel]
-  have ka : Region.Disjoint ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ (psaR s) := by
+  have ka : Region.Disjoint ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ (psaR pc s) := by
     show Region.Disjoint _ ⟨fb s + BitVec.ofNat 64 96, _⟩
     rw [fb_eq, Offset.add_add]
     exact (Offset.disjoint_base _ (by unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega)
       (by unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega)).symm
   have cs' : Region.Sub ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ (kR s) := by
     have := callee_sub s; rwa [fb_eq, BitVec.add_sub_cancel] at this
-  have g3 : (callE s t).gpr .r3 = s.gpr .r3 := (callE_gpr s t).trans A.r3
-  have g4 : (callE s t).gpr .r4 = s.gpr .r7 := (callE_gpr s t).trans A.r4
-  have g5 : (callE s t).gpr .r5 = s.gpr .r6 := (callE_gpr s t).trans A.r5
-  have g6 : (callE s t).gpr .r6 = s.gpr .r7 := (callE_gpr s t).trans A.r6
-  have g7 : (callE s t).gpr .r7 = s.gpr .r8 := (callE_gpr s t).trans A.r7
-  have g8 : (callE s t).gpr .r8 = s.gpr .r9 := (callE_gpr s t).trans A.r8
-  have g9 : (callE s t).gpr .r9 = stackArg s 1 := (callE_gpr s t).trans A.r9
-  have g10 : (callE s t).gpr .r10 = s.gpr .r7 := (callE_gpr s t).trans A.r10
-  have hO : Rsa.PPC64LE.Priv.oR (callE s t) = oR s := by simp only [Rsa.PPC64LE.Priv.oR, g3, g4, oR, h.h4]
-  have hN : Rsa.PPC64LE.Priv.nR (callE s t) = nR s := by simp only [Rsa.PPC64LE.Priv.nR, g5, g6]
-  have hE : Rsa.PPC64LE.Priv.eR (callE s t) = eR s := by simp only [Rsa.PPC64LE.Priv.eR, g7, g8]
-  have hI : Rsa.PPC64LE.Priv.iR (callE s t) = iR s := by simp only [Rsa.PPC64LE.Priv.iR, g9, g10, iR, h.hi]
-  have hP : Rsa.PPC64LE.Priv.pR (callE s t) = pR s := by
+  have g3 : (callE pc s t).gpr .r3 = s.gpr .r3 := (callE_gpr (pc := pc) s t).trans A.r3
+  have g4 : (callE pc s t).gpr .r4 = s.gpr .r7 := (callE_gpr (pc := pc) s t).trans A.r4
+  have g5 : (callE pc s t).gpr .r5 = s.gpr .r6 := (callE_gpr (pc := pc) s t).trans A.r5
+  have g6 : (callE pc s t).gpr .r6 = s.gpr .r7 := (callE_gpr (pc := pc) s t).trans A.r6
+  have g7 : (callE pc s t).gpr .r7 = s.gpr .r8 := (callE_gpr (pc := pc) s t).trans A.r7
+  have g8 : (callE pc s t).gpr .r8 = s.gpr .r9 := (callE_gpr (pc := pc) s t).trans A.r8
+  have g9 : (callE pc s t).gpr .r9 = stackArg s 1 := (callE_gpr (pc := pc) s t).trans A.r9
+  have g10 : (callE pc s t).gpr .r10 = s.gpr .r7 := (callE_gpr (pc := pc) s t).trans A.r10
+  have hO : Rsa.PPC64LE.Priv.oR (callE pc s t) = oR s := by simp only [Rsa.PPC64LE.Priv.oR, g3, g4, oR, h.h4]
+  have hN : Rsa.PPC64LE.Priv.nR (callE pc s t) = nR s := by simp only [Rsa.PPC64LE.Priv.nR, g5, g6]
+  have hE : Rsa.PPC64LE.Priv.eR (callE pc s t) = eR s := by simp only [Rsa.PPC64LE.Priv.eR, g7, g8]
+  have hI : Rsa.PPC64LE.Priv.iR (callE pc s t) = iR s := by simp only [Rsa.PPC64LE.Priv.iR, g9, g10, iR, h.hi]
+  have hP : Rsa.PPC64LE.Priv.pR (callE pc s t) = pR s := by
     simp only [Rsa.PPC64LE.Priv.pR, sa 0 (by decide), sa 1 (by decide)]
-  have hQ : Rsa.PPC64LE.Priv.qR (callE s t) = qR s := by
+  have hQ : Rsa.PPC64LE.Priv.qR (callE pc s t) = qR s := by
     simp only [Rsa.PPC64LE.Priv.qR, sa 2 (by decide), sa 3 (by decide)]
-  have hDP : Rsa.PPC64LE.Priv.dpR (callE s t) = dpR s := by
+  have hDP : Rsa.PPC64LE.Priv.dpR (callE pc s t) = dpR s := by
     simp only [Rsa.PPC64LE.Priv.dpR, sa 4 (by decide), sa 5 (by decide)]
-  have hDQ : Rsa.PPC64LE.Priv.dqR (callE s t) = dqR s := by
+  have hDQ : Rsa.PPC64LE.Priv.dqR (callE pc s t) = dqR s := by
     simp only [Rsa.PPC64LE.Priv.dqR, sa 6 (by decide), sa 7 (by decide)]
-  have hQI : Rsa.PPC64LE.Priv.qiR (callE s t) = qiR s := by
+  have hQI : Rsa.PPC64LE.Priv.qiR (callE pc s t) = qiR s := by
     simp only [Rsa.PPC64LE.Priv.qiR, sa 8 (by decide), sa 9 (by decide)]
-  have hS : Rsa.PPC64LE.Priv.sR (callE s t) = sR s := by
+  have hS : Rsa.PPC64LE.Priv.sR (callE pc s t) = sR s := by
     simp only [Rsa.PPC64LE.Priv.sR, sa 10 (by decide), sa 11 (by decide)]
-  have hA : Rsa.PPC64LE.Priv.aR false (callE s t) = psaR s := by simp only [Rsa.PPC64LE.Priv.aR, callE_addr A, Bool.false_eq_true, ↓reduceIte]
+  have hA : Rsa.PPC64LE.Priv.aR pc (callE pc s t) = psaR pc s := by simp only [Rsa.PPC64LE.Priv.aR, callE_addr A]
   have s1 := sa 1 (by decide)
   have s3 := sa 3 (by decide)
   have s5 := sa 5 (by decide)
@@ -106,7 +114,13 @@ theorem preP_entry {s t : State} (h : DPre s) (A : AtPriv s t) : Rsa.PPC64LE.Pri
   refine ⟨by rw [hsp]; unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega, by rw [hsp]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [Rsa.PPC64LE.Priv.rdL, Bool.false_eq_true, ↓reduceIte, List.append_nil]; rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA, ← inR_eq h]; rfl
+  · simp only [Rsa.PPC64LE.Priv.rdL]
+    rw [hN, hE, hI, hP, hQ, hDP, hDQ, hQI, hA, ← inR_eq h]
+    cases pc
+    · rfl
+    · simp only [↓reduceIte, Rsa.PPC64LE.Priv.preR, callE_stackArg A (i := 12) (by decide),
+        callE_stackArg A (i := 13) (by decide)]
+      rfl
   · rw [hO, hS, ← outR_eq h]; rfl
   · rw [hO, hN]; exact h.on
   · rw [hO, hE]; exact h.oe
@@ -195,8 +209,9 @@ theorem bytes_of_frame {s : State} {rs : List Region} {m : Mem} (hf : Frame rs s
   simp only [Spec.Rsa.bytesAt]
   exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, len⟩) hd hl (List.mem_range.mp hi)
 
-theorem call_covers {s t : State} (h : DPre s) (A : AtPriv s t) :
-    Covers (callRd s ++ callWr s) (t.rd ++ t.wr) ∧ Covers (callWr s) t.wr := by
+theorem call_covers {s t : State} (h : DPre pc s) (A : AtPriv pc s t) :
+    Covers (callRd pc s ++ callWr s) (t.rd ++ t.wr) ∧ Covers (callWr s) t.wr := by
+  have pl := psa_le (pc := pc)
   have hw : Covers (callWr s) t.wr := by
     rw [A.wr, h.hwr, ← outR_eq h]
     exact Covers.of_mem fun r hr => by
@@ -204,26 +219,95 @@ theorem call_covers {s t : State} (h : DPre s) (A : AtPriv s t) :
       rcases hr with rfl | rfl <;> simp
   refine ⟨Covers.append_left (Covers.of_forall fun r hr => ?_) (Covers.right hw), hw⟩
   rw [A.rd, A.wr, h.hrd]
-  simp only [callRd, List.mem_cons, List.not_mem_nil, or_false, inR_eq h] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  rotate_left 8
-  · exact Covers.right (Covers.one (in_fr s _ (by decide) (by decide)))
-  all_goals exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp)
+  have hleft : r ∈ rdL pc s → Covers [r] (rdL pc s ++ fr s :: s.wr) := fun h =>
+    Covers.left (Covers.of_mem fun r' hr' => by rw [List.mem_singleton.mp hr']; exact h)
+  simp only [callRd, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, inR_eq h] at hr
+  rcases hr with ((rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) | hp) | rfl
+  · exact hleft (by simp [rdL])
+  · exact hleft (by simp [rdL])
+  · exact hleft (by simp [rdL])
+  · exact hleft (by simp [rdL])
+  · exact hleft (by simp [rdL])
+  · exact hleft (by simp [rdL])
+  · exact hleft (by simp [rdL])
+  · exact hleft (by simp [rdL])
+  · cases pc
+    · simp at hp
+    · simp only [↓reduceIte, List.mem_singleton] at hp
+      subst hp; exact hleft (by simp [rdL])
+  · exact Covers.right (Covers.one (in_fr s _ (by decide) (by unfold frameBytes; omega)))
 
 theorem priv_sdepth : sdepth Impl.Rsa.PPC64LE.Priv.code = Impl.Rsa.PPC64LE.Priv.frameBytes := by decide +kernel
 
-theorem call_ok {s t : State} (h : DPre s) (A : AtPriv s t) {Q : State → Prop}
-    (hQ : ∀ u, AtD s u → Q u) : WP isa privCall t Q := by
-  have hk := h.k2
+theorem privP_sdepth : sdepth Impl.Rsa.PPC64LE.Priv.codeP = Impl.Rsa.PPC64LE.Priv.frameBytes := by decide +kernel
+
+/-- With `pc`, the facts of `pre` at the call. -/
+theorem preX_entry {s t : State} (h : DPre true s) (X : PreX s) (A : AtPriv true s t) :
+    Rsa.PPC64LE.Priv.PreX (callE true s t) := by
+  have sa := fun i (hi : i < 14) => callE_stackArg A (i := i) hi
+  have hsp : (callE true s t).sp = fb s := A.sp
+  have fbt := fb_toNat h
+  have sp2 := h.sp2
+  simp only [↓reduceIte] at sp2
+  unfold frameBytes at fbt
+  have hPre : Rsa.PPC64LE.Priv.preR (callE true s t) = preR s := by
+    simp only [Rsa.PPC64LE.Priv.preR, sa 12 (by decide), sa 13 (by decide)]
+  have hO : Rsa.PPC64LE.Priv.oR (callE true s t) = oR s := by
+    simp only [Rsa.PPC64LE.Priv.oR, callE_gpr (pc := true) s t (r := .r3), callE_gpr (pc := true) s t (r := .r4),
+      A.r3, A.r4, oR, h.h4]
+  have hS : Rsa.PPC64LE.Priv.sR (callE true s t) = sR s := by
+    simp only [Rsa.PPC64LE.Priv.sR, sa 10 (by decide), sa 11 (by decide)]
+  have hK : Rsa.PPC64LE.Priv.kR (callE true s t) = ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := by
+    simp only [Rsa.PPC64LE.Priv.kR, Rsa.PPC64LE.Priv.fb, hsp, fb_eq, BitVec.add_sub_cancel]
+  have cs' : Region.Sub ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ (kR s) := by
+    have := callee_sub s; rwa [fb_eq, BitVec.add_sub_cancel] at this
+  refine ⟨by rw [hO, hPre]; exact X.oP, by rw [hS, hPre]; exact X.sP, by rw [hK, hPre]; exact X.kP.sub_left cs',
+    ?_, ?_, ?_, ?_⟩
+  · rw [sa 12 (by decide), sa 13 (by decide)]; exact X.wP
+  · rw [sa 13 (by decide), sa 1 (by decide), sa 3 (by decide), callE_gpr (pc := true) s t (r := .r6), A.r6]
+    exact X.pl
+  · rw [hsp]; omega
+  · have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
+      bytes_of_frame (s := s) (rs := [kR s]) A.mem (p := p) (len := len)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
+    have hw := VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (p := stackArg s 15) (n := (stackArg s 16).toNat)
+      (fun r hr => by rw [List.mem_singleton.mp hr, Nat.mul_comm]; exact X.kP.symm) (by have := X.wP; omega)
+    simp only [Rsa.PPC64LE.Priv.PreHyp, State.withRegions_mem, State.callEntry_mem,
+      callE_gpr (pc := true) s t (r := .r5), callE_gpr (pc := true) s t (r := .r6), A.r5, A.r6, sa 0 (by decide),
+      sa 1 (by decide), sa 2 (by decide), sa 3 (by decide), sa 12 (by decide), sa 13 (by decide), hw]
+    rw [hb h.kn.symm (by have := h.wn; omega), hb h.kp.symm (by have := h.wp; omega),
+      hb h.kq.symm (by have := h.wq; omega)]
+    exact X.hyp rfl
+
+/-- The call of `vg_rsa_private_checked`, or with `pc` of
+`vg_rsa_private_checked_precomputed`. -/
+theorem call_priv {s t : State} (h : DPre pc s) (X : pc = true → PreX s) (A : AtPriv pc s t) :
+    WP isa (privCall pc) t fun u => u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧
+      Frame (callWr s ++ [below (fb s) Impl.Rsa.PPC64LE.Priv.frameBytes]) t.mem u.mem ∧
+      (∀ r ∈ preserved, u.gpr r = t.gpr r) ∧
+      Rsa.PPC64LE.Priv.fnPost (callE pc s t) (u.withRegions (callRd pc s) (callWr s)) := by
   obtain ⟨hc, hw⟩ := call_covers h A
+  cases pc with
+  | false =>
+    refine WP.callAny (k := Rsa.PPC64LE.Priv.fnContract) Rsa.PPC64LE.Priv.code_correct
+      (Rsa.PPC64LE.Priv.pre_of_preP (preP_entry h A)) hc hw (fun u hrd hwr hsp hf hpres hpost => ?_)
+      (by rw [priv_sdepth]; decide)
+    rw [priv_sdepth, A.sp] at hf
+    exact ⟨hrd, hwr, hsp, hf, hpres, hpost⟩
+  | true =>
+    refine WP.callAny (k := Rsa.PPC64LE.Priv.fnContractP) Rsa.PPC64LE.Priv.codeP_correct
+      (Rsa.PPC64LE.Priv.pre_of_prePX (preP_entry h A) (preX_entry h (X rfl) A)) hc hw
+      (fun u hrd hwr hsp hf hpres hpost => ?_) (by rw [privP_sdepth]; decide)
+    rw [privP_sdepth, A.sp] at hf
+    exact ⟨hrd, hwr, hsp, hf, hpres, hpost⟩
+
+theorem call_ok {s t : State} (h : DPre pc s) (X : pc = true → PreX s) (A : AtPriv pc s t) {Q : State → Prop}
+    (hQ : ∀ u, AtD s u → Q u) : WP isa (privCall pc) t Q := by
+  have hk := h.k2
   have cs := callee_sub s
-  unfold privCall
-  refine WP.callAny (k := Rsa.PPC64LE.Priv.fnContract) Rsa.PPC64LE.Priv.code_correct
-    (Rsa.PPC64LE.Priv.pre_of_preP (preP_entry h A)) hc hw
-    (fun u hrd hwr hsp hf hpres hpost => hQ u ?_) (by rw [priv_sdepth]; decide)
-  have hb : below t.sp (sdepth Impl.Rsa.PPC64LE.Priv.code) =
-      ⟨fb s - BitVec.ofNat 64 Impl.Rsa.PPC64LE.Priv.frameBytes, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := by
-    rw [priv_sdepth, A.sp]
+  refine WP.mono (call_priv h X A) fun u ⟨hrd, hwr, hsp, hf, hpres, hpost⟩ => hQ u ?_
+  have hb : below (fb s) Impl.Rsa.PPC64LE.Priv.frameBytes =
+      ⟨fb s - BitVec.ofNat 64 Impl.Rsa.PPC64LE.Priv.frameBytes, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := rfl
   rw [hb] at hf
   simp only [callWr, List.cons_append, List.nil_append, outR_eq h] at hf
   have hp : ∀ r ∈ preserved, u.gpr r = t.gpr r := hpres
@@ -246,10 +330,11 @@ theorem call_ok {s t : State} (h : DPre s) (A : AtPriv s t) {Q : State → Prop}
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), fun _ h => h⟩
       · exact ⟨_, List.mem_cons_self .., cs⟩
-  · have sa := fun i hi => callE_stackArg A (i := i) hi
-    simp only [Rsa.PPC64LE.Priv.fnContract, Rsa.PPC64LE.Priv.fnPost, State.withRegions_mem,
-      State.withRegions_gpr, State.callEntry_mem, callE_gpr s t (r := .r3), callE_gpr s t (r := .r5),
-      callE_gpr s t (r := .r6), callE_gpr s t (r := .r7), callE_gpr s t (r := .r8), callE_gpr s t (r := .r9),
+  · have sa := fun i (hi : i < 12) => callE_stackArg A (i := i) (lt_nCall hi)
+    simp only [Rsa.PPC64LE.Priv.fnPost, State.withRegions_mem,
+      State.withRegions_gpr, State.callEntry_mem, callE_gpr (pc := pc) s t (r := .r3),
+      callE_gpr (pc := pc) s t (r := .r5), callE_gpr (pc := pc) s t (r := .r6), callE_gpr (pc := pc) s t (r := .r7),
+      callE_gpr (pc := pc) s t (r := .r8), callE_gpr (pc := pc) s t (r := .r9),
       A.r3, A.r5, A.r6, A.r7, A.r8, A.r9, sa 0 (by decide), sa 1 (by decide), sa 2 (by decide), sa 3 (by decide),
       sa 4 (by decide), sa 6 (by decide), sa 8 (by decide), Nat.reduceAdd] at hpost
     have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>

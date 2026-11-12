@@ -41,7 +41,8 @@ branch depends only on the pointers, the lengths and the counters. `out`'s
 and `AM`'s bytes are all read, whichever is returned.
 
 The frame (`alloc frameBytes`) holds the private-key operation's twelve
-stack arguments (at `sp`), then our caller's `s0`–`s9` and our return
+(or, for `vg_rsa_pkcs1_decrypt_precomputed`, fourteen) stack arguments (at
+`sp`), then our caller's `s0`–`s9` and our return
 address (`saved`). Our own stack arguments are at `sp + frameBytes + 8 j`,
 from `t6` (`argBase`). The values kept across the calls are in `s0`–`s9`,
 which every function called saves and restores: `s0` = `scratch`, `s1` =
@@ -61,12 +62,12 @@ open VG.Impl.Hmac.Stream.RISCV64 (Hash mov)
 open VG.Impl.RsaPkcs1Sig.RISCV64 (copyLoop fillLoop)
 
 /-- The size of the frame. -/
-def frameBytes : Nat := 192
+def frameBytes : Nat := 208
 
 /-- Where our caller's `s0`–`s9` and our return address are saved. -/
 def saved : List (Reg × Nat) :=
-  [(.s0, 96), (.s1, 104), (.s2, 112), (.s3, 120), (.s4, 128), (.s5, 136), (.s6, 144), (.s7, 152), (.s8, 160),
-    (.s9, 168), (.ra, 176)]
+  [(.s0, 112), (.s1, 120), (.s2, 128), (.s3, 136), (.s4, 144), (.s5, 152), (.s6, 160), (.s7, 168), (.s8, 176),
+    (.s9, 184), (.ra, 192)]
 
 /-- `t6 :=` the address of our first stack argument, `sp + frameBytes`. -/
 def argBase : Instr := .addSp .t6 frameBytes
@@ -94,7 +95,14 @@ def sha256 : Hash where
   finN := Spec.Sha256.finalizeApi.name
   finC := Impl.Sha256.RISCV64.Stream.finalize
 
-def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.RISCV64.Priv.code
+/-- `vg_rsa_private_checked`, or with `pc` `vg_rsa_private_checked_precomputed`. -/
+def privCall : Bool → Prog isa
+  | false => .call "vg_rsa_private_checked" Impl.Rsa.RISCV64.Priv.code
+  | true => .call "vg_rsa_private_checked_precomputed" Impl.Rsa.RISCV64.Priv.codeP
+
+/-- The private-key operation's stack arguments: twelve, or with `pc`
+fourteen (`pre` and `pre_len` too). -/
+def nCallArgs (pc : Bool) : Nat := if pc then 14 else 12
 def macInitCall : Prog isa := .call Spec.Hmac.sha256I.initAnyKeyApi.name sha256.init
 def macFinCall : Prog isa := .call Spec.Hmac.sha256I.finalizeApi.name sha256.finalize
 
@@ -112,15 +120,15 @@ def keeps : List Instr :=
   [argBase, mov .s1 .a4, mov .s2 .a0, mov .s3 .a2, mov .s4 .a7, .load .d .s5 .t6 0, .load .d .s6 .t6 8,
     .load .d .s0 .t6 104]
 
-/-- Our stack argument `3 + j` (`p` … `scratch_len`) to the private-key
-operation's stack argument `j`. -/
+/-- Our stack argument `3 + j` (`p` … `scratch_len`, then `pre` and
+`pre_len`) to the private-key operation's stack argument `j`. -/
 def copyArg (j : Nat) : List Instr := [.load .d .t1 .t6 (8 * (3 + j)), .store .d .t1 .t0 (8 * j)]
 
 /-- Its registers: `out`, `k`, `n`, `k`, `e`, `e_len`, the input, `k`. -/
 def privRegs : List Instr :=
   [mov .a1 .s1, mov .a2 .a3, mov .a3 .s1, mov .a4 .a5, mov .a5 .a6, mov .a6 .s6, mov .a7 .s1]
 
-def setup : List Instr := save ++ keeps ++ (List.range 12).flatMap copyArg ++ privRegs
+def setup (pc : Bool) : List Instr := save ++ keeps ++ (List.range (nCallArgs pc)).flatMap copyArg ++ privRegs
 
 /-! ## 2. The key derivation key -/
 
@@ -301,11 +309,19 @@ def selPart : Prog isa :=
 
 /-! ## The function -/
 
-def body : Prog isa :=
-  .seq (.block setup) (.seq privCall (.seq dBuild (.seq hashD (.seq kdkMac (.seq clLoop
+def body (pc : Bool) : Prog isa :=
+  .seq (.block (setup pc)) (.seq (privCall pc) (.seq dBuild (.seq hashD (.seq kdkMac (.seq clLoop
     (.seq amLoop (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))))
 
+/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed`. -/
+def codeG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body pc) (.free frameBytes)
+
 /-- `vg_rsa_pkcs1_decrypt`. -/
-def code : Prog isa := .frame (.alloc frameBytes) body (.free frameBytes)
+abbrev code : Prog isa := codeG false
+
+/-- `vg_rsa_pkcs1_decrypt_precomputed`: with the key's precomputed values
+`pre` (our stack arguments 15 and 16), calling
+`vg_rsa_private_checked_precomputed`. -/
+abbrev codeP : Prog isa := codeG true
 
 end VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt

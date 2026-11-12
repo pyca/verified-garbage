@@ -109,6 +109,8 @@ structure Par where
   win : Nat
   /-- The stores are from `lo` of the working space. -/
   lo : Nat
+  /-- The offsets of the working space that are loaded from and stored to, modulo 32. -/
+  al : Nat
 
 /-- The terms of the thirty-two vector registers (by number), and the stores
 into the working space, the last first: the offset and what was stored. -/
@@ -138,7 +140,7 @@ def litOf (cst : List Nat) (o : Nat) : Option T :=
 /-- The term of 32 bytes of memory. -/
 def VSym.src (P : Par) (σ : VSym) (m : MemOp) : Option T :=
   (baseOff m).bind fun bo =>
-    if bo.1 = .rdi then (if bo.2 % 32 = 0 ∧ bo.2 + 32 ≤ P.win then some (look σ.st bo.2) else none)
+    if bo.1 = .rdi then (if bo.2 % 32 = P.al ∧ bo.2 + 32 ≤ P.win then some (look σ.st bo.2) else none)
     else if bo.1 = P.cb then litOf P.cst bo.2
     else if bo.2 + 32 ≤ P.lim bo.1 then some (.ld bo.1 bo.2) else none
 
@@ -197,7 +199,7 @@ def VSym.step (P : Par) (σ : VSym) : Instr → Option VSym
   | .evLoad d m => (σ.src P m).map fun t => σ.set d t
   | .evMadd52Load h d a m => (σ.src P m).map fun t => σ.set d (.mad h (σ.get d) (σ.get a) t)
   | .evStore m r => (baseOff m).bind fun bo =>
-    if bo.1 = .rdi ∧ bo.2 % 32 = 0 ∧ bo.2 + 32 ≤ P.win ∧ P.lo ≤ bo.2 then some { σ with st := (bo.2, σ.get r) :: σ.st }
+    if bo.1 = .rdi ∧ bo.2 % 32 = P.al ∧ bo.2 + 32 ≤ P.win ∧ P.lo ≤ bo.2 then some { σ with st := (bo.2, σ.get r) :: σ.st }
     else none
   | _ => none
 
@@ -222,7 +224,7 @@ structure SRel (P : Par) (σ : VSym) (s₀ s : State) : Prop where
   reg : ∀ r k, k < 4 → qv s r k = (σ.reg (vi r)).eval s₀ k
   eq : vm s₀ s = s
   mem : s.mem = stores s₀ σ.st
-  al : ∀ e ∈ σ.st, e.1 % 32 = 0 ∧ e.1 + 32 ≤ P.win
+  al : ∀ e ∈ σ.st, e.1 % 32 = P.al ∧ e.1 + 32 ≤ P.win
   lo : ∀ e ∈ σ.st, P.lo ≤ e.1
 
 theorem SRel.gpr {P : Par} {σ : VSym} {s₀ s : State} (h : SRel P σ s₀ s) : s.gpr = s₀.gpr := by
@@ -275,7 +277,7 @@ structure Ctx (P : Par) (s₀ : State) : Prop where
 theorem stores_sep {P : Par} {s₀ : State} {a : Addr}
     (hs : Mem.Sep a 32 (s₀.gpr .rdi + BitVec.ofNat 64 P.lo) (P.win - P.lo)) (hw : P.win < 2 ^ 62)
     {k : Nat} (hk : k < 4) :
-    ∀ (st : List (Nat × T)), (∀ e ∈ st, e.1 % 32 = 0 ∧ e.1 + 32 ≤ P.win) → (∀ e ∈ st, P.lo ≤ e.1) →
+    ∀ (st : List (Nat × T)), (∀ e ∈ st, e.1 % 32 = P.al ∧ e.1 + 32 ≤ P.win) → (∀ e ∈ st, P.lo ≤ e.1) →
       (stores s₀ st).readW (a + BitVec.ofNat 64 (8 * k)) 64 = s₀.mem.readW (a + BitVec.ofNat 64 (8 * k)) 64
   | [], _, _ => rfl
   | (e, t) :: st, he, hl => by
@@ -296,9 +298,9 @@ theorem stores_sep {P : Par} {s₀ : State} {a : Addr}
         omega
 
 /-- A quadword of 32 bytes of the working space, after the stores. -/
-theorem stores_look {P : Par} {s₀ : State} (hw : P.win < 2 ^ 62) {o k : Nat} (ho : o % 32 = 0)
+theorem stores_look {P : Par} {s₀ : State} (hw : P.win < 2 ^ 62) {o k : Nat} (ho : o % 32 = P.al)
     (ho2 : o + 32 ≤ P.win) (hk : k < 4) :
-    ∀ (st : List (Nat × T)), (∀ e ∈ st, e.1 % 32 = 0 ∧ e.1 + 32 ≤ P.win) →
+    ∀ (st : List (Nat × T)), (∀ e ∈ st, e.1 % 32 = P.al ∧ e.1 + 32 ≤ P.win) →
       (stores s₀ st).readW (s₀.gpr .rdi + BitVec.ofNat 64 (o + 8 * k)) 64 = (look st o).eval s₀ k
   | [], _ => rfl
   | (e, t) :: st, he => by

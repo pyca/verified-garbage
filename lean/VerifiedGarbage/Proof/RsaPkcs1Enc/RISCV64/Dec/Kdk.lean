@@ -20,6 +20,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 
+variable {pc : Bool}
+
 /-- The ciphertext. -/
 abbrev cOf (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .a4).toNat
 
@@ -42,7 +44,7 @@ theorem blockKey_length {key : List Byte} (h : key.length ≤ 64) :
   omega
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 omit h in

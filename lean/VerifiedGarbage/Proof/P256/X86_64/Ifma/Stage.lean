@@ -453,10 +453,10 @@ def tops : Ops Id T where
 /-- What the blocks run with: their constants at `r10`; the words of a
 point's three coordinates at `rcx` and of two more field elements at `rdx`,
 and the mask of an entry's sign at `r9`; and the working space at `rdi`, to the end of the slots, which
-are from `4512` of it. -/
+are from `5056` of it. -/
 def par : Par :=
   ⟨.r10, poolLit.flatMap fun k => [k.w0, k.w1, k.w2, k.w3],
-    fun r => if r = .rcx then 96 else if r = .rdx then 64 else if r = .r9 then 32 else 0, 5408, 4512⟩
+    fun r => if r = .rcx then 96 else if r = .rdx then 64 else if r = .r9 then 32 else 0, 5920, 5056, 0⟩
 
 /-- The offset of a slot in the working space. -/
 def slotOff (i : Nat) : Nat := cfg.sbase + 32 * i
@@ -491,12 +491,21 @@ def group5 : List T → List (F5 T)
 /-- The terms of a stage's results. -/
 def segT (seg : Seg Id T) (ins : List (F5 T)) : List T := (Id.run (seg ins)).flatMap F5.toList
 
-/-- The code of a stage computes its terms, into the places `outs`, and stores only into the slots. -/
-def chkSeg (code : List Instr) (ins : List (F5 T)) (seg : Seg Id T) (outs : List Loc) : Bool :=
+/-- The bytes of the slots the blocks store to, nine: the working space past them, to `par.win`, is
+only read. -/
+abbrev slotsLen : Nat := 288
+
+/-- The code of a stage computes its terms, into the places `outs`, and stores only into the first
+`w` bytes of the slots. -/
+def chkSegW (w : Nat) (code : List Instr) (ins : List (F5 T)) (seg : Seg Id T) (outs : List Loc) : Bool :=
   match VSym.init.run par code with
   | some σ => decide (outs.map (termAt σ) = segT seg ins) && outs.all locOk &&
-    σ.st.all fun e => decide (cfg.sbase ≤ e.1)
+    σ.st.all fun e => decide (cfg.sbase ≤ e.1 ∧ e.1 + 32 ≤ cfg.sbase + w)
   | none => false
+
+/-- `chkSegW`, for the first nine slots. -/
+abbrev chkSeg (code : List Instr) (ins : List (F5 T)) (seg : Seg Id T) (outs : List Loc) : Bool :=
+  chkSegW slotsLen code ins seg outs
 
 /-- Stage `j` of a block, from the terms `ins` at its start, its last stage's values into `fin`. -/
 def chkStage (pieces : List (List Instr)) (locs : List (List Loc)) (segs : List (Seg Id T)) (ins : List (F5 T))
@@ -523,43 +532,61 @@ theorem termAt_ok {σ : VSym} {s₀ s : State} (h : SRel par σ s₀ s) {l : Loc
     rw [h.mem, h.gpr]
     exact stores_look (by decide) (slotOff_mod i) hl hk σ.st h.al
 
-/-- Stores from `lo` up change nothing below `lo` or from the working space's end. -/
-theorem stores_unch (s₀ : State) (lo : Nat) :
-    ∀ (st : List (Nat × T)), (∀ e ∈ st, (e.1 % 32 = 0 ∧ e.1 + 32 ≤ par.win) ∧ lo ≤ e.1) →
-      Unch (s₀.gpr .rdi) [(lo, par.win - lo)] s₀.mem (stores s₀ st)
+/-- Stores from `lo` to `hi` change nothing else. -/
+theorem stores_unch_hi (s₀ : State) (lo hi : Nat) :
+    ∀ (st : List (Nat × T)), (∀ e ∈ st, (lo ≤ e.1 ∧ e.1 + 32 ≤ hi) ∧ e.1 + 32 ≤ par.win) →
+      Unch (s₀.gpr .rdi) [(lo, hi - lo)] s₀.mem (stores s₀ st)
   | [], _ => Unch.refl _ _ _
   | (e, t) :: st, he => by
     have he0 := he (e, t) List.mem_cons_self
     intro x hx
-    have h1 := hx (lo, par.win - lo) (List.mem_singleton.2 rfl)
+    have h1 := hx (lo, hi - lo) (List.mem_singleton.2 rfl)
     simp only [stores]
     rw [writeW_byte_off _ _ _ _ ?_]
-    · exact stores_unch s₀ lo st (fun y hy => he y (List.mem_cons_of_mem _ hy)) x hx
+    · exact stores_unch_hi s₀ lo hi st (fun y hy => he y (List.mem_cons_of_mem _ hy)) x hx
     · simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.reduceDiv]
       have := (x - s₀.gpr .rdi).isLt
-      have hw : par.win = 5408 := rfl
+      have hw : par.win = 5920 := rfl
+      simp only [VG.Proof.Mont.ofs] at h1
+      omega
+
+/-- Stores change nothing outside the part of the working space they are to. -/
+theorem stores_unchP {P : Par} (hw : P.win < 2 ^ 62) (s₀ : State) :
+    ∀ (st : List (Nat × T)), (∀ e ∈ st, P.lo ≤ e.1 ∧ e.1 + 32 ≤ P.win) →
+      Unch (s₀.gpr .rdi) [(P.lo, P.win - P.lo)] s₀.mem (stores s₀ st)
+  | [], _ => Unch.refl _ _ _
+  | (e, t) :: st, he => by
+    have he0 := he (e, t) List.mem_cons_self
+    intro x hx
+    have h1 := hx (P.lo, P.win - P.lo) (List.mem_singleton.2 rfl)
+    simp only [stores]
+    rw [writeW_byte_off _ _ _ _ ?_]
+    · exact stores_unchP hw s₀ st (fun y hy => he y (List.mem_cons_of_mem _ hy)) x hx
+    · simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.reduceDiv]
+      have := (x - s₀.gpr .rdi).isLt
       simp only [VG.Proof.Mont.ofs] at h1
       omega
 
 /-- What a piece does: every quadword of every place of its results is its
 term, of the state before; nothing else of the state changes but vector
-registers and the slots of the working space. -/
-theorem stage_wp {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSeg c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) :
+registers and the first nine slots of the working space. -/
+theorem stage_wp {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
+    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) :
     WP isa (.block c) s₀ fun s =>
-      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s₀.mem s.mem ∧
+      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem ∧
       ∀ (j : Nat) (l : Loc) (t : T), outs[j]? = some l → (segT seg ins)[j]? = some t →
         ∀ k, k < 4 → lanesAt s l k = t.eval s₀ k := by
-  unfold chkSeg at h
+  unfold chkSegW at h
   split at h
   case h_2 => cases h
   rename_i σ hσ
   simp only [Bool.and_eq_true, decide_eq_true_eq] at h
   refine WP.mono (srun_ok hc c (SRel.init par s₀) hσ) fun s hs => ⟨⟨σ, hs⟩, ?_, fun j l t hl ht k hk => ?_⟩
   · rw [hs.mem]
-    refine stores_unch s₀ cfg.sbase σ.st fun e he => ⟨hs.al e he, ?_⟩
-    have := List.all_eq_true.1 h.2 e he
-    simpa using this
+    have := stores_unch_hi s₀ cfg.sbase (cfg.sbase + w) σ.st fun e he => by
+      have := List.all_eq_true.1 h.2 e he
+      exact ⟨by simpa using this, (hs.al e he).2⟩
+    rwa [Nat.add_sub_cancel_left] at this
   · have hok : locOk l = true := List.all_eq_true.1 h.1.2 l (List.mem_of_getElem? hl)
     rw [← h.1.1, List.getElem?_map, hl] at ht
     cases ht
@@ -574,10 +601,10 @@ theorem envOf_slot (s : State) (i k : Nat) : (envOf s).m .rdi (slotOff i) k = in
 
 /-- `stage_wp`, for integers: the quadwords of a place whose term has bounds
 (`T.iv`) within 64 signed bits are the term's integer. -/
-theorem stage_int {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSeg c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) :
+theorem stage_int {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
+    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) :
     WP isa (.block c) s₀ fun s =>
-      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s₀.mem s.mem ∧
+      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem ∧
       ∀ (j : Nat) (l : Loc) (t : T), outs[j]? = some l → (segT seg ins)[j]? = some t →
         ∀ k, k < 4 → ∀ iv, t.iv B k = some iv → -2 ^ 63 ≤ iv.1 → iv.2 < 2 ^ 63 →
           ints s l k = t.int (envOf s₀) k ∧ iv.1 ≤ t.int (envOf s₀) k ∧ t.int (envOf s₀) k ≤ iv.2 := by

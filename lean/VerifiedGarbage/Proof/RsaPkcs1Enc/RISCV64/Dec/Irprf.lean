@@ -24,6 +24,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (mov)
 
+variable {pc : Bool}
+
 /-- After `i` blocks of IRPRF to `scratch + dst` from `t₀`, with the messages `textF`. -/
 structure PInv (s : State) (R : BitVec 64) (EM : List Byte) (kd : List Byte) (dst : Nat)
     (textF : Nat → List Byte) (t₀ : State) (i : Nat) (t : State) : Prop extends Post s R EM t where
@@ -38,7 +40,7 @@ theorem counter_ne {n k : Nat} (hk : k + 1 ≤ n) (hn : n < 2 ^ 64) :
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 theorem prfLoop_ok {label : List Nat} {len count : List Instr} {dst N : Nat}
@@ -125,7 +127,7 @@ theorem count8_ok (u : State) :
     ⟨(p₁.trans p₂).mono, by rw [f₂, f₁, p₁.get .s8]⟩
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 /-- A byte of the message buffer is writable. -/

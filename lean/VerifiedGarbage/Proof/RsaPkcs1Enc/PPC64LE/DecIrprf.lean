@@ -23,6 +23,8 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 
+variable {pc : Bool}
+
 /-- After `i` blocks of IRPRF to `scratch + dst` from `t₀`, with the messages `textF`. -/
 structure PInv (s : State) (R : BitVec 64) (EM : List Byte) (kd : List Byte) (nbv : BitVec 64) (dst : Nat)
     (textF : Nat → List Byte) (t₀ : State) (i : Nat) (t : State) : Prop where
@@ -38,7 +40,7 @@ theorem counter_ne {n k : Nat} (hk : k + 1 ≤ n) (hn : n < 2 ^ 64) :
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 theorem prfLoop_ok {label : List Nat} {len count : List Instr} {dst N : Nat}
@@ -121,7 +123,7 @@ theorem slots_safe {s : State} : ∀ r ∈ ([⟨fb s + BitVec.ofNat 64 oI, 8⟩,
 
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 /-- A byte of the message buffer is writable. -/

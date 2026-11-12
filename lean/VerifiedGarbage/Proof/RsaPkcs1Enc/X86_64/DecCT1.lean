@@ -22,6 +22,8 @@ namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 
+variable {X : State → State → Prop}
+
 /-- Callee-saved registers but `rsp` as on entry. -/
 def CS (s t : State) : Prop := ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r
 
@@ -29,7 +31,7 @@ def J0 (s t : State) : Prop := t = allocState frameBytes s
 def JS (s t : State) : Prop := Setup s t ∧ CS s t
 def JP (s t : State) : Prop := PostPriv s t ∧ CS s t
 
-theorem setup_two : RelCT isa (Two (At J0)) (.block setup) (Two (At JS)) :=
+theorem setup_two : RelCT isa (Two (At X J0)) (.block setup) (Two (At X JS)) :=
   two_blk [.rsp] (pins (J := J0) [(.rsp, fb)] (by
       simp only [List.mem_singleton]; rintro p rfl s t h; rw [h]; rfl)
     (by simp only [List.mem_singleton]; rintro p rfl; exact fb_pin)) (by taint_decide)
@@ -41,7 +43,7 @@ theorem setup_two : RelCT isa (Two (At J0)) (.block setup) (Two (At JS)) :=
 
 
 /-- A buffer the function only reads, as a callee from the frame sees it. -/
-theorem entryBytes {s t : State} (hp : DPre s) (h : Setup s t) (rd wr : List Region) {p : Addr} {len : Nat}
+theorem entryBytes {s t : State} (hp : DPre s) (h : CallAt s t) (rd wr : List Region) {p : Addr} {len : Nat}
     (hk : (stkR s).Disjoint ⟨p, len⟩) (ho : (outR s).Disjoint ⟨p, len⟩) (hm : (mlR s).Disjoint ⟨p, len⟩)
     (hs : (⟨p, len⟩ : Region).Disjoint (scrR s)) (hl : len ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt (t.callEntry.withRegions rd wr).mem p len = Spec.Rsa.bytesAt s.mem p len := by
@@ -51,21 +53,21 @@ theorem entryBytes {s t : State} (hp : DPre s) (h : Setup s t) (rd wr : List Reg
     rw [List.mem_singleton.mp hr]; exact ⟨stkR s, List.mem_cons_self .., below_sub s (by decide)⟩) hk ho hm hs.symm hl
 
 /-- What the private-key operation's contract makes public, from the entry state. -/
-theorem priv_view {a s t : State} (S : Sib a s) (h : Setup s t) :
-    [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp].map (t.callEntry.withRegions (privRd s) (privWr s)).gpr =
+theorem priv_view {a s t : State} {rds : List Region} (S : Sib X a s) (h : CallAt s t) :
+    [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp].map (t.callEntry.withRegions rds (privWr s)).gpr =
       [a.gpr .rdi, a.gpr .r8, a.gpr .rcx, a.gpr .r8, a.gpr .r9, stackArg a 0, fb a - 8] ∧
-    (List.range 14).map (stackArg (t.callEntry.withRegions (privRd s) (privWr s))) =
+    (List.range 14).map (stackArg (t.callEntry.withRegions rds (privWr s))) =
       ((List.range 14).map fun i => stackArg a (i + 3)) ∧
-    Spec.Rsa.bytesAt (t.callEntry.withRegions (privRd s) (privWr s)).mem
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .rdx)
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .rcx).toNat = nB a ∧
-    Spec.Rsa.bytesAt (t.callEntry.withRegions (privRd s) (privWr s)).mem
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .r8)
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .r9).toNat = eB a := by
+    Spec.Rsa.bytesAt (t.callEntry.withRegions rds (privWr s)).mem
+      ((t.callEntry.withRegions rds (privWr s)).gpr .rdx)
+      ((t.callEntry.withRegions rds (privWr s)).gpr .rcx).toNat = nB a ∧
+    Spec.Rsa.bytesAt (t.callEntry.withRegions rds (privWr s)).mem
+      ((t.callEntry.withRegions rds (privWr s)).gpr .r8)
+      ((t.callEntry.withRegions rds (privWr s)).gpr .r9).toNat = eB a := by
   have hp := S.p
   have hk2 := hp.k2
   have hsi := hp.hsi
-  have g : ∀ {r : Reg}, r ≠ .rsp → (t.callEntry.withRegions (privRd s) (privWr s)).gpr r = t.gpr r := fun hr => by
+  have g : ∀ {r : Reg}, r ≠ .rsp → (t.callEntry.withRegions rds (privWr s)).gpr r = t.gpr r := fun hr => by
     rw [State.withRegions_gpr, State.callEntry_gpr _ hr]
   refine ⟨?_, ?_, ?_, ?_⟩
   · simp only [List.map_cons, List.map_nil]
@@ -82,17 +84,17 @@ theorem priv_view {a s t : State} (S : Sib a s) (h : Setup s t) :
       (by have := hp.dOe; rw [outR]; exact this) hp.dMe hp.des (by have := hp.wE; omega)]
     exact S.e
 
-theorem priv_ct (pv : PrivImpl) : RelCT isa (Two (At JS)) (.call pv.name pv.code) fun _ _ => True := by
+theorem priv_ct (pv : PrivImpl) : RelCT isa (Two (At X JS)) (.call pv.name pv.code) fun _ _ => True := by
   refine RelCT.callEx (k := privK) pv.ok pv.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁, _⟩, ⟨s₂, S₂, j₂, _⟩⟩ => ?_
-  obtain ⟨r₁, a₁, n₁, e₁⟩ := priv_view S₁ j₁
-  obtain ⟨r₂, a₂, n₂, e₂⟩ := priv_view S₂ j₂
-  obtain ⟨c₁, w₁⟩ := priv_covers S₁.p j₁
-  obtain ⟨c₂, w₂⟩ := priv_covers S₂.p j₂
-  exact ⟨privRd s₁, privWr s₁, privRd s₂, privWr s₂, priv_pre S₁.p j₁, priv_pre S₂.p j₂,
+  obtain ⟨r₁, a₁, n₁, e₁⟩ := priv_view (rds := privRd s₁) S₁ j₁.call
+  obtain ⟨r₂, a₂, n₂, e₂⟩ := priv_view (rds := privRd s₂) S₂ j₂.call
+  obtain ⟨c₁, w₁⟩ := priv_covers S₁.p j₁.call
+  obtain ⟨c₂, w₂⟩ := priv_covers S₂.p j₂.call
+  exact ⟨privRd s₁, privWr s₁, privRd s₂, privWr s₂, priv_pre S₁.p j₁.call, priv_pre S₂.p j₂.call,
     ⟨List.map_inj_left.mp (r₁.trans r₂.symm), a₁.trans a₂.symm, n₁.trans n₂.symm, e₁.trans e₂.symm⟩,
     c₁, w₁, c₂, w₂, by rw [j₁.rsp, j₂.rsp, S₁.fb, S₂.fb]⟩
 
-theorem priv_two (pv : PrivImpl) : RelCT isa (Two (At JS)) (.call pv.name pv.code) (Two (At JP)) :=
+theorem priv_two (pv : PrivImpl) : RelCT isa (Two (At X JS)) (.call pv.name pv.code) (Two (At X JP)) :=
   two_then (priv_ct pv) fun _ _ hp ⟨h, hcs⟩ => WP.mono (priv_call pv hp h) fun _ ⟨hpost, hcs', _⟩ =>
     ⟨hpost, fun r hr hr' => (hcs' r hr).trans (hcs r hr hr')⟩
 
@@ -104,7 +106,7 @@ def J2 (s t : State) : Prop := ∃ R EM t₀, P1 s R EM t₀ ∧ ZInv s t₀ (kO
 def J3 (s t : State) : Prop := ∃ R EM t₀, P2 s R EM t₀ t
 def JDB (s t : State) : Prop := ∃ R EM, DB s R EM t
 
-theorem dBuild_ct : RelCT isa (Two (At JP)) dBuild fun _ _ => True := by
+theorem dBuild_ct : RelCT isa (Two (At X JP)) dBuild fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := J1) [.rsp] (pins (J := JP) [(.rsp, fb)] (by
       simp only [List.mem_singleton]; rintro p rfl s t h; exact h.1.rsp)
     (by simp only [List.mem_singleton]; rintro p rfl; exact fb_pin)) (by taint_decide)
@@ -147,7 +149,7 @@ theorem dBuild_ct : RelCT isa (Two (At JP)) dBuild fun _ _ => True := by
         · intro a s S; dsimp only; rw [S.scr, S.k, show dlOf s = dlOf a by simp only [dlOf, S.arg (i := 2) (by decide)]]
         · exact const_pin _)) (by taint_decide)
 
-theorem dBuild_two : RelCT isa (Two (At JP)) dBuild (Two (At JDB)) :=
+theorem dBuild_two : RelCT isa (Two (At X JP)) dBuild (Two (At X JDB)) :=
   two_then dBuild_ct fun _ _ hp ⟨h, hcs⟩ => WP.mono (dBuild_step hp h hcs) fun _ h' => ⟨_, _, h'⟩
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

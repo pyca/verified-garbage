@@ -23,19 +23,21 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 
+variable {pc : Bool}
+
 /-- SHA-256's streaming functions, and the facts about them. -/
 abbrev H : VG.Impl.Hmac.Stream.PPC64LE.Hash := VG.Proof.Hmac.Stream.PPC64LE.Sha256.hash
 abbrev hH : HashOK H := VG.Proof.Hmac.Stream.PPC64LE.Sha256.ok
 
-theorem fb_ge {s : State} (h : DPre s) : 3328 ≤ (fb s).toNat := by
+theorem fb_ge {s : State} (h : DPre pc s) : 3328 ≤ (fb s).toNat := by
   have := fb_toNat h; have := h.sp1; unfold stackBytes frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega
 
 /-- The stack below our frame misses `scratch`. -/
-theorem lowD {s : State} (h : DPre s) {n : Nat} (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes) {a l : Nat}
+theorem lowD {s : State} (h : DPre pc s) {n : Nat} (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes) {a l : Nat}
     (ha : a + l ≤ scrBytes) : (below (fb s) n).Disjoint ⟨scA s a, l⟩ :=
   (h.ks.sub_left (sub_trans (low_sub s hn) (callee_sub s))).sub_right (sub_trans (scSub ha) (sc_sub h))
 
-theorem scCovR {s u : State} (h : DPre s) (hwr : u.wr = fr s :: s.wr) {a n : Nat} (ha : a + n ≤ scrBytes) :
+theorem scCovR {s u : State} (h : DPre pc s) (hwr : u.wr = fr s :: s.wr) {a n : Nat} (ha : a + n ≤ scrBytes) :
     Covers [⟨scA s a, n⟩] (u.rd ++ u.wr) :=
   Covers.right (scCov h hwr ha)
 
@@ -46,7 +48,7 @@ theorem bytes_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Ad
   exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, len⟩) hd hl (List.mem_range.mp hi)
 
 /-- What a call working in `scratch`, on the stack below our frame, leaves. -/
-theorem Post.call {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {t t' : State}
+theorem Post.call {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte} {t t' : State}
     (hc : Post s R EM t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
     (hg : ∀ r ∈ preserved, t'.gpr r = t.gpr r) {ws : List Region} {n : Nat}
     (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes) (hf : Frame (ws ++ [below t.sp n]) t.mem t'.mem)
@@ -58,7 +60,7 @@ theorem Post.call {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {t t
 
 /-- A range of `scratch` that a call working elsewhere in `scratch`, on the
 stack below our frame, leaves as it was. -/
-theorem keep_call {s : State} (h : DPre s) {m m' : Mem} {ws : List Region} {n : Nat}
+theorem keep_call {s : State} (h : DPre pc s) {m m' : Mem} {ws : List Region} {n : Nat}
     (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes) (hf : Frame (ws ++ [below (fb s) n]) m m') {a l : Nat}
     (ha : a + l ≤ scrBytes) (hs : ∀ r ∈ ws, Region.Disjoint ⟨scA s a, l⟩ r) :
     Spec.Rsa.bytesAt m' (scA s a) l = Spec.Rsa.bytesAt m (scA s a) l :=
@@ -122,7 +124,7 @@ theorem shaFinArgs_ok {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (
     exec_addi (show Reg.r6 ≠ .r0 by decide) c5]
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 theorem init_step {t : State} (hc : Post s R EM t) {rest : Prog isa} {Q : State → Prop}

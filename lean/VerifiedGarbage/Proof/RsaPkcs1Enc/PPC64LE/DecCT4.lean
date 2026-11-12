@@ -34,8 +34,10 @@ open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.Proof.RsaPkcs1Enc (bitMask)
 
+variable {pc : Bool}
+
 section
-variable {e : Env}
+variable {e : Env pc}
 
 /-- A block split where a pointer it loads is used: the first part's taint
 from `rs₁`, the second's from `rs₂`, which `X` fixes. -/
@@ -43,8 +45,8 @@ theorem rel_split {P Q X : State → State → Prop} {l₁ l₂ : List Instr} (r
     {hc₁ : VG.Taint.Hint T} (ht₁ : (taint.check (ofRegs rs₁) (.block l₁) hc₁).isSome = true)
     {hc₂ : VG.Taint.Hint T} (ht₂ : (taint.check (ofRegs rs₂) (.block l₂) hc₂).isSome = true)
     (hpin₁ : ∀ a b, P e.s₁ a → P e.s₂ b → AgreeOn rs₁ a b) (hpin₂ : ∀ a b, X e.s₁ a → X e.s₂ b → AgreeOn rs₂ a b)
-    (hw₁ : ∀ s u, DPre s → P s u → WP isa (.block l₁) u (X s))
-    (hw : ∀ s u, DPre s → P s u → WP isa (.block (l₁ ++ l₂)) u (Q s)) :
+    (hw₁ : ∀ s u, DPre pc s → P s u → WP isa (.block l₁) u (X s))
+    (hw : ∀ s u, DPre pc s → P s u → WP isa (.block (l₁ ++ l₂)) u (Q s)) :
     RelCT isa (Rel e P) (.block (l₁ ++ l₂)) (Rel e Q) :=
   RelCT.block_append (RelCT.seq
     (rel_step (P' := fun s u => X s u ∧ WP isa (.block l₂) u (Q s)) rs₁ ht₁ hpin₁
@@ -62,7 +64,7 @@ def PA (s u : State) : Prop := PMK s u ∧ u.gpr .r11 = scA s sCL ∧ u.gpr .r7 
 def PAL (s u : State) : Prop := PP s u ∧ ∃ al, u.gpr .r6 = BitVec.ofNat 64 al
 
 omit e in
-theorem k11 {s : State} (h : DPre s) : s.gpr .r7 - BitVec.ofNat 64 11 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 11) := by
+theorem k11 {s : State} (h : DPre pc s) : s.gpr .r7 - BitVec.ofNat 64 11 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 11) := by
   have := h.k1; have := h.k2
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
@@ -125,7 +127,7 @@ def PSC (s u : State) : Prop := PP s u ∧ (∃ al, u.gpr .r6 = BitVec.ofNat 64 
   (∃ sep, u.gpr .r3 = BitVec.ofNat 64 sep ∧ sep < 2 ^ 63) ∧ u.gpr .r0 = 0 ∧ u.gpr .r8 = BitVec.allOnes 64
 
 omit e in
-theorem k2' {s : State} (h : DPre s) : s.gpr .r7 - BitVec.ofNat 64 2 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 2) := by
+theorem k2' {s : State} (h : DPre pc s) : s.gpr .r7 - BitVec.ofNat 64 2 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 2) := by
   have := h.k1; have := h.k2
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
@@ -175,7 +177,7 @@ def PO (s u : State) : Prop := (∃ R, Fr3 s R u) ∧ u.gpr .r11 = s.gpr .r3 + B
   u.gpr .r10 = scA s sAM + BitVec.ofNat 64 0 ∧ u.gpr .r7 = s.gpr .r7 ∧ u.gpr .r0 = 0
 
 omit e in
-theorem selLoop_run {s : State} (h : DPre s) {R : BitVec 64} {t : State} (hc : Fr3 s R t)
+theorem selLoop_run {s : State} (h : DPre pc s) {R : BitVec 64} {t : State} (hc : Fr3 s R t)
     (h11 : t.gpr .r11 = s.gpr .r3 + BitVec.ofNat 64 0) (h10 : t.gpr .r10 = scA s sAM + BitVec.ofNat 64 0)
     (h7 : t.gpr .r7 = s.gpr .r7) (h0 : t.gpr .r0 = 0) : WP isa selLoop t fun u => Fr3 s R u := by
   have hk := h.k2
@@ -266,7 +268,7 @@ theorem selPart_ct : RelCT isa (Rel e PSC) selPart (Rel e fun _ _ => True) := by
   exact rel_step [] (by taint_decide) (fun a b ⟨_, ha⟩ ⟨_, hb⟩ => ⟨by rw [ha.sp, hb.sp, e.fb_eq], fun _ h => nomatch h⟩)
     fun s u h ⟨R, hu⟩ => WP.mono (finish_ok hu) fun _ _ => trivial
 
-theorem body_ct : RelCT isa (Rel e PEnt) body fun _ _ => True := by
+theorem body_ct : RelCT isa (Rel e PEnt) (body pc) fun _ _ => True := by
   unfold body
   refine RelCT.seq setup_ct ?_
   refine RelCT.seq priv_ct ?_
@@ -286,8 +288,9 @@ end
 theorem code_ct : ConstantTime isa (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre
     (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pub code :=
   RelCT.constantTime (RelCT.alloc (fun _ _ ⟨_, _, hp⟩ => (same_of (pub_data hp)).sp)
-    ((RelCT.exists_ fun e : Env => body_ct (e := e)).mono
-      (fun _ _ ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ => ⟨⟨s, t, dPre_of hs, dPre_of ht, same_of (pub_data hp)⟩, ea, eb⟩)
+    ((RelCT.exists_ fun e : Env false => body_ct (e := e)).mono
+      (fun _ _ ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ =>
+        ⟨⟨s, t, dPre_of hs, dPre_of ht, nofun, nofun, same_of (pub_data hp)⟩, ea, eb⟩)
       fun _ _ h => h))
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
