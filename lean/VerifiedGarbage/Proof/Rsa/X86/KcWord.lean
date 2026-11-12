@@ -48,6 +48,23 @@ theorem Stg.mulWide_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
       (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
   · rw [e, h.arrs.get ha, h.arrs.get hb]
 
+/-- `mulHalf o a b`: `[a] [b]`, both below `2^(32 (w / 2))`, `2 w` words from array `o` on. -/
+theorem Stg.mulHalf_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {o a b : Nat} (ho : o + 1 < nArr) (ha : a ∈ live) (hb : b ∈ live)
+    (hol : ∀ j ∈ live, j ≠ o ∧ j ≠ o + 1) (hv : o ≠ aVD ∧ o + 1 ≠ aVD)
+    (hA : A a < 2 ^ (32 * (g.w / 2))) (hB : A b < 2 ^ (32 * (g.w / 2))) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.mulHalf g.L o a b) s fun t => Stg g s0 A live c t ∧
+      val32 t.mem g.B (arr g.w o) (2 * g.w) = A a * A b := by
+  refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulHalf_ok h.ws ho (h.live_lt a ha) (h.live_lt b hb)
+    (hol a ha).1 (hol a ha).2 (hol b hb).1 (hol b hb).2) fun t ⟨ht, k, e, r⟩ => ⟨?_, ?_⟩
+  · refine h.next ht k (by simp; omega) (by decide) r wordRegs_body
+      (h.arrs_keep k (fun j hj => by simp [(hol j hj).1, (hol j hj).2]) (by decide)) h.live_lt
+      (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
+  · have ea : val32 s.mem g.B (arr g.w a) g.w = A a := h.arrs.get ha
+    have eb : val32 s.mem g.B (arr g.w b) g.w = A b := h.arrs.get hb
+    rw [e, VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := g.w) (Nat.div_le_self _ _) (by rw [ea]; exact hA), ea,
+      VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := g.w) (Nat.div_le_self _ _) (by rw [eb]; exact hB), eb]
+
 /-- Two words are the number, when it is below `2^64`. -/
 theorem val32_two {m : Mem} {B : Addr} {w j : Nat} (hw : 2 ≤ w) (hl : num m B w j < 2 ^ 64) :
     val32 m B (arr w j) 2 = num m B w j :=

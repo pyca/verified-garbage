@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -22,6 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # `vg_rsa_crt_values` on x86-64: constant time, `main`
 
@@ -90,11 +92,25 @@ theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Impl.Bignum.X86_64.Public.
   · exact ⟨h.args.q, h.args.ql, ⟨_, h.q, L.qbl⟩, L.ql1, by have := L.ql2; have := @k8 I.k; omega⟩
   · exact ⟨h.args.d, h.args.dl, ⟨_, h.d, L.dbl⟩, L.dl1, by have := L.dl2; have := @k8 I.k; omega⟩
 
+/-- `GA` with `p` and `q` below their lengths' bounds. -/
+def GB (p : CvP) (s : State) : Prop :=
+  GA p s ∧ wv s.mem p.B (slot (wk p.k) aP) (wk p.k) < 256 ^ p.pl ∧
+    wv s.mem p.B (slot (wk p.k) aQ) (wk p.k) < 256 ^ p.ql
+
+/-- The loads, with `p` and `q` below their lengths' bounds. -/
+theorem loadsB_ct : RelCT isa (Two GA) (seqs (loadA aN Impl.Bignum.X86_64.Public.sN Impl.Bignum.X86_64.Public.sK ++
+    (loadA aP sP sPl ++ (loadA aQ sQ sQl ++ loadA aD sD sDl)))) (Two GB) :=
+  two_post (loads_ct.mono (fun _ _ h => h) fun _ _ _ => trivial) fun _ _ h => by
+    obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
+    exact WP.mono (cvLoads_ok h' L) fun t ⟨ht, mt, _, vP, vQ, _⟩ => ⟨⟨I, m₀, c, rfl, ht, L, O, mt.trans hm⟩,
+      by have := os2ip_lt I.pb; rw [L.pbl] at this; dsimp only [CvIn.pub]; rw [vP]; exact this,
+      by have := os2ip_lt I.qb; rw [L.qbl] at this; dsimp only [CvIn.pub]; rw [vQ]; exact this⟩
+
 /-! ## The arithmetic -/
 
 /-- A cleared product accumulator, for the multiplication. -/
 def GZ (p : CvP) (s : State) : Prop :=
-  GA p s ∧ wv s.mem p.B (slot (wk p.k) aU) (2 * wk p.k + 2) = 0
+  GB p s ∧ wv s.mem p.B (slot (wk p.k) aU) (2 * wk p.k + 2) = 0
 
 /-- Array-only changes to the two contiguous product slots preserve `GA`. -/
 theorem GA.product {p : CvP} {s t : State} (h : GA p s)
@@ -105,21 +121,53 @@ theorem GA.product {p : CvP} {s t : State} (h : GA p s)
   change Outside I.B (slot (wk I.k) aU) (8 * (2 * wk I.k + 2)) s.mem t.mem at ho
   rw [mword_out ho, hm]
 
+/-- `p` and `q` through a change to the product's arrays. -/
+theorem GB.product {p : CvP} {s t : State} (h : GB p s)
+    (ho : Outside p.B (slot (wk p.k) aU) (8 * (2 * wk p.k + 2)) s.mem t.mem)
+    {rs : List Reg} (hk : Keep rs s t) (hr : .rdi ∉ rs ∧ .rsp ∉ rs) : GB p t := by
+  have hw := h.1.ws
+  have hn := hw.scr.nowrap
+  have sP := hw.sl (show aP < 16 by decide)
+  have sQ := hw.sl (show aQ < 16 by decide)
+  refine ⟨h.1.product ho hk hr, ?_, ?_⟩
+  · rw [ho.wv (by simp [slot, aU, aP]; omega) (by omega)]; exact h.2.1
+  · rw [ho.wv (by simp [slot, aU, aQ]; omega) (by omega)]; exact h.2.2
+
 /-- The product's zeroing uses only the public workspace dimensions. -/
-theorem productZero_ct : RelCT isa (Two GA) (seqs Impl.Rsa.X86_64.Crt.zeroAccs) (Two GZ) := by
+theorem productZero_ct : RelCT isa (Two GB) (seqs Impl.Rsa.X86_64.Crt.zeroAccs) (Two GZ) := by
   refine two_post (two_map (fun p : CvP => (⟨p.B, p.Z, wk p.k⟩ : VG.Proof.Bignum.X86_64.Ws))
-    (fun _ _ h => ⟨_, h.ws.good⟩) zeroAccs_ct) fun p s h => ?_
-  have hw := h.ws.w2
-  exact WP.mono (zeroAccs_ok h.ws.good.1 h.ws.good.2 (by omega)) fun t ⟨hz, ho, hk⟩ =>
+    (fun _ _ h => ⟨_, h.1.ws.good⟩) zeroAccs_ct) fun p s h => ?_
+  have hw := h.1.ws.w2
+  exact WP.mono (zeroAccs_ok h.1.ws.good.1 h.1.ws.good.2 (by omega)) fun t ⟨hz, ho, hk⟩ =>
     ⟨h.product ho hk (by decide), wv_zero hz⟩
 
-/-- The multiplication is checked after pinning its width and array bases. -/
+/-- The registers `mulRows` needs pinned. -/
+def pqVal (p : CvP) : Reg → BitVec 64
+  | .rdi => p.B
+  | .r11 => off p.B (slot (wk p.k) aP)
+  | .r9 => off p.B (slot (wk p.k) aQ)
+  | .r8 => off p.B (slot (wk p.k) aU)
+  | .r10 => BitVec.ofNat 64 ((p.pl + 7) / 8)
+  | .r12 => BitVec.ofNat 64 ((p.ql + 7) / 8)
+  | _ => 0
+
+/-- The multiplication is checked after pinning its widths (of the public lengths) and array bases. -/
 theorem product_ct : RelCT isa (Two GZ)
     (.seq (.block productSetup) Impl.Rsa.X86_64.Crt.mulRows) (Two GA) := by
-  unfold productSetup
-  simp only [List.append_assoc]
-  refine ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.1.ws) (by taint_decide) fun p s h => ?_
-  exact WP.mono (product_ok h.1.ws h.2) fun t ⟨_, ho, hk⟩ => h.1.product ho hk (by decide)
+  refine pin_ct [.rdi] [.rdi, .r11, .r9, .r8, .r10, .r12] pqVal
+    (fun a s₁ s₂ h₁ h₂ => pins_GA a s₁ s₂ h₁.1.1 h₂.1.1) (by taint_decide) (fun p s h => ?_) (by taint_decide)
+    fun p s h => ?_
+  all_goals
+    obtain ⟨⟨⟨I, m₀, c, rfl, h', L, O, hm⟩, bP, bQ⟩, hz⟩ := id h
+    have := L.pl2; have := L.ql2; have := L.k2
+  · refine WP.mono (productSetup_ok h'.ws h'.args.pl h'.args.ql (by omega) (by omega))
+      fun t ⟨h11, h9, h8, h10, h12, _, k⟩ r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact (k.gpr (by decide)).trans h'.ws.rdi
+    all_goals assumption
+  · exact WP.mono (product_ok h'.ws h'.args.pl h'.args.ql L.pl1 L.ql1 (by unfold wk; omega) (by unfold wk; omega)
+      bP bQ hz) fun t ⟨_, ho, hk⟩ => GA.product ⟨I, m₀, c, rfl, h', L, O, hm⟩ ho hk (by decide)
 
 /-- The public registers the full-product comparison reads. -/
 def ProductEq (p : CvP) (s : State) : Prop :=
@@ -149,7 +197,7 @@ theorem productEq_ct : RelCT isa (Two GA) (seqs Impl.Rsa.X86_64.Crt.eqCheck) fun
         hl (sArr aN) (by decide), hw.hw, hw.harr aU (by decide), hw.harr aN (by decide)]) rfl)
     fun t ⟨ht, hk⟩ => ⟨(hk.gpr (by decide)).trans hw.rdi, ht⟩
 
-theorem pqCheck_ct : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
+theorem pqCheck_ct : RelCT isa (Two GB) (seqs pqCheck) (Two GA) := by
   refine two_post ?_ fun p s h => ?_
   · unfold pqCheck
     rw [List.append_assoc]
@@ -158,8 +206,8 @@ theorem pqCheck_ct : RelCT isa (Two GA) (seqs pqCheck) (Two GA) := by
         change RelCT isa (Two GZ) (.seq (.block productSetup) (.seq Impl.Rsa.X86_64.Crt.mulRows
           (seqs Impl.Rsa.X86_64.Crt.eqCheck))) _
         exact RelCT.assoc (RelCT.seq product_ct productEq_ct)))
-  · obtain ⟨I, m₀, c, rfl, h, L, O, hm⟩ := h
-    exact WP.mono (cvCheck_ok h L hm) fun t ⟨ht, hmt, _⟩ => ⟨I, m₀, _, rfl, ht, L, O, hmt⟩
+  · obtain ⟨⟨I, m₀, c, rfl, h, L, O, hm⟩, bP, bQ⟩ := h
+    exact WP.mono (cvCheck_ok h L hm bP bQ) fun t ⟨ht, hmt, _⟩ => ⟨I, m₀, _, rfl, ht, L, O, hmt⟩
 
 theorem divisor_ct {j : Nat} (hj : j < 16) (hjC : aC ≠ j) {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .rsi ++ base aC .rbx)) copyWords)

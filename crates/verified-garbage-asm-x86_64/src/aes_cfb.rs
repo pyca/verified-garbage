@@ -10,6 +10,8 @@ pub const VG_AES_CFB128_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = 
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -34,7 +36,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJPhIjWQkCDHAMckx0jH2Mf9FMcBFMdLD"
 .p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
@@ -46,6 +48,8 @@ pub const VG_AES_CFB128_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = 
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -86,7 +90,7 @@ jmp 26f
 jmp 21f
 20:
 21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJPhIjWQkCDHAMckx0jH2Mf9FMcBFMdLD"
 .p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
@@ -114,7 +118,7 @@ pub const VG_AES_CFB128_ENCRYPT_FINAL_VAES_FEATURES: verified_garbage_cpu::Featu
 pub(crate) unsafe extern "sysv64" fn vg_aes_cfb128_encrypt_final_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJMBIieBIg8AQSIlEJAhIi0QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIn7SIn1SYnUTYnPTYnGSYPmD02JxU0p9UkBzUnB6AQ="
-call {vg_aes_cfb128_encrypt_vaes}
+call {vg_aes_cfb128_encrypt_vaes_core}
 .base64 "TYX2"
 je 20f
 .base64 "SInfSInuTIniuQEAAABNifg="
@@ -128,7 +132,7 @@ jmp 21f
 21:
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
-        vg_aes_cfb128_encrypt_vaes = sym super::aes_cfb::vg_aes_cfb128_encrypt_vaes,
+        vg_aes_cfb128_encrypt_vaes_core = sym super::aes::vg_aes_cfb128_encrypt_vaes_core::vg_aes_cfb128_encrypt_vaes_core,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
@@ -155,7 +159,7 @@ pub const VG_AES_CFB128_DECRYPT_FINAL_VAES_FEATURES: verified_garbage_cpu::Featu
 pub(crate) unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_final_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJMBIieBIg8AQSIlEJAhIi0QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIn7SIn1SYnUTYnPTYnGSYPmD02JxU0p9UkBzUnB6AQ="
-call {vg_aes_cfb128_decrypt_vaes}
+call {vg_aes_cfb128_decrypt_vaes_core}
 .base64 "TYX2"
 je 20f
 .base64 "SInfSInuTIniuQEAAABNifg="
@@ -169,7 +173,7 @@ jmp 21f
 21:
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
-        vg_aes_cfb128_decrypt_vaes = sym super::aes_cfb::vg_aes_cfb128_decrypt_vaes,
+        vg_aes_cfb128_decrypt_vaes_core = sym super::aes::vg_aes_cfb128_decrypt_vaes_core::vg_aes_cfb128_decrypt_vaes_core,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
@@ -180,6 +184,8 @@ pub const VG_AES_CFB128_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features =
 /// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -205,7 +211,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJPhIjWQkCDHAMckx0jH2Mf9FMcBFMdLD"
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
@@ -217,6 +223,8 @@ pub const VG_AES_CFB128_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features =
 /// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -257,7 +265,7 @@ jmp 26f
 jmp 21f
 20:
 21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJPhIjWQkCDHAMckx0jH2Mf9FMcBFMdLD"
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
@@ -285,7 +293,7 @@ pub const VG_AES_CFB128_ENCRYPT_FINAL_AESNI_FEATURES: verified_garbage_cpu::Feat
 pub(crate) unsafe extern "sysv64" fn vg_aes_cfb128_encrypt_final_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJMBIieBIg8AQSIlEJAhIi0QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIn7SIn1SYnUTYnPTYnGSYPmD02JxU0p9UkBzUnB6AQ="
-call {vg_aes_cfb128_encrypt_aesni}
+call {vg_aes_cfb128_encrypt_aesni_core}
 .base64 "TYX2"
 je 20f
 .base64 "SInfSInuTIniuQEAAABNifg="
@@ -299,7 +307,7 @@ jmp 21f
 21:
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
-        vg_aes_cfb128_encrypt_aesni = sym super::aes_cfb::vg_aes_cfb128_encrypt_aesni,
+        vg_aes_cfb128_encrypt_aesni_core = sym super::aes::vg_aes_cfb128_encrypt_aesni_core::vg_aes_cfb128_encrypt_aesni_core,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -326,7 +334,7 @@ pub const VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES: verified_garbage_cpu::Feat
 pub(crate) unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_final_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJMBIieBIg8AQSIlEJAhIi0QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIn7SIn1SYnUTYnPTYnGSYPmD02JxU0p9UkBzUnB6AQ="
-call {vg_aes_cfb128_decrypt_aesni}
+call {vg_aes_cfb128_decrypt_aesni_core}
 .base64 "TYX2"
 je 20f
 .base64 "SInfSInuTIniuQEAAABNifg="
@@ -340,7 +348,7 @@ jmp 21f
 21:
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
-        vg_aes_cfb128_decrypt_aesni = sym super::aes_cfb::vg_aes_cfb128_decrypt_aesni,
+        vg_aes_cfb128_decrypt_aesni_core = sym super::aes::vg_aes_cfb128_decrypt_aesni_core::vg_aes_cfb128_decrypt_aesni_core,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -444,7 +452,7 @@ jmp 21f
 pub(crate) unsafe extern "sysv64" fn vg_aes_cfb128_encrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJMBIieBIg8AQSIlEJAhIi0QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIn7SIn1SYnUTYnPTYnGSYPmD02JxU0p9UkBzUnB6AQ="
-call {vg_aes_cfb128_encrypt}
+call {vg_aes_cfb128_encrypt_core}
 .base64 "TYX2"
 je 20f
 .base64 "SInfSInuTIniuQEAAABNifg="
@@ -458,7 +466,7 @@ jmp 21f
 21:
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
-        vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
+        vg_aes_cfb128_encrypt_core = sym super::aes::vg_aes_cfb128_encrypt_core::vg_aes_cfb128_encrypt_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
@@ -481,7 +489,7 @@ jmp 21f
 pub(crate) unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJMBIieBIg8AQSIlEJAhIi0QkCEiJGEiJaAhMiWAQTIloGEyJcCBMiXgoSIn7SIn1SYnUTYnPTYnGSYPmD02JxU0p9UkBzUnB6AQ="
-call {vg_aes_cfb128_decrypt}
+call {vg_aes_cfb128_decrypt_core}
 .base64 "TYX2"
 je 20f
 .base64 "SInfSInuTIniuQEAAABNifg="
@@ -495,7 +503,7 @@ jmp 21f
 21:
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
-        vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
+        vg_aes_cfb128_decrypt_core = sym super::aes::vg_aes_cfb128_decrypt_core::vg_aes_cfb128_decrypt_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

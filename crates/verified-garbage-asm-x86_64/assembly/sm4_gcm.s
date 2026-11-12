@@ -16,7 +16,7 @@ vg_sm4_gcm_init:
 	mov QWORD PTR [rdx+168], r15
 	mov r15, rdx
 	mov r13, rsi
-	call {vg_sm4_expand_key}
+	call {vg_sm4_expand_key_core}
 	mov eax, 0
 	mov QWORD PTR [r13+240], rax
 	mov QWORD PTR [r13+248], rax

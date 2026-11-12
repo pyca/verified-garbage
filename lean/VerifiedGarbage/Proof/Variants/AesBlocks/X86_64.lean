@@ -16,6 +16,9 @@ def aesNi : BlocksImpl :=
   { BlocksImpl.aesni with
     cfb8EncRes := some BlocksResidue.encAesni
     cfb8DecRes := some BlocksResidue.decAesni
+    cfbEncRes := some BlocksResidue.cfbEncAesni
+    cfbDecRes := some BlocksResidue.cfbDecAesni
+    ofbRes := some BlocksResidue.ofbAesni
     ecbEncRes := some BlocksResidue.ecbAesni
     ocbInitRes := some BlocksResidue.ocbAesni }
 
@@ -26,6 +29,9 @@ def vaes : BlocksImpl :=
   { BlocksImpl.vaes with
     cfb8EncRes := some BlocksResidue.encVaes
     cfb8DecRes := some BlocksResidue.decVaes
+    cfbEncRes := some BlocksResidue.cfbEncVaes
+    cfbDecRes := some BlocksResidue.cfbDecVaes
+    ofbRes := some BlocksResidue.ofbVaes
     ecbEncRes := some BlocksResidue.ecbVaes
     ocbInitRes := some BlocksResidue.ocbVaes }
 

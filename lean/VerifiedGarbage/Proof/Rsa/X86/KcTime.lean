@@ -375,6 +375,66 @@ def AtStart (g : CallGeometry) (sp : BitVec 32) (x : Vals × State) (t : State) 
   RunBase g sp x ∧ Stg (geometry g) x.2 (aStart x.1) live0
     (decide (x.1.p % 2 = 1) && decide (x.1.p * x.1.q = x.1.n)) t
 
+/-- Before the product: the guard in `sG`. -/
+def AtBal (g : CallGeometry) (sp : BitVec 32) (x : Vals × State) (t : State) : Prop :=
+  RunBase g sp x ∧ Stg (geometry g) x.2 (aStart x.1) live0 (decide (x.1.p % 2 = 1)) t ∧
+    (slot t.mem g.base sG = 0 ↔ BalN g x.1.n)
+
+/-- After the product. -/
+def AtProd (g : CallGeometry) (sp : BitVec 32) (x : Vals × State) (t : State) : Prop :=
+  RunBase g sp x ∧ Stg (geometry g) x.2 (aStart x.1) live0 (decide (x.1.p % 2 = 1)) t ∧
+    val32 t.mem (geometry g).B (arr (geometry g).w aVQ) (2 * (geometry g).w) = x.1.p * x.1.q
+
+theorem startBal_ok {g : CallGeometry} {sp : BitVec 32} {x : Vals × State} {t : State}
+    (h : RunBase g sp x ∧ Stg (geometry g) x.2 (aStart x.1) live0 (decide (x.1.p % 2 = 1)) t) :
+    WP isa (.block (VG.Impl.Rsa.X86.WordModRt.balanced (lay g.full) 1 (pLenArg g.full) (qLenArg g.full) aN sG)) t
+      (AtBal g sp x) := by
+  obtain ⟨⟨r, b⟩, h6⟩ := h
+  obtain ⟨ap, -, hap, -, parg⟩ := b.pLen
+  obtain ⟨aq, -, haq, -, qarg⟩ := b.qLen
+  have ep := r.1.arg parg hap (pLen_lt g.full)
+  have eq := r.1.arg qarg haq (qLen_lt g.full)
+  refine WP.mono (h6.balanced_ok (h6.arg parg) (h6.arg qarg) hap haq (by decide))
+    fun t7 ⟨h7, an, han, cn, _, hg⟩ => ⟨⟨r, b⟩, h7, ?_⟩
+  have ea := (stg_run r h6).1.arg cn han (nLen_lt g.full)
+  have nv : num t.mem g.base (geometry g).w aN = x.1.n := h6.arrs.get (by decide)
+  have tp : 2 ^ 31 ≤ mw t.mem g.base (geometry g).w aN ((geometry g).w - 1) ↔
+      2 ^ (32 * (geometry g).w - 1) ≤ x.1.n := by
+    rw [← nv]; exact top_iff h6.ws.ws.wpos
+  refine hg.trans ?_
+  subst ea ep eq
+  exact ⟨fun ⟨a, b, c, d, e⟩ => ⟨a, b, c, d, tp.mp e⟩, fun ⟨a, b, c, d, e⟩ => ⟨a, b, c, d, tp.mpr e⟩⟩
+
+theorem startGuard_ok {g : CallGeometry} {sp : BitVec 32} {x : Vals × State} {t : State} (h : AtBal g sp x t) :
+    WP isa (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sG)), .alu .cmp .eax (.imm 0)]) t fun t' =>
+      AtBal g sp x t' ∧ t'.zf = some (decide (slot t'.mem g.base sG = 0)) := by
+  obtain ⟨rb, hs, hg⟩ := h
+  refine wp_movS (readSrc_sc hs.ws.ws.workspace (by have := hs.ws.ws.hdr_le; unfold sG hdr at *; omega))
+    fun u U _ => wp_cmpi fun t' T _ z => WP.block_nil ?_
+  have hs' := (hs.regs U.keeps U.mem (by decide)).regs (T.keeps []) T.mem (by decide)
+  have mm : t'.mem = t.mem := T.mem.trans U.mem
+  have sl : slot t'.mem g.base sG = slot t.mem g.base sG := by rw [mm]
+  refine ⟨⟨rb, hs', by rw [sl]; exact hg⟩, ?_⟩
+  rw [z, U.gpr, sub0_beq, sl]; rfl
+
+/-- Under the guard, the product over the primes' `w / 2` words. -/
+theorem halfProd_ok {g : CallGeometry} {sp : BitVec 32} {x : Vals × State} {t : State}
+    (h : AtBal g sp x t ∧ BalN g x.1.n) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.mulHalf (lay g.full) aVQ aP aQ) t (AtProd g sp x) := by
+  obtain ⟨⟨⟨r, b⟩, hs, _⟩, bal⟩ := h
+  obtain ⟨a, -, ha, plt, parg⟩ := b.pLen
+  obtain ⟨a', -, ha', qlt, qarg⟩ := b.qLen
+  have ea := r.1.arg parg ha (pLen_lt g.full)
+  have ea' := r.1.arg qarg ha' (qLen_lt g.full)
+  subst ea ea'
+  obtain ⟨h8, hp, hq, -, -⟩ := bal
+  have e8 : 32 * ((geometry g).w / 2) = 8 * (g.args (pLenArg g.full)).toNat := by
+    simp only [geometry, Geo.w, VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega
+  exact WP.mono (hs.mulHalf_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by show x.1.p < _; rw [e8]; exact plt)
+    (by show x.1.q < _; rw [e8, show 8 * (g.args (pLenArg g.full)).toNat = 8 * (g.args (qLenArg g.full)).toNat by
+      omega]; exact qlt)) fun _ ⟨ht, e⟩ => ⟨⟨r, b⟩, ht, e⟩
+
 theorem start_relCT {g : CallGeometry} {sp : BitVec 32} (ck : KcCk g.full) :
     RelCT isa (Both₂ fun x t => RunBase g sp x ∧ t = x.2) (start g.full) (Both₂ (AtStart g sp)) := by
   unfold start
@@ -384,21 +444,52 @@ theorem start_relCT {g : CallGeometry} {sp : BitVec 32} (ck : KcCk g.full) :
     Stg (geometry g) x.2 (aStart x.1) live0 (decide (x.1.p % 2 = 1)) t)
     (taintLift ck.first (fun x t h => h.2 ▸ h.1.1) fun x t h => by
       obtain ⟨hb, rfl⟩ := h; exact WP.mono (first_ok hb.2) fun _ ht => ⟨hb, ht⟩) ?_)
-  -- The product `p q`.
-  refine VG.RelCT.seq (R := Both₂ fun x t => RunBase g sp x ∧
-    Stg (geometry g) x.2 (aStart x.1) live0 (decide (x.1.p % 2 = 1)) t ∧
-    val32 t.mem (geometry g).B (arr (geometry g).w aVQ) (2 * (geometry g).w) = x.1.p * x.1.q) ?_ ?_
-  · refine relLift (Rel := fun x₁ x₂ : Vals × State => x₁.1.n = x₂.1.n) ?_ fun x t h =>
-      WP.mono (h.2.mulWide_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide)
-        (by decide)) fun _ ⟨ht, e⟩ => ⟨h.1, ht, e⟩
-    refine fun t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂ => ?_
-    obtain ⟨x₁, x₂, _, h₁, h₂⟩ := hp
-    exact VG.Proof.Rsa.X86.WordRt.mulRows_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
-      (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O) (τV_regs g.full)
-      (rows := none) (by show 1 ≤ VG.Proof.Rsa.X86.KeyRt.kw _; exact h₁.2.ws.kw_pos) (Nat.le_refl _)
-      (fun k hk => by cases hk) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      ck.rows.c₀ ck.rows.c₁ ck.rows.c₂ _ _ _ _ _ _
-      ⟨⟨h₁.2.ws, stg_run h₁.1.1 h₁.2⟩, ⟨h₂.2.ws, stg_run h₂.1.1 h₂.2⟩⟩ e₁ e₂
+  -- The guard.
+  refine VG.RelCT.seq (R := Both₂ (AtBal g sp))
+    (taintLift ck.bal (fun x t h => stg_run h.1.1 h.2) fun x t h => startBal_ok h) ?_
+  -- The product `p q`: over the primes' `w / 2` words where the guard holds.
+  refine VG.RelCT.seq (R := Both₂ (AtProd g sp)) ?_ ?_
+  · unfold VG.Impl.Rsa.X86.WordModRt.ifBalanced
+    have zEq : ∀ {t₁ t₂ : State}, Both₂ (fun x t => AtBal g sp x t ∧ t.zf = some (decide (slot t.mem g.base sG = 0)))
+        t₁ t₂ → t₁.zf = t₂.zf := fun {t₁ t₂} ⟨x₁, x₂, hn, ⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩ => by
+      rw [z₁, z₂]
+      have : (slot t₁.mem g.base sG = 0) ↔ (slot t₂.mem g.base sG = 0) := by
+        rw [g₁.2.2, g₂.2.2]; change BalN g x₁.1.n ↔ BalN g x₂.1.n; rw [hn]
+      simp only [this]
+    refine VG.RelCT.seq (R := Both₂ fun x t => AtBal g sp x t ∧ t.zf = some (decide (slot t.mem g.base sG = 0)))
+      (taintLift ck.guard (fun x t h => stg_run h.1.1 h.2.1) fun x t h => startGuard_ok h)
+      (VG.RelCT.ite (M := isa) (c := .e) (fun t₁ t₂ h => zEq h) ?_ ?_)
+    · refine (relLift (Rel := fun x₁ x₂ : Vals × State => x₁.1.n = x₂.1.n)
+        (P := fun x t => AtBal g sp x t ∧ BalN g x.1.n) ?_ fun x t h => halfProd_ok h).mono ?_ fun _ _ h => h
+      · refine fun t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂ => ?_
+        obtain ⟨x₁, x₂, _, h₁, h₂⟩ := hp
+        exact VG.Proof.Rsa.X86.WordRt.mulHalf_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
+          (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O) (τV_regs g.full)
+          (by show 1 ≤ VG.Proof.Rsa.X86.KeyRt.kw _; exact h₁.1.2.1.ws.kw_pos)
+          (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+          ck.half.c₀ ck.half.c₁ ck.half.c₂ _ _ _ _ _ _
+          ⟨⟨h₁.1.2.1.ws, stg_run h₁.1.1.1 h₁.1.2.1⟩, ⟨h₂.1.2.1.ws, stg_run h₂.1.1.1 h₂.1.2.1⟩⟩ e₁ e₂
+      · rintro t₁ t₂ ⟨hb, et⟩
+        have et₂ : isa.eval .e t₂ = some true := (zEq hb).symm.trans et
+        obtain ⟨x₁, x₂, hn, ⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩ := hb
+        have b₁ : BalN g x₁.1.n := g₁.2.2.mp (by
+          change t₁.zf = _ at et; rw [z₁] at et; simpa using et)
+        have b₂ : BalN g x₂.1.n := g₂.2.2.mp (by
+          change t₂.zf = _ at et₂; rw [z₂] at et₂; simpa using et₂)
+        exact ⟨x₁, x₂, hn, ⟨g₁, b₁⟩, ⟨g₂, b₂⟩⟩
+    · refine (relLift (Rel := fun x₁ x₂ : Vals × State => x₁.1.n = x₂.1.n) (P := AtBal g sp) ?_ fun x t h =>
+        WP.mono (h.2.1.mulWide_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide)
+          (by decide)) fun _ ⟨ht, e⟩ => ⟨h.1, ht, e⟩).mono ?_ fun _ _ h => h
+      · refine fun t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂ => ?_
+        obtain ⟨x₁, x₂, _, h₁, h₂⟩ := hp
+        exact VG.Proof.Rsa.X86.WordRt.mulRows_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
+          (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O) (τV_regs g.full)
+          (rows := none) (by show 1 ≤ VG.Proof.Rsa.X86.KeyRt.kw _; exact h₁.2.1.ws.kw_pos) (Nat.le_refl _)
+          (fun k hk => by cases hk) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+          ck.rows.c₀ ck.rows.c₁ ck.rows.c₂ _ _ _ _ _ _
+          ⟨⟨h₁.2.1.ws, stg_run h₁.1.1 h₁.2.1⟩, ⟨h₂.2.1.ws, stg_run h₂.1.1 h₂.2.1⟩⟩ e₁ e₂
+      · rintro t₁ t₂ ⟨⟨x₁, x₂, hn, ⟨g₁, _⟩, ⟨g₂, _⟩⟩, _⟩
+        exact ⟨x₁, x₂, hn, g₁, g₂⟩
   · -- `p q = n`, and'ed into the mask.
     refine taintLift ck.eqAcc (fun x t h => stg_run h.1.1 h.2.1) fun x t h => ?_
     refine WP.seq (WP.mono (h.2.1.eqWide_ok (o := aVQ) (n := aN) (by decide) (by decide)) fun t1 ⟨h1, e1⟩ => ?_)

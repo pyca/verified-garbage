@@ -40,6 +40,11 @@ structure CvCk : Prop where
     (.block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc VG.Impl.Rsa.X86.WordModRt.oJ) .eax]))
   r₁ : Ck τV (.block (VG.Proof.Rsa.X86.WordRt.rowHead lay aQ))
   r₂ : Ck τV₂ (.seq (.block (VG.Proof.Rsa.X86.WordRt.rowH₂ lay aDR2 aP)) (VG.Proof.Rsa.X86.WordRt.rowTail lay aDR2 aP aQ none))
+  h₀ : Ck τV (.seq (.seq (.seq (VG.Impl.Rsa.X86.KeyRt.zeroWide lay aDR2) (VG.Impl.Rsa.X86.KeyRt.zeroWide lay (aDR2 + 1)))
+    (.block (VG.Impl.Rsa.X86.WordModRt.topZero lay aDR2)))
+    (.block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc VG.Impl.Rsa.X86.WordModRt.oJ) .eax]))
+  h₂ : Ck τV₂ (.seq (.block (VG.Proof.Rsa.X86.WordRt.rowH₂ lay aDR2 aP true))
+    (VG.Proof.Rsa.X86.WordRt.rowTail lay aDR2 aP aQ none true))
   checksA : Ck τV (VG.Impl.Rsa.X86.Keys.seqs checksPrefix)
   suffix : Ck τV (VG.Impl.Rsa.X86.Keys.seqs checksSuffix)
   guard : Ck τV (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sG)), .alu .cmp .eax (.imm 0)])
@@ -57,7 +62,7 @@ structure CvCk : Prop where
   stores : Ck τV stores
 
 theorem cvCk : CvCk := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals exact ⟨_, by taint_decide⟩
 
 end VG.Proof.Rsa.X86.CrtValuesRt
