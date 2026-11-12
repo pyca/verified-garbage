@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValSetup
 public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
+public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValTail
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64

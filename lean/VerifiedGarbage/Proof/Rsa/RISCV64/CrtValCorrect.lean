@@ -148,43 +148,6 @@ theorem dParts_ok {s0 s : State} (h : PreC s0) {X₁ X₂ V X : Nat} (iv : Iv s0
 
 end VG.Proof.Rsa.RISCV64.CrtValues
 
-namespace VG.Proof.Rsa.RISCV64.InvBatch
-
-open VG VG.RISCV64 VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys VG.Impl.Bignum.RISCV64
-open VG.Impl.Rsa.RISCV64.Keys (ptr)
-open VG.Impl.Rsa.RISCV64.InvBatch (zeroW zeros)
-open VG.RISCV64.RegUpd
-
-/-- `zeroW j` on the working space alone: `[j]` := 0. -/
-theorem zeroWs_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N) (hN : N ≤ 256) :
-    WP isa (zeroW j) s fun t => Ws t B Z w N ∧ Keys.Frame B w [j] [] s.mem t.mem ∧ num t.mem B w j = 0 ∧
-      Keep kRegs s t := by
-  have fj := h.arr_fit hj
-  have hS : S w = 8 * (w + 2) := rfl
-  have := h.wle
-  have := arr_al4 w j
-  rw [zeroW, WP.seq_iff]
-  refine ptr_ok h (by decide) (by decide) (by omega) ?_
-  refine WP.mono (WP.keep [.t3] (Q := fun u => u.gpr .t3 = BitVec.ofNat 64 (2 * w + 2) ∧
-    u.gpr .t0 = off B (arr w j) ∧ u.mem = s.mem) ?_ (by rfl) (by rfl)) fun u ⟨⟨u3, u0, um⟩, ku⟩ => ?_
-  · brun [h.s9]
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
-  have k1 : Keep kRegs s u := ((Keep.write _ .t0 _).trans ku).mono (by decide)
-  rw [zeros, WP.seq_iff]
-  refine WP.mono (WP.keep [.t5] (Q := fun y => y.gpr .t5 = 0 ∧ y.mem = u.mem) (by brun [fin64_exec_li_zero])
-    (by rfl) (by rfl)) fun y ⟨⟨y5, ym⟩, ky⟩ => ?_
-  have k2 : Keep kRegs s y := Keep.trans' k1 (ky.mono (by decide))
-  refine WP.mono (zeroLoop_ok (dO := arr w j) (n := 2 * w + 2) (h.of_keep k2).scr (by rw [ky.gpr (by decide)]; exact u0)
-    (by rw [ky.gpr (by decide)]; exact u3) y5 (by omega) (by omega) (by omega) (by omega)) fun t ⟨z, out, kt⟩ => ?_
-  rw [ym, um] at out
-  refine ⟨h.of_keep (Keep.trans' k2 (kt.mono (by decide))), Keys.Frame.of_arr (d := 0)
-    (by simpa only [Nat.add_zero] using out) (by omega) (by simp), ?_, Keep.trans' k2 (kt.mono (by decide))⟩
-  rw [num_eq]
-  exact val32_zero fun i hi => z i (by omega)
-
-end VG.Proof.Rsa.RISCV64.InvBatch
 
 namespace VG.Proof.Rsa.RISCV64.CrtValues
 
@@ -195,101 +158,6 @@ open VG.Impl.Rsa.RISCV64.CrtValues (dParts nArr aP aQ aD aDQ aDD aDT aDR2 aDR3 s
 open VG.Proof.Rsa.CrtValues (maskOf)
 
 /-! ## The divisions by words, for a balanced key -/
-
-theorem cv_exec_li32 {s : State} {d : Reg} : exec (.li d 32) s = some (s.write d 32#64) := by
-  rw [exec_li (by decide)]; rfl
-
-theorem wr_other {m : Mem} {B : Addr} {d e : Nat} (v : BitVec 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d)
-    (he : e + 8 ≤ 2 ^ 64) (hd : d + 8 ≤ 2 ^ 64) : word (m.writeW (off B e) v) B d = word m B d :=
-  (writeW_outside m B v he).word h hd
-
-theorem Outside.writeW_in {B : Addr} {o n e : Nat} {m m' : Mem} (h : Outside B o n m m') (v : BitVec 64)
-    (he : o ≤ e) (he' : e + 8 ≤ o + n) (hf : e + 8 ≤ 2 ^ 64) : Outside B o n m (m'.writeW (off B e) v) :=
-  h.trans ((writeW_outside m' B v hf).mono he he')
-
-/-- `saveK`: `kept` into `aDQ`'s first nine words. -/
-theorem saveK_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (hq : aDQ < N) (hw : 7 ≤ w) :
-    WP isa (.block saveK) s fun t => Ws t B Z w N ∧ Keys.Frame B w [aDQ] [] s.mem t.mem ∧ Keep [.t0] s t ∧
-      word t.mem B (arr w aDQ) = s.gpr .s1 ∧ word t.mem B (arr w aDQ + 8) = s.gpr .s2 ∧
-      word t.mem B (arr w aDQ + 16) = s.gpr .s3 ∧ word t.mem B (arr w aDQ + 24) = s.gpr .s4 ∧
-      word t.mem B (arr w aDQ + 32) = s.gpr .a0 ∧ word t.mem B (arr w aDQ + 40) = s.gpr .a1 ∧
-      word t.mem B (arr w aDQ + 48) = s.gpr .a2 ∧ word t.mem B (arr w aDQ + 56) = s.gpr .a3 ∧
-      word t.mem B (arr w aDQ + 64) = s.gpr .a6 := by
-  have fit := h.arr_fit hq
-  have nw := h.nowrap
-  have hS : S w = 8 * (w + 2) := rfl
-  have al := arr_al w aDQ
-  unfold saveK
-  refine ptr_ok h (by decide) (by decide) (show aDQ < 2048 by decide) ?_
-  generalize hA : arr w aDQ = A at fit al
-  refine WP.mono (WP.keep [] (Q := fun t => t.mem =
-      ((((((((s.mem.writeW (off B A) (s.gpr .s1)).writeW (off B (A + 8)) (s.gpr .s2)).writeW (off B (A + 16)) (s.gpr .s3)).writeW (off B (A + 24)) (s.gpr .s4)).writeW (off B (A + 32)) (s.gpr .a0)).writeW (off B (A + 40)) (s.gpr .a1)).writeW (off B (A + 48)) (s.gpr .a2)).writeW (off B (A + 56)) (s.gpr .a3)).writeW (off B (A + 64)) (s.gpr .a6)) (by
-    brun [BitVec.add_zero, h.scr.st (show A + 8 ≤ Z by omega), h.scr.al8 (show A + 8 ≤ Z by omega) al,
-      h.scr.st (show A + 8 + 8 ≤ Z by omega), h.scr.al8 (show A + 8 + 8 ≤ Z by omega) (by omega),
-      h.scr.st (show A + 16 + 8 ≤ Z by omega), h.scr.al8 (show A + 16 + 8 ≤ Z by omega) (by omega),
-      h.scr.st (show A + 24 + 8 ≤ Z by omega), h.scr.al8 (show A + 24 + 8 ≤ Z by omega) (by omega),
-      h.scr.st (show A + 32 + 8 ≤ Z by omega), h.scr.al8 (show A + 32 + 8 ≤ Z by omega) (by omega),
-      h.scr.st (show A + 40 + 8 ≤ Z by omega), h.scr.al8 (show A + 40 + 8 ≤ Z by omega) (by omega),
-      h.scr.st (show A + 48 + 8 ≤ Z by omega), h.scr.al8 (show A + 48 + 8 ≤ Z by omega) (by omega),
-      h.scr.st (show A + 56 + 8 ≤ Z by omega), h.scr.al8 (show A + 56 + 8 ≤ Z by omega) (by omega),
-      h.scr.st (show A + 64 + 8 ≤ Z by omega), h.scr.al8 (show A + 64 + 8 ≤ Z by omega) (by omega)])
-    (by rfl) (by rfl)) fun t ⟨tm, k⟩ => ?_
-  have kk : Keep [.t0] s t := ((Keep.write _ _ _).trans k).mono (by decide)
-  refine ⟨h.of_keep kk, ?_, kk, ?_⟩
-  · have o : Outside B A 72 s.mem t.mem := by
-      rw [tm]
-      repeat refine Outside.writeW_in ?_ _ (by omega) (by omega) (by omega)
-      exact Outside.refl _ _ _ _
-    rw [← hA] at o
-    exact Keys.Frame.of_arr (o := aDQ) (d := 0) (n := 72) (by simpa using o) (by omega) (by simp)
-  · rw [tm]
-    simp (disch := omega) only [wr_other, Mont.word_writeW_self, and_self]
-
-/-- `restoreK`: `kept` back from `aDQ`'s first nine words. -/
-theorem restoreK_ok {u : State} {B : Addr} {Z w N : Nat} (h : Ws u B Z w N) (hq : aDQ < N) (hw : 7 ≤ w)
-    {v1 v2 v3 v4 v5 v6 v7 v8 v9 : BitVec 64}
-    (e1 : word u.mem B (arr w aDQ) = v1) (e2 : word u.mem B (arr w aDQ + 8) = v2)
-    (e3 : word u.mem B (arr w aDQ + 16) = v3) (e4 : word u.mem B (arr w aDQ + 24) = v4)
-    (e5 : word u.mem B (arr w aDQ + 32) = v5) (e6 : word u.mem B (arr w aDQ + 40) = v6)
-    (e7 : word u.mem B (arr w aDQ + 48) = v7) (e8 : word u.mem B (arr w aDQ + 56) = v8)
-    (e9 : word u.mem B (arr w aDQ + 64) = v9) :
-    WP isa (.block restoreK) u fun t => (t.gpr .s1 = v1 ∧ t.gpr .s2 = v2 ∧ t.gpr .s3 = v3 ∧ t.gpr .s4 = v4 ∧
-      t.gpr .a0 = v5 ∧ t.gpr .a1 = v6 ∧ t.gpr .a2 = v7 ∧ t.gpr .a3 = v8 ∧ t.gpr .a6 = v9 ∧ t.mem = u.mem) ∧
-      Keep [.t0, .s1, .s2, .s3, .s4, .a0, .a1, .a2, .a3, .a6] u t := by
-  have fit := h.arr_fit hq
-  have nw := h.nowrap
-  have hS : S w = 8 * (w + 2) := rfl
-  have al := arr_al w aDQ
-  unfold restoreK
-  refine ptr_ok h (by decide) (by decide) (show aDQ < 2048 by decide) ?_
-  generalize hA : arr w aDQ = A at fit al e1 e2 e3 e4 e5 e6 e7 e8 e9
-  have r1 : u.mem.readW (off B A) 64 = v1 := e1
-  have r2 : u.mem.readW (off B (A + 8)) 64 = v2 := e2
-  have r3 : u.mem.readW (off B (A + 16)) 64 = v3 := e3
-  have r4 : u.mem.readW (off B (A + 24)) 64 = v4 := e4
-  have r5 : u.mem.readW (off B (A + 32)) 64 = v5 := e5
-  have r6 : u.mem.readW (off B (A + 40)) 64 = v6 := e6
-  have r7 : u.mem.readW (off B (A + 48)) 64 = v7 := e7
-  have r8 : u.mem.readW (off B (A + 56)) 64 = v8 := e8
-  have r9 : u.mem.readW (off B (A + 64)) 64 = v9 := e9
-  refine WP.mono (WP.keep [.t0, .s1, .s2, .s3, .s4, .a0, .a1, .a2, .a3, .a6] (Q := fun t =>
-      t.gpr .s1 = v1 ∧ t.gpr .s2 = v2 ∧ t.gpr .s3 = v3 ∧ t.gpr .s4 = v4 ∧ t.gpr .a0 = v5 ∧ t.gpr .a1 = v6 ∧
-        t.gpr .a2 = v7 ∧ t.gpr .a3 = v8 ∧ t.gpr .a6 = v9 ∧ t.mem = u.mem) (by
-    brun [BitVec.add_zero, r1, r2, r3, r4, r5, r6, r7, r8, r9,
-      h.scr.ld (show A + 8 ≤ Z by omega), h.scr.al8 (show A + 8 ≤ Z by omega) al,
-      h.scr.ld (show A + 8 + 8 ≤ Z by omega), h.scr.al8 (show A + 8 + 8 ≤ Z by omega) (by omega),
-      h.scr.ld (show A + 16 + 8 ≤ Z by omega), h.scr.al8 (show A + 16 + 8 ≤ Z by omega) (by omega),
-      h.scr.ld (show A + 24 + 8 ≤ Z by omega), h.scr.al8 (show A + 24 + 8 ≤ Z by omega) (by omega),
-      h.scr.ld (show A + 32 + 8 ≤ Z by omega), h.scr.al8 (show A + 32 + 8 ≤ Z by omega) (by omega),
-      h.scr.ld (show A + 40 + 8 ≤ Z by omega), h.scr.al8 (show A + 40 + 8 ≤ Z by omega) (by omega),
-      h.scr.ld (show A + 48 + 8 ≤ Z by omega), h.scr.al8 (show A + 48 + 8 ≤ Z by omega) (by omega),
-      h.scr.ld (show A + 56 + 8 ≤ Z by omega), h.scr.al8 (show A + 56 + 8 ≤ Z by omega) (by omega),
-      h.scr.ld (show A + 64 + 8 ≤ Z by omega), h.scr.al8 (show A + 64 + 8 ≤ Z by omega) (by omega)])
-    (by rfl) (by rfl)) fun t ⟨q, k⟩ => ⟨q, ((Keep.write _ _ _).trans k).mono (by decide)⟩
-
-/-- The registers the divisions by words write. -/
-abbrev dwRegs : List Reg :=
-  [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
 
 /-- `divWP a r`: `[r] := d mod (2 ⌊[a] / 2⌋)` by words, exact for a divisor of
 exactly `w / 2` words. -/
@@ -375,31 +243,6 @@ theorem bal_inW {s0 : State} (hv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true
   have qlo := balanced_lo (p := Qv s0) (q := Pv s0) (by rw [Nat.mul_comm]; exact hpqn) hn hkw pv (by omega) hw2
   have qodd : Qv s0 % 2 = 1 := VG.Proof.Rsa.odd_factor (by rw [Nat.mul_comm]; exact hpqn) (VG.Proof.Rsa.modulusValid_facts hv).1
   exact ⟨⟨by omega, by rw [e64]; omega⟩, ⟨by omega, by rw [e64]; omega⟩⟩
-
-/-- `shape`: `t0 = 0` exactly for `p_len` (`s4`) a multiple of 8 and at least
-32, equal to `q_len` (`s6`) and to `4 w` (`s9`). -/
-theorem shape_ok {s : State} {pl ql w : Nat} (h4 : s.gpr .s4 = BitVec.ofNat 64 pl)
-    (h6 : s.gpr .s6 = BitVec.ofNat 64 ql) (h9 : s.gpr .s9 = BitVec.ofNat 64 w) (hpl : pl < 2 ^ 32)
-    (hql : ql < 2 ^ 32) (hw : w ≤ 1024) :
-    WP isa (.block shape) s fun t =>
-      ((t.gpr .t0 = 0 ↔ (pl % 8 = 0 ∧ 4 * w = pl ∧ pl = ql ∧ 32 ≤ pl)) ∧ t.mem = s.mem) ∧ Keep [.t0, .t1] s t := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  have hP : ∀ x : Nat, x < 2 ^ 32 → (BitVec.ofNat 64 x).toNat = x := fun x hx => by
-    rw [BitVec.toNat_ofNat]; omega
-  unfold shape
-  brun [h4, h6, h9, cv_exec_li32]
-  simp only [Keys.bv_or0, Keys.bv_xor0, Keys.bv_lt_ite0]
-  have l2 : BitVec.ofNat 64 w <<< 2 = BitVec.ofNat 64 (4 * w) := by
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hP w (by omega), BitVec.toNat_ofNat]; omega
-  simp only [l2, Keys.bv_and7, hP pl hpl, BitVec.lt_def, show (32#64).toNat = 32 from rfl, Nat.not_lt]
-  constructor
-  · rintro ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩
-    refine ⟨h1, ?_, ?_, h4⟩
-    · have := congrArg BitVec.toNat h2; rw [hP _ (by omega), hP pl hpl] at this; exact this
-    · have := congrArg BitVec.toNat h3; rw [hP pl hpl, hP ql hql] at this; exact this
-  · rintro ⟨h1, h2, h3, h4⟩
-    exact ⟨⟨⟨h1, by rw [h2]⟩, by rw [h3]⟩, h4⟩
 
 open VG.Impl.Rsa.RISCV64.Keys (storeBytes restore)
 open VG.Impl.Rsa.RISCV64.CrtValues (code stores valid front mask checks invPart)

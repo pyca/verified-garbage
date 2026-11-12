@@ -311,4 +311,8 @@ def gcd : Prog isa := seqs [init, .loop batchG (.nonzero .s7), finishG]
 /-- The inverse at the working space's width `w` (`s9`). -/
 def inverse : Prog isa := seqs [init, .loop batch (.nonzero .s7), normalize, doublings, finish]
 
+/-- The inverse without its doublings: `[3] = y` with `y 2^(6 (n + 1)) x ≡
+gcd(x, m) (mod m)`, for a caller that scales `y` itself. -/
+def inverseS : Prog isa := seqs [init, .loop batch (.nonzero .s7), normalize, finish]
+
 end VG.Impl.Rsa.RISCV64.InvBatch
