@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.RecoverVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignP
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -24,6 +25,10 @@ def artifacts : List Artifact := [
   Spec.RsaPkcs1Sig.signApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.Sign.code
     stack := Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes
-    verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.code_verified }]
+    verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.code_verified },
+  Spec.RsaPkcs1Sig.signPrecomputedApi.artifact PPC64LE.target {
+    code := Impl.RsaPkcs1Sig.PPC64LE.Sign.codeP
+    stack := Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes
+    verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.codeP_verified }]
 
 end VG.Artifacts.RsaPkcs1Sig.PPC64LE

@@ -20,6 +20,8 @@ namespace VG.Proof.RsaPkcs1Sig.PPC64LE.Sign
 
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Sig.PPC64LE.Sign
 
+variable {pc : Bool}
+
 /-- The base of the stack the function and its callee use. -/
 abbrev kb (s : State) : Addr := s.sp - BitVec.ofNat 64 stackBytes
 
@@ -30,12 +32,12 @@ theorem fb_eq (s : State) : fb s = kb s + BitVec.ofNat 64 Impl.Rsa.PPC64LE.Priv.
   simp only [fb, kb, stackBytes, frameBytes, Impl.Rsa.PPC64LE.Priv.frameBytes]
   bv_omega
 
-theorem fb_toNat {s : State} (h : SPre s) : (fb s).toNat + frameBytes = s.sp.toNat := by
+theorem fb_toNat {s : State} (h : SPre pc s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := h.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
   unfold Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega
 
-theorem kb_toNat {s : State} (h : SPre s) : (kb s).toNat + stackBytes = s.sp.toNat := by
+theorem kb_toNat {s : State} (h : SPre pc s) : (kb s).toNat + stackBytes = s.sp.toNat := by
   have := h.sp1
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
   unfold Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega
@@ -84,8 +86,13 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
   simp only [stackArgAddr, Nat.add_zero]
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 32 + 8 * 8 + 8 * j = 32 + 8 * (8 + j) by omega]
 
-theorem in_aR {s : State} {j : Nat} (hj : j < 13) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+theorem lt_args {j : Nat} (hj : j < 13) : j < if pc then 15 else 13 := by
+  cases pc <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega
+
+theorem in_aR {s : State} {j : Nat} (hj : j < if pc then 15 else 13) : (aR pc s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]
+  cases pc <;> simp only [aR, Bool.false_eq_true, ↓reduceIte] at hj ⊢ <;>
+    exact Offset.contains_base _ (by omega) (by omega)
 
 /-! ## The saves -/
 

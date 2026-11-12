@@ -48,7 +48,7 @@ theorem code_constantTime (c : PrivChecked) :
     ConstantTime isa (Spec.RsaPkcs1Sig.signContract abi (stk c.stack)).pre
       (Spec.RsaPkcs1Sig.signContract abi (stk c.stack)).pub (code c.name c.code) :=
   RelCT.constantTime ((code_ct c).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
-    ⟨s₁, ⟨preS_of h₁, PubS.refl s₁⟩, preS_of h₂, pubS_of hp⟩) fun _ _ h => h)
+    ⟨s₁, ⟨preS_of h₁, PubS.refl s₁, trivial⟩, preS_of h₂, pubS_of hp, trivial⟩) fun _ _ h => h)
 
 /-- A state meeting the precondition: a 512-bit modulus, one-byte `e`, hash
 value and key parts, a working space of 1056 words, and the stack pointer at
@@ -84,14 +84,14 @@ theorem sat (K : Nat) (hK : K ≤ 2 ^ 20) : ∃ s, (Spec.RsaPkcs1Sig.signContrac
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_thirteen,
     List.append_eq]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := sat_args
-  have hS : frameBytes + K - 1 + 1 = 1136 + K := by unfold frameBytes; omega
+  have hS : frameBytes + K - 1 + 1 = 1152 + K := by unfold frameBytes; omega
   have hsp : (0x10000000000 : BitVec 64).toNat = 2 ^ 40 := by decide
-  have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (1136 + K)).toNat = 2 ^ 40 - (1136 + K) := by
+  have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (1152 + K)).toNat = 2 ^ 40 - (1152 + K) := by
     rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega
   have ha : stackArgAddr satState 0 = 0x10000000000 := by decide
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, hS, ha]
   have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
-      Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1136 + K), 1136 + K⟩ ⟨b, n⟩ := fun b n h =>
+      Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1152 + K), 1152 + K⟩ ⟨b, n⟩ := fun b n h =>
     Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega)) (by dsimp only; rw [hkb]; omega)
       (by dsimp only; omega)
   refine ⟨by rw [hsp]; omega, by decide, by decide, by decide, ?_⟩

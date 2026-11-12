@@ -2,7 +2,9 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
 
-import VerifiedGarbage.Proof.Rsa.Arm.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 
@@ -13,23 +15,30 @@ namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem privateBody_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s : State)
-    (h : PrivContext g bs s) (output : s.gpr .r0 = g.output)
-    (modulus : s.gpr .r2 = g.sources 0) (count : s.gpr .r3 = BitVec.ofNat 32 g.length) :
-    WP isa (body v.name v.code v.pcName v.pc v.pdName v.pd) s fun t =>
-      Spec.Rsa.writtenOutcome t.mem (State.addr g.output) g.length (t.gpr .r0)
-        (Spec.Rsa.privateChecked (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) (bs 7)) ∧
-      Spec.Rsa.bytesAt t.mem (State.addr g.temporary) g.length = List.replicate g.length 0 ∧
-      Frame (bodyWrites g) s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .r4, .r12, .lr] s t := by
-  unfold body
+/-- What the private body guarantees. -/
+def BodyPost (g : PrivGeometry) (bs : Fin 8 → List Byte) (s t : State) : Prop :=
+  Spec.Rsa.writtenOutcome t.mem (State.addr g.output) g.length (t.gpr .r0)
+    (Spec.Rsa.privateChecked (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) (bs 7)) ∧
+  Spec.Rsa.bytesAt t.mem (State.addr g.temporary) g.length = List.replicate g.length 0 ∧
+  Frame (bodyWrites g) s.mem t.mem ∧ Rest [.r0, .r1, .r2, .r3, .r4, .r12, .lr] s t
+
+theorem bodyWith_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q : State → Prop}
+    (kept : Kept g Q) {chk : Prog isa}
+    (hchk : ∀ s, PrivContext g bs s → PrivSlots g s.mem → Q s → WP isa chk s (CheckPost g bs s))
+    (s : State) (h : PrivContext g bs s) (output : s.gpr .r0 = g.output)
+    (modulus : s.gpr .r2 = g.sources 0) (count : s.gpr .r3 = BitVec.ofNat 32 g.length) (q : Q s) :
+    WP isa (bodyWith v.name v.code chk) s (BodyPost g bs s) := by
+  unfold bodyWith
   refine WP.seq (WP.mono (crtArgs_ok s h output modulus count) ?_)
   rintro u ⟨hu, slotsU, argsU, frameU, restU⟩
   refine WP.seq (WP.mono (crt_call v hu slotsU argsU) ?_)
   rintro z ⟨hz, slotsZ, frameZ, restZ, crt⟩
-  refine WP.mono (check_ok v z hz slotsZ) ?_
+  have frameZ' := frameZ.sub (calleeWrites_sub (crtWrites_sub h.valid))
+  have frameU' : Frame (bodyWrites g) s.mem u.mem := frameU.mono (by simp [bodyWrites])
+  refine WP.mono (hchk z hz slotsZ (kept (kept q frameU' restU) frameZ' restZ)) ?_
   rintro t ⟨_, status, bytes, cleared, frameT, restT⟩
-  refine ⟨?_, cleared, (frameU.mono (by simp [bodyWrites])).trans
-    ((frameZ.sub (calleeWrites_sub (crtWrites_sub h.valid))).trans frameT),
+  unfold BodyPost
+  refine ⟨?_, cleared, frameU'.trans (frameZ'.trans frameT),
     (restU.mono (by simp)).trans ((restZ.mono (by simp [callClobbers])).trans restT)⟩
   have narrow : ((z.gpr .r0).setWidth 64).setWidth 32 = z.gpr .r0 := by
     rw [BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq]
@@ -39,4 +48,10 @@ theorem privateBody_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byt
     (h.sources 0).length (h.sources 2).length (by rw [narrow]; exact crt) rfl bytes
   rw [status]
   exact outcome
+
+theorem privateBody_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s : State)
+    (h : PrivContext g bs s) (output : s.gpr .r0 = g.output)
+    (modulus : s.gpr .r2 = g.sources 0) (count : s.gpr .r3 = BitVec.ofNat 32 g.length) :
+    WP isa (body v.name v.code v.pcName v.pc v.pdName v.pd) s (BodyPost g bs s) :=
+  bodyWith_ok v (kept_true g) (fun s h sl _ => check_ok v s h sl) s h output modulus count trivial
 end VG.Proof.Rsa.Arm

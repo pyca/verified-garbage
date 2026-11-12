@@ -77,7 +77,7 @@ theorem pp_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : 
 
 theorem PpPre.expanded {g : CrtGeometry} {s : State} (h : PpPre g s) : PpPre g (crtExpanded s g.base g.words) :=
   ⟨h.fit, (by obtain ⟨r, hr, hc⟩ := h.write; exact ⟨r, List.mem_append_right _ hr, hc⟩), h.workspace, h.stack,
-    h.sources, h.input, h.qi⟩
+    h.sources, h.input, h.qi, h.noR2⟩
 
 theorem pp_body_scoped_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0) :
     RelCT isa (fun s t =>
@@ -118,7 +118,7 @@ theorem pp_crtFrame_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulu
         Spec.Rsa.wordsAt y.mem (State.addr g.output) (ppPreWords g) = List.replicate (ppPreWords g) 0 := by
     refine WP.mono (crt_entry_ready x hx.1) ?_
     rintro y ⟨ready, frameY, _, restY⟩
-    refine ⟨ready, ⟨hx.2.fit, ?_, hx.2.workspace, ?_, hx.2.sources, hx.2.input, hx.2.qi⟩, ?_⟩
+    refine ⟨ready, ⟨hx.2.fit, ?_, hx.2.workspace, ?_, hx.2.sources, hx.2.input, hx.2.qi, hx.2.noR2⟩, ?_⟩
     · rw [restY.wr]; obtain ⟨r, hr, hc⟩ := hx.2.write; exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
     · rw [restY.sp]; exact pp_push_separate hx.1.stackFit hx.2.below hx.2.args
     · rw [Proof.Rsa.wordsAt_frame frameY (by have := hx.2.fit; omega)

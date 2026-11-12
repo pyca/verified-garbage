@@ -142,14 +142,14 @@ theorem priv_covers {s t : State} (hp : PreS s) (he : Env s t) :
   have hrd : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [he.rd]; exact hx)
   simp only [privRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, hrd ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨s.gpr .r8, (s.gpr .r9).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨s.gpr .r8, (s.gpr .r9).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega⟩
   · exact ⟨_, List.mem_append_right _ hfr, oEM, rfl, by dsimp only [emR]; unfold oEM frameBytes; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 11, (stackArg s 12).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨stackArg s 11, (stackArg s 12).toNat⟩ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega⟩
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega⟩
 
 /-- The callee's stack and the return address, below the frame. -/

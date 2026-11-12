@@ -24,6 +24,8 @@ uses, `kR`, from its base `fb`, and is writable. From the state after its
 
 namespace VG.Proof.Rsa.RISCV64.Priv
 
+variable {pc : Bool}
+
 open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv VG.RISCV64.RegUpd
 
 /-! ## Addresses -/
@@ -31,11 +33,11 @@ open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv VG.RISCV64.RegUpd
 theorem fb_toNat {s : State} (h : frameBytes ≤ s.sp.toNat) : (fb s).toNat + frameBytes = s.sp.toNat := by
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
 
-theorem fb_al {s : State} (h : PreP s) : (fb s).toNat % 16 = 0 := by
+theorem fb_al {s : State} (h : PreP pc s) : (fb s).toNat % 16 = 0 := by
   have := fb_toNat h.sp1; have := h.sp16; unfold frameBytes at *; omega
 
 /-- A word of the frame at an offset that is a multiple of 8 is aligned. -/
-theorem fb_al8 {s : State} (h : PreP s) {d : Nat} (hd : d % 8 = 0) :
+theorem fb_al8 {s : State} (h : PreP pc s) {d : Nat} (hd : d % 8 = 0) :
     (fb s + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   have := fb_toNat h.sp1; have := fb_al h
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
@@ -57,8 +59,9 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
     stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
 
-theorem in_aR {s : State} {j : Nat} (hj : j < 12) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+theorem in_aR {s : State} {j : Nat} (hj : j < 12) : (aR pc s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]
+  cases pc <;> exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega) (by omega)
 
 /-! ## The saves -/
 
@@ -109,7 +112,7 @@ structure Fr (s t : State) : Prop where
 /-- The saves, from the state after the frame's `alloc`: `t0` holds the
 frame's base, `s1`–`s6` and the return address are in their slots, and memory
 is changed only in the frame. -/
-theorem save_ok {s : State} (h : PreP s) {rest : List Instr} {Q : State → Prop}
+theorem save_ok {s : State} (h : PreP pc s) {rest : List Instr} {Q : State → Prop}
     (k : ∀ v, Fr s v → v.gpr .t0 = fb s → (∀ r, r ≠ .t0 → v.gpr r = s.gpr r) →
       WP isa (.block rest) v Q) :
     WP isa (.block (([.addSp .t0 0] : List Instr) ++ Spill.saveCode .t0 saved ++ rest))
@@ -143,29 +146,29 @@ theorem save_ok {s : State} (h : PreP s) {rest : List Instr} {Q : State → Prop
 
 /-! ## The stack arguments -/
 
-theorem stackArgAddr_al {s : State} (h : PreP s) (j : Nat) :
+theorem stackArgAddr_al {s : State} (h : PreP pc s) (j : Nat) :
     (stackArgAddr s j).toNat % 8 = 0 := by
   have := h.sp16; have := h.sp2
   simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
 
 /-- Our stack argument `j` is in the arguments' region, apart from the frame. -/
-theorem arg_read {s : State} (h : PreP s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 12) :
+theorem arg_read {s : State} (h : PreP pc s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 12) :
     m.readW (stackArgAddr s j) 64 = stackArg s j :=
-  hm.readW (in_aR hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
+  hm.readW (in_aR (pc := pc) hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
 
 /-- Our stack argument `j`, after the frame and the working space changed. -/
-theorem arg_read2 {s : State} (h : PreP s) {m : Mem} (hm : Frame [kR s, sR s] s.mem m) {j : Nat}
+theorem arg_read2 {s : State} (h : PreP pc s) {m : Mem} (hm : Frame [kR s, sR s] s.mem m) {j : Nat}
     (hj : j < 12) : m.readW (stackArgAddr s j) 64 = stackArg s j := by
-  refine hm.readW (in_aR hj) (fun r hr => ?_) (by decide)
+  refine hm.readW (in_aR (pc := pc) hj) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact h.ka.symm
   · exact h.sa.symm
 
-theorem arg_in {s t : State} (h : PreP s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 12) :
+theorem arg_in {s t : State} (h : PreP pc s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 12) :
     InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 := by
   rw [hrd, h.hrd]
-  exact ⟨_, List.mem_append_left _ (by simp), in_aR hj⟩
+  exact ⟨aR pc s, List.mem_append_left _ (by simp), in_aR hj⟩
 
 /-- `argBase`: `t6` holds the address of our first stack argument. -/
 theorem argBase_ok {s v : State} (hsp : v.sp = fb s) {rest : List Instr} {Q : State → Prop}
@@ -210,7 +213,7 @@ structure CI (s w : State) (n : Nat) (t : State) : Prop where
   mem : Frame [psaR s] w.mem t.mem
   psa : ∀ i < n, t.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (2 + i)
 
-theorem copy_step {s w : State} (h : PreP s) (hw0 : w.gpr .t0 = fb s) (hw6 : w.gpr .t6 = s.sp)
+theorem copy_step {s w : State} (h : PreP pc s) (hw0 : w.gpr .t0 = fb s) (hw6 : w.gpr .t6 = s.sp)
     (hrd : w.rd = s.rd) (hwr : w.wr = kR s :: s.wr) (hm : Frame [kR s] s.mem w.mem) {n : Nat} (hn : n < 10)
     {t : State} (hc : CI s w n t) : WP isa (.block (argCopy n)) t (CI s w (n + 1)) := by
   have t0 : t.gpr .t0 = fb s := (hc.keep.gpr (by decide)).trans hw0
@@ -243,7 +246,7 @@ theorem copy_step {s w : State} (h : PreP s) (hw0 : w.gpr .t0 = fb s) (hw6 : w.g
       exact hc.psa i hi
     · rw [Mem.readW_writeW_self64]
 
-theorem copies_ok {s w : State} (h : PreP s) (hw0 : w.gpr .t0 = fb s) (hw6 : w.gpr .t6 = s.sp)
+theorem copies_ok {s w : State} (h : PreP pc s) (hw0 : w.gpr .t0 = fb s) (hw6 : w.gpr .t6 = s.sp)
     (hrd : w.rd = s.rd) (hwr : w.wr = kR s :: s.wr) (hm : Frame [kR s] s.mem w.mem) :
     WP isa (.block ((List.range 10).flatMap argCopy)) w (CI s w 10) :=
   wp_range_flatMap (M := isa) (CI s w) (fun _ _ hn hc => copy_step h hw0 hw6 hrd hwr hm hn hc) 10
@@ -265,7 +268,7 @@ theorem movs_ok {s v : State} (hg : ∀ r, r ≠ .t0 → v.gpr r = s.gpr r) :
   brun [mov, hg .a0 (by decide), hg .a2 (by decide), hg .a3 (by decide), hg .a4 (by decide),
     hg .a5 (by decide), hg .a6 (by decide), BitVec.add_zero]
 
-theorem head_ok {s w : State} (h : PreP s) (hrd : w.rd = s.rd) (hm : Frame [kR s] s.mem w.mem)
+theorem head_ok {s w : State} (h : PreP pc s) (hrd : w.rd = s.rd) (hm : Frame [kR s] s.mem w.mem)
     (h0 : w.gpr .t0 = fb s) (h6 : w.gpr .t6 = s.sp) (h3 : w.gpr .s3 = s.gpr .a3)
     (h6' : w.gpr .s6 = s.gpr .a6) :
     WP isa (.block crtHead) w fun u =>
@@ -282,7 +285,7 @@ theorem head_ok {s w : State} (h : PreP s) (hrd : w.rd = s.rd) (hm : Frame [kR s
   refine WP.keep _ ?_ (by rfl) (by rfl)
   brun [mov, h0, h6, h3, h6', i0, i1, l0, l1, r0, r1, BitVec.add_zero, oM]
 
-theorem setup_core {s : State} (h : PreP s) :
+theorem setup_core {s : State} (h : PreP pc s) :
     WP isa (.block (save ++ crtArgs)) (allocd frameBytes s) fun t => t.sp = fb s → AtCrt s t := by
   rw [save_eq, crtArgs_eq, List.append_assoc]
   refine save_ok h fun v F h0 hg => ?_
@@ -333,7 +336,7 @@ theorem setup_core {s : State} (h : PreP s) :
   · rw [g _ (by decide), kx.gpr (by decide)]; exact w5
   · rw [g _ (by decide), kx.gpr (by decide)]; exact w6
 
-theorem setup_ok {s : State} (h : PreP s) :
+theorem setup_ok {s : State} (h : PreP pc s) :
     WP isa (.block (save ++ crtArgs)) (allocd frameBytes s) (AtCrt s) :=
   WP.mono (WP.rdwr (setup_core h)) fun _ ⟨hc, _, _, hsp⟩ => hc hsp
 
