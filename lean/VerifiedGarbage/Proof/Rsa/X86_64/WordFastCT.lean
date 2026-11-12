@@ -16,8 +16,9 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 def FastPre (p : Pub) (s : State) : Prop := Ws s p.B p.Z p.W ∧ slot p.W 17 ≤ p.Z ∧ 6 ≤ p.W
 
-theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _ => True := by
-  refine RelCT.seq (R := Two Pre) ?_ code_ct
+theorem fastAt_ct {top : Option Nat} (ck : SeedCk top) (hk : ∀ (p : Pub) k, 6 ≤ p.W → top = some k → k ≤ p.W / 2) :
+    RelCT isa (Two FastPre) (.seq (.block normalize) (code top)) fun _ _ => True := by
+  refine RelCT.seq (R := Two Pre) ?_ (code_ct ck hk)
   unfold normalize
   rw [List.append_assoc]
   refine ws_block_ct Pub.B Pub.Z Pub.W (fun _ _ h => h.1) (by taint_decide) ?_
@@ -35,5 +36,8 @@ theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _
   refine ⟨h.1.congr ft (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact Mut.ofSlot _ _ _)
     kt (by decide), h.2.1, h.2.2, ?_⟩
   rw [mt, word_writeW_self]; exact high_or _
+
+theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _ => True :=
+  fastAt_ct seedCk_none fun _ _ _ e => nomatch e
 
 end VG.Proof.Rsa.X86_64.WordDivide

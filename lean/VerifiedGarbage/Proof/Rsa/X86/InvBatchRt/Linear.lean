@@ -42,6 +42,7 @@ theorem correction_ok {s : State} (h : Bx L s B Z len N) {c : Nat} (hc : c + 4 �
           2 ^ 32 * (if 2 ^ 31 ≤ w32 s.mem B c then val32 s.mem B (rv (kw len) src) (nw len) else 0) =
         val32 s.mem B (rv (kw len) acc) (nw len + 1) + 2 ^ (32 * (nw len + 1)) * cb.toNat := by
   have hn := h.nowrap
+  have ke := kw_eq len
   have ra := rv_ge (kw len) acc
   have rt := rv_ge (kw len) tmp
   have e4 := rv_byte (kw len) acc 4
@@ -80,6 +81,7 @@ theorem correction_ok {s : State} (h : Bx L s B Z len N) {c : Nat} (hc : c + 4 �
       rw [V, show 32 * (nw len + 1) = 32 + 32 * nw len by omega, Nat.pow_add, Nat.mul_assoc]
       have := congrArg (2 ^ 32 * ·) V₁
       simp only [Nat.mul_add] at this
+      simp only [nw] at this ⊢
       omega
     · simp only [hk, decide_false, Bool.false_eq_true, ite_false] at V ⊢
       rw [V, A₁]
@@ -104,6 +106,7 @@ theorem linear_ok {s : State} (h : Bx L s B Z len N) {u v : Nat} (hu : u + 4 ≤
         ((s.mem.readW (off B u) 32).toInt * val32 s.mem B (rv (kw len) a) (nw len + e) +
          (s.mem.readW (off B v) 32).toInt * val32 s.mem B (rv (kw len) b) (nw len + e)) % 2 ^ (32 * (nw len + 1)) := by
   have hn := h.nowrap
+  have ke := kw_eq len
   have ra := rv_ge (kw len) acc
   have rt := rv_ge (kw len) tmp
   unfold linear

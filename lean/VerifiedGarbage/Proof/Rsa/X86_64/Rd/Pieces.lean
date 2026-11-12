@@ -154,6 +154,11 @@ theorem shrA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (h
 /-- The count of words of `shlA`. -/
 abbrev shlN (wide : Bool) (w : Nat) : Nat := if wide then 2 * w + 2 else w
 
+theorem off_addN (B : Addr) (e n : Nat) : off B e + BitVec.ofNat 64 n = off B (e + n) := by
+  simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
+
+theorem slot_256 (w j : Nat) : 256 ≤ slot w j := by simp only [Bignum.slot, hdrBytes]; omega_arith
+
 /-- `w` doubled and 2 added, if `wide`. -/
 theorem wideIf_ok (wide : Bool) {w : Nat} {t₀ : State} (h12₀ : t₀.gpr .r12 = BitVec.ofNat 64 w) :
     WP isa (.block (if wide then wideR else [])) t₀ fun t =>
@@ -309,14 +314,6 @@ theorem FrmP.of_frm {B : Addr} {P : Nat → Prop} {m m' : Mem} {rs : List (Nat �
     · rcases Nat.lt_or_ge (ofs B x) (r.1 + r.2) with h2 | h2
       · exact absurd (hP r hr _ h1 h2) hx
       · exact .inr h2
-
-theorem FrmP.of_frm2 {B : Addr} {m m' : Mem} {o₁ n₁ o₂ n₂ : Nat} (h : Frm B [(o₁, n₁), (o₂, n₂)] m m') :
-    FrmP B (fun y => (o₁ ≤ y ∧ y < o₁ + n₁) ∨ (o₂ ≤ y ∧ y < o₂ + n₂)) m m' :=
-  FrmP.of_frm h fun r hr y h1 h2 => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact .inl ⟨h1, h2⟩
-    · exact .inr ⟨h1, h2⟩
 
 theorem FrmP.of_eq {B : Addr} {P : Nat → Prop} {m m' : Mem} (h : m' = m) : FrmP B P m m' := fun _ _ => by rw [h]
 

@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvGuard
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.TimeBody
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBodyRel
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # The inverse's trace: a public guard, then the batches or the general inverse

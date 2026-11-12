@@ -228,9 +228,8 @@ theorem wordRems_ok {g : Geometry} {len : Nat} {s : State} (h : StD g len s) {a 
   unfold wordRems rems
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_cond_ok h.ws hm (x := aDQ) (r := aDR2) (m := aDD) (t := aDT)
-    (wide := false) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
-    (fun e => absurd e (by decide)) h4 hw) fun t1 ⟨h1, k1, c1, r1⟩ => ?_
+    (top := none) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) h4 hw (by simp)) fun t1 ⟨h1, k1, c1, r1⟩ => ?_
   have O1 := keep_outside h.ws.ws k1 (by simp; decide) (by decide)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok h1 (o := aDQ) (a := aD) (by decide) (by decide) (by decide)) fun u ⟨hu, ku, vu, ru, _⟩ => ?_
@@ -245,9 +244,8 @@ theorem wordRems_ok {g : Geometry} {len : Nat} {s : State} (h : StD g len s) {a 
   have hmz : MLen z g.base g.size 9 a :=
     (hm.keep r1 (by decide) O1).keep Rz (by decide) Oz
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_cond_ok hz hmz (x := aDQ) (r := aDR3) (m := aDD) (t := aDT)
-    (wide := false) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
-    (fun e => absurd e (by decide)) h4 hw) fun t ⟨ht, kt, ct, rt⟩ => ?_
+    (top := none) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) h4 hw (by simp)) fun t ⟨ht, kt, ct, rt⟩ => ?_
   have K : Keep g.base (kw len) [aDQ, aDR2, aDD, aDR3, aDT] wordSlots s.mem t.mem :=
     k1.mono.trans (Kz.mono.trans kt.mono)
   have R : Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s t := r1.trans ((Rz.mono (by decide)).trans rt)
@@ -260,12 +258,12 @@ theorem wordRems_ok {g : Geometry} {len : Nat} {s : State} (h : StD g len s) {a 
   refine ⟨⟨ht, fun hpq _ => ?_, fun hpq _ => ?_, h.mask.frame K (by decide) (by decide) (by decide) (fit _ (by decide))⟩,
     K, R⟩
   · have e := (c1 (by rw [h.dd]; exact (top hpq).1)).2
-    simp only [VG.Proof.Rsa.X86.WordRt.xw, Bool.false_eq_true, ↓reduceIte] at e
+    simp only [VG.Proof.Rsa.X86.WordRt.xw] at e
     change num t1.mem g.base (kw len) aDR2 = num s.mem g.base (kw len) aDQ % num s.mem g.base (kw len) aDD at e
     rw [kt.num (by decide) (by decide) (fit _ (by decide)), Kz.num (by decide) (by decide) (fit _ (by decide)), e,
       h.dq, h.dd]
   · have e := (ct (by rw [mz]; exact (top hpq).2)).2
-    simp only [VG.Proof.Rsa.X86.WordRt.xw, Bool.false_eq_true, ↓reduceIte] at e
+    simp only [VG.Proof.Rsa.X86.WordRt.xw] at e
     change num t.mem g.base (kw len) aDR3 = num z.mem g.base (kw len) aDQ % num z.mem g.base (kw len) aDD at e
     rw [e, dz, mz]
 

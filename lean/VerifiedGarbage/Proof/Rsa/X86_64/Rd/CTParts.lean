@@ -186,8 +186,8 @@ theorem prodLoop_frm {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : N
   have hw2 := h.w2
   refine WP.seq (WP.mono (prodInit_ok h hel (by omega_using [he2, hw2])) fun s₃ ⟨h12, hbx, h10, h15, h11, h13, hdi, m₃, k₃⟩ => ?_)
   have hs₃ := h.scr.congr k₃.2.2
-  refine wp_upto (a := 0) (N := (el + 7) / 8) (by omega_using [he1]) (ProdInv s₃ B Z w)
-    (fun j _ hj t hI => prodStep_ok hI (by omega_using [hw1]) (by omega_using [hw2]) hZ (by omega_using [he2]) hj h12 hbx h10 h15 h11)
+  refine wp_upto (a := 0) (N := (el + 7) / 8) (by omega_using [he1]) (ProdInv s₃ B Z w w)
+    (fun j _ hj t hI => prodStep_ok hI (by omega_using [hw1]) (Nat.le_refl _) (by omega_using [hw2]) hZ (by omega_using [he2]) hj h12 hbx h10 h15 h11)
     (fun t hI => ?_) ⟨hs₃, Keep.refl _ _, h13, Outside.refl _ _ _ _, by rw [m₃, hz, wv, Nat.mul_zero]⟩
   exact ⟨fun x hx => by rw [hI.out x hx, m₃], (k₃.trans hI.keep).mono (by decide)⟩
 

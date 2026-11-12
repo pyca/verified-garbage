@@ -12,27 +12,24 @@ arrays). From `a = [0]` and the odd modulus `m = [aM]` (both below
 `2^(32 k)`), array 1 ends as `gcd(a, m)` and array 3 as `x < m` with
 `x a ≡ gcd(a, m) (mod m)`, each zero to the arrays' width `r7 / 4 - 2`.
 
-The state is `δ` and `(f, g)`, two's complement in `k + 1` words (arrays
-`bF`, `bG`), and `(d, e)` in `[0, m)` (arrays `bD`, `bE`, their word `k`
-zero), from `(1, m, a', 0, 1)`, with `a' = a + m` for an even `a`, so
-that `g` starts odd or zero. Each batch runs 30 divsteps on the low words of
-`f` and `g` (`wstep`, in registers), which give the batch's matrix
-`(u, v, q, r)`, its entries at most `2^30` in magnitude; then
+The state is `δ`, `(f, g)` and `(d, e)`, all two's complement in `k + 1`
+words (arrays `bF`, `bG`, `bD`, `bE`), from `(1, m, a', 0, 1)`, with
+`a' = a + m` for an even `a`, so that `g` starts odd or zero. Each batch runs
+30 divsteps on the low words of `f` and `g` (`wstep`, in registers), which
+give the batch's matrix `(u, v, q, r)`, its entries at most `2^30` in
+magnitude; then one pass over each pair, both rows at once and in place
+(libsecp256k1's `update_fg` and `update_de`, `Proof/Divstep/Libsecp.lean`):
 
-* `f, g := (u f + v g) / 2^30, (q f + r g) / 2^30`: each product as the
-  magnitude of the coefficient times the factor negated (modulo
-  `2^(32 (k + 1))`) where the coefficient is negative (`cnegFG`), the sum
-  exact modulo `2^(32 (k + 1))` (`macRow`), shifted right by 30 bits with
-  its sign (`shr30`);
-* `d, e := (u d + v e) / 2^30, (q d + r e) / 2^30` modulo `m`: likewise,
-  `m - d` in place of `-d` (`cnegDE`), so that the sum is at most `2^30 m`;
-  then a multiple of `m` that clears its low 30 bits (`redc`, with
-  `-m⁻¹ mod 2^32`), the shift, and one conditional subtraction of `m`.
+* `f, g := (u f + v g) / 2^30, (q f + r g) / 2^30`;
+* `d, e := (u d + v e + md₁ m) / 2^30, (q d + r e + md₂ m) / 2^30`, each `md`
+  the multiple of `m` that clears the sum's low 30 bits (with
+  `-m⁻¹ mod 2^32`) and keeps `d` and `e` in `(-2m, m)`.
 
 `3 (k + 1)` batches leave `g = 0` and `f = ±gcd(a, m)` with `x a ≡ f d`:
-array 1 gets `|f|` and array 3 `±d mod m`. The batches count down in the
-high bits of `r6` and the divsteps in its low five. Every choice is a masked
-selection, so the addresses and branches depend only on `r7`, `r8` and `r9`.
+array 1 gets `|f|` and array 3 `±d mod m`, `d` brought into `[0, m)` by two
+conditional additions of `m`. The batches count down in the high bits of
+`r6` and the divsteps in its low five. Every choice is a masked selection,
+so the addresses and branches depend only on `r7`, `r8` and `r9`.
 -/
 
 @[expose] public section
@@ -80,43 +77,6 @@ def cV : Coef := ⟨1, 4⟩
 def cQ : Coef := ⟨1, 8⟩
 def cR : Coef := ⟨3, 0⟩
 
-/-! ## Word loops -/
-
-/-- `r1 · [r12 + 4 i] + r11` added into `[r0 + 4 i]` for `lr` words, the carry
-out in `r11`: the scalar split once into its halves, `r1` and `r10`, and each
-product from four 16 × 16-bit products. Preserves `r6`–`r9`. -/
-def macSplit : List Instr := [.mov .r10 (.shifted .r1 .lsr 16), .dp .bic .r1 .r1 (.shifted .r10 .lsl 16)]
-
-/-- `r5:r4 := (r1 + 2^16 r10) · r2 + r11`, `r2` split into its halves. -/
-def macMul : List Instr :=
-  [.mov .r3 (.shifted .r2 .lsr 16), .dp .bic .r2 .r2 (.shifted .r3 .lsl 16),
-   .mul .r4 .r1 .r2, .mul .r2 .r10 .r2, .mul .r5 .r10 .r3, .mul .r3 .r1 .r3,
-   .adds .r4 .r4 (.shifted .r2 .lsl 16), .adc .r5 .r5 (.shifted .r2 .lsr 16),
-   .adds .r4 .r4 (.shifted .r3 .lsl 16), .adc .r5 .r5 (.shifted .r3 .lsr 16),
-   .adds .r4 .r4 (.reg .r11), .adc .r5 .r5 (.imm 0)]
-
-/-- The accumulator word added in, the carry into `r11`, and the word stored. -/
-def macAcc : List Instr := [.ldr .r2 .r0 0, .adds .r4 .r4 (.reg .r2), .adc .r11 .r5 (.imm 0), .str .r4 .r0 0]
-
-def macAdvance : List Instr := [.dp .add .r0 .r0 (.imm 4), .dp .add .r12 .r12 (.imm 4), .subs .lr .lr (.imm 1)]
-
-def macStep : List Instr := .ldr .r2 .r12 0 :: macMul ++ macAcc ++ macAdvance
-
-def macRow : Prog isa := .seq (.block macSplit) (.loop (.block macStep) .ne)
-
-/-- `[r0 + 4 i] := ([r12 + 4 i] >> 30) + ([r12 + 4 i + 4] << 2)` for `lr`
-words, then the word after them the last word shifted right by 30 with its
-sign: `lr + 1` words shifted right by 30 bits, as a signed number. -/
-def shrStep : List Instr :=
-  [.ldr .r1 .r12 0, .ldr .r2 .r12 4, .mov .r1 (.shifted .r1 .lsr 30), .dp .add .r1 .r1 (.shifted .r2 .lsl 2),
-   .str .r1 .r0 0, .dp .add .r0 .r0 (.imm 4), .dp .add .r12 .r12 (.imm 4), .subs .lr .lr (.imm 1)]
-
-def shrTop : List Instr :=
-  [.ldr .r1 .r12 0, .mov .r2 (.shifted .r1 .lsr 30), .mov .r1 (.shifted .r1 .lsr 31),
-   .dp .sub .r2 .r2 (.shifted .r1 .lsl 2), .str .r2 .r0 0]
-
-def shr30 : Prog isa := .seq (.loop (.block shrStep) .ne) (.block shrTop)
-
 /-! ## Array operations at the width `k` -/
 
 /-- `lr := k + 1`. -/
@@ -142,39 +102,6 @@ def copy1 (o a : Nat) (low : Bool := false) : Prog isa :=
 /-- Word `k` of `[o]` := 0. -/
 def topZero (o : Nat) : List Instr :=
   ptr .r0 o ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2), .mov .r1 (.imm 0), .str .r1 .r0 0]
-
-/-- `r11` := the sign bit of the coefficient `c`. -/
-def signOf (c : Coef) : List Instr := ptr .r12 c.arr ++ [.ldr .r1 .r12 c.off, .mov .r11 (.shifted .r1 .lsr 31)]
-
-/-- `r1` := the magnitude of the coefficient `c`, and `r11 := 0`. -/
-def absOf (c : Coef) : List Instr :=
-  ptr .r12 c.arr ++ [.ldr .r1 .r12 c.off, .mov .r11 (.shifted .r1 .lsr 31),
-    .dp .sub .r2 .r11 (.shifted .r11 .lsl 1), .dp .eor .r1 .r1 (.reg .r2), .dp .sub .r1 .r1 (.reg .r2),
-    .mov .r11 (.imm 0)]
-
-/-- `[t] := [base] - [x]` where `c` is negative, else `[x]`. -/
-def cneg (base t x : Nat) (c : Coef) : Prog isa :=
-  seqs [sub1 t base x, .block (signOf c), sel1 t x t]
-
-/-- `[acc] += |c| · [src]`, `k + 1` words, the carry dropped. -/
-def mac1 (acc src : Nat) (c : Coef) : Prog isa :=
-  .seq (.block (ptr .r0 acc ++ absOf c ++ ptr .r12 src ++ [cnt1])) macRow
-
-/-- `[acc] := c₁ [x] + c₂ [y]`, as `|c₁| (±[x]) + |c₂| (±[y])`, the negations
-from `base`. -/
-def lin (base acc x y : Nat) (c₁ c₂ : Coef) : Prog isa :=
-  seqs [cneg base bT1 x c₁, cneg base bT2 y c₂, zero1 acc, mac1 acc bT1 c₁, mac1 acc bT2 c₂]
-
-/-- `[o] := [a] >> 30`, signed, `k + 1` words. -/
-def shr1 (o a : Nat) : Prog isa := .seq (.block (ptr .r0 o ++ ptr .r12 a ++ [.mov .lr (.reg .r9)])) shr30
-
-/-- `[acc] +=` the multiple `((acc · (-m⁻¹)) mod 2^30) m` that clears its low 30 bits. -/
-def redc (acc : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 acc ++ [.ldr .r1 .r0 0, .ldr .r2 .r8 sB, .mul .r1 .r1 .r2,
-    .dp .bic .r1 .r1 (.imm 0xC0000000), .mov .r11 (.imm 0)] ++ ptr .r12 bP ++ [cnt1])) macRow
-
-/-- `[o] := [a] - m` if that does not borrow, else `[a]`. -/
-def csub1 (o a : Nat) (low : Bool := false) : Prog isa := seqs [sub1 bT1 a bP, sel1 o bT1 a low]
 
 /-! ## The divsteps -/
 
@@ -210,13 +137,145 @@ def wstore : List Instr :=
 
 def divsteps : Prog isa := seqs [.block wload, .loop (.block wbody) .ne, .block wstore]
 
-/-! ## The batches -/
+/-! ## The batches
 
-def update : Prog isa := seqs [
-  lin bZ bA1 bF bG cU cV, lin bZ bA2 bF bG cQ cR, shr1 bF bA1, shr1 bG bA2,
-  lin bP bA1 bD bE cU cV, lin bP bA2 bD bE cQ cR, redc bA1, redc bA2,
-  shr1 bT2 bA1, csub1 bD bT2, shr1 bT2 bA2, csub1 bE bT2,
-  .block [.subs .r6 .r6 (.imm 32)]]
+A batch's matrix `(u, v; q, r)` is applied in one pass over `(f, g)` and one over `(d, e)`, both
+rows at once, in place: word `i` of each input is read before word `i - 1` of each output is
+written. A row's sum is unsigned: each input word is XORed with its coefficient's sign mask, its
+coefficient taken in magnitude, and the row's carry starts at the magnitudes of its negative
+coefficients, so that the sum is the row's value plus `2^(32 (k + 1))` times the magnitudes of the
+coefficients whose sign differs from their input's (the row's correction), which the top word
+subtracts. A product of a word and a magnitude (at most `2^31`) is four 16 × 16-bit products.
+
+Over `(d, e)` each row also adds `md` times `m`, `md` the multiple of `m` that clears the sum's
+low 30 bits (libsecp256k1's `update_de`: `Proof/Divstep/Libsecp.lean`), so `d` and `e` stay in
+`(-2m, m)` as signed `k + 1`-word numbers and every output is the sum shifted right by 30.
+
+The scratch is array `bT1` (`r12`), which the batches alone use: coefficient `t` (`u, v, q, r, md₁, md₂`) at `16 + 12 t` as its sign mask and its
+magnitude's low and high halves; the rows' corrections at 88 and 92 and their starting carries at
+100 and 104. It needs `W ≥ 8`: 27 words of the four arrays from `bT1`.
+
+The terms need every register but `r8`, so a pass keeps nothing public in memory, which the
+constant-time analysis could not follow: `lr` holds the words left below the batches left
+(`r6`), and after the pass `r6` comes back from `lr`, `r7` (the stride) from the rows' pointers,
+which are a stride apart, and `r9` (`k`) from `r0`'s offset in its array. -/
+
+/-- Coefficient `t`'s scratch: its sign mask, then its magnitude's halves at `+ 4` and `+ 8`. -/
+def coefOff (t : Nat) : Nat := 16 + 12 * t
+def corrOff (row : Nat) : Nat := 88 + 4 * row
+def carryOff (row : Nat) : Nat := 100 + 4 * row
+
+/-- `c := |c|` and `m := -(c >>> 31)`, its sign mask. -/
+def absMask (c m : Reg) : List Instr :=
+  [.mov m (.shifted c .lsr 31), .dp .sub m m (.shifted m .lsl 1), .dp .eor c c (.reg m), .dp .sub c c (.reg m)]
+
+/-- Coefficient `t` from `r1`: its mask (left in `r2`) and halves stored, `|c|` left in `r1`. -/
+def coefStore (t : Nat) : List Instr :=
+  absMask .r1 .r2 ++ [.str .r2 .r12 (coefOff t), .mov .r3 (.shifted .r1 .lsr 16), .str .r3 .r12 (coefOff t + 8),
+    .dp .bic .r3 .r1 (.shifted .r3 .lsl 16), .str .r3 .r12 (coefOff t + 4)]
+
+/-- `hi:lo += |c| (x ^ m)` for coefficient `t` and the word `x` at `[xs + xo]`, through `r6`, `r7`,
+`r9`, `r10`. -/
+def term (xs : Reg) (xo t : Nat) (lo hi : Reg) : List Instr :=
+  [.ldr .r6 xs xo, .ldr .r7 .r12 (coefOff t), .dp .eor .r6 .r6 (.reg .r7),
+   .mov .r7 (.shifted .r6 .lsr 16), .dp .bic .r6 .r6 (.shifted .r7 .lsl 16),
+   .ldr .r9 .r12 (coefOff t + 4), .mul .r10 .r6 .r9, .adds lo lo (.reg .r10), .adc hi hi (.imm 0),
+   .mul .r10 .r7 .r9, .adds lo lo (.shifted .r10 .lsl 16), .adc hi hi (.shifted .r10 .lsr 16),
+   .ldr .r9 .r12 (coefOff t + 8), .mul .r10 .r6 .r9, .adds lo lo (.shifted .r10 .lsl 16),
+   .adc hi hi (.shifted .r10 .lsr 16), .mla hi .r7 .r9 hi]
+
+/-- Word 0 of a row's sum (`lo`): its top two bits into the row's word 0 (`[p]`), and the carry down. -/
+def out0 (p lo hi : Reg) : List Instr :=
+  [.mov .r6 (.shifted lo .lsr 30), .str .r6 p 0, .mov lo (.reg hi), .mov hi (.imm 0)]
+
+/-- Word `i` of a row's sum: word `i - 1` of the output completed (`[p]`), its top two bits into
+word `i` (`[p + 4]`), and the carry down. -/
+def outW (p lo hi : Reg) : List Instr :=
+  [.ldr .r6 p 0, .dp .orr .r6 .r6 (.shifted lo .lsl 2), .str .r6 p 0, .mov .r6 (.shifted lo .lsr 30),
+   .str .r6 p 4, .mov lo (.reg hi), .mov hi (.imm 0)]
+
+/-- The top word: the carry less the row's correction, shifted into word `k` (`[p]`). -/
+def outTop (p lo : Reg) (row : Nat) : List Instr :=
+  [.ldr .r6 .r12 (corrOff row), .dp .sub lo lo (.reg .r6), .ldr .r6 p 0, .dp .orr .r6 .r6 (.shifted lo .lsl 2),
+   .str .r6 p 0]
+
+/-- `r5 :=` the sign mask of array `a`'s word `k`, through `r3`. -/
+def topMask (a : Nat) : List Instr :=
+  ptr .r3 a ++ [.dp .add .r3 .r3 (.shifted .r9 .lsl 2), .ldr .r5 .r3 0, .mov .r5 (.shifted .r5 .lsr 31),
+    .dp .sub .r5 .r5 (.shifted .r5 .lsl 1)]
+
+/-- `r1 :=` the coefficient `c`, through `r3`. -/
+def ldCoef (c : Coef) : List Instr := ptr .r3 c.arr ++ [.ldr .r1 .r3 c.off]
+
+/-- `r4 +=` the correction of coefficient `|c|` (`r1`, mask `r2`) on an input of mask `r5`, and
+`r10 +=` its starting carry. -/
+def corrAdd : List Instr :=
+  [.dp .eor .r3 .r2 (.reg .r5), .dp .and .r3 .r3 (.reg .r1), .dp .add .r4 .r4 (.reg .r3),
+   .dp .and .r3 .r1 (.reg .r2), .dp .add .r10 .r10 (.reg .r3)]
+
+/-- A row `c₁ [x] + c₂ [y]`: its coefficients stored as `t₁` and `t₂`, its correction and its
+starting carry. -/
+def rowPrep (x y : Nat) (c₁ c₂ : Coef) (t₁ t₂ row : Nat) : List Instr :=
+  [.mov .r4 (.imm 0), .mov .r10 (.imm 0)] ++
+  topMask x ++ ldCoef c₁ ++ coefStore t₁ ++ corrAdd ++
+  topMask y ++ ldCoef c₂ ++ coefStore t₂ ++ corrAdd ++
+  [.str .r4 .r12 (corrOff row), .str .r10 .r12 (carryOff row)]
+
+/-- The scratch's address, and `lr := (r6 << 11) + k`: the batches left (`r6 / 32`) above the words
+left. -/
+def spill : List Instr := ptr .r12 bT1 ++ [.dp .add .lr .r9 (.shifted .r6 .lsl 11)]
+
+/-- A word done: `lr`'s low half down by one, `z` iff it is `0`, through `r6`. -/
+def wordDone : List Instr := [.dp .sub .lr .lr (.imm 1), .mov .r6 (.shifted .lr .lsl 16), .cmp .r6 (.imm 0)]
+
+/-- `r6`, `r7`, `r9` back from `lr` and the rows' pointers, `r0` at word `k` of array `a` and `r1` of
+array `a + 1`: `r7 = r1 - r0`, `r9 = (r0 - r8 - hdr - a r7) / 4`, `a r7` as the shifts `sh`. -/
+def restore (sh : List Nat) : List Instr :=
+  [.mov .r6 (.shifted .lr .lsr 11), .dp .sub .r7 .r1 (.reg .r0), .dp .sub .r9 .r0 (.reg .r8),
+   .dp .sub .r9 .r9 (.imm 160)] ++ sh.map (fun n => .dp .sub .r9 .r9 (.shifted .r7 .lsl n)) ++
+  [.mov .r9 (.shifted .r9 .lsr 2)]
+
+/-- The two rows' words `0` (`zo = 0`) or `i` (`zo = 4`) over `[r0]`, `[r1]`. -/
+def fgTerms (zo : Nat) : List Instr :=
+  term .r0 zo 0 .r2 .r3 ++ term .r0 zo 2 .r4 .r5 ++ term .r1 zo 1 .r2 .r3 ++ term .r1 zo 3 .r4 .r5
+
+/-- `(f, g) := ((u f + v g) / 2^30, (q f + r g) / 2^30)`. -/
+def fgPass : Prog isa := seqs [
+  .block (spill ++ rowPrep bF bG cU cV 0 1 0 ++ rowPrep bF bG cQ cR 2 3 1 ++
+    [.ldr .r2 .r12 (carryOff 0), .mov .r3 (.imm 0), .ldr .r4 .r12 (carryOff 1), .mov .r5 (.imm 0)] ++
+    ptr .r0 bF ++ ptr .r1 bG ++ fgTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
+  .loop (.block (fgTerms 4 ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
+    [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4)] ++ wordDone)) .ne,
+  .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ restore [2])]
+
+/-- A row's `md` (coefficients `c₁`, `c₂` on `d`, `e`) stored as coefficient `t`, its correction and
+starting carry added to the row's: `md = md₀ - ((md₀ - np (c₁ d₀ + c₂ e₀)) mod 2^30)` for
+`md₀ = (d < 0 ? c₁ : 0) + (e < 0 ? c₂ : 0)` and `np = -m⁻¹` (`sB`). -/
+def mdPrep (c₁ c₂ : Coef) (t row : Nat) : List Instr :=
+  topMask bD ++ ldCoef c₁ ++ [.dp .and .r0 .r1 (.reg .r5)] ++ ptr .r3 bD ++ [.ldr .r3 .r3 0, .mul .r11 .r1 .r3] ++
+  topMask bE ++ ldCoef c₂ ++ [.dp .and .r4 .r1 (.reg .r5), .dp .add .r0 .r0 (.reg .r4)] ++ ptr .r3 bE ++
+  [.ldr .r3 .r3 0, .mla .r11 .r1 .r3 .r11, .ldr .r3 .r8 sB, .mul .r11 .r11 .r3, .dp .sub .r11 .r0 (.reg .r11),
+   .dp .bic .r11 .r11 (.imm 0xC0000000), .dp .sub .r1 .r0 (.reg .r11)] ++
+  coefStore t ++
+  [.dp .and .r3 .r1 (.reg .r2), .ldr .r4 .r12 (corrOff row), .dp .add .r4 .r4 (.reg .r3),
+   .str .r4 .r12 (corrOff row), .ldr .r4 .r12 (carryOff row), .dp .add .r4 .r4 (.reg .r3),
+   .str .r4 .r12 (carryOff row)]
+
+/-- The two rows' words `0` or `i` over `[r0]`, `[r1]` and `m` at `[r11]`. -/
+def deTerms (zo : Nat) : List Instr :=
+  fgTerms zo ++ term .r11 zo 4 .r2 .r3 ++ term .r11 zo 5 .r4 .r5
+
+/-- `(d, e) := ((u d + v e + md₁ m) / 2^30, (q d + r e + md₂ m) / 2^30)`. -/
+def dePass : Prog isa := seqs [
+  .block (spill ++ rowPrep bD bE cU cV 0 1 0 ++ rowPrep bD bE cQ cR 2 3 1 ++
+    mdPrep cU cV 4 0 ++ mdPrep cQ cR 5 1 ++
+    [.ldr .r2 .r12 (carryOff 0), .mov .r3 (.imm 0), .ldr .r4 .r12 (carryOff 1), .mov .r5 (.imm 0)] ++
+    ptr .r0 bD ++ ptr .r1 bE ++ ptr .r11 bP ++ deTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
+  .loop (.block (deTerms 4 ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
+    [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r11 .r11 (.imm 4)] ++ wordDone)) .ne,
+  .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ restore [2, 1])]
+
+def update : Prog isa := seqs [fgPass, dePass, .block [.subs .r6 .r6 (.imm 32)]]
 
 def batch : Prog isa := .seq divsteps update
 
@@ -252,11 +311,18 @@ def zeroW (o : Nat) : Prog isa :=
 def fSign : List Instr :=
   ptr .r12 bF ++ [.dp .add .r12 .r12 (.shifted .r9 .lsl 2), .ldr .r1 .r12 0, .mov .r11 (.shifted .r1 .lsr 31)]
 
-/-- `[1] = |f|`, `[3] = ±d mod m`, each `k` words of zeros to the width. -/
+/-- `r11 :=` the sign bit of `[a]`'s word `k`. -/
+def signTop (a : Nat) : List Instr :=
+  ptr .r12 a ++ [.dp .add .r12 .r12 (.shifted .r9 .lsl 2), .ldr .r1 .r12 0, .mov .r11 (.shifted .r1 .lsr 31)]
+
+/-- `[1] = |f|` and `[3] = ±d mod m` from `d ∈ (-2m, m)`: `m` added where `d` is negative, the
+sign of `f` applied, `m` added again where negative; each `k` words of zeros to the width. -/
 def finish : Prog isa := seqs [
   zeroW 1, zeroW 3,
   sub1 bT1 bZ bF, .block fSign, sel1 1 bF bT1 true,
-  sub1 bT2 bP bD, .block fSign, sel1 bT2 bD bT2, csub1 3 bT2 true]
+  sub1 bT2 bZ bP, sub1 bT1 bD bT2, .block (signTop bD), sel1 bA1 bD bT1,
+  sub1 bT2 bZ bA1, .block fSign, sel1 bA2 bA1 bT2,
+  sub1 bT2 bZ bP, sub1 bT1 bA2 bT2, .block (signTop bA2), sel1 3 bA2 bT1 true]
 
 end Inv
 

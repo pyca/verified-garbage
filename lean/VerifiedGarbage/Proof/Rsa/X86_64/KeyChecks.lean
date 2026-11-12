@@ -16,8 +16,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 In the workspace at `B` (`Good`): `loadNum` loads a number (`loadNum_ok`),
 `ltMask` and `eqOne` and their masks into `sMask` (`ltMask_ok`, `eqOne_ok`),
-`decM` subtracts 1 from `m` (`decM_ok`), and `mulE` and `mulXR` compute the
-products the reductions start from (`mulE_ok`, `mulXR_ok`).
+`decM` subtracts 1 from `m` (`decM_ok`), and `mulE` and `mulPQ` compute the
+products the reductions start from (`mulE_ok`, `mulPQ_ok`).
 -/
 
 @[expose] public section
@@ -268,60 +268,6 @@ theorem mulE_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good
   · rw [hv, hm₃, hz₂, hcx, hX, Nat.zero_add]
   · rw [hm₃] at ho
     exact a₂.trans (Arrays.of_outside (by simp) ho (Nat.le_refl _) (by omega_arith))
-
-/-- `acc := [aX] [aR]` (`2 w + 2` words). -/
-theorem mulXR_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
-    (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 28) :
-    WP isa (seqs mulXR) s fun t =>
-      wv t.mem B (slot w aAcc) (2 * w + 2) = wv s.mem B (slot w aX) w * wv s.mem B (slot w aR) w ∧
-      Arrays B w [aAcc, aTmp] s.mem t.mem ∧ Keep mmRegs s t := by
-  have hn := hg.scr.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hdrLd hg.scr hZ hi
-  have sl := slot_eq w
-  have h8Z : slot w 8 = 256 + 64 * (w + 2) := by rw [sl]; omega_arith
-  have hA : slot w aAcc + 8 * (2 * w + 2) ≤ Z := by rw [sl]; simp only [aAcc]; omega_arith
-  simp only [mulXR, Impl.Rsa.X86_64.Crt.zeroAccs, List.cons_append, List.nil_append, seqs]
-  refine WP.seq (WP.mono (WP.keep [.r8, .rbx] (Q := fun t => t.gpr .r8 = off B (slot w aAcc) ∧
-      t.gpr .rbx = BitVec.ofNat 64 w ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aAcc) (by decide), hg.hdr.hw,
-      hg.hdr.harr aAcc (by decide)]) rfl) fun s₁ ⟨⟨h8, hbx, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (zeroWin_ok (hg.scr.congr k₁.2.2) h8 hbx (by omega_arith) hA) fun s₂ ⟨hz₂, ho₂, k₂⟩ => ?_)
-  rw [hm₁] at ho₂
-  have k12 := k₁.trans k₂
-  have hs₂ := hg.scr.congr k12.2.2
-  have hdi₂ : s₂.gpr .rdi = B := (k12.gpr (by decide)).trans hg.rdi
-  have a₂ : Arrays B w [aAcc, aTmp] s.mem s₂.mem := fun x hx => ho₂ x (by
-    have h1 := hx aAcc (by simp); have h2 := hx aTmp (by simp)
-    rw [sl] at h1 h2; simp only [aAcc, aTmp] at h1 h2; rw [sl]; simp only [aAcc]; omega_arith)
-  have hH₂ := a₂.hdr hg.hdr
-  have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off B (8 * i)) 8 := fun i hi => hdrLd hs₂ hZ hi
-  have fX : wv s₂.mem B (slot w aX) w = wv s.mem B (slot w aX) w :=
-    a₂.wv_eq (fun j hj => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl <;> rw [sl, sl] <;> simp only [aX, aAcc, aTmp] <;> omega_arith) (by rw [sl]; simp only [aX]; omega_arith)
-  have fR : wv s₂.mem B (slot w aR) w = wv s.mem B (slot w aR) w :=
-    a₂.wv_eq (fun j hj => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl <;> rw [sl, sl] <;> simp only [aR, aAcc, aTmp] <;> omega_arith) (by rw [sl]; simp only [aR]; omega_arith)
-  refine WP.seq (WP.mono (WP.keep [.r11, .r10, .r9, .r12, .r8] (Q := fun t => t.gpr .r11 = off B (slot w aX) ∧
-      t.gpr .r10 = BitVec.ofNat 64 w ∧ t.gpr .r9 = off B (slot w aR) ∧ t.gpr .r12 = BitVec.ofNat 64 w ∧
-      t.gpr .r8 = off B (slot w aAcc) ∧ t.mem = s₂.mem)
-    (by xrun [State.ea, hdr, hdi₂, hdrOff, hl₂ sW (by decide), hl₂ (sArr aX) (by decide),
-      hl₂ (sArr aR) (by decide), hl₂ (sArr aAcc) (by decide), hH₂.hw, hH₂.harr aX (by decide),
-      hH₂.harr aR (by decide), hH₂.harr aAcc (by decide)]) rfl)
-    fun s₃ ⟨⟨h11, h10, h9, h12, h8', hm₃⟩, k₃⟩ => ?_)
-  have hz : wv s₃.mem B (slot w aAcc) (w + w + 2) = 0 := by
-    rw [hm₃, wv_eq_zero_iff]; exact fun q hq => hz₂ q (by omega_arith)
-  refine WP.mono (mulRows_ok (hs₂.congr k₃.2.2) h11 h9 h10 h12 h8' hw hw (by omega_arith)
-    (by rw [show w + w + 2 = 2 * w + 2 by omega_arith]; exact hA) (by rw [sl]; simp only [aX]; omega_arith)
-    (by rw [sl]; simp only [aR]; omega_arith) (by rw [sl, sl]; simp only [aX, aAcc]; omega_arith)
-    (by rw [sl, sl]; simp only [aR, aAcc]; omega_arith) (by rw [hz]; exact Nat.two_pow_pos _)) fun t ⟨hv, ho, k₄⟩ => ?_
-  refine ⟨?_, ?_, ((k12.trans k₃).trans k₄).mono (by decide)⟩
-  · rw [show 2 * w + 2 = w + w + 2 by omega_arith, hv, hz, Nat.zero_add, hm₃, fX, fR]
-  · rw [hm₃] at ho
-    exact a₂.trans fun x hx => ho x (by
-      have h1 := hx aAcc (by simp); have h2 := hx aTmp (by simp)
-      rw [sl] at h1 h2; simp only [aAcc, aTmp] at h1 h2; rw [sl]; simp only [aAcc]; omega_arith)
 
 /-- `acc := [aX] [aR]` over their `⌈p_len / 8⌉` and `⌈q_len / 8⌉` words (`2 w + 2` words). -/
 theorem mulPQ_ok {s : State} {B : Addr} {Z w pl ql : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
 import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
 import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: the checks with remainders
@@ -85,7 +87,7 @@ theorem crtQInv_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem B (8 
     (srP : Src s B Z pp pb) (srQ : Src s B Z pq qb) (srQI : Src s B Z pqi qib) (hqil : qib.length = pb.length)
     (hp1 : 1 ≤ pb.length) (hpk : pb.length ≤ 8 * w) (hq1 : 1 ≤ qb.length) (hqk : qb.length ≤ 8 * w) :
     WP isa (seqs (loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
-        loadNum aR sQ sQlen ++ mulXR ++ Impl.Rsa.X86_64.CheckCrtKey.reduceTop sPlen Impl.Rsa.X86_64.CheckCrtKey.topQ ++
+        loadNum aR sQ sQlen ++ mulPQ ++ Impl.Rsa.X86_64.CheckCrtKey.reduceTop sPlen Impl.Rsa.X86_64.CheckCrtKey.topQ ++
         eqOne)) t fun t' =>
       KCtx s t' B Z w minv N ∧ ∃ R : Nat,
         (0 < Spec.Rsa.os2ip pb → Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb →
@@ -107,14 +109,20 @@ theorem crtQInv_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem B (8 
     fun t₃ ⟨h₃, m₃, o₃⟩ => ?_)
   rw [v₁, v₂, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₃
   rw [← Outside.wv_arr o₃ (by decide) hZ hn (by omega_arith)] at v₁ v₂
-  refine wsa (by simp [loadNum]) (by simp [mulXR]) (WP.mono (loadK h₃ (j := aR) (by decide) (by decide)
+  refine wsa (by simp [loadNum]) (by simp [mulPQ]) (WP.mono (loadK h₃ (j := aR) (by decide) (by decide)
     (by decide) (show sQ < 32 by decide) (show sQlen < 32 by decide) (by decide) (by decide) hpq hql srQ hq1 hqk)
     fun t₄ ⟨h₄, v₄, a₄⟩ => ?_)
   rw [← Arrays.wv_other a₄ (by decide) (by decide) hZ hn] at v₁ v₂
-  refine wsa (by simp [mulXR]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
-    (WP.mono (mulXRK h₄) fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
+  -- `qInv` and `q` are their low `⌈len / 8⌉` words.
+  have low : ∀ {bs : List Byte} {j L : Nat}, wv t₄.mem B (slot w j) w = Spec.Rsa.os2ip bs → bs.length = L →
+      L ≤ 8 * w → wv t₄.mem B (slot w j) ((L + 7) / 8) = Spec.Rsa.os2ip bs := fun {bs j L} v hL hk => by
+    rw [wv_low_of_lt (v := (L + 7) / 8) (w := w) (by omega) (by
+      rw [v]; exact Nat.lt_of_lt_of_le (os2ip_lt bs) (by
+        rw [hL, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))), v]
+  refine wsa (by simp [mulPQ]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
+    (WP.mono (mulPQK h₄ hpl hql hp1 hq1 hpk hqk) fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
   rw [← Arrays.wv_other a₅ (by decide) (by decide) hZ hn] at v₁
-  rw [v₂, v₄] at v₅
+  rw [low v₂ hqil hpk, low v₄ rfl hqk] at v₅
   have hql' : qb.length < 2 ^ 32 := by omega_arith
   refine wsa (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (by simp [eqOne])
     (WP.mono (reduceTopK h₅ (sl := sPlen) (top := Impl.Rsa.X86_64.CheckCrtKey.topQ) (L := pb.length)

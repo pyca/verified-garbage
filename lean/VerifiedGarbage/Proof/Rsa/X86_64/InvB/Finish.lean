@@ -13,7 +13,8 @@ import Mathlib.Tactic.Ring
 
 From the batches' state (`BS`): `t := a mod m` (`fin1_ok`); `t := ±t 2^K mod m`
 for the sign of `f` and `K = 15 n + 10` (`fin2_ok`); `|f|` into the cleared
-`aA`, and the two results copied out (`fin3_ok`).
+`aA`, and the two results copied out (`fin3_ok`); for the GCD alone, `|f|`
+alone (`fin3G_ok`).
 -/
 
 @[expose] public section
@@ -509,23 +510,25 @@ theorem countN_ok {s : State} {n : Nat} (h13 : s.gpr .r13 = BitVec.ofNat 64 n) :
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]) rfl)
     fun t ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
 
-/-- The end's last part. -/
-def fin3L (iV iX₂ : Nat) : List (Prog isa) := [zeroI aA,
+/-- The end's last part, but `[x₂]`: `[v] = |f|`. -/
+def fin3GL (iV : Nat) : List (Prog isa) := [zeroI aA,
   .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
   wordLoop 0 subBody,
   .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
   .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
-  copyI iV aA, copyI iX₂ aT]
+  copyI iV aA]
 
-/-- `[v] = |f|` and `[x₂] = t`. -/
-theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w n s) {iV iX₂ : Nat}
-    (hV : iV < 16) (hX : iX₂ < 16) (hVX : iV ≠ iX₂)
-    (hT : wv s.mem B (slot w aT) (n + 1) = x) (hx : x < p) (hZT : HZ s.mem B w n aT) (hpn : p < 2 ^ (64 * n))
+/-- The end's last part. -/
+def fin3L (iV iX₂ : Nat) : List (Prog isa) := fin3GL iV ++ [copyI iX₂ aT]
+
+/-- `[v] = |f|`, `t` unchanged. -/
+theorem fin3G_ok {s : State} {B : Addr} {Z w n p : Nat} {f : Int} (h : FS B Z w n s) {iV : Nat}
+    (hV : iV < 16) (hpn : p < 2 ^ (64 * n))
     (hf : (wv s.mem B (slot w aF) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = f % 2 ^ (64 * (n + 1)))
     (hf1 : -(p : Int) ≤ f) (hf2 : f ≤ p) :
-    WP isa (seqs (fin3L iV iX₂)) s fun t => t.gpr .rdi = B ∧
-      wv t.mem B (slot w iV) w = f.natAbs ∧ wv t.mem B (slot w iX₂) w = x ∧
-      Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
+    WP isa (seqs (fin3GL iV)) s fun t => FS B Z w n t ∧
+      wv t.mem B (slot w iV) w = f.natAbs ∧ wv t.mem B (slot w aT) (w + 2) = wv s.mem B (slot w aT) (w + 2) ∧
+      Frm B [(slot w iV, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   have hn := h.ws.scr.nowrap
   have hnw := h.nw; have hn1 := h.n1
@@ -550,8 +553,7 @@ theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w
     (by have := wv_lt s.mem B (slot w aF) (n + 1); rw [e2]; exact_mod_cast this) (by rw [e2]; exact hf)
   rw [e2] at hFv
   have sV := h.sl (show iV < 26 by omega)
-  have sX := h.sl (show iX₂ < 26 by omega)
-  unfold fin3L
+  unfold fin3GL
   simp only [seqs]
   -- `a := 0`.
   refine WP.seq (WP.mono (zeroAI_ok h.ws hZ h.r9 (j := aA) (by decide)) fun s₁ ⟨zA₁, o₁, r9₁, k₁⟩ => ?_)
@@ -616,32 +618,56 @@ theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w
     (Nat.pow_le_pow_right (by decide) (by omega)))
   have Aw : wv s₅.mem B (slot w aA) w = f.natAbs :=
     wv_lowK (by rw [hZA.wv_eq (by omega), habs]) hfw (by omega)
-  -- `t`, unchanged.
   have T₅ : wv s₅.mem B (slot w aT) (w + 2) = wv s.mem B (slot w aT) (w + 2) := by
     rw [o₅.wv (Or.inr (by omega)) (by omega), o₄.wv (Or.inr (by omega)) (by omega),
       o₃.wv (Or.inl (by omega)) (by omega), m₂, o₁.wv (Or.inr (by omega)) (by omega)]
+  -- The copy.
+  refine WP.mono (copyAI_ok h₅.ws hZ h₅.r9 (o := iV) (a := aA) (by omega) (by decide) (by unfold aA; omega))
+    fun t ⟨v₆, o₆, k₆⟩ => ⟨h₅.of_out o₆ k₆ (by decide) (by decide) (by decide), by rw [v₆, Aw], ?_, ?_, ?_⟩
+  · have sVT := slot_far (w := w) (show iV ≠ aT by unfold aT; omega)
+    rw [o₆.wv (by omega) (by omega), T₅]
+  · have big : ∀ {m m' : Mem}, Frm B [(slot w 16, 80 * (w + 2))] m m' →
+        Frm B [(slot w iV, 8 * w), (slot w 16, 80 * (w + 2))] m m' :=
+      fun f => f.mono (by simp)
+    exact ((((big (frW o₁ (by decide) (by decide) (by omega))).trans
+      (big (by rw [← m₂]; exact frW o₃ (by decide) (by decide) (by omega)))).trans
+      (big (frW o₄ (by decide) (by decide) (by omega)))).trans (big (frW o₅ (by decide) (by decide) (by omega)))).trans
+      (Frm.of_outside o₆ (by simp))
+  · exact ((((k₁.trans k23).trans k₄).trans k₅).trans k₆).mono (by decide)
+
+/-- `[v] = |f|` and `[x₂] = t`. -/
+theorem fin3_ok {s : State} {B : Addr} {Z w n p x : Nat} {f : Int} (h : FS B Z w n s) {iV iX₂ : Nat}
+    (hV : iV < 16) (hX : iX₂ < 16) (hVX : iV ≠ iX₂)
+    (hT : wv s.mem B (slot w aT) (n + 1) = x) (hx : x < p) (hZT : HZ s.mem B w n aT) (hpn : p < 2 ^ (64 * n))
+    (hf : (wv s.mem B (slot w aF) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = f % 2 ^ (64 * (n + 1)))
+    (hf1 : -(p : Int) ≤ f) (hf2 : f ≤ p) :
+    WP isa (seqs (fin3L iV iX₂)) s fun t => t.gpr .rdi = B ∧
+      wv t.mem B (slot w iV) w = f.natAbs ∧ wv t.mem B (slot w iX₂) w = x ∧
+      Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
+  have hn := h.ws.scr.nowrap
+  have hnw := h.nw
+  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  have e26 : slot w 26 = 256 + 26 * (8 * (w + 2)) := slot_eq w 26
+  have hZ := h.z
+  have sV := h.sl (show iV < 26 by omega)
+  have sX := h.sl (show iX₂ < 26 by omega)
+  unfold fin3L
+  rw [seqs_append_iff _ _ (by simp [fin3GL]) (by simp)]
+  refine WP.mono (fin3G_ok h hV hpn hf hf1 hf2) fun s₅ ⟨h₅, Aw, T₅, F₅, k₅⟩ => ?_
   have hxw : x < 2 ^ (64 * w) := Nat.lt_of_lt_of_le (by omega) (Nat.pow_le_pow_right (by decide) (by omega) :
     2 ^ (64 * n) ≤ 2 ^ (64 * w))
   have Tw : wv s₅.mem B (slot w aT) w = x :=
     wv_lowK (by rw [T₅, hZT.wv_eq (by omega), hT]) hxw (by omega)
-  -- The copies.
-  refine WP.seq (WP.mono (copyAI_ok h₅.ws hZ h₅.r9 (o := iV) (a := aA) (by omega) (by decide) (by unfold aA; omega))
-    fun s₆ ⟨v₆, o₆, k₆⟩ => ?_)
-  have sVA := slot_far (w := w) (show iV ≠ aT by unfold aT; omega)
   have sVX := slot_far (w := w) hVX
   have sXA := slot_far (w := w) (show iX₂ ≠ aT by unfold aT; omega)
-  refine WP.mono (copyAI_ok (wsOut h₅.ws o₆ k₆ (by decide)) hZ ((k₆.gpr (by decide)).trans h₅.r9) (o := iX₂) (a := aT) (by omega) (by decide)
+  simp only [seqs]
+  refine WP.mono (copyAI_ok h₅.ws hZ h₅.r9 (o := iX₂) (a := aT) (by omega) (by decide)
     (by unfold aT; omega)) fun t ⟨v₇, o₇, k₇⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
-  · exact ((((((k₁.trans k23).trans k₄).trans k₅).trans k₆).trans k₇).gpr (by decide)).trans h.ws.rdi
-  · rw [o₇.wv (by omega) (by omega), v₆, Aw]
-  · rw [v₇, o₆.wv (by omega) (by omega), Tw]
-  · have big : ∀ {m m' : Mem}, Frm B [(slot w 16, 80 * (w + 2))] m m' →
-        Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] m m' :=
-      fun f => f.mono (by simp)
-    exact (((((big (frW o₁ (by decide) (by decide) (by omega))).trans
-      (big (by rw [← m₂]; exact frW o₃ (by decide) (by decide) (by omega)))).trans
-      (big (frW o₄ (by decide) (by decide) (by omega)))).trans (big (frW o₅ (by decide) (by decide) (by omega)))).trans
-      (Frm.of_outside o₆ (by simp))).trans (Frm.of_outside o₇ (by simp))
-  · exact (((((k₁.trans k23).trans k₄).trans k₅).trans k₆).trans k₇).mono (by decide)
+  · exact (k₇.gpr (by decide)).trans h₅.ws.rdi
+  · rw [o₇.wv (by omega) (by omega), Aw]
+  · rw [v₇, Tw]
+  · exact (F₅.mono (by simp)).trans (Frm.of_outside o₇ (by simp))
+  · exact (k₅.trans k₇).mono (by decide)
 
 end VG.Proof.Rsa.X86_64.InvB

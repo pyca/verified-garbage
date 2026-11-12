@@ -33,6 +33,8 @@ structure WordOk (g : Geo) (s0 : State) (v : Vals) (ap : Nat) : Prop where
   four : 4 ≤ wq ap
   room : wq ap + 2 ≤ g.w
   top : v.p * v.q = v.n → Top (wq ap) v.p ∧ Top (wq ap) (2 * (v.p / 2)) ∧ Top (wq ap) (2 * (v.q / 2))
+  /-- The primes' words, half the modulus's. -/
+  half : 2 * wq ap = g.w
 
 theorem wordOk_of {g : Geo} {s0 : State} {v : Vals} {an ap aq top : Nat}
     (hm : MLen s0 g.B g.Z (pLenArg g.full) ap) (hp : v.p < 2 ^ (8 * ap)) (hq : v.q < 2 ^ (8 * aq))
@@ -47,7 +49,7 @@ theorem wordOk_of {g : Geo} {s0 : State} {v : Vals} {an ap aq top : Nat}
     have := htop.mp ht
     rwa [show 32 * g.w = 2 * (8 * ap) by rw [hw]; omega] at this
   have hq' : v.q < 2 ^ (8 * ap) := by rwa [show 8 * aq = 8 * ap by omega] at hq
-  refine ⟨hm, by omega, by omega, fun hpq => ?_⟩
+  refine ⟨hm, by omega, by omega, fun hpq => ?_, by omega⟩
   simp only [Top, hK]
   have pt := top_factor (factor_top hn hq' hpq) hp
   have qt := top_factor (factor_top hn hp (by rw [Nat.mul_comm]; exact hpq)) hq'
@@ -115,22 +117,21 @@ theorem Stg.eWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   have hmY : m ≠ aY := (hfree m hmL).1
   have hmT : m ≠ aT := (hfree m hmL).2.2.2.1
   have hmX : m ≠ aX := (hfree m hmL).2.1
-  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := m) (wide := false) hm h4 (by omega) (by decide)
+  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := m) (top := some 2) hm h4 (by omega)
+    (fun k e => by obtain rfl := Option.some.inj e; omega) (by decide)
     (by decide) hmL (fun j hj => ⟨(hfree j hj).2.2.1, (hfree j hj).2.2.2.1⟩) (fun e => (hfree m hmL).2.2.1 e.symm)
-    (by decide) hmT (by decide) (by decide) hmY (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
-    (fun e => absurd e (by decide)) ⟨hmv, by decide⟩) fun t3 ⟨M, R, hMR, h3⟩ => ?_
+    (by decide) hmT (by decide) (by decide) hmY ⟨hmv, by decide⟩) fun t3 ⟨M, R, hMR, h3⟩ => ?_
   have nA : aA ∉ live := fun ha => (hfree aA ha).2.2.1 rfl
   refine WP.mono (h3.eqA_ok (a := aA) (b := aOne) (by simp) (by simp [hO]) (by simp [nW]; decide))
     fun t ht => ⟨M, R, fun tp => (hMR tp).1, fun tp hlt he => ?_, ?_⟩
   · obtain ⟨-, eR⟩ := hMR tp
-    simp only [Bool.false_eq_true, ↓reduceIte] at eR
-    have big : A x * A aE < 2 ^ (32 * g.w) :=
+    have big : A x * A aE < 2 ^ (32 * (wq ap + 2)) :=
       calc A x * A aE < 2 ^ (32 * wq ap) * 2 ^ 64 :=
             Nat.mul_lt_mul'' (Nat.lt_trans hlt tp.2) (Nat.lt_trans he (by decide))
-        _ = 2 ^ (32 * wq ap + 64) := by rw [Nat.pow_add]
-        _ ≤ 2 ^ (32 * g.w) := Nat.pow_le_pow_right (by decide) (by omega)
+        _ = 2 ^ (32 * (wq ap + 2)) := by rw [← Nat.pow_add]; congr 1
     have full := e2 (Nat.lt_trans he (by decide))
-    rw [eR, val32_low (Nat.le_add_right g.w 2) (by rw [full]; exact big), full, Nat.mul_comm]
+    rw [eR, show VG.Proof.Rsa.X86.WordRt.xw g.len ap (some 2) = wq ap + 2 from rfl,
+      val32_low (k := wq ap + 2) (w := g.w + 2) (by omega) (by rw [full]; exact big), full, Nat.mul_comm]
   · have v1 : upd (upd A m M) aA R aOne = 1 := by
       rw [upd_ne _ _ (by decide), upd_ne _ _ (Ne.symm hmO), one]
     rw [upd_self, v1] at ht
@@ -140,37 +141,48 @@ theorem Stg.eWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
 /-- `qInvWord`: `qInv < p` and `q qInv mod p = 1`, `p` left as it was where its top bit is set. -/
 theorem Stg.qInvWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {ap : Nat}
-    (hm : MLen s0 g.B g.Z (pLenArg g.full) ap) (h4 : 4 ≤ wq ap) (hw : wq ap + 2 ≤ g.w)
+    (hm : MLen s0 g.B g.Z (pLenArg g.full) ap) (h4 : 4 ≤ wq ap) (hh : 2 * wq ap = g.w)
     (hI : aQI ∈ live) (hP : aP ∈ live) (hQ : aQ ∈ live) (hO : aOne ∈ live) (one : A aOne = 1)
     (hfree : ∀ j ∈ live, j ≠ aY ∧ j ≠ aX ∧ j ≠ aA ∧ j ≠ aT ∧ j ≠ aW) :
     WP isa (seqs (qInvWord g.full)) s fun t => ∃ M R,
       (Top (wq ap) (A aP) → M = A aP) ∧
-      (Top (wq ap) (A aP) → R = A aQ * A aQI % A aP) ∧
+      (Top (wq ap) (A aP) → A aQ < 2 ^ (32 * wq ap) → A aQI < A aP → R = A aQ * A aQI % A aP) ∧
       Stg g s0 (upd A aP M) live ((c && decide (A aQI < A aP)) && decide (R = 1)) t := by
   have nW : aW ∉ live := fun hw' => (hfree aW hw').2.2.2.2 rfl
+  have hh2 : g.w / 2 = wq ap := by omega
   unfold qInvWord
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   rw [wp_seqs_append (by simp [ltA]) (by simp)]
   refine WP.mono (h.ltA_ok hI hP nW) fun t1 h1 => ?_
   rw [wp_seqs_cons (by simp)]
-  refine WP.mono (h1.mulWide_ok (o := aY) (a := aQ) (b := aQI) (by decide) hQ hI
+  refine WP.mono (h1.mulHalf_if_ok (o := aY) (a := aQ) (b := aQI) (by decide) hQ hI
     (fun j hj => ⟨(hfree j hj).1, (hfree j hj).2.1⟩) (by decide)) fun t2 ⟨h2, e2⟩ => ?_
   rw [wp_seqs_cons (by simp [eqA])]
-  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := aP) (wide := true) hm h4 (by omega) (by decide)
+  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := aP) (top := none) hm h4 (by omega) (by simp) (by decide)
     (by decide) hP (fun j hj => ⟨(hfree j hj).2.2.1, (hfree j hj).2.2.2.1⟩) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (fun _ => by decide) (fun _ => by decide)
-    (fun _ => by decide) ⟨by decide, by decide⟩) fun t3 ⟨M, R, hMR, h3⟩ => ?_
+    (by decide) (by decide) (by decide) (by decide) (by decide) ⟨by decide, by decide⟩) fun t3 ⟨M, R, hMR, h3⟩ => ?_
   have nA : aA ∉ live := fun ha => (hfree aA ha).2.2.1 rfl
   refine WP.mono (h3.eqA_ok (a := aA) (b := aOne) (by simp) (by simp [hO]) (by simp [nW]; decide))
-    fun t ht => ⟨M, R, fun tp => (hMR tp).1, fun tp => ?_, ?_⟩
+    fun t ht => ⟨M, R, fun tp => (hMR tp).1, fun tp hq hlt => ?_, ?_⟩
   · obtain ⟨-, eR⟩ := hMR tp
-    simp only [↓reduceIte] at eR
-    rw [eR, e2]
+    simp only [VG.Proof.Rsa.X86.WordRt.xw] at eR
+    have hi : A aQI < 2 ^ (32 * wq ap) := Nat.lt_trans hlt tp.2
+    have full := e2 (by rw [hh2]; exact hq) (by rw [hh2]; exact hi)
+    have big : A aQ * A aQI < 2 ^ (32 * g.w) :=
+      calc A aQ * A aQI < 2 ^ (32 * wq ap) * 2 ^ (32 * wq ap) := Nat.mul_lt_mul'' hq hi
+        _ = 2 ^ (32 * g.w) := by rw [← Nat.pow_add, ← hh]; congr 1; omega
+    rw [eR, val32_low (k := g.w) (w := 2 * g.w) (by omega) (by rw [full]; exact big), full]
   · have v1 : upd (upd A aP M) aA R aOne = 1 := by
       rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), one]
     rw [upd_self, v1] at ht
     exact (ht.sub (live' := live) fun j hj => by simp [hj]).congr' fun j hj => by
       rw [upd_ne _ _ (by rintro rfl; exact nA hj)]
+
+/-- Below `2^(32 k)` where twice its half is (`k ≥ 1`). -/
+theorem lt_of_half_lt {x k : Nat} (hk : 1 ≤ k) (h : 2 * (x / 2) < 2 ^ (32 * k)) : x < 2 ^ (32 * k) := by
+  have e : 2 ^ (32 * k) = 2 * 2 ^ (32 * k - 1) := by
+    rw [← Nat.pow_succ']; congr 1; omega
+  omega
 
 /-- The arrays after the product checks by word steps: `p - 1`, `q - 1` and `p` as they were
 where `p q = n`. -/
@@ -196,12 +208,13 @@ theorem Stg.wordProducts_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} {ap :
   rw [wp_seqs_append (by simp [eWord, ltA]) (by simp [ltA, qInvWord])]
   refine WP.mono (h1.eWord_ok (x := aDQ) (m := aM2) wo.len wo.four wo.room (by decide) (by decide) (by decide)
     (by decide) rfl fr (by decide) (by decide)) fun t2 ⟨M₂, R₂, eM₂, eR₂, h2⟩ => ?_
-  refine WP.mono (h2.qInvWord_ok wo.len wo.four wo.room (by decide) (by decide) (by decide) (by decide) rfl fr)
+  refine WP.mono (h2.qInvWord_ok wo.len wo.four wo.half (by decide) (by decide) (by decide) (by decide) rfl fr)
     fun t ⟨M₃, R₃, eM₃, eR₃, h3⟩ => ⟨M₁, M₂, M₃, R₁, R₂, R₃, fun hpq => ?_, fun he hpq => ?_, h3⟩
   · obtain ⟨tp, tp1, tq1⟩ := wo.top hpq
     exact ⟨eM₁ tp1, eM₂ tq1, eM₃ tp⟩
   · obtain ⟨tp, tp1, tq1⟩ := wo.top hpq
-    exact ⟨fun hlt => eR₁ tp1 hlt he, fun hlt => eR₂ tq1 hlt he, fun _ => eR₃ tp⟩
+    exact ⟨fun hlt => eR₁ tp1 hlt he, fun hlt => eR₂ tq1 hlt he,
+      fun hlt => eR₃ tp (lt_of_half_lt (by have := wo.four; omega) tq1.2) hlt⟩
 
 /-- `dWords`: `d < n`, and the remainders of `d` modulo `[aM1]` and `[aM2]` by word steps, compared
 with `dP` and `dQ`. -/
@@ -223,10 +236,9 @@ theorem Stg.dWords_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
   refine WP.mono (h.ltA_ok hD (hl aN (by decide)) nW) fun t1 h1 => ?_
   rw [wp_seqs_cons (by simp [eqA])]
   have gd1 := h1.arrs.get hD
-  refine WP.mono (h1.wordMod_ok (x := aD) (r := aVR) (m := aM1) (wide := false) hm h4 hw (by decide)
+  refine WP.mono (h1.wordMod_ok (x := aD) (r := aVR) (m := aM1) (top := none) hm h4 hw (by simp) (by decide)
     (by decide) hM1 (fun j hj => ⟨(fr j hj).1, (fr j hj).2.1⟩) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
-    (fun e => absurd e (by decide)) ⟨by decide, by decide⟩) fun t2 ⟨M, Y₁, eY₁, h2⟩ => ?_
+    (by decide) (by decide) (by decide) ⟨by decide, by decide⟩) fun t2 ⟨M, Y₁, eY₁, h2⟩ => ?_
   rw [wp_seqs_append (by simp [eqA]) (by simp [eqA])]
   refine WP.mono (h2.eqA_ok (a := aVR) (b := aDP) (by simp) (by simp [hl aDP (by decide)])
     (by simp [nW]; decide)) fun t3 h3 => ?_
@@ -234,19 +246,18 @@ theorem Stg.dWords_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
   have h3' := h3.sub (live' := live) fun j hj => by simp [hj]
   rw [wp_seqs_cons (by simp [eqA])]
   have gd3 := h3'.arrs.get hD
-  refine WP.mono (h3'.wordMod_ok (x := aD) (r := aVR) (m := aM2) (wide := false) hm h4 hw (by decide)
+  refine WP.mono (h3'.wordMod_ok (x := aD) (r := aVR) (m := aM2) (top := none) hm h4 hw (by simp) (by decide)
     (by decide) hM2 (fun j hj => ⟨(fr j hj).1, (fr j hj).2.1⟩) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
-    (fun e => absurd e (by decide)) ⟨by decide, by decide⟩) fun t4 ⟨M', Y₂, eY₂, h4'⟩ => ?_
+    (by decide) (by decide) (by decide) ⟨by decide, by decide⟩) fun t4 ⟨M', Y₂, eY₂, h4'⟩ => ?_
   refine WP.mono (h4'.eqA_ok (a := aVR) (b := aDQ) (by simp) (by simp [hl aDQ (by decide)])
     (by simp [nW]; decide)) fun t ht => ⟨Y₁, Y₂, fun tp => ?_, fun tp => ?_, ?_⟩
   · obtain ⟨-, e⟩ := eY₁ tp
-    simp only [Bool.false_eq_true, ↓reduceIte] at e
+    simp only [VG.Proof.Rsa.X86.WordRt.xw] at e
     rw [e]; exact congrArg (· % A aM1) gd1
   · have a2 : upd (upd A aM1 M) aVR Y₁ aM2 = A aM2 := by rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]
     rw [a2] at eY₂
     obtain ⟨-, e⟩ := eY₂ tp
-    simp only [Bool.false_eq_true, ↓reduceIte] at e
+    simp only [VG.Proof.Rsa.X86.WordRt.xw] at e
     have d3 : num t3.mem g.B g.w aD = A aD := by rw [gd3, upd_ne _ _ (by decide), upd_ne _ _ (by decide)]
     rw [e]; exact congrArg (· % A aM2) d3
   · rw [upd_self, upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_ne _ _ (by decide),

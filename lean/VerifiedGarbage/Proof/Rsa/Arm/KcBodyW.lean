@@ -74,16 +74,19 @@ theorem top_word_pos {mem : Mem} {base : Addr} {d k n M : Nat} (hkn : k + 1 ≤ 
 
 theorem divRegs_body : ∀ x ∈ KeyDiv.divRegs, x ∈ bodyRegs := by decide
 
-/-- `mulLo o x y`: `[o] := X Y mod 2^(32 w)` for `X = [x]` of `w / 2` words, `w` even. -/
-theorem Stg.mulLo_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+/-- `mulLo o x y n`: `[o] := X' Y mod 2^(32 w)` for `X'` the low `n` words of `X = [x]` (`w / 2`
+for `none`) and `Y = [y]` of `w / 2`, `w` even. -/
+theorem Stg.mulLo_any {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {o x y : Nat} (ho : o < nArr) (hx : x ∈ live) (hy : y ∈ live) (hz : aZ ∈ live)
     (hA0 : A aZ = 0) (hox : o ≠ x) (hoy : o ≠ y) (ho0 : o ≠ aZ) (hoV : o ≠ aVD) (hw : g.w % 2 = 0)
-    (hw2 : 2 ≤ g.w) (hX : A x < 2 ^ (32 * (g.w / 2))) :
-    WP isa (KeyDiv.mulLo o x y) s (Stg g s0 (upd A o (A x * A y % 2 ^ (32 * g.w))) (o :: live) c) := by
+    (hw2 : 2 ≤ g.w) {n : Option Nat} (hY : A y < 2 ^ (32 * (g.w / 2)))
+    (hn : KeyDiv.RowsOk n g.w := by trivial) :
+    WP isa (KeyDiv.mulLo o x y n) s
+      (Stg g s0 (upd A o (A x % 2 ^ (32 * KeyDiv.rowsN n g.w) * A y % 2 ^ (32 * g.w))) (o :: live) c) := by
   have c16 : slot s.mem g.B 16 = g.w := by
     simp only [slot, w32]; rw [h.cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.ws.wle; omega)]
   refine WP.mono (KeyDiv.mulLo_ok h.ws ho (h.live_lt x hx) (h.live_lt y hy) (by decide) hox hoy ho0 c16 hw hw2
-    (h.arrs.get hx) hX (h.arrs.get hy) (by have := h.arrs.get hz; rw [hA0] at this; exact this))
+    (h.arrs.get hx) (h.arrs.get hy) hY (by have := h.arrs.get hz; rw [hA0] at this; exact this) hn)
     fun t ⟨ht, e, k, r⟩ => ?_
   refine h.next ht k (by simpa using ho) (by decide) r divRegs_body ?_ ?_
     (h.vd_keep k (by simpa using hoV) (by decide)) (h.mask_keep k (by decide))
@@ -94,6 +97,27 @@ theorem Stg.mulLo_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
     · exact ho
     · exact h.live_lt j hj'
 
+/-- `mulLo o x y n`: `[o] := X Y mod 2^(32 w)` for `X = [x]` of `n` words (`w / 2` for `none`)
+and `Y = [y]` of `w / 2`, `w` even. -/
+theorem Stg.mulLo_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {o x y : Nat} (ho : o < nArr) (hx : x ∈ live) (hy : y ∈ live) (hz : aZ ∈ live)
+    (hA0 : A aZ = 0) (hox : o ≠ x) (hoy : o ≠ y) (ho0 : o ≠ aZ) (hoV : o ≠ aVD) (hw : g.w % 2 = 0)
+    (hw2 : 2 ≤ g.w) {n : Option Nat} (hX : A x < 2 ^ (32 * KeyDiv.rowsN n g.w)) (hY : A y < 2 ^ (32 * (g.w / 2)))
+    (hn : KeyDiv.RowsOk n g.w := by trivial) :
+    WP isa (KeyDiv.mulLo o x y n) s (Stg g s0 (upd A o (A x * A y % 2 ^ (32 * g.w))) (o :: live) c) := by
+  have := h.mulLo_any ho hx hy hz hA0 hox hoy ho0 hoV hw hw2 hY hn
+  rwa [Nat.mod_eq_of_lt hX] at this
+
+/-- `Stg.mulLo_ok` with the product's factors the other way round. -/
+theorem Stg.mulLo_ok' {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {o x y : Nat} (ho : o < nArr) (hx : x ∈ live) (hy : y ∈ live) (hz : aZ ∈ live)
+    (hA0 : A aZ = 0) (hox : o ≠ x) (hoy : o ≠ y) (ho0 : o ≠ aZ) (hoV : o ≠ aVD) (hw : g.w % 2 = 0)
+    (hw2 : 2 ≤ g.w) {n : Option Nat} (hX : A x < 2 ^ (32 * KeyDiv.rowsN n g.w)) (hY : A y < 2 ^ (32 * (g.w / 2)))
+    (hn : KeyDiv.RowsOk n g.w := by trivial) :
+    WP isa (KeyDiv.mulLo o x y n) s (Stg g s0 (upd A o (A y * A x % 2 ^ (32 * g.w))) (o :: live) c) := by
+  rw [Nat.mul_comm (A y) (A x)]
+  exact h.mulLo_ok ho hx hy hz hA0 hox hoy ho0 hoV hw hw2 hX hY hn
+
 /-- `divW a r m t nm u`: `[r] := [a] mod M` for `M = [m]` of `w / 2` words, its top word not zero. -/
 theorem Stg.divW_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a r m t nm u : Nat} (ha : a ∈ live) (hm : m ∈ live) (hz : aZ ∈ live)
@@ -101,8 +125,9 @@ theorem Stg.divW_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r) (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r)
     (htn : t ≠ nm) (hnu : nm ≠ u) (hnm' : nm ≠ m) (hr0 : r ≠ aZ) (ht0 : t ≠ aZ) (hu0 : u ≠ aZ) (hn0 : nm ≠ aZ)
     (hV : aVD ∉ [r, t, u, nm]) (hw6 : 6 ≤ g.w) (hMl : A m < 2 ^ (32 * (g.w / 2)))
-    (hMg : 2 ^ (32 * (g.w / 2 - 1)) ≤ A m) (hlive : ∀ j ∈ live, j = r ∨ j ∉ [r, t, u, nm]) :
-    WP isa (KeyDiv.divW a r m t nm u) s (Stg g s0 (upd A r (A a % A m)) (r :: live) c) := by
+    (hMg : 2 ^ (32 * (g.w / 2 - 1)) ≤ A m) (hlive : ∀ j ∈ live, j = r ∨ j ∉ [r, t, u, nm]) {top : Option Nat}
+    (htop : KeyDiv.TopOk top g.w (A a) := by trivial) :
+    WP isa (KeyDiv.divW a r m t nm u top) s (Stg g s0 (upd A r (A a % A m)) (r :: live) c) := by
   have c16 : slot s.mem g.B 16 = g.w := by
     simp only [slot, w32]; rw [h.cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.ws.wle; omega)]
   have hT0 : 0 < w32 s.mem (State.addr g.B) (arr g.w m + 4 * (g.w / 2 - 1)) :=
@@ -110,7 +135,7 @@ theorem Stg.divW_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       (by rw [show g.w / 2 - 1 + 1 = g.w / 2 by omega]; exact hMl) hMg
   refine WP.mono (KeyDiv.divW_ok h.ws (h.live_lt a ha) hr (h.live_lt m hm) ht hnm hu (by decide) hra hrt hru htu hmr
     hmt hmu hnr htn hnu hnm' hr0 ht0 hu0 hn0 hw6 c16 (h.arrs.get hm) hMl hT0
-    (by have := h.arrs.get hz; rw [hA0] at this; exact this))
+    (by have := h.arrs.get hz; rw [hA0] at this; exact this) (by rw [h.arrs.get ha]; exact htop))
     fun v ⟨hv, e, _, k, rr⟩ => ?_
   have hjs : ∀ j ∈ [r, t, u, nm], j < nArr := by simp; exact ⟨hr, ht, hu, hnm⟩
   refine h.next hv k hjs (by decide) rr divRegs_body ?_ ?_ (h.vd_keep k (fun j hj e' => hV (e' ▸ hj)) (by decide))
@@ -271,12 +296,21 @@ abbrev cW (g : Geo) (v : Vals) : Bool :=
     (v.dP * v.e % 2 ^ (32 * g.w) % VG.Proof.Rsa.fixT (g.w / 2) (2 * (v.p / 2)))
     (v.dQ * v.e % 2 ^ (32 * g.w) % VG.Proof.Rsa.fixT (g.w / 2) (2 * (v.q / 2)))
 
+/-- `dX e mod 2^(32 w)` for `dX` of `w / 2` words and `e` of two is below `2^(32 (2 + w / 2))`. -/
+theorem eTop {w d e : Nat} (hd : d < 2 ^ (32 * (w / 2))) (he : e < 2 ^ (32 * 2)) :
+    d * e % 2 ^ (32 * w) < 2 ^ (32 * (2 + w / 2)) := by
+  refine Nat.lt_of_le_of_lt (Nat.mod_le _ _) ?_
+  have := Nat.mul_lt_mul_of_lt_of_le hd (Nat.le_of_lt he) (Nat.two_pow_pos _)
+  rw [← Nat.pow_add] at this
+  rwa [show 32 * (w / 2) + 32 * 2 = 32 * (2 + w / 2) by omega] at this
+
 theorem divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live) (hz : aZ ∈ live) (hA0 : A aZ = 0)
     (haV : a ≠ aVD) (hdV : d ≠ aVD) (hav : a ∉ [aVR, aVT, aY, aX]) (hw6 : 6 ≤ g.w)
     (hD : A d < 2 ^ (32 * (g.w / 2)))
-    (hlive : ∀ j ∈ live, j = aVR ∨ j ∉ [aVR, aVT, aY, aX]) :
-    WP isa (seqs (divK a d)) s (Stg g s0 (upd (upd A aVD (fixT (g.w / 2) (A d))) aVR
+    (hlive : ∀ j ∈ live, j = aVR ∨ j ∉ [aVR, aVT, aY, aX]) {top : Option Nat}
+    (htop : KeyDiv.TopOk top g.w (A a) := by trivial) :
+    WP isa (seqs (divK a d top)) s (Stg g s0 (upd (upd A aVD (fixT (g.w / 2) (A d))) aVR
       (A a % fixT (g.w / 2) (A d))) (aVR :: aVD :: live) c) := by
   unfold divK
   rw [wp_seqs_cons (by simp)]
@@ -305,6 +339,7 @@ theorem divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c 
       · rcases hlive j hj' with e | e
         · left; exact e
         · right; simpa [List.mem_cons, or_comm, or_left_comm] using e)
+    (htop := by rw [upd_ne _ _ haV]; exact htop)
   rw [upd_self, upd_ne _ _ haV] at this
   exact this
 
@@ -324,7 +359,8 @@ macro "ne_nil" : tactic => `(tactic| first
 /-- `keyBodyW`: for a balanced key, the mask is `cW` of what the checks compute. -/
 theorem keyBodyW_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hw : g.w % 2 = 0)
     (hp : v.p < 2 ^ (32 * (g.w / 2))) (hq : v.q < 2 ^ (32 * (g.w / 2))) (hdp : v.dP < 2 ^ (32 * (g.w / 2)))
-    (hdq : v.dQ < 2 ^ (32 * (g.w / 2))) :
+    (hdq : v.dQ < 2 ^ (32 * (g.w / 2))) (hqi : v.qI < 2 ^ (32 * (g.w / 2)))
+    (he : v.e < 2 ^ (32 * 2)) :
     WP isa keyBodyW s fun t => ∃ A live, Stg g s A live (cW g v) t := by
   have kb := h.kb
   have hw6 : 6 ≤ g.w := by simp only [Geo.w]; omega
@@ -337,7 +373,7 @@ theorem keyBodyW_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hw : g.
   refine WP.mono (first_ok h) fun t0 h0 => ?_
   rw [wp_seqs_cons (by ne_nil)]
   refine WP.mono (h0.mulLo_ok (o := aVQ) (x := aP) (y := aQ) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) (by decide) (by decide) (by decide) hw (by omega) hp) fun t1 h1 => ?_
+    (by decide) (by decide) (by decide) (by decide) hw (by omega) hp hq) fun t1 h1 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h1.eqA_ok (a := aVQ) (b := aN) (by decide) (by decide) (by decide)) fun t2 h2 => ?_
   rw [wp_seqs_cons (by ne_nil)]
@@ -352,30 +388,32 @@ theorem keyBodyW_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hw : g.
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h6.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun t7 h7 => ?_
   rw [wp_seqs_cons (by ne_nil)]
-  refine WP.mono (h7.mulLo_ok (o := aA) (x := aDP) (y := aE) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) (by decide) (by decide) (by decide) hw (by omega) hdp) fun t8 h8 => ?_
+  refine WP.mono (h7.mulLo_ok' (o := aA) (x := aE) (y := aDP) (n := some 2) (by decide) (by decide) (by decide)
+    (by decide) rfl (by decide) (by decide) (by decide) (by decide) hw (by omega) he hdp
+    ⟨by decide, by omega, by decide⟩) fun t8 h8 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (divK_ok h8 (a := aA) (d := aM1) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
-    (by decide) hw6 p2 (by decide)) fun t9 h9 => ?_
+    (by decide) hw6 p2 (by decide) (top := some 2) ⟨by decide, by omega, by decide, eTop hdp he⟩) fun t9 h9 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h9.eqA_ok (a := aVR) (b := aOne) (by decide) (by decide) (by decide)) fun t10 h10 => ?_
   -- `dQ`.
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h10.ltA_ok (a := aDQ) (b := aM2) (by decide) (by decide) (by decide)) fun t11 h11 => ?_
   rw [wp_seqs_cons (by ne_nil)]
-  refine WP.mono (h11.mulLo_ok (o := aA) (x := aDQ) (y := aE) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) (by decide) (by decide) (by decide) hw (by omega) hdq) fun t12 h12 => ?_
+  refine WP.mono (h11.mulLo_ok' (o := aA) (x := aE) (y := aDQ) (n := some 2) (by decide) (by decide) (by decide)
+    (by decide) rfl (by decide) (by decide) (by decide) (by decide) hw (by omega) he hdq
+    ⟨by decide, by omega, by decide⟩) fun t12 h12 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (divK_ok h12 (a := aA) (d := aM2) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
-    (by decide) hw6 q2 (by decide)) fun t13 h13 => ?_
+    (by decide) hw6 q2 (by decide) (top := some 2) ⟨by decide, by omega, by decide, eTop hdq he⟩) fun t13 h13 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h13.eqA_ok (a := aVR) (b := aOne) (by decide) (by decide) (by decide)) fun t14 h14 => ?_
   -- `qInv`.
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h14.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t15 h15 => ?_
   rw [wp_seqs_cons (by ne_nil)]
-  refine WP.mono (h15.mulLo_ok (o := aT) (x := aQ) (y := aQI) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) (by decide) (by decide) (by decide) hw (by omega) hq) fun t16 h16 => ?_
+  refine WP.mono (h15.mulLo_ok' (o := aT) (x := aQI) (y := aQ) (n := none) (by decide) (by decide) (by decide)
+    (by decide) rfl (by decide) (by decide) (by decide) (by decide) hw (by omega) hqi hq) fun t16 h16 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (divK_ok h16 (a := aT) (d := aP) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
     (by decide) hw6 hp (by decide)) fun t17 h17 => ?_

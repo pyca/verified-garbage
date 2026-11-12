@@ -178,12 +178,12 @@ def nModP : Prog isa :=
 def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), .block shape, nModP]
 
 /-- `[aA]` and `[aY]` equal exactly when `q qInv ≡ 1 (mod p)`: for a balanced key
-(`shape`), `q qInv` (`MontKey.mulLo`, exact in `w` digits) by words modulo `p`
+(`shape`), `q qInv` (`MontKey.mulHalf` over the primes' digits, `p_len = q_len`) by words modulo `p`
 and `1`; else Montgomery's `q qInv` and `1 · 1` modulo `p | 1`, over `⌈q_len / 4⌉`
 steps. -/
 def qInvMod : Prog isa :=
   .ite (.zero .d .r0)
-    (seqs [MontKey.mulLo aX aQ aQI .r21, copy aY aP, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW,
+    (seqs [MontKey.mulHalf aX aQ aQI .r19, copy aY aP, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW,
       copy aY aOne])
     (seqs [montPq aA aQ aQI, montPq aY aOne aOne])
 
@@ -191,11 +191,13 @@ def qInvMod : Prog isa :=
 def len8 : List Instr := [.li .r4 8]
 
 /-- `[aA] := e [x] mod [m]` (`e < 2^33` in `aE`): for a balanced key (`shape`),
-`e [x]` exactly (`MontKey.mulLo` over `e`'s two digits) by words modulo `[m]`;
+`e [x]` exactly (`MontKey.mulLo` over `e`'s two digits) by words modulo `[m]`, over its `w / 4 + 1`
+words;
 else bit-serially over `33` steps (`mulA`). -/
 def eMod (x m : Nat) : Prog isa :=
   .ite (.zero .d .r0)
-    (seqs [.block len8, MontKey.mulLo aX aE x .r4, copy aY m, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW])
+    (seqs [.block len8, MontKey.mulLo aX aE x .r4, copy aY m, .block (KeyDiv.fixTop aY),
+      KeyDiv.divW aX aA aY aVT aW (some 1)])
     (seqs (mulA aE x m cnt33))
 
 /-- Then: `p q ≡ n (mod 2^(32 w))`, `n ≡ 0 (mod p)`, `p - 1` and `q - 1`, and

@@ -16,5 +16,6 @@ instance invLaw : InvLaw where
   inverseN_ok := InvB.inverseN_ok
   inverseNS_ok := InvB.inverseNS_ok
   inverse_ok := InvB.inverse_ok
+  gcdN_ok := InvB.gcdN_ok
 
 end VG.Proof.Rsa.X86_64

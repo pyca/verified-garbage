@@ -65,12 +65,12 @@ theorem mrA_ok {s0 v : State} {B : BitVec 32} {Z w N o x y Y i : Nat} (I : MulIn
     (by decide), by rw [U2.other _ (by decide), p1], ?_⟩
   rw [U2.gpr, m1, ← I.J]; exact (ofNat_toNat32 _).symm
 
-/-- What `mulLo o x y` needs of each run. -/
-def MulPre (B : BitVec 32) (Z w N x : Nat) (s : State) : Prop :=
-  Ws s B Z w N ∧ slot s.mem B 16 = w ∧ num s.mem B w x < 2 ^ (32 * (w / 2)) ∧ num s.mem B w 0 = 0
+/-- What `mulLo o x y n` needs of each run: `[y]` of `w / 2` words. -/
+def MulPre (B : BitVec 32) (Z w N y : Nat) (s : State) : Prop :=
+  Ws s B Z w N ∧ slot s.mem B 16 = w ∧ num s.mem B w y < 2 ^ (32 * (w / 2)) ∧ num s.mem B w 0 = 0
 
 /-- The taint analysis' facts for `mulLo o x y`. -/
-structure MulTaint (o x y : Nat) : Prop where
+structure MulTaint (o x y : Nat) (n : Option Nat := none) : Prop where
   copy : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (copy o 0) hc).isSome = true
   init : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
     (.block [.mov .r0 (.imm 0), .str .r0 .r8 sJ]) hc).isSome = true
@@ -78,17 +78,19 @@ structure MulTaint (o x y : Nat) : Prop where
     (.block (ptr .r0 o ++ [.ldr .r2 .r8 sJ])) hc).isSome = true
   rowB : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r0, .r2, .r7, .r8, .r9])
     (.seq (.block ([.dp .add .r0 .r0 (.reg .r2)] ++ ptr .r12 y ++
-      [.mov .r3 (.shifted .r2 .lsr 2), .dp .sub .lr .r9 (.reg .r3)] ++ ptr .r1 x ++
+      [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1)] ++ ptr .r1 x ++
       [.dp .add .r1 .r1 (.reg .r2), .ldr .r1 .r1 0, .mov .r11 (.imm 0)]))
-    (.seq VG.Impl.Bignum.Arm.row (.block (ctx ++ [.ldr .r0 .r8 sJ, .dp .add .r0 .r0 (.imm 4), .str .r0 .r8 sJ,
-      .mov .r1 (.shifted .r9 .lsl 1), .cmp .r0 (.reg .r1)])))) hc).isSome = true
+    (.seq VG.Impl.Bignum.Arm.row (.block (ctx ++ [.ldr .r0 .r8 sJ, .dp .add .r0 .r0 (.imm 4), .str .r0 .r8 sJ] ++
+      rowsEnd n)))) hc).isSome = true
 
-/-- `mulLo o x y` is constant time. -/
-theorem mulLo_ct {B : BitVec 32} {Z w N o x y : Nat} (T : MulTaint o x y) (ho : o < N) (hx : x < N) (hy : y < N)
-    (hN : N ≤ 256) (hox : o ≠ x) (hoy : o ≠ y) (ho0 : o ≠ 0) (hw : w % 2 = 0) (hw2 : 2 ≤ w) :
-    RelCT isa (fun s t => MulPre B Z w N x s ∧ MulPre B Z w N x t) (mulLo o x y) fun _ _ => True := by
-  refine (RelCT.exists_ (P := fun (p : State × State) s t => (s = p.1 ∧ MulPre B Z w N x p.1) ∧
-    (t = p.2 ∧ MulPre B Z w N x p.2)) fun p => ?_).mono (fun s t h => ⟨(s, t), ⟨rfl, h.1⟩, rfl, h.2⟩)
+/-- `mulLo o x y n` is constant time. -/
+theorem mulLo_ct {B : BitVec 32} {Z w N o x y : Nat} {n : Option Nat} (T : MulTaint o x y n) (ho : o < N)
+    (hx : x < N) (hy : y < N) (hN : N ≤ 256) (hox : o ≠ x) (hoy : o ≠ y) (ho0 : o ≠ 0) (hw : w % 2 = 0)
+    (hw2 : 2 ≤ w) (hn : RowsOk n w := by trivial) :
+    RelCT isa (fun s t => MulPre B Z w N y s ∧ MulPre B Z w N y t) (mulLo o x y n) fun _ _ => True := by
+  obtain ⟨hR1, hR⟩ := hn.facts hw2
+  refine (RelCT.exists_ (P := fun (p : State × State) s t => (s = p.1 ∧ MulPre B Z w N y p.1) ∧
+    (t = p.2 ∧ MulPre B Z w N y p.2)) fun p => ?_).mono (fun s t h => ⟨(s, t), ⟨rfl, h.1⟩, rfl, h.2⟩)
     fun _ _ h => h
   obtain ⟨σ₁, σ₂⟩ := p
   rw [mulLo]
@@ -98,40 +100,40 @@ theorem mulLo_ct {B : BitVec 32} {Z w N o x y : Nat} (T : MulTaint o x y) (ho : 
       (Q σ₁)) (Q₂ := fun v1 => Ws v1 B Z w N ∧ WP isa (.block [.mov .r0 (.imm 0), .str .r0 .r8 sJ]) v1 (Q σ₂))
     [.r7, .r8, .r9] T.copy (fun s t h₁ h₂ => by rw [h₁.1, h₂.1]; exact ws_regs' h₁.2.1 h₂.2.1)
     (fun s h => by
-      obtain ⟨rfl, W, c16, -, z0⟩ := h; exact mulInit_ok x W ho hy hN hoy ho0 c16 hw2 z0)
+      obtain ⟨rfl, W, c16, yl, z0⟩ := h; exact mulInit_ok x W ho hy hN hoy ho0 c16 hw2 z0 yl)
     (fun s h => by
-      obtain ⟨rfl, W, c16, -, z0⟩ := h; exact mulInit_ok x W ho hy hN hoy ho0 c16 hw2 z0)) ?_
+      obtain ⟨rfl, W, c16, yl, z0⟩ := h; exact mulInit_ok x W ho hy hN hoy ho0 c16 hw2 z0 yl)) ?_
   refine RelCT.seq (piece (Q₁ := Q σ₁) (Q₂ := Q σ₂) [.r7, .r8, .r9] T.init
     (fun s t h₁ h₂ => ws_regs' h₁.1 h₂.1) (fun s h => h.2) (fun s h => h.2)) ?_
   -- The rows.
-  let I (n : Nat) (s t : State) : Prop := ∃ i, n = w / 2 - i ∧ i < w / 2 ∧
+  let I (k : Nat) (s t : State) : Prop := ∃ i, k = rowsN n w - i ∧ i < rowsN n w ∧
     MulInv σ₁ s B Z w N o x y (num σ₁.mem B w y) i ∧ MulInv σ₂ t B Z w N o x y (num σ₂.mem B w y) i
-  refine (RelCT.loop (Q := fun _ _ => True) I (fun n => ?_) (w / 2)).mono
+  refine (RelCT.loop (Q := fun _ _ => True) I (fun k => ?_) (rowsN n w)).mono
     (fun s t h => ⟨0, by omega, by omega, h.1, h.2⟩) fun _ _ h => h
-  refine (RelCT.exists_ (P := fun i s t => n = w / 2 - i ∧ i < w / 2 ∧
+  refine (RelCT.exists_ (P := fun i s t => k = rowsN n w - i ∧ i < rowsN n w ∧
     MulInv σ₁ s B Z w N o x y (num σ₁.mem B w y) i ∧ MulInv σ₂ t B Z w N o x y (num σ₂.mem B w y) i)
     fun i => ?_).mono (fun s t h => h) fun _ _ h => h
-  by_cases hni : n = w / 2 - i ∧ i < w / 2
+  by_cases hni : k = rowsN n w - i ∧ i < rowsN n w
   swap
   · exact RelCT.of_false fun s t h => hni ⟨h.1, h.2.1⟩
-  obtain ⟨hn, hi⟩ := hni
+  obtain ⟨hk, hi⟩ := hni
   let Post (σ : State) (v : State) := MulInv σ v B Z w N o x y (num σ.mem B w y) (i + 1) ∧
-    v.z = decide (4 * (i + 1) = 2 * w)
+    v.z = decide (i + 1 = rowsN n w)
   let RowB := (.seq (.block ([.dp .add .r0 .r0 (.reg .r2)] ++ ptr .r12 y ++
-      [.mov .r3 (.shifted .r2 .lsr 2), .dp .sub .lr .r9 (.reg .r3)] ++ ptr .r1 x ++
+      [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1)] ++ ptr .r1 x ++
       [.dp .add .r1 .r1 (.reg .r2), .ldr .r1 .r1 0, .mov .r11 (.imm 0)]))
-    (.seq VG.Impl.Bignum.Arm.row (.block (ctx ++ [.ldr .r0 .r8 sJ, .dp .add .r0 .r0 (.imm 4), .str .r0 .r8 sJ,
-      .mov .r1 (.shifted .r9 .lsl 1), .cmp .r0 (.reg .r1)]))) : Prog isa)
+    (.seq VG.Impl.Bignum.Arm.row (.block (ctx ++ [.ldr .r0 .r8 sJ, .dp .add .r0 .r0 (.imm 4), .str .r0 .r8 sJ] ++
+      rowsEnd n))) : Prog isa)
   let QA (σ : State) (u : State) := (Ws u B Z w N ∧ u.gpr .r0 = B + BitVec.ofNat 32 (arr w o) ∧
     u.gpr .r2 = BitVec.ofNat 32 (4 * i)) ∧ WP isa RowB u (Post σ)
-  have fA : ∀ σ s, (n = w / 2 - i ∧ i < w / 2 ∧ MulInv σ s B Z w N o x y (num σ.mem B w y) i) →
+  have fA : ∀ σ s, (k = rowsN n w - i ∧ i < rowsN n w ∧ MulInv σ s B Z w N o x y (num σ.mem B w y) i) →
       WP isa (.block (ptr .r0 o ++ [.ldr .r2 .r8 sJ])) s (QA σ) := fun σ s h => by
-    have m := mulRow_ok h.2.2 ho hx hy hN hox hoy h.2.1
+    have m := mulRow_ok h.2.2 ho hx hy hN hox hoy n hn hw h.2.1
     rw [mulRow, WP.seq_iff] at m
     exact wp_and (mrA_ok h.2.2 ho hN) m
-  have c := RelCT.seq (piece (P₁ := fun s => n = w / 2 - i ∧ i < w / 2 ∧
+  have c := RelCT.seq (piece (P₁ := fun s => k = rowsN n w - i ∧ i < rowsN n w ∧
       MulInv σ₁ s B Z w N o x y (num σ₁.mem B w y) i)
-    (P₂ := fun s => n = w / 2 - i ∧ i < w / 2 ∧ MulInv σ₂ s B Z w N o x y (num σ₂.mem B w y) i)
+    (P₂ := fun s => k = rowsN n w - i ∧ i < rowsN n w ∧ MulInv σ₂ s B Z w N o x y (num σ₂.mem B w y) i)
     [.r7, .r8, .r9] T.rowA (fun s t h₁ h₂ => ws_regs' h₁.2.2.ws h₂.2.2.ws) (fA σ₁) (fA σ₂))
     (piece (Q₁ := Post σ₁) (Q₂ := Post σ₂) [.r0, .r2, .r7, .r8, .r9] T.rowB (fun s t h₁ h₂ => by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -147,8 +149,8 @@ theorem mulLo_ct {B : BitVec 32} {Z w N o x y : Nat} (T : MulTaint o x y) (ho : 
   · change some (!s.z) = some (!t.z); rw [z₁, z₂]
   · change some (!s.z) = some true at e
     rw [z₁] at e
-    have hne : ¬4 * (i + 1) = 2 * w := fun h' => by simp [h'] at e
-    exact ⟨w / 2 - (i + 1), by omega, i + 1, rfl, by omega, I₁, I₂⟩
+    have hne : ¬i + 1 = rowsN n w := fun h' => by simp [h'] at e
+    exact ⟨rowsN n w - (i + 1), by omega, i + 1, rfl, by omega, I₁, I₂⟩
 
 end VG.Proof.Rsa.Arm.KeyDiv
 
@@ -205,8 +207,8 @@ theorem wp_seq_and {c rest : Prog isa} {s : State} {P F : State → Prop} (h₁ 
 abbrev tailB : List Instr := [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]
 
 /-- The taint analysis' facts for `divW a r m t nm u`. -/
-structure DivTaint (a r m t nm u : Nat) : Prop where
-  prep : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (prep a r m nm) hc).isSome = true
+structure DivTaint (a r m t nm u : Nat) (top : Option Nat := none) : Prop where
+  prep : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (prep a r m nm top) hc).isSome = true
   estA : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (.block (estA r)) hc).isSome = true
   estB : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r0, .r7, .r8, .r9, .r10]) (.block estB) hc).isSome = true
   clearT : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (clearT t) hc).isSome = true
@@ -238,7 +240,7 @@ theorem bnd_regs {B : BitVec 32} {Z w N j : Nat} {r₁ r₂ : Prog isa} {F₁ F�
 
 /-- A step is constant time, from runs that each carry its correctness `F` and the frame of
 its estimate. -/
-theorem step_ct {B : BitVec 32} {Z w N a r m t nm u j : Nat} (T : DivTaint a r m t nm u) (hr : r < N)
+theorem step_ct {B : BitVec 32} {Z w N a r m t nm u j : Nat} {top : Option Nat} (T : DivTaint a r m t nm u top) (hr : r < N)
     (hm : m < N) (ht : t < N) (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hru : r ≠ u) (htu : t ≠ u)
     (hmt : m ≠ t) (htn : t ≠ nm) (hrt : r ≠ t) (ht0 : t ≠ 0) (hdw : 3 ≤ w / 2) (hj : j + w / 2 ≤ w)
     {F₁ F₂ : State → Prop} :
@@ -366,21 +368,23 @@ theorem step_ct {B : BitVec 32} {Z w N a r m t nm u j : Nat} (T : DivTaint a r m
   -- The last block.
   exact piece [.r7, .r8, .r9] T.tail bnd_regs (fun s h => h.2.2.2) (fun s h => h.2.2.2)
 
-/-- What `divW a r m t nm u` needs of each run. -/
-def DivPre (B : BitVec 32) (Z w N m : Nat) (s : State) : Prop :=
+/-- What `divW a r m t nm u top` needs of each run. -/
+def DivPre (B : BitVec 32) (Z w N m : Nat) (s : State) (a : Nat := 0) (top : Option Nat := none) : Prop :=
   Ws s B Z w N ∧ slot s.mem B 16 = w ∧ num s.mem B w m < 2 ^ (32 * (w / 2)) ∧
-    0 < w32 s.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) ∧ num s.mem B w 0 = 0
+    0 < w32 s.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) ∧ num s.mem B w 0 = 0 ∧ TopOk top w (num s.mem B w a)
 
 /-- `divW a r m t nm u` is constant time. -/
-theorem divW_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} (T : DivTaint a r m t nm u) (ha : a < N)
+theorem divW_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top : Option Nat} (T : DivTaint a r m t nm u top)
+    (ha : a < N)
     (hr : r < N) (hm : m < N) (ht : t < N) (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hra : r ≠ a)
     (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r) (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r)
     (htn : t ≠ nm) (hnu : nm ≠ u) (hnm' : nm ≠ m) (hr0 : r ≠ 0) (ht0 : t ≠ 0) (hu0 : u ≠ 0) (hn0 : nm ≠ 0)
     (hw6 : 6 ≤ w) :
-    RelCT isa (fun s t' => DivPre B Z w N m s ∧ DivPre B Z w N m t') (divW a r m t nm u) fun _ _ => True := by
+    RelCT isa (fun s t' => DivPre B Z w N m s a top ∧ DivPre B Z w N m t' a top) (divW a r m t nm u top)
+      fun _ _ => True := by
   have hdw : 3 ≤ w / 2 := by omega
-  refine (RelCT.exists_ (P := fun (p : State × State) s t' => (s = p.1 ∧ DivPre B Z w N m p.1) ∧
-    (t' = p.2 ∧ DivPre B Z w N m p.2)) fun p => ?_).mono (fun s t' h => ⟨(s, t'), ⟨rfl, h.1⟩, rfl, h.2⟩)
+  refine (RelCT.exists_ (P := fun (p : State × State) s t' => (s = p.1 ∧ DivPre B Z w N m p.1 a top) ∧
+    (t' = p.2 ∧ DivPre B Z w N m p.2 a top)) fun p => ?_).mono (fun s t' h => ⟨(s, t'), ⟨rfl, h.1⟩, rfl, h.2⟩)
     fun _ _ h => h
   obtain ⟨σ₁, σ₂⟩ := p
   let Inv (σ : State) (n : Nat) (y : State) : Prop :=
@@ -388,9 +392,13 @@ theorem divW_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} (T : DivTaint a r m t
   rw [divW]
   simp only [VG.Impl.Rsa.Arm.Keys.seqs]
   -- The preparation.
-  have fP : ∀ σ s, (s = σ ∧ DivPre B Z w N m σ) → WP isa (prep a r m nm) s (Inv σ (w - w / 2)) := by
-    rintro σ s ⟨rfl, W, c16, hMl, hT0, z0⟩
-    exact WP.mono (prep_ok t u W ha hr hm hnm hN hra hmr hnm' hnr hr0 hn0 hw6 c16 rfl hMl hT0 z0)
+  by_cases hT : TopOk top w (num σ₁.mem B w a)
+  swap
+  · exact RelCT.of_false fun s t' h => hT h.1.2.2.2.2.2.2
+  have hj1 := (hT.facts (by simp only [num]; exact val32_lt _ _ _ _) (by omega)).1
+  have fP : ∀ σ s, (s = σ ∧ DivPre B Z w N m σ a top) → WP isa (prep a r m nm top) s (Inv σ (jStart top w)) := by
+    rintro σ s ⟨rfl, W, c16, hMl, hT0, z0, htop⟩
+    exact WP.mono (prep_ok t u W ha hr hm hnm hN hra hmr hnm' hnr hr0 hn0 hw6 c16 rfl hMl hT0 z0 htop)
       fun x0 ⟨⟨z, I0⟩, _, _⟩ => ⟨x0, z, I0⟩
   refine RelCT.seq (piece [.r7, .r8, .r9] T.prep (fun s t' h₁ h₂ => by rw [h₁.1, h₂.1]; exact ws_regs' h₁.2.1 h₂.2.1)
     (fP σ₁) (fP σ₂)) ?_
@@ -447,7 +455,7 @@ theorem divW_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} (T : DivTaint a r m t
     · rw [c₁] at e
       have : n ≠ 1 := fun hne => by simp [hne] at e
       exact ⟨n - 1, by omega, by omega, ⟨x0₁, z₁, I₁⟩, ⟨x0₂, z₂, I₂⟩⟩
-  refine RelCT.seq (RelCT.loop (Q := fun s t' => Inv σ₁ 0 s ∧ Inv σ₂ 0 t') I body (w - w / 2) |>.mono
+  refine RelCT.seq (RelCT.loop (Q := fun s t' => Inv σ₁ 0 s ∧ Inv σ₂ 0 t') I body (jStart top w) |>.mono
     (fun s t' h => ⟨by omega, h.1, h.2⟩) fun _ _ h => h) ?_
   -- The last step.
   refine (RelCT.exists_ (P := fun (q : (State × Nat) × (State × Nat)) s t' =>
