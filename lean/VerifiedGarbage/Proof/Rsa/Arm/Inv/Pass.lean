@@ -1310,6 +1310,13 @@ theorem scr_store (h : SG s B Z W k N) (m : Mem) {d d' : Nat} (hd : d + 4 ≤ 12
 theorem scr_self (m : Mem) (d : Nat) (v : BitVec 32) :
     scr (m.writeW (off (State.addr B) (arr W bT1 + d)) v) B W d = v := Mem.readW_writeW_self32 _ _ _
 
+/-- `scr_store` for aligned offsets. -/
+theorem scr_ne (h : SG s B Z W k N) (m : Mem) {d d' : Nat} (hd : d + 4 ≤ 120 ∧ d' + 4 ≤ 120 ∧ d % 4 = 0 ∧ d' % 4 = 0)
+    (hne : d ≠ d') (v : BitVec 32) :
+    (m.writeW (off (State.addr B) (arr W bT1 + d')) v).readW (off (State.addr B) (arr W bT1 + d)) 32 =
+      m.readW (off (State.addr B) (arr W bT1 + d)) 32 :=
+  h.scr_store m hd.1 hd.2.1 (by omega) v
+
 /-- A store to the scratch is in the arrays `bT1`, `bT2` and `bA1`. -/
 theorem keep (h : SG s B Z W k N) (m : Mem) {d : Nat} (hd : d + 4 ≤ 120) (v : BitVec 32) :
     Keep B W [bT1, bT2, bA1] [] m (m.writeW (off (State.addr B) (arr W bT1 + d)) v) := by
@@ -1645,3 +1652,141 @@ theorem md_word {c1 c2 dt et d0 e0 np : BitVec 32} {d e : Int}
   have := Int.emod_lt_of_pos ((if d < 0 then c1.toInt else 0) + (if e < 0 then c2.toInt else 0) -
     np.toNat * (c1.toInt * d + c2.toInt * e)) (show (0 : Int) < 2 ^ 30 by decide)
   constructor <;> split <;> split <;> omega
+
+namespace SG
+variable {s : State} {B : BitVec 32} {Z W k N : Nat}
+
+/-- `ptr r3 j` and a load from it. -/
+theorem ldArr_ok (h : SG s B Z W k N) {j d : Nat} (hj : j < bT1) (hd : d + 4 ≤ S W) (hd' : d < 4096) {dst : Reg}
+    {is : List Instr} {Q : State → Prop}
+    (kk : ∀ t, t.gpr dst = aword s.mem B W j d → Rest [.r3, dst] s t → t.mem = s.mem → WP isa (.block is) t Q) :
+    WP isa (.block (ptr .r3 j ++ (.ldr dst .r3 d :: is))) s Q := by
+  refine h.g.ptr_ok (by decide) (by simp only [bT1] at hj; omega) fun t1 p1 r1 m1 g1 => ?_
+  have fa := h.g.arr_fit (j := j) (by have := h.hN; simp only [bT1] at hj; omega)
+  refine wp_ldr (a := off (State.addr B) (arr W j + d)) hd'
+    (by rw [p1, VG.Offset.add_add]; exact h.g.addr (by omega))
+    (by rw [r1.rd, r1.wr]; exact h.g.read (by omega)) fun t2 u2 => ?_
+  exact kk t2 (by rw [u2.gpr, m1]) ((r1.mono (by simp)).trans (u2.rest (by simp))) (by rw [u2.mem, m1])
+
+/-- `mdPrep`: a row's `md` (coefficients `c₁` on `d`, `c₂` on `e`) to slot `t`, its correction and starting
+carry added to the row's. -/
+theorem mdPrep_ok (h : SG s B Z W k N) {c₁ c₂ : Coef} {t row : Nat}
+    (hc₁ : c₁.arr < bT1) (hc₂ : c₂.arr < bT1) (ho₁ : c₁.off ≤ 8) (ho₂ : c₂.off ≤ 8) (ht : t ≤ 5) (hr : row ≤ 1)
+    {is : List Instr} {Q : State → Prop}
+    (kk : ∀ u, SG u B Z W k N → Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r11] s u →
+      let w₁ := aword s.mem B W c₁.arr c₁.off
+      let w₂ := aword s.mem B W c₂.arr c₂.off
+      let md0 := (w₁ &&& smask (aword s.mem B W bD (4 * k))) + (w₂ &&& smask (aword s.mem B W bE (4 * k)))
+      let md := md0 - ((md0 - (w₂ * aword s.mem B W bE 0 + w₁ * aword s.mem B W bD 0) *
+        s.mem.readW (off (State.addr B) sB) 32) &&& ~~~(BitVec.ofNat 32 0xC0000000))
+      u.mem = wr (wr (wrC s.mem B W t md) B W (corrOff row) (scr s.mem B W (corrOff row) + (wabs md &&& smask md)))
+        B W (carryOff row) (scr s.mem B W (carryOff row) + (wabs md &&& smask md)) →
+      WP isa (.block is) u Q) :
+    WP isa (.block (mdPrep c₁ c₂ t row ++ is)) s Q := by
+  have hW := h.hW
+  have hS : 8 + 4 ≤ S W := by simp only [S]; omega
+  have hk4 : 4 * k + 4 ≤ S W := by have := h.g.kle; simp only [S]; omega
+  have hdr : hdr ≤ Z := Nat.le_trans (Nat.le_add_right _ _) h.g.fits
+  simp only [mdPrep, List.append_assoc, List.cons_append, List.nil_append]
+  refine h.topMask_ok (by decide) fun s1 v1 r1 m1 => ?_
+  have h1 := h.of r1
+  refine h1.ldCoef_ok c₁ hc₁ (by omega) (by omega) fun s2 v2 r2 m2 => ?_
+  have h2 := h1.of r2
+  refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
+  have h3 := h2.of (u3.rest (ws := [.r0]) (by simp))
+  refine h3.ldArr_ok (j := bD) (d := 0) (by decide) (by simp only [S]; omega) (by decide) fun s4 v4 r4 m4 => ?_
+  have h4 := h3.of r4
+  refine wp_mul fun s5 u5 => ?_
+  have h5 := h4.of (u5.rest (ws := [.r11]) (by simp))
+  refine h5.topMask_ok (by decide) fun s6 v6 r6 m6 => ?_
+  have h6 := h5.of r6
+  refine h6.ldCoef_ok c₂ hc₂ (by omega) (by omega) fun s7 v7 r7 m7 => ?_
+  have h7 := h6.of r7
+  refine wp_dp (op2_reg _ _) fun s8 u8 => ?_
+  refine wp_dp (op2_reg _ _) fun s9 u9 => ?_
+  have h9 := h7.of ((u8.rest (ws := [.r0, .r4]) (by simp)).trans (u9.rest (by simp)))
+  refine h9.ldArr_ok (j := bE) (d := 0) (by decide) (by simp only [S]; omega) (by decide) fun s10 v10 r10 m10 => ?_
+  have h10 := h9.of r10
+  refine wp_mla fun s11 u11 => ?_
+  have sBz : sB + 4 ≤ Z := by simp only [sB]; simp only [VG.Impl.Rsa.Arm.Keys.hdr] at hdr; omega
+  have sBa : State.addr (s11.gpr .r8 + BitVec.ofNat 32 sB) = off (State.addr B) sB := by
+    rw [u11.other _ (by decide), h10.g.r8]; exact h.g.addr (by omega)
+  have sBr : InRegions (s11.rd ++ s11.wr) (off (State.addr B) sB) 4 := by
+    rw [u11.rd, u11.wr]; exact h10.g.read sBz
+  refine wp_ldr (a := off (State.addr B) sB) (by decide) sBa sBr fun s12 u12 => ?_
+  refine wp_mul fun s13 u13 => ?_
+  refine wp_dp (op2_reg _ _) fun s14 u14 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s15 u15 => ?_
+  refine wp_dp (op2_reg _ _) fun s16 u16 => ?_
+  have h16 := h10.of ((u11.rest (ws := [.r1, .r3, .r11]) (by simp)).trans <| (u12.rest (by simp)).trans <|
+    (u13.rest (by simp)).trans <| (u14.rest (by simp)).trans <| (u15.rest (by simp)).trans (u16.rest (by simp)))
+  refine h16.coefStore_ok ht fun s17 a17 m17 r17 mm17 => ?_
+  have h17 := h16.of r17
+  refine wp_dp (op2_reg _ _) fun s18 u18 => ?_
+  have h18 := h17.of (u18.rest (ws := [.r3]) (by simp))
+  refine h18.ldr (by simp only [corrOff]; omega) fun s19 u19 => ?_
+  refine wp_dp (op2_reg _ _) fun s20 u20 => ?_
+  have h20 := h18.of ((u19.rest (ws := [.r4]) (by simp)).trans (u20.rest (by simp)))
+  refine h20.str (by simp only [corrOff]; omega) fun s21 u21 => ?_
+  have h21 := h20.of (u21.rest [])
+  refine h21.ldr (by simp only [carryOff]; omega) fun s22 u22 => ?_
+  refine wp_dp (op2_reg _ _) fun s23 u23 => ?_
+  have h23 := h21.of ((u22.rest (ws := [.r4]) (by simp)).trans (u23.rest (by simp)))
+  refine h23.str (by simp only [carryOff]; omega) fun s24 u24 => ?_
+  refine kk s24 (h23.of (u24.rest [])) ?_ ?_
+  · exact (r1.mono (by simp)).trans <| (r2.mono (by simp)).trans <| (u3.rest (by simp)).trans <|
+      (r4.mono (by simp)).trans <| (u5.rest (by simp)).trans <| (r6.mono (by simp)).trans <|
+      (r7.mono (by simp)).trans <| (u8.rest (by simp)).trans <| (u9.rest (by simp)).trans <|
+      (r10.mono (by simp)).trans <| (u11.rest (by simp)).trans <| (u12.rest (by simp)).trans <|
+      (u13.rest (by simp)).trans <| (u14.rest (by simp)).trans <| (u15.rest (by simp)).trans <|
+      (u16.rest (by simp)).trans <| (r17.mono (by simp)).trans <| (u18.rest (by simp)).trans <|
+      (u19.rest (by simp)).trans <| (u20.rest (by simp)).trans <| (u21.rest _).trans <|
+      (u22.rest (by simp)).trans <| (u23.rest (by simp)).trans (u24.rest _)
+  · have ms : s16.mem = s.mem := by
+      rw [u16.mem, u15.mem, u14.mem, u13.mem, u12.mem, u11.mem, m10, u9.mem, u8.mem, m7, m6, u5.mem, m4, u3.mem,
+        m2, m1]
+    have m3 : s3.mem = s.mem := by rw [u3.mem, m2, m1]
+    have m9 : s9.mem = s.mem := by rw [u9.mem, u8.mem, m7, m6, u5.mem, m4, m3]
+    -- The registers.
+    have e2 : s2.gpr .r1 = aword s.mem B W c₁.arr c₁.off := by rw [v2, m1]
+    have e3 : s3.gpr .r0 = aword s.mem B W c₁.arr c₁.off &&& smask (aword s.mem B W bD (4 * k)) := by
+      rw [u3.gpr, dpVal, e2, r2.gpr _ (by decide), v1]
+    have e5 : s5.gpr .r11 = aword s.mem B W c₁.arr c₁.off * aword s.mem B W bD 0 := by
+      rw [u5.gpr, v4, r4.gpr _ (by decide), u3.other _ (by decide), e2, m3]
+    have e7 : s7.gpr .r1 = aword s.mem B W c₂.arr c₂.off := by rw [v7, m6, u5.mem, m4, m3]
+    have e9 : s9.gpr .r0 = (aword s.mem B W c₁.arr c₁.off &&& smask (aword s.mem B W bD (4 * k))) +
+        (aword s.mem B W c₂.arr c₂.off &&& smask (aword s.mem B W bE (4 * k))) := by
+      rw [u9.gpr, dpVal, u8.other _ (by decide), r7.gpr _ (by decide), r6.gpr _ (by decide), u5.other _ (by decide),
+        r4.gpr _ (by decide), e3, u8.gpr, dpVal, e7, r7.gpr _ (by decide), v6, u5.mem, m4, m3]
+    have e11 : s11.gpr .r11 = aword s.mem B W c₂.arr c₂.off * aword s.mem B W bE 0 +
+        aword s.mem B W c₁.arr c₁.off * aword s.mem B W bD 0 := by
+      rw [u11.gpr, v10, r10.gpr _ (by decide), u9.other _ (by decide), u8.other _ (by decide), e7, m9,
+        r10.gpr _ (by decide), u9.other _ (by decide), u8.other _ (by decide), r7.gpr _ (by decide),
+        r6.gpr _ (by decide), e5]
+    have e15 : s15.gpr .r11 = (s9.gpr .r0 - s11.gpr .r11 * s.mem.readW (off (State.addr B) sB) 32) &&&
+        ~~~(BitVec.ofNat 32 0xC0000000) := by
+      rw [u15.gpr, dpVal, u14.gpr, dpVal, u13.other _ (by decide), u12.other _ (by decide), u11.other _ (by decide),
+        r10.gpr _ (by decide), u13.gpr, u12.gpr, u12.other _ (by decide), u11.mem, m10, m9]
+      rfl
+    have e16 : s16.gpr .r1 = s9.gpr .r0 - s15.gpr .r11 := by
+      rw [u16.gpr, dpVal, u15.other _ (by decide), u14.other _ (by decide), u13.other _ (by decide),
+        u12.other _ (by decide), u11.other _ (by decide), r10.gpr _ (by decide)]
+    rw [e15, e9, e11] at e16
+    generalize hmd : s16.gpr .r1 = md at e16
+    rw [e16] at hmd
+    -- The scratch.
+    have c19 : s19.gpr .r4 = scr s.mem B W (corrOff row) := by
+      rw [u19.gpr, u18.mem, mm17, ms]
+      simp (disch := (simp only [coefOff, corrOff, carryOff]; omega)) only [h.scr_ne]
+    have c3 : s19.gpr .r3 = wabs (s16.gpr .r1) &&& smask (s16.gpr .r1) := by
+      rw [u19.other _ (by decide), u18.gpr, dpVal, a17, m17]
+    have c20 : s20.gpr .r4 = scr s.mem B W (corrOff row) + (wabs (s16.gpr .r1) &&& smask (s16.gpr .r1)) := by
+      rw [u20.gpr, dpVal, c19, c3]
+    have c22 : s22.gpr .r4 = scr s.mem B W (carryOff row) := by
+      rw [u22.gpr, u21.mem, u20.mem, u19.mem, u18.mem, mm17, ms]
+      simp (disch := (simp only [coefOff, corrOff, carryOff]; omega)) only [h.scr_ne]
+    have c23 : s23.gpr .r4 = scr s.mem B W (carryOff row) + (wabs (s16.gpr .r1) &&& smask (s16.gpr .r1)) := by
+      rw [u23.gpr, dpVal, c22, u22.other _ (by decide), u21.gpr, u20.other _ (by decide), c3]
+    rw [u24.mem, u23.mem, u22.mem, u21.mem, u20.mem, u19.mem, u18.mem, mm17, ms, c23, c20, hmd]
+
+end SG
