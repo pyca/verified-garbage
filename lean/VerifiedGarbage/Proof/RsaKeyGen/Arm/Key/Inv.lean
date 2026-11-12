@@ -38,7 +38,8 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum
 open VG.Proof.X25519.Arm
 
 /-- `inverse`, with the values it leaves. -/
-theorem inverse_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256) :
+theorem inverse_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
+    (hW8 : 8 ≤ w) :
     WP isa VG.Impl.Rsa.Arm.Keys.inverse s fun t => Ws t B Z w N ∧ Keep B w invArrs invSlots s.mem t.mem ∧
       Rest (.r6 :: opRegs) s t ∧
       (num s.mem B w aNM + num s.mem B w aM = 2 ^ (32 * w) → num s.mem B w aZero = 0 →
@@ -48,7 +49,7 @@ theorem inverse_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s
         num t.mem B w 3 = (VG.Proof.RsaKeyGen.Arm.Key.ivr w (num s.mem B w 0) (num s.mem B w aM)).2.2.2) := by
   have g : VG.Proof.Rsa.Arm.Inv.Gk s B Z w w N :=
     ⟨h.nowrap, h.writable, h.fits, h.wpos, le_refl _, h.wle, h.r7, h.r8, h.r9⟩
-  exact WP.mono (InvLaw.inverseK_ok g hN15 hN) fun t ⟨gt, kt, rt, v⟩ =>
+  exact WP.mono (InvLaw.inverseK_ok g hN15 hN hW8) fun t ⟨gt, kt, rt, v⟩ =>
     ⟨⟨gt.nowrap, gt.writable, gt.fits, gt.kpos, gt.wle, gt.r7, gt.r8, gt.r9⟩, kt, rt,
       fun _ _ hmo hm1 _ => by simp only [VG.Proof.RsaKeyGen.Arm.Key.ivr]; exact v hmo hm1⟩
 
@@ -91,7 +92,7 @@ theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero �
         (1 :: 3 :: aNM :: aM :: L0) V LS) := by
   refine VP.of_ct (fun σ₁ σ₂ => inverse_cert σ₁ σ₂) fun σ s ⟨e, h, hw⟩ => ?_
   obtain ⟨vZ, vNM, vodd, v1, e1, e2, e3⟩ := hv σ s ⟨e, h, hw⟩
-  refine WP.mono (inverse_ok' hw (by decide) (by decide)) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
+  refine WP.mono (inverse_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega)) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
   have g : ∀ j ∈ aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0, num s.mem P.B P.W j = A σ j := fun j hj => h.arrs j hj
   have bk := v (by rw [g aNM (by simp), g aM (by simp)]; exact vNM) (by rw [g aZero (by simp [hZ])]; exact vZ)
     (by rw [g aM (by simp)]; exact vodd) (by rw [g aM (by simp)]; exact v1)
