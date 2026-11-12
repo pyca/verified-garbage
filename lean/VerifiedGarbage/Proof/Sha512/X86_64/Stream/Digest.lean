@@ -148,4 +148,68 @@ abbrev satD (D : Nat) : State := MdStream.X86_64.Finalize.satD params D
 
 end Finalize
 
+/-! ### With the working space the compression function uses -/
+
+/-- `finalizeDigestX86_64` with `n` bytes of scratch space. -/
+def finalizeDigestX86_64S (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byte → List Byte) (n : Nat) :
+    Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 192⟩
+    let out : Region := ⟨s.gpr .rdx, D⟩
+    let scratch : Region := ⟨s.gpr .rcx, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ m, Spec.Sha512.Repr iv s.mem (s.gpr .rdi) m → m.length < 2 ^ 64 →
+    s.gpr .rsi = BitVec.ofNat 64 m.length → Spec.Sha512.bytesAt s'.mem (s.gpr .rdx) D = digest m
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+/-- `finalizeDigest` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem Finalize.verifiedDigestS {so : Nat} (h : so = 0 ∨ so = 192) {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { paramsS so with out := o }) md D) (ht : Taints { paramsS so with out := o })
+    {iv : Spec.Sha512.HashValue} {digest : List Byte → List Byte}
+    (hdg : ∀ m, (md.hash iv m).take D = digest m) {f : Callee} (hf : CalleeOk (P := params) md f.code)
+    (hv : Verified X86_64.target f.code (Proof.Sha512.compressWideX86_64S so))
+    (hm : (finalizeDigest { paramsS so with out := o } f).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (finalizeDigest { paramsS so with out := o } f)
+      (finalizeDigestX86_64S iv D digest (so + 48)) :=
+  have h := MdStream.X86_64.Finalize.verifiedD (P := { paramsS so with out := o })
+    ⟨dims.B, dims.N, dims.L, show so ≤ 2048 by omega⟩ hs ht ((calleeS hf hv).withOut o) hm
+  h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hl hc => (h iv m hr hl hc).trans (hdg m),
+    fun _ _ _ _ h => h, h.2.2⟩
+
+/-- `taints384` and its kin, with `so` bytes for the compression function:
+the code that differs is the end of `finalize`, which restores our caller's
+registers from after the compression function's working space. -/
+theorem taintsDigestS {so : Nat} (h : so = 0 ∨ so = 192) {o : List Instr} (ho : Taints { params with out := o })
+    (hfe : ∃ hc, (Taint.check taint (X86_64.Taint.ofRegs [.rbx, .rbp, .r15])
+      (.block (o ++ Impl.MdStream.X86_64.restore (paramsS so))) hc).isSome = true) :
+    Taints { paramsS so with out := o } :=
+  have t := taintsS so h
+  ⟨t.updStart, t.updHead, t.updEnd, t.finStart, t.finPad, hfe, t.lenSec, ho.outPub, t.lenSafe, ho.outSafe⟩
+
+theorem taints384S {so : Nat} (h : so = 0 ∨ so = 192) : Taints { paramsS so with out := out64 6 } :=
+  taintsDigestS h taints384 (by rcases h with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+
+theorem taints512_256S {so : Nat} (h : so = 0 ∨ so = 192) : Taints { paramsS so with out := out64 4 } :=
+  taintsDigestS h taints512_256 (by rcases h with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+
+theorem taints512_224S {so : Nat} (h : so = 0 ∨ so = 192) :
+    Taints { paramsS so with out := out64 3 ++ outHi 3 } :=
+  taintsDigestS h taints512_224 (by rcases h with rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+
+theorem shape384S (so : Nat) : ShapeD (P := { paramsS so with out := out64 6 }) md 48 :=
+  ⟨shape384.le, shape384.len, shape384.lenV, shape384.out⟩
+
+theorem shape512_256S (so : Nat) : ShapeD (P := { paramsS so with out := out64 4 }) md 32 :=
+  ⟨shape512_256.le, shape512_256.len, shape512_256.lenV, shape512_256.out⟩
+
+theorem shape512_224S (so : Nat) : ShapeD (P := { paramsS so with out := out64 3 ++ outHi 3 }) md 28 :=
+  ⟨shape512_224.le, shape512_224.len, shape512_224.lenV, shape512_224.out⟩
 end VG.Proof.Sha512.X86_64.Stream

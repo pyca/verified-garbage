@@ -167,6 +167,28 @@ scratch space, which it does not use. -/
 theorem shani_verified0 : Verified X86_64.target Callee.shani.code (Proof.Sha512.compressWideX86_64S 0) :=
   ShaNi.compress_verified0
 
+theorem dimsS (so : Nat) (h : so ≤ 2048) : Dims (paramsS so) := ⟨dims.B, dims.N, dims.L, h⟩
+
+theorem shapeS (so : Nat) : Shape (P := paramsS so) md := ⟨shape.len, shape.lenV, shape.out⟩
+
+/-- `update` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem Update.verifiedS {so : Nat} (h : so = 0 ∨ so = 192) {f : Callee} (hf : CalleeOk (P := params) md f.code)
+    (hv : Verified X86_64.target f.code (Proof.Sha512.compressWideX86_64S so))
+    (hm : (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.update (paramsS so) f.name f.code)
+      (Proof.Sha512.updateX86_64S (so + 48)) :=
+  MdStream.X86_64.Update.verified (dimsS so (by omega)) (taintsS so h) (calleeS hf hv) hm
+
+/-- `finalize` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem Finalize.verifiedS {so : Nat} (h : so = 0 ∨ so = 192) {f : Callee} (hf : CalleeOk (P := params) md f.code)
+    (hv : Verified X86_64.target f.code (Proof.Sha512.compressWideX86_64S so))
+    (hm : (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code)
+      (Proof.Sha512.finalizeX86_64S (so + 48)) :=
+  MdStream.X86_64.Finalize.verified (dimsS so (by omega)) (shapeS so) (taintsS so h) (calleeS hf hv) hm
+
 namespace Update
 
 /-- `update` is verified if it never loads MXCSR. -/

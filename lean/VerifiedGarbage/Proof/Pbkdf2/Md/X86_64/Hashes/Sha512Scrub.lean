@@ -148,4 +148,44 @@ theorem dig512_224Out (v : Compress) : PostOut (dig512_224Fn v).contract (dig512
   postOut_of_local (leak := none) ScrubAbi.plain
     (Proof.Sha512.digestPost_out 28 Spec.Sha512.sha512_224 64 (by decide))
 
+section S
+variable (v : Compress) {so : Nat} (h : so = 0 ∨ so = 192)
+  (hv : Verified X86_64.target v.callee.code (Proof.Sha512.compressWideX86_64S so))
+
+theorem updOutS : PostOut (updFnS v h hv).contract (updFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.updatePost_out 64)
+
+theorem finOutS : PostOut (finFnS v h hv).contract (finFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.finalizePost_out 64)
+
+theorem digOutS : PostOut (digFnS v h hv).contract (digFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.Sha512.digestPost_out 64 Spec.Sha512.sha512 64 (by decide))
+
+theorem fin384OutS : PostOut (fin384FnS v h hv).contract (fin384FnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.Sha512.finalizeDigestPost_out H0_384 48 Spec.Sha512.sha384 64 (by decide))
+
+theorem dig384OutS : PostOut (dig384FnS v h hv).contract (dig384FnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.Sha512.digestPost_out 48 Spec.Sha512.sha384 64 (by decide))
+
+theorem fin512_256OutS : PostOut (fin512_256FnS v h hv).contract (fin512_256FnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.Sha512.finalizeDigestPost_out H0_512_256 32 Spec.Sha512.sha512_256 64 (by decide))
+
+theorem dig512_256OutS : PostOut (dig512_256FnS v h hv).contract (dig512_256FnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.Sha512.digestPost_out 32 Spec.Sha512.sha512_256 64 (by decide))
+
+theorem fin512_224OutS : PostOut (fin512_224FnS v h hv).contract (fin512_224FnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.Sha512.finalizeDigestPost_out H0_512_224 28 Spec.Sha512.sha512_224 64 (by decide))
+
+theorem dig512_224OutS : PostOut (dig512_224FnS v h hv).contract (dig512_224FnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.Sha512.digestPost_out 28 Spec.Sha512.sha512_224 64 (by decide))
+
+end S
+
 end VG.Proof.Pbkdf2.Md.X86_64.Sha512
