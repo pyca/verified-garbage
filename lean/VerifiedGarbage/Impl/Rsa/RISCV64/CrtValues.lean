@@ -113,11 +113,21 @@ def loads : Prog isa := seqs [load aDQ .s1 .s2, load aP .s3 .s4, load aQ .s5 .s6
 def divChecks : Prog isa := seqs [
   copy aDD aP, .block (bitOf sPodd aP), divL aDQ aDR aDD .s4, eqS sE1 aDQ aQ, eqS sE2 aDR aZero]
 
+/-- `t0 := 0` exactly for a balanced key: `p_len` (`s4`) a multiple of 8 and
+at least 32, equal to `q_len` (`s6`) and to `4 w` (`s9`). -/
+def shape : List Instr :=
+  [.logicImm .and .t0 .s4 7, .shift .sll .d .t1 .s9 2, .logic .xor .t1 .t1 .s4, .logic .or .t0 .t0 .t1,
+    .logic .xor .t1 .s4 .s6, .logic .or .t0 .t0 .t1, .li .t1 32, .sltu .t1 .s4 .t1, .logic .or .t0 .t0 .t1]
+
+/-- `[aDR] := p q mod 2^(64 w)`: over the primes' `w / 2` words for a balanced key (`shape`). -/
+def pqProduct : Prog isa :=
+  .seq (.block shape) (.ite (.zero .t0) (RecoverDet.mulHalf aDR aP aQ) (RecoverDet.mulLow aDR aP aQ))
+
 /-- `p` odd, and `p q mod 2^(64 w) = n` into `sE1` (`sE2` := 1, as `0 = 0`), for
 `p q < 2^(64 w)`; `a2`, `a3`, `a6` kept in `s0`, `s7`, `a5` around the product. -/
 def mulChecks : Prog isa := seqs [
   .block (bitOf sPodd aP), .block [mov .s0 .a2, mov .s7 .a3, mov .a5 .a6],
-  RecoverDet.mulLow aDR aP aQ,
+  pqProduct,
   .block [mov .a2 .s0, mov .a3 .s7, mov .a6 .a5],
   eqS sE1 aDR aDQ, eqS sE2 aZero aZero]
 
@@ -143,12 +153,6 @@ words (`WordDiv.divW`), exact for a divisor whose top word is not zero, as
 those numbers' are when `p q = n`, which the mask requires. The registers
 `divW` writes that the rest reads are kept in `aDQ`, which these parts do not
 use otherwise. -/
-
-/-- `t0 := 0` exactly for a balanced key: `p_len` (`s4`) a multiple of 8 and
-at least 32, equal to `q_len` (`s6`) and to `4 w` (`s9`). -/
-def shape : List Instr :=
-  [.logicImm .and .t0 .s4 7, .shift .sll .d .t1 .s9 2, .logic .xor .t1 .t1 .s4, .logic .or .t0 .t0 .t1,
-    .logic .xor .t1 .s4 .s6, .logic .or .t0 .t0 .t1, .li .t1 32, .sltu .t1 .s4 .t1, .logic .or .t0 .t0 .t1]
 
 /-- The registers kept in `aDQ` around the work by words. -/
 def kept : List Reg := [.s1, .s2, .s3, .s4, .a0, .a1, .a2, .a3, .a6]

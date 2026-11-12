@@ -673,11 +673,13 @@ def aC : Nat := 9
 def andZero : List Instr :=
   [.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp), .alu .and .rbp (.mem (hdr sMask)), .store (hdr sMask) .rbp]
 
-/-- The factors' bases and widths for `mulRows`, and the product's base.
-The product occupies arrays 2 and 3, leaving the factors and `d` alone. -/
+/-- The factors' bases and widths for `mulRows`, `⌈p_len / 8⌉` rows of `⌈q_len / 8⌉`
+words, and the product's base. The product occupies arrays 2 and 3, leaving the factors
+and `d` alone. -/
 def productSetup : List Instr :=
   ws ++ base aP .r11 ++ base aQ .rax ++ base aU .r8 ++
-    ([.mov .r9 (.reg .rax), .mov .r10 (.reg .r12)] : List Instr)
+    ([.mov .r9 (.reg .rax), .mov .r10 (.mem (hdr sPl)), .alu .add .r10 (.imm 7), .shift .shr .r10 3,
+      .mov .r12 (.mem (hdr sQl)), .alu .add .r12 (.imm 7), .shift .shr .r12 3] : List Instr)
 
 /-- The mask of `p q = n` and'ed into `sMask`, comparing all `2 w + 2`
 words of the product so an overflowing product cannot pass. -/
