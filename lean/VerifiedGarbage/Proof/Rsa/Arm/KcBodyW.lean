@@ -265,16 +265,11 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Ar
 open VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm
 
-/-- The products of a balanced key's checks, when their factors are below their moduli. -/
-def ProdsW (g : Geo) (v : Vals) (R₁ R₂ : Nat) : Prop :=
-  (v.dP < 2 * (v.p / 2) → 2 * (2 * (v.p / 2)) ≤ 2 ^ (32 * g.w) →
-    R₁ = v.e % 2 ^ 33 * v.dP % (2 * (v.p / 2))) ∧
-  (v.dQ < 2 * (v.q / 2) → 2 * (2 * (v.q / 2)) ≤ 2 ^ (32 * g.w) →
-    R₂ = v.e % 2 ^ 33 * v.dQ % (2 * (v.q / 2)))
-
 /-- The mask a balanced key's checks compute. -/
-abbrev cW (g : Geo) (v : Vals) (R₁ R₂ : Nat) : Bool :=
-  VG.Proof.Rsa.keyBitsW g.w v.n v.d v.p v.q v.dP v.dQ v.qI R₁ R₂
+abbrev cW (g : Geo) (v : Vals) : Bool :=
+  VG.Proof.Rsa.keyBitsW g.w v.n v.d v.p v.q v.dP v.dQ v.qI
+    (v.dP * v.e % 2 ^ (32 * g.w) % VG.Proof.Rsa.fixT (g.w / 2) (2 * (v.p / 2)))
+    (v.dQ * v.e % 2 ^ (32 * g.w) % VG.Proof.Rsa.fixT (g.w / 2) (2 * (v.q / 2)))
 
 theorem divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live) (hz : aZ ∈ live) (hA0 : A aZ = 0)
@@ -330,11 +325,14 @@ theorem mulIdx_qp : MulIdx nArr aZ aY aX aA aP aT := by decide
 
 /-- `keyBodyW`: for a balanced key, the mask is `cW` of what the checks compute. -/
 theorem keyBodyW_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hw : g.w % 2 = 0)
-    (hp : v.p < 2 ^ (32 * (g.w / 2))) (hq : v.q < 2 ^ (32 * (g.w / 2))) :
-    WP isa keyBodyW s fun t => ∃ R₁ R₂, ProdsW g v R₁ R₂ ∧ ∃ A live, Stg g s A live (cW g v R₁ R₂) t := by
+    (hp : v.p < 2 ^ (32 * (g.w / 2))) (hq : v.q < 2 ^ (32 * (g.w / 2))) (hdp : v.dP < 2 ^ (32 * (g.w / 2)))
+    (hdq : v.dQ < 2 ^ (32 * (g.w / 2))) :
+    WP isa keyBodyW s fun t => ∃ A live, Stg g s A live (cW g v) t := by
   have kb := h.kb
   have hw6 : 6 ≤ g.w := by simp only [Geo.w]; omega
   have wle : g.w ≤ 1024 := by simp only [Geo.w]; omega
+  have p2 : 2 * (v.p / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega) hp
+  have q2 : 2 * (v.q / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega) hq
   unfold keyBodyW crtChecksW dChecksW
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   rw [wp_seqs_cons (by ne_nil)]
@@ -355,46 +353,47 @@ theorem keyBodyW_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hw : g.
   -- `dP`.
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h6.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun t7 h7 => ?_
+  rw [wp_seqs_cons (by ne_nil)]
+  refine WP.mono (h7.mulLo_ok (o := aA) (x := aDP) (y := aE) (by decide) (by decide) (by decide) (by decide) rfl
+    (by decide) (by decide) (by decide) (by decide) hw (by omega) hdp) fun t8 h8 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h7.mulA_ok (y := aE) (x := aDP) (m := aM1) (k := 33) (by decide) (by decide) (by decide)
-    (by decide) rfl mulIdx_m1 (by decide) (by decide) (by decide) (by decide) fun u _ => cnt33_ok u)
-    fun t8 ⟨R₁, hR₁, h8⟩ => ?_
+  refine WP.mono (divK_ok h8 (a := aA) (d := aM1) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
+    (by decide) hw6 p2 (by decide)) fun t9 h9 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h8.eqA_ok (a := aA) (b := aOne) (by decide) (by decide) (by decide)) fun t9 h9 => ?_
+  refine WP.mono (h9.eqA_ok (a := aVR) (b := aOne) (by decide) (by decide) (by decide)) fun t10 h10 => ?_
   -- `dQ`.
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h9.ltA_ok (a := aDQ) (b := aM2) (by decide) (by decide) (by decide)) fun t10 h10 => ?_
+  refine WP.mono (h10.ltA_ok (a := aDQ) (b := aM2) (by decide) (by decide) (by decide)) fun t11 h11 => ?_
+  rw [wp_seqs_cons (by ne_nil)]
+  refine WP.mono (h11.mulLo_ok (o := aA) (x := aDQ) (y := aE) (by decide) (by decide) (by decide) (by decide) rfl
+    (by decide) (by decide) (by decide) (by decide) hw (by omega) hdq) fun t12 h12 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h10.mulA_ok (y := aE) (x := aDQ) (m := aM2) (k := 33) (by decide) (by decide) (by decide)
-    (by decide) rfl mulIdx_m2 (by decide) (by decide) (by decide) (by decide) fun u _ => cnt33_ok u)
-    fun t11 ⟨R₂, hR₂, h11⟩ => ?_
+  refine WP.mono (divK_ok h12 (a := aA) (d := aM2) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
+    (by decide) hw6 q2 (by decide)) fun t13 h13 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h11.eqA_ok (a := aA) (b := aOne) (by decide) (by decide) (by decide)) fun t12 h12 => ?_
+  refine WP.mono (h13.eqA_ok (a := aVR) (b := aOne) (by decide) (by decide) (by decide)) fun t14 h14 => ?_
   -- `qInv`.
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h12.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t13 h13 => ?_
+  refine WP.mono (h14.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t15 h15 => ?_
   rw [wp_seqs_cons (by ne_nil)]
-  refine WP.mono (h13.mulLo_ok (o := aT) (x := aQ) (y := aQI) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) (by decide) (by decide) (by decide) hw (by omega) hq) fun t14 h14 => ?_
+  refine WP.mono (h15.mulLo_ok (o := aT) (x := aQ) (y := aQI) (by decide) (by decide) (by decide) (by decide) rfl
+    (by decide) (by decide) (by decide) (by decide) hw (by omega) hq) fun t16 h16 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (divK_ok h14 (a := aT) (d := aP) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
-    (by decide) hw6 hp (by decide)) fun t15 h15 => ?_
+  refine WP.mono (divK_ok h16 (a := aT) (d := aP) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
+    (by decide) hw6 hp (by decide)) fun t17 h17 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h15.eqA_ok (a := aVR) (b := aOne) (by decide) (by decide) (by decide)) fun t16 h16 => ?_
+  refine WP.mono (h17.eqA_ok (a := aVR) (b := aOne) (by decide) (by decide) (by decide)) fun t18 h18 => ?_
   -- `d`.
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h16.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t17 h17 => ?_
+  refine WP.mono (h18.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t19 h19 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  have p2 : 2 * (v.p / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega) hp
-  have q2 : 2 * (v.q / 2) < 2 ^ (32 * (g.w / 2)) := Nat.lt_of_le_of_lt (by omega) hq
-  refine WP.mono (divK_ok h17 (a := aD) (d := aM1) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
-    (by decide) hw6 p2 (by decide)) fun t18 h18 => ?_
+  refine WP.mono (divK_ok h19 (a := aD) (d := aM1) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
+    (by decide) hw6 p2 (by decide)) fun t20 h20 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h18.eqA_ok (a := aVR) (b := aDP) (by decide) (by decide) (by decide)) fun t19 h19 => ?_
+  refine WP.mono (h20.eqA_ok (a := aVR) (b := aDP) (by decide) (by decide) (by decide)) fun t21 h21 => ?_
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (divK_ok h19 (a := aD) (d := aM2) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
-    (by decide) hw6 q2 (by decide)) fun t20 h20 => ?_
-  exact WP.mono (h20.eqA_ok (a := aVR) (b := aDQ) (by decide) (by decide) (by decide)) fun t h21 =>
-    ⟨R₁, R₂, ⟨hR₁, hR₂⟩, _, _, h21⟩
+  refine WP.mono (divK_ok h21 (a := aD) (d := aM2) (by decide) (by decide) (by decide) rfl (by decide) (by decide)
+    (by decide) hw6 q2 (by decide)) fun t22 h22 => ?_
+  exact WP.mono (h22.eqA_ok (a := aVR) (b := aDQ) (by decide) (by decide) (by decide)) fun t h23 => ⟨_, _, h23⟩
 
 end VG.Proof.Rsa.Arm.KeyCheck

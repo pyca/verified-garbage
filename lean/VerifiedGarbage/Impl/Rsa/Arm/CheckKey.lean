@@ -21,6 +21,6 @@ open VG VG.Arm VG.Impl.Rsa.Arm.KeyCheck
 def args : List (Nat × Nat) := [(0, aD), (8, aP), (16, aQ), (24, aDP), (32, aDQ), (40, aQI)]
 
 /-- `vg_rsa_check_key`. -/
-def code : Prog isa := fn 48 args (keyBodyS 12 20)
+def code : Prog isa := fn 48 args (keyBodyS 12 20 28 36)
 
 end VG.Impl.Rsa.Arm.CheckKey

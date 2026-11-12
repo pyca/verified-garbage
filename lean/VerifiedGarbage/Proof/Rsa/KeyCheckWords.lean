@@ -118,4 +118,28 @@ theorem keyBits_words {k n d p q dP dQ qInv w R₁ R₂ : Nat} (hm : modulusVali
       · simp [a]
   · simp [hP]
 
+/-- With the products `e dP` and `e dQ` by words too: `dX e mod 2^(32 w)` (exact for `e < 2^33`)
+modulo the divisor with its top word made not zero. -/
+theorem keyBits_words2 {k n e d p q dP dQ qInv w : Nat} (hm : modulusValid n k = true)
+    (hw : w = (k + 3) / 4) (hw4 : 4 ≤ w) (he2 : w % 2 = 0) (hp : p < 2 ^ (32 * (w / 2)))
+    (hq : q < 2 ^ (32 * (w / 2))) (hdp : dP < 2 ^ (32 * (w / 2))) (hdq : dQ < 2 ^ (32 * (w / 2)))
+    (he : e < 2 ^ 33) :
+    keyBitsW w n d p q dP dQ qInv (dP * e % 2 ^ (32 * w) % fixT (w / 2) (2 * (p / 2)))
+        (dQ * e % 2 ^ (32 * w) % fixT (w / 2) (2 * (q / 2))) =
+      keyBits' n d p q dP dQ qInv (n / p) (n % p) (e % 2 ^ 33 * dP % (2 * (p / 2)))
+        (e % 2 ^ 33 * dQ % (2 * (q / 2))) (q % 2 ^ (32 * w) * qInv % p) (d % (2 * (p / 2)))
+        (d % (2 * (q / 2))) := by
+  rw [← keyBits_words hm hw hw4 he2 hp hq]
+  have hW : (2 : Nat) ^ (32 * w) = 2 ^ (32 * (w / 2)) * 2 ^ (32 * (w / 2)) := by
+    rw [← Nat.pow_add]; congr 1; omega
+  by_cases hN : p * q = n
+  · obtain ⟨-, pT', qT'⟩ := top_words hm hw hw4 hp hq hN
+    have eB : e < 2 ^ (32 * (w / 2)) := Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) (by omega))
+    rw [fixT_of_ge pT', fixT_of_ge qT', Nat.mod_eq_of_lt (show dP * e < 2 ^ (32 * w) by rw [hW]; exact mul_lt_sq hdp eB),
+      Nat.mod_eq_of_lt (show dQ * e < 2 ^ (32 * w) by rw [hW]; exact mul_lt_sq hdq eB), Nat.mod_eq_of_lt he,
+      Nat.mul_comm dP e, Nat.mul_comm dQ e]
+  · have hpq : p * q % 2 ^ (32 * w) ≠ n := by
+      rw [Nat.mod_eq_of_lt (show p * q < 2 ^ (32 * w) by rw [hW]; exact mul_lt_sq hp hq)]; exact hN
+    simp [keyBitsW, hpq]
+
 end VG.Proof.Rsa

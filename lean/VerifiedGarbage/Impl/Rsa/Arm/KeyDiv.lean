@@ -246,6 +246,15 @@ def shape (oP oQ : Nat) : List Instr :=
     .mov .r2 (.shifted .r3 .lsl 1), .dp .eor .r0 .r0 (.reg .r2), .dp .eor .r1 .r1 (.reg .r2),
     .dp .orr .r0 .r0 (.reg .r1), .dp .and .r2 .r3 (.imm 1), .dp .orr .r0 .r0 (.reg .r2), .cmp .r0 (.imm 0)]
 
+/-- `shape`, with the lengths at `oDP` and `oDQ` also `2 w` bytes: for `dP` and `dQ` of
+`w / 2` words. -/
+def shape4 (oP oQ oDP oDQ : Nat) : List Instr :=
+  [.dp .add .r3 .r11 (.imm 3), .mov .r3 (.shifted .r3 .lsr 2), .ldrSp .r0 oP, .ldrSp .r1 oQ,
+    .mov .r2 (.shifted .r3 .lsl 1), .dp .eor .r0 .r0 (.reg .r2), .dp .eor .r1 .r1 (.reg .r2),
+    .dp .orr .r0 .r0 (.reg .r1), .ldrSp .r1 oDP, .dp .eor .r1 .r1 (.reg .r2), .dp .orr .r0 .r0 (.reg .r1),
+    .ldrSp .r1 oDQ, .dp .eor .r1 .r1 (.reg .r2), .dp .orr .r0 .r0 (.reg .r1),
+    .dp .and .r2 .r3 (.imm 1), .dp .orr .r0 .r0 (.reg .r2), .cmp .r0 (.imm 0)]
+
 /-! ## Products -/
 
 /-- Row `i` (`4 i` at 72) of `[o] += x_i [y]` over the `w - i` words from word
