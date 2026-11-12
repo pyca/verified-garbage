@@ -88,8 +88,8 @@ theorem valid_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (h : Base s0 s)
     refine WP.mono (finish_ok h3) fun t ⟨V, iV, outs⟩ => ?_
     refine ⟨_, _, V, _, _, _, fun _ => ⟨rfl, rfl⟩, iV, fun _ => rfl, fun _ => rfl, ?_⟩
     rw [← maskW_eq hm hB hp hq V]
-    exact outs.congr (fun hc => by rw [e2, (remW_eq hm hB hp hq h.pre.w16.1 hc).1])
-      (fun hc => by rw [e3, (remW_eq hm hB hp hq h.pre.w16.1 hc).2])
+    exact outs.congr (fun hc => by rw [e2, fP, (remW_eq hm hB hp hq h.pre.w16.1 hc).1])
+      (fun hc => by rw [e3, fQ, (remW_eq hm hB hp hq h.pre.w16.1 hc).2])
   · -- Any key: `n` divided by `p`.
     unfold midD
     rw [wp_seqs_cons (List.cons_ne_nil _ _)]
