@@ -29,9 +29,10 @@ theorem dwLr_val {w : Nat} (hw : w ≤ 1024) :
 
 /-- `clearT t`: `[t]`'s `w / 2 + 1` words zero, copied from `[0]`'s. -/
 theorem clearT_ok {s : State} {B : BitVec 32} {Z w N t : Nat} (h : Ws s B Z w N) (ht : t < N) (ht0 : t ≠ 0)
-    (hN : N ≤ 256) (hz : val32 s.mem (State.addr B) (arr w 0) (w / 2 + 1) = 0) :
+    (hN : N ≤ 256) :
     WP isa (clearT t) s fun v => Ws v B Z w N ∧ Keep B w [t] [] s.mem v.mem ∧
-      val32 v.mem (State.addr B) (arr w t) (w / 2 + 1) = 0 ∧ Rest opRegs s v := by
+      val32 v.mem (State.addr B) (arr w t) (w / 2 + 1) = val32 s.mem (State.addr B) (arr w 0) (w / 2 + 1) ∧
+      Rest opRegs s v := by
   have := h.wle
   rw [clearT, WP.seq_iff]
   refine ptr3_ok h (o := t) (a := 0) (b := 0) (by omega) (by omega) (by omega) fun s3 p0 p10 p12 r3 m3 h3 => ?_
@@ -60,7 +61,7 @@ theorem clearT_ok {s : State} {B : BitVec 32} {Z w N t : Nat} (h : Ws s B Z w N)
   rw [mu] at vv
   refine ⟨hu.rest inv.rest, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero, mu] using inv.outside)
     (by simp only [S]; omega) (by simp), ?_, restU.trans (inv.rest.mono (by simp))⟩
-  rw [vv]; split <;> exact hz
+  rw [vv]; split <;> rfl
 
 theorem dw_val {w : Nat} (hw : w ≤ 1024) : BitVec.ofNat 32 w >>> 1 = BitVec.ofNat 32 (w / 2) := by
   apply BitVec.eq_of_toNat_eq
@@ -86,10 +87,10 @@ theorem rest_back {s t : State} {B : BitVec 32} {Z w N : Nat} {ws : List Reg} (h
 
 /-- `prodT m t`: `[t] := q̂ [m]` over `w / 2` words and its carry, for `[t]` zero. -/
 theorem prodT_ok {s : State} {B : BitVec 32} {Z w N m t : Nat} (h : Ws s B Z w N) (hm : m < N) (ht : t < N)
-    (hmt : m ≠ t) (hN : N ≤ 256) (h16 : slot s.mem B 16 = w) (hdw : 1 ≤ w / 2)
-    (hz : val32 s.mem (State.addr B) (arr w t) (w / 2) = 0) {q : Nat} (hq : slot s.mem B sQ = q) :
+    (hmt : m ≠ t) (hN : N ≤ 256) (h16 : slot s.mem B 16 = w) (hdw : 1 ≤ w / 2) :
     WP isa (prodT m t) s fun v => Ws v B Z w N ∧ Keep B w [t] [] s.mem v.mem ∧
-      val32 v.mem (State.addr B) (arr w t) (w / 2 + 1) = q * val32 s.mem (State.addr B) (arr w m) (w / 2) ∧
+      val32 v.mem (State.addr B) (arr w t) (w / 2 + 1) = val32 s.mem (State.addr B) (arr w t) (w / 2) +
+        slot s.mem B sQ * val32 s.mem (State.addr B) (arr w m) (w / 2) ∧
       Rest divRegs s v := by
   have := h.wle
   have nw := h.nowrap
@@ -114,8 +115,8 @@ theorem prodT_ok {s : State} {B : BitVec 32} {Z w N m t : Nat} (h : Ws s B Z w N
       (u5.rest (by simp))))
   have rc : RowCtx u B Z (arr w t) (arr w m) (w / 2) :=
     ⟨h.nowrap, by omega, by omega, by omega, by rw [restU.wr]; exact h.writable⟩
-  have x1 : (u.gpr .r1).toNat = q := by
-    rw [u5.other _ (by decide), u4.gpr, u3.mem, m2, m1, ← hq]
+  have x1 : (u.gpr .r1).toNat = slot s.mem B sQ := by
+    rw [u5.other _ (by decide), u4.gpr, u3.mem, m2, m1]
   have x11 : (u.gpr .r11).toNat = 0 := by rw [u5.gpr]; rfl
   rw [WP.seq_iff]
   refine WP.mono (WP.keep [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12, .lr]
@@ -142,7 +143,7 @@ theorem prodT_ok {s : State} {B : BitVec 32} {Z w N m t : Nat} (h : Ws s B Z w N
       (by simp)).trans (Keep.of_arr (d := 4 * (w / 2)) (writeW32_outside _ _ _ (by omega)) (by simp only [S]; omega)
       (by simp))
   · have vv := inv.value
-    rw [x1, x11, mu, hz] at vv
+    rw [x1, x11, mu] at vv
     rw [m2', mv1, val32_succ, w32_write_self, Outside.val32 (writeW32_outside _ _ _ (by omega)) (by omega)
       (by omega)]
     omega
@@ -381,9 +382,8 @@ theorem stepA_ok {s : State} {B : BitVec 32} {Z w N r m t j z : Nat} (h : Ws s B
   refine estimate_ok h hr hN h16 hdw hJ hj hY hYM hz hP hMP hD hDn hV
     fun t1 q hq1 Elo Ehi _ K1 W1 R1 => WP.block_nil ?_
   rw [WP.seq_iff]
-  refine WP.mono (clearT_ok W1 ht ht0 hN (by
-    rw [keep_val K1 (a := 0) (Nat.le_refl _) (by simp only [S]; omega) (by simp) (fit := g0)]; exact hz0))
-    fun t2 ⟨W2, K2, Z2, R2⟩ => ?_
+  refine WP.mono (clearT_ok W1 ht ht0 hN) fun t2 ⟨W2, K2, Z2, R2⟩ => ?_
+  rw [keep_val K1 (a := 0) (Nat.le_refl _) (by simp only [S]; omega) (by simp) (fit := g0), hz0] at Z2
   rw [WP.seq_iff]
   have M2 : val32 t2.mem (State.addr B) (arr w m) (w / 2) = M := by
     rw [keep_val K2 (a := m) (Nat.le_refl _) (by simp only [S]; omega) (by simpa using hmt.symm) (fit := gm),
@@ -394,7 +394,8 @@ theorem stepA_ok {s : State} {B : BitVec 32} {Z w N r m t j z : Nat} (h : Ws s B
   have s16 : slot t2.mem B 16 = w := by
     rw [K2.slot (by decide) (by simp), K1.slot (by decide) (by decide)]; exact h16
   have sQ2 : slot t2.mem B sQ = q := by rw [K2.slot (by decide) (by simp)]; exact hq1
-  refine WP.mono (prodT_ok W2 hm ht hmt hN s16 (by omega) Zt sQ2) fun t3 ⟨W3, K3, T3, R3⟩ => ?_
+  refine WP.mono (prodT_ok W2 hm ht hmt hN s16 (by omega)) fun t3 ⟨W3, K3, T3, R3⟩ => ?_
+  rw [Zt, sQ2, Nat.zero_add] at T3
   refine k t3 q Elo Ehi (by rw [T3, M2]) ((K1.mono).trans ((K2.mono).trans K3.mono)) W3 ?_
   exact rest_back h W3 (ws := divRegs ++ [.r7, .r8, .r9])
     ((R1.mono (by decide)).trans ((R2.mono (by decide)).trans (R3.mono (by decide))))
