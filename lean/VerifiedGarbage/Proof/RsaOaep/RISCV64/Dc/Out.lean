@@ -124,7 +124,7 @@ theorem andCopy_ok {u : State} {p q : Addr} {n : Nat} {msk : BitVec 64} (hn : 0 
     exact h.2.1
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- `ok` (`s7`). -/
@@ -161,7 +161,7 @@ theorem ml_w : InRegions (fr s :: s.wr) (s.gpr .a2 + BitVec.ofNat 64 0) 8 := by
 
 omit P in
 /-- The slots and a buffer apart from the stack. -/
-theorem slR_dis {R : Region} (h : (kD s).Disjoint R) : (slR s).Disjoint R :=
+theorem slR_dis {R : Region} (h : (kD pc s).Disjoint R) : (slR s).Disjoint R :=
   h.sub_left fun a ha => kR_sub a (slR_sub s a ha)
 
 /-- The buffer's first `k` bytes ANDed with `ok` to `out`. -/

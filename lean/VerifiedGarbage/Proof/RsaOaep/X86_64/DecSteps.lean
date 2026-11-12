@@ -90,7 +90,7 @@ theorem DW.lab (h : DW s t) {W : Nat → BitVec 64} (hW : ArgsD s W) :
   have hsl := hp.hsl
   have sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by unfold oRsa; omega)
   exact ⟨w27, by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq], (stackArg s 12).isLt,
-    Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, h.he.rd, hp.hrd]; simp),
+    Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, h.he.rd]; exact hp.hrd _ (by simp)),
     hp.dlbs.sub_right sS, hp.dKlb.sub_left (ret_subD s)⟩
 
 end

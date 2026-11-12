@@ -2,7 +2,8 @@ module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KcBase
 
-import VerifiedGarbage.Proof.Rsa.X86.KcDiv
+import VerifiedGarbage.Proof.Rsa.X86.KcWord
+import VerifiedGarbage.Proof.Rsa.X86.KcOps
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Framework.Block
@@ -23,6 +24,9 @@ structure BodyIn (g : Geo) (v : Vals) (s : State) : Prop where
   /-- `q`'s length argument, whose bytes bound `q`. -/
   qLen : ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ v.q < 2 ^ (8 * a) ∧
     VG.Proof.Bignum.X86.CallArgument s g.B g.Z (qLenArg g.full) (BitVec.ofNat 32 a)
+  /-- `p`'s. -/
+  pLen : ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ v.p < 2 ^ (8 * a) ∧
+    VG.Proof.Bignum.X86.CallArgument s g.B g.Z (pLenArg g.full) (BitVec.ofNat 32 a)
 
 abbrev live0 : List Nat := [aZ, aOne, aN, aE, aP, aQ, aDP, aDQ, aQI, aD]
 
@@ -45,13 +49,26 @@ theorem first_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
   · rw [e5, p4]
     rcases Nat.mod_two_eq_zero_or_one v.p with e | e <;> simp [e]
 
+/-- The arrays after `start`. -/
+abbrev aStart (v : Vals) : Nat → Nat := upd (vals v) aOne 1
+
+/-- `start`: `1`, and the mask of `p` odd and `p q = n`. -/
 theorem start_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
-    WP isa (start g.full) s fun u =>
-      WP isa (division g.full) u fun t => ∃ Xq Xr,
-        (0 < v.p → Xr = v.n % v.p ∧ Xq = v.n / v.p) ∧
-        Stg g s (upd (upd (upd (vals v) aOne 1) aVQ Xq) aVR Xr)
-          (aVR :: aVQ :: live0) (decide (v.p % 2 = 1)) t := by
+    WP isa (start g.full) s (Stg g s (aStart v) live0 (decide (v.p % 2 = 1) && decide (v.p * v.q = v.n))) := by
   unfold start
-  rw [wp_seqs_append (by simp) (by simp [divSet])]
-  exact WP.mono (first_ok h) fun u hu => hu.divSet_ok (a := aN) (d := aP) (by decide) (by decide) (by decide)
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  have f := first_ok h
+  rw [WP.seq_iff] at f
+  refine WP.mono f fun u hu => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono hu fun t ht => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (ht.mulWide_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide)
+    (by decide)) fun t1 ⟨h1, e1⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (h1.eqWide_ok (o := aVQ) (n := aN) (by decide) (by decide)) fun t2 ⟨h2, e2⟩ => ?_
+  refine h2.acc_ok ?_
+  rw [e2, e1]
+  change (if v.p * v.q = v.n then 1 else 0) = _
+  by_cases hh : v.p * v.q = v.n <;> simp [hh]
 end VG.Proof.Rsa.X86.KeyCheck

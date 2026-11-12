@@ -222,7 +222,6 @@ vg_rsa_private_crt_precomputed:
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
 216:
-	ldr x8, [x0, #80]
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -256,98 +255,75 @@ vg_rsa_private_crt_precomputed:
 	sub x16, x16, #1
 	tst x4, x4
 	csel x1, x16, x14, eq
-	add x16, x8, #0
-	add x14, x12, #2
-217:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 217b
-	add x16, x8, #0
+	lsl x13, x12, #3
+	sub x13, x13, #24
+	add x16, x11, x13
+	ldr x3, [x16, #8]
+	ldr x4, [x16, #0]
+	add x17, x9, x13
+	ldr x15, [x17, #8]
+	sub x14, x12, #2
+	tst x14, x14
+	csel x4, x14, x4, eq
+	mul x13, x1, x15
+	umulh x14, x1, x15
+	mul x16, x1, x5
+	umulh x17, x1, x5
+	adds x14, x14, x16
+	adc x17, x17, x7
+	subs x4, x4, x13
+	sbcs x3, x3, x14
+	sbc x2, x2, x17
+	adds x4, x4, x15
+	adcs x3, x3, x5
+	adc x16, x2, x7
+	sub x17, x1, #1
+	tst x2, x2
+	csel x1, x17, x1, mi
+	csel x2, x16, x2, mi
+	lsr x2, x2, #63
+	sub x1, x1, x2
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
-	adds x2, x7, x7
-218:
+	add x2, x7, #0
+	movz x15, #0, lsl #0
+	sub x15, x15, #1
+	add x13, x15, #0
+	adds x3, x7, x7
+217:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
 	adcs x4, x4, x2
 	adc x2, x3, x7
 	ldr x3, [x16, #0]
-	adds x4, x4, x3
+	adds x4, x4, x13
+	eor x13, x3, x15
+	eor x4, x4, x15
 	str x4, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 218b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-	ldr x3, [x16, #0]
-	subs x3, x7, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-219:
-	ldr x4, [x17, #0]
-	ldr x3, [x16, #0]
-	sbcs x3, x4, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 219b
+	cbnz x14, 217b
+	adc x4, x13, x2
+	eor x4, x4, x15
+	str x4, [x16, #0]
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 220f
+	cbz x3, 218f
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
 	sub x15, x7, x3
-	add x16, x8, #0
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-222:
-	ldr x4, [x17, #0]
-	and x4, x4, x15
-	ldr x3, [x16, #0]
-	adcs x3, x3, x4
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 222b
-	ldr x3, [x16, #0]
-	adc x3, x3, x7
-	str x3, [x16, #0]
-	b 221f
 220:
-221:
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	cbz x3, 223f
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	sub x15, x7, x3
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-225:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -356,23 +332,13 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 225b
+	cbnz x14, 220b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
-	b 224f
-223:
-224:
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-226:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 226b
+	b 219f
+218:
+219:
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
@@ -381,38 +347,43 @@ vg_rsa_private_crt_precomputed:
 212:
 	ldr x12, [x0, #48]
 	sub x13, x12, #2
-	cbz x13, 227f
+	cbz x13, 221f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	lsl x13, x12, #3
-	sub x13, x13, #16
+	sub x13, x13, #24
 	add x13, x9, x13
-	ldr x15, [x13, #8]
-	ldr x3, [x13, #0]
+	ldr x15, [x13, #16]
+	ldr x3, [x13, #8]
+	ldr x4, [x13, #0]
 	movz x10, #1, lsl #0
 	movz x13, #63, lsl #0
-229:
+223:
 	add x16, x15, x15
 	add x17, x10, x10
 	tst x15, x15
 	csel x15, x16, x15, pl
 	csel x10, x17, x10, pl
 	sub x13, x13, #1
-	cbnz x13, 229b
+	cbnz x13, 223b
+	mul x16, x3, x10
+	umulh x4, x4, x10
+	add x16, x16, x4
 	umulh x3, x3, x10
 	add x15, x15, x3
 	str x10, [x6, #8]
 	str x15, [x6, #16]
+	str x16, [x6, #24]
 	ldr x5, [x6, #16]
 	sub x2, x7, x5
 	sub x2, x2, #1
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-230:
+224:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -424,25 +395,24 @@ vg_rsa_private_crt_precomputed:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 230b
+	cbnz x13, 224b
 	str x10, [x6, #0]
 	add x8, x11, #0
 	movz x9, #1, lsl #0
 	sub x13, x12, #1
 	add x16, x8, #0
 	add x14, x12, #2
-231:
+225:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 231b
+	cbnz x14, 225b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	add x13, x12, #1
 	str x13, [x0, #208]
-232:
-	ldr x8, [x0, #80]
+226:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -482,68 +452,82 @@ vg_rsa_private_crt_precomputed:
 	sub x16, x16, #1
 	tst x4, x4
 	csel x1, x16, x14, eq
-	add x16, x8, #0
-	add x14, x12, #2
-233:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 233b
-	add x16, x8, #0
+	lsl x13, x12, #3
+	sub x13, x13, #32
+	add x16, x11, x13
+	ldr x3, [x16, #16]
+	ldr x4, [x16, #8]
+	ldr x14, [x16, #0]
+	sub x15, x12, #3
+	tst x15, x15
+	csel x14, x15, x14, eq
+	ldr x17, [x6, #8]
+	mul x3, x3, x17
+	umulh x15, x4, x17
+	add x3, x3, x15
+	mul x4, x4, x17
+	umulh x15, x14, x17
+	add x4, x4, x15
+	ldr x15, [x6, #24]
+	mul x13, x1, x15
+	umulh x14, x1, x15
+	mul x16, x1, x5
+	umulh x17, x1, x5
+	adds x14, x14, x16
+	adc x17, x17, x7
+	subs x4, x4, x13
+	sbcs x3, x3, x14
+	sbc x2, x2, x17
+	adds x4, x4, x15
+	adcs x3, x3, x5
+	adc x16, x2, x7
+	sub x17, x1, #1
+	tst x2, x2
+	csel x1, x17, x1, mi
+	csel x2, x16, x2, mi
+	lsr x2, x2, #63
+	sub x1, x1, x2
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
-	adds x2, x7, x7
-234:
+	add x2, x7, #0
+	movz x15, #0, lsl #0
+	sub x15, x15, #1
+	add x13, x15, #0
+	adds x3, x7, x7
+227:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
 	adcs x4, x4, x2
 	adc x2, x3, x7
 	ldr x3, [x16, #0]
-	adds x4, x4, x3
+	adds x4, x4, x13
+	eor x13, x3, x15
+	eor x4, x4, x15
 	str x4, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 234b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-	ldr x3, [x16, #0]
-	subs x3, x7, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-235:
-	ldr x4, [x17, #0]
-	ldr x3, [x16, #0]
-	sbcs x3, x4, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 235b
+	cbnz x14, 227b
+	adc x4, x13, x2
+	eor x4, x4, x15
+	str x4, [x16, #0]
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 236f
+	cbz x3, 228f
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
 	sub x15, x7, x3
-	add x16, x8, #0
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-238:
+230:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -552,59 +536,19 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 238b
+	cbnz x14, 230b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
-	b 237f
-236:
-237:
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	cbz x3, 239f
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	sub x15, x7, x3
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-241:
-	ldr x4, [x17, #0]
-	and x4, x4, x15
-	ldr x3, [x16, #0]
-	adcs x3, x3, x4
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 241b
-	ldr x3, [x16, #0]
-	adc x3, x3, x7
-	str x3, [x16, #0]
-	b 240f
-239:
-240:
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-242:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 242b
+	b 229f
+228:
+229:
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 232b
-	b 228f
-227:
+	cbnz x13, 226b
+	b 222f
+221:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -614,27 +558,27 @@ vg_rsa_private_crt_precomputed:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 243f
-245:
+	cbz x6, 231f
+233:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 245b
-	b 244f
-243:
-244:
+	cbnz x6, 233b
+	b 232f
+231:
+232:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-246:
+234:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 246b
+	cbnz x14, 234b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -642,7 +586,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-247:
+235:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -653,14 +597,14 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-248:
+236:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 248b
+	cbnz x14, 236b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -668,7 +612,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-249:
+237:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -677,12 +621,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 249b
+	cbnz x14, 237b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-250:
+238:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -691,22 +635,22 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 250b
+	cbnz x14, 238b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 247b
+	cbnz x13, 235b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-251:
+239:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 251b
-228:
+	cbnz x13, 239b
+222:
 213:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_5_1_4}
@@ -793,63 +737,63 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-252:
+240:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 252b
+	cbnz x14, 240b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #152]
 	ldr x2, [x5, #160]
 	ldr x8, [x0, #64]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-253:
+241:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 254f
-	b 255f
-254:
+	cbz x5, 242f
+	b 243f
+242:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-255:
-	cbnz x2, 253b
+243:
+	cbnz x2, 241b
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-256:
+244:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 256b
+	cbnz x14, 244b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #224]
 	ldr x2, [x5, #160]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-257:
+245:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 258f
-	b 259f
-258:
+	cbz x5, 246f
+	b 247f
+246:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-259:
-	cbnz x2, 257b
+247:
+	cbnz x2, 245b
 	ldr x0, [x0, #128]
 	ldr x0, [x0, #240]
 	ldr x8, [x0, #64]
@@ -857,32 +801,32 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-260:
+248:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 260b
+	cbnz x14, 248b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #184]
 	ldr x2, [x5, #192]
 	ldr x8, [x0, #64]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-261:
+249:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 262f
-	b 263f
-262:
+	cbz x5, 250f
+	b 251f
+250:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-263:
-	cbnz x2, 261b
+251:
+	cbnz x2, 249b
 	ldr x0, [x0, #128]
 	ldr x0, [x0, #232]
 	ldr x12, [x0, #48]
@@ -891,14 +835,14 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
-264:
+252:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 264b
+	cbnz x14, 252b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	ldr x5, [x0, #128]
@@ -912,13 +856,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #64]
 	add x14, x12, #0
-265:
+253:
 	ldr x3, [x16, #0]
 	and x3, x3, x15
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 265b
+	cbnz x14, 253b
 	movz x4, #3, lsl #0
 	and x5, x15, x4
 	eor x5, x5, x4
@@ -957,11 +901,11 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-266:
+254:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 266b
+	cbnz x14, 254b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -974,13 +918,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #64]
 	add x14, x12, #0
-267:
+255:
 	ldr x3, [x16, #0]
 	and x3, x3, x15
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 267b
+	cbnz x14, 255b
 	movz x4, #3, lsl #0
 	and x5, x15, x4
 	eor x5, x5, x4
@@ -1019,11 +963,11 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-268:
+256:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 268b
+	cbnz x14, 256b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -1034,11 +978,11 @@ vg_rsa_private_crt_precomputed:
 	movz x3, #0, lsl #0
 	movz x7, #0, lsl #0
 	movz x8, #1, lsl #0
-269:
+257:
 	add x3, x3, x5
 	subs x4, x3, x12
 	csel x4, x7, x8, hs
-	cbnz x4, 269b
+	cbnz x4, 257b
 	add x3, x3, x5
 	sub x3, x3, x12
 	lsl x3, x3, #6
@@ -1049,7 +993,7 @@ vg_rsa_private_crt_precomputed:
 	sub x13, x13, #8
 	add x13, x10, x13
 	ldr x4, [x13, #0]
-	cbz x4, 270f
+	cbz x4, 258f
 	ldr x13, [x0, #248]
 	lsr x13, x13, #6
 	sub x5, x12, #1
@@ -1057,138 +1001,138 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	movz x8, #1, lsl #0
 	csel x6, x8, x7, lo
-	cbz x6, 272f
+	cbz x6, 260f
 	movz x9, #1, lsl #0
 	ldr x8, [x0, #112]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-274:
+262:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 274b
+	cbnz x14, 262b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_6}
 	umov x30, v31.d[0]
+	b 261f
+260:
+	ldr x3, [x0, #248]
+	movz x9, #1, lsl #0
+	movz x13, #64, lsl #0
+	sub x6, x3, #1
+	cbz x6, 263f
+265:
+	lsr x3, x3, #1
+	add x9, x9, x9
+	sub x13, x13, #1
+	sub x6, x3, #1
+	cbnz x6, 265b
+	b 264f
+263:
+264:
+	str x9, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_4_7}
+	umov x30, v31.d[0]
+266:
+	mov v31.d[0], x30
+	bl {vg_rsa_square_6_6}
+	umov x30, v31.d[0]
+	ldr x3, [x0, #248]
+	ldr x4, [x0, #208]
+	and x3, x3, x4
+	cbnz x3, 267f
+	b 268f
+267:
+	ldr x5, [x0, #112]
+	ldr x10, [x0, #64]
+	ldr x8, [x0, #80]
+	ldr x6, [x0, #88]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x17, x5, #0
+	add x16, x8, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+269:
+	ldr x3, [x17, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x17, x17, #8
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 269b
+	adc x3, x7, x7
+	str x3, [x16, #0]
+	add x16, x8, #0
+	add x17, x10, #0
+	add x13, x6, #0
+	add x14, x12, #0
+	subs x3, x7, x7
+270:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x13, x13, #8
+	sub x14, x14, #1
+	cbnz x14, 270b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	add x16, x8, #0
+	add x14, x12, #0
+271:
+	ldr x3, [x16, #0]
+	ldr x4, [x6, #0]
+	csel x3, x4, x3, hs
+	str x3, [x5, #0]
+	add x16, x16, #8
+	add x6, x6, #8
+	add x5, x5, #8
+	sub x14, x14, #1
+	cbnz x14, 271b
+268:
+	ldr x3, [x0, #208]
+	lsr x3, x3, #1
+	str x3, [x0, #208]
+	cbnz x3, 266b
+261:
+	b 259f
+258:
+	ldr x3, [x0, #248]
+	movz x9, #1, lsl #0
+	movz x13, #64, lsl #0
+	sub x6, x3, #1
+	cbz x6, 272f
+274:
+	lsr x3, x3, #1
+	add x9, x9, x9
+	sub x13, x13, #1
+	sub x6, x3, #1
+	cbnz x6, 274b
 	b 273f
 272:
-	ldr x3, [x0, #248]
-	movz x9, #1, lsl #0
-	movz x13, #64, lsl #0
-	sub x6, x3, #1
-	cbz x6, 275f
-277:
-	lsr x3, x3, #1
-	add x9, x9, x9
-	sub x13, x13, #1
-	sub x6, x3, #1
-	cbnz x6, 277b
-	b 276f
-275:
-276:
-	str x9, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_4_7}
-	umov x30, v31.d[0]
-278:
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	ldr x3, [x0, #248]
-	ldr x4, [x0, #208]
-	and x3, x3, x4
-	cbnz x3, 279f
-	b 280f
-279:
-	ldr x5, [x0, #112]
-	ldr x10, [x0, #64]
-	ldr x8, [x0, #80]
-	ldr x6, [x0, #88]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x17, x5, #0
-	add x16, x8, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-281:
-	ldr x3, [x17, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x17, x17, #8
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 281b
-	adc x3, x7, x7
-	str x3, [x16, #0]
-	add x16, x8, #0
-	add x17, x10, #0
-	add x13, x6, #0
-	add x14, x12, #0
-	subs x3, x7, x7
-282:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 282b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	add x16, x8, #0
-	add x14, x12, #0
-283:
-	ldr x3, [x16, #0]
-	ldr x4, [x6, #0]
-	csel x3, x4, x3, hs
-	str x3, [x5, #0]
-	add x16, x16, #8
-	add x6, x6, #8
-	add x5, x5, #8
-	sub x14, x14, #1
-	cbnz x14, 283b
-280:
-	ldr x3, [x0, #208]
-	lsr x3, x3, #1
-	str x3, [x0, #208]
-	cbnz x3, 278b
 273:
-	b 271f
-270:
-	ldr x3, [x0, #248]
-	movz x9, #1, lsl #0
-	movz x13, #64, lsl #0
-	sub x6, x3, #1
-	cbz x6, 284f
-286:
-	lsr x3, x3, #1
-	add x9, x9, x9
-	sub x13, x13, #1
-	sub x6, x3, #1
-	cbnz x6, 286b
-	b 285f
-284:
-285:
 	str x9, [x0, #208]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_7}
 	umov x30, v31.d[0]
-287:
+275:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #248]
 	ldr x4, [x0, #208]
 	and x3, x3, x4
-	cbnz x3, 288f
-	b 289f
-288:
+	cbnz x3, 276f
+	b 277f
+276:
 	ldr x5, [x0, #112]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -1199,14 +1143,14 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-290:
+278:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 290b
+	cbnz x14, 278b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -1214,7 +1158,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-291:
+279:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -1223,12 +1167,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 291b
+	cbnz x14, 279b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-292:
+280:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -1237,40 +1181,40 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 292b
-289:
+	cbnz x14, 280b
+277:
 	ldr x3, [x0, #208]
 	lsr x3, x3, #1
 	str x3, [x0, #208]
-	cbnz x3, 287b
-271:
+	cbnz x3, 275b
+259:
 	ldr x0, [x0, #240]
 	ldr x8, [x0, #96]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-293:
+281:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 293b
+	cbnz x14, 281b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #112]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-294:
+282:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-295:
+283:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 295b
+	cbnz x14, 283b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -1278,13 +1222,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-296:
+284:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 296b
+	cbnz x14, 284b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -1306,7 +1250,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-297:
+285:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -1315,7 +1259,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 297b
+	cbnz x14, 285b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -1323,7 +1267,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-298:
+286:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -1332,12 +1276,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 298b
+	cbnz x14, 286b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-299:
+287:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -1346,20 +1290,20 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 299b
+	cbnz x14, 287b
 	ldr x3, [x0, #176]
-	cbnz x3, 294b
+	cbnz x3, 282b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #112]
 	add x14, x12, #0
-2100:
+288:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2100b
+	cbnz x14, 288b
 	ldr x0, [x0, #128]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_5_6}
@@ -1370,27 +1314,27 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2101:
+289:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2101b
+	cbnz x14, 289b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #112]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-2102:
+290:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2103:
+291:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2103b
+	cbnz x14, 291b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -1398,13 +1342,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2104:
+292:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2104b
+	cbnz x14, 292b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -1426,7 +1370,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2105:
+293:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -1435,7 +1379,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2105b
+	cbnz x14, 293b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -1443,7 +1387,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2106:
+294:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -1452,12 +1396,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2106b
+	cbnz x14, 294b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2107:
+295:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -1466,9 +1410,9 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2107b
+	cbnz x14, 295b
 	ldr x3, [x0, #176]
-	cbnz x3, 2102b
+	cbnz x3, 290b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #216]
 	str x3, [x0, #136]
@@ -1487,13 +1431,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2108:
+296:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2108b
+	cbnz x14, 296b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -1504,27 +1448,27 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2109:
+297:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2109b
+	cbnz x14, 297b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2110:
+298:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2110b
+	cbnz x14, 298b
 	movz x3, #30, lsl #0
 	str x3, [x0, #160]
-2111:
+299:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_5_5_4}
 	umov x30, v31.d[0]
@@ -1538,17 +1482,17 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #104]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2112:
+2100:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2112b
+	cbnz x14, 2100b
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2111b
+	cbnz x3, 299b
 	movz x3, #0, lsl #0
 	str x3, [x0, #216]
 	str x3, [x0, #160]
@@ -1560,10 +1504,10 @@ vg_rsa_private_crt_precomputed:
 	movz x4, #1, lsl #0
 	movz x5, #0, lsl #0
 	csel x9, x4, x5, hs
-	cbnz x9, 2113f
-	b 2114f
-2113:
-2115:
+	cbnz x9, 2101f
+	b 2102f
+2101:
+2103:
 	ldr x3, [x0, #136]
 	ldr x4, [x0, #152]
 	add x3, x3, x4
@@ -1659,15 +1603,15 @@ vg_rsa_private_crt_precomputed:
 	movz x4, #1, lsl #0
 	movz x5, #0, lsl #0
 	csel x9, x4, x5, hs
-	cbnz x9, 2115b
-2114:
+	cbnz x9, 2103b
+2102:
 	ldr x3, [x0, #144]
 	ldr x4, [x0, #152]
 	sub x3, x3, x4
-	cbnz x3, 2116f
-	b 2117f
-2116:
-2118:
+	cbnz x3, 2104f
+	b 2105f
+2104:
+2106:
 	ldr x3, [x0, #136]
 	ldr x4, [x0, #152]
 	add x3, x3, x4
@@ -1677,6 +1621,120 @@ vg_rsa_private_crt_precomputed:
 	lsl x3, x3, #1
 	ldr x4, [x0, #168]
 	lsr x4, x4, #7
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2107f
+	b 2108f
+2107:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2108:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #6
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2109f
+	b 2110f
+2109:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2110:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #5
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2111f
+	b 2112f
+2111:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2112:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #4
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2113f
+	b 2114f
+2113:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2114:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #3
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2115f
+	b 2116f
+2115:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2116:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #2
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2117f
+	b 2118f
+2117:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2118:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #1
 	movz x5, #1, lsl #0
 	and x4, x4, x5
 	orr x3, x3, x4
@@ -1695,7 +1753,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x3, [x0, #216]
 	lsl x3, x3, #1
 	ldr x4, [x0, #168]
-	lsr x4, x4, #6
+	lsr x4, x4, #0
 	movz x5, #1, lsl #0
 	and x4, x4, x5
 	orr x3, x3, x4
@@ -1711,150 +1769,36 @@ vg_rsa_private_crt_precomputed:
 	bl {vg_rsa_square_window5}
 	umov x30, v7.d[0]
 2122:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #5
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2123f
-	b 2124f
-2123:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2124:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #4
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2125f
-	b 2126f
-2125:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2126:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #3
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2127f
-	b 2128f
-2127:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2128:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #2
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2129f
-	b 2130f
-2129:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2130:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #1
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2131f
-	b 2132f
-2131:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2132:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #0
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2133f
-	b 2134f
-2133:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2134:
 	ldr x3, [x0, #152]
 	add x3, x3, #1
 	str x3, [x0, #152]
 	ldr x3, [x0, #144]
 	ldr x4, [x0, #152]
 	sub x3, x3, x4
-	cbnz x3, 2118b
-2117:
+	cbnz x3, 2106b
+2105:
 	ldr x3, [x0, #160]
-	cbnz x3, 2135f
-	b 2136f
-2135:
-2137:
+	cbnz x3, 2123f
+	b 2124f
+2123:
+2125:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2137b
+	cbnz x3, 2125b
 	ldr x12, [x0, #48]
 	lsr x3, x12, #3
 	movz x4, #7, lsl #0
 	and x4, x12, x4
-	cbnz x3, 2138f
+	cbnz x3, 2126f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2140:
+2128:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -1867,7 +1811,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2141:
+2129:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -1877,7 +1821,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2141b
+	cbnz x14, 2129b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -1888,15 +1832,15 @@ vg_rsa_private_crt_precomputed:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #32
-	cbnz x4, 2140b
-	b 2139f
-2138:
-	cbz x4, 2142f
+	cbnz x4, 2128b
+	b 2127f
+2126:
+	cbz x4, 2130f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2144:
+2132:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -1909,7 +1853,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2145:
+2133:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -1919,7 +1863,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2145b
+	cbnz x14, 2133b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -1930,9 +1874,9 @@ vg_rsa_private_crt_precomputed:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #32
-	cbnz x4, 2144b
-	b 2143f
-2142:
+	cbnz x4, 2132b
+	b 2131f
+2130:
 	ldr x12, [x0, #48]
 	add x6, x12, #2
 	lsl x6, x6, #3
@@ -1942,7 +1886,7 @@ vg_rsa_private_crt_precomputed:
 	movz x2, #1, lsl #0
 	dup v24.2d, x2
 	ldr x17, [x0, #104]
-2146:
+2134:
 	ldr x16, [x0, #104]
 	sub x16, x17, x16
 	ldr x3, [x0, #200]
@@ -1953,7 +1897,7 @@ vg_rsa_private_crt_precomputed:
 	movi v17.2d, #0
 	movi v18.2d, #0
 	movi v19.2d, #0
-2147:
+2135:
 	cmeq v20.2d, v23.2d, v22.2d
 	ldr q21, [x16, #0]
 	bit v16.16b, v21.16b, v20.16b
@@ -1966,26 +1910,26 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, x6
 	add v23.2d, v23.2d, v24.2d
 	sub x14, x14, #1
-	cbnz x14, 2147b
+	cbnz x14, 2135b
 	str q16, [x17, #0]
 	str q17, [x17, #16]
 	str q18, [x17, #32]
 	str q19, [x17, #48]
 	add x17, x17, #64
 	sub x13, x13, #1
-	cbnz x13, 2146b
+	cbnz x13, 2134b
 	ldr x3, [x0, #200]
 	lsl x4, x6, #5
 	add x3, x3, x4
 	str x3, [x0, #208]
 	movz x3, #32, lsl #0
 	str x3, [x0, #224]
-2143:
-2139:
+2131:
+2127:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
-2136:
+2124:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_7}
 	umov x30, v31.d[0]
@@ -1996,11 +1940,11 @@ vg_rsa_private_crt_precomputed:
 	movz x3, #0, lsl #0
 	movz x7, #0, lsl #0
 	movz x8, #1, lsl #0
-2148:
+2136:
 	add x3, x3, x5
 	subs x4, x3, x12
 	csel x4, x7, x8, hs
-	cbnz x4, 2148b
+	cbnz x4, 2136b
 	add x3, x3, x5
 	sub x3, x3, x12
 	lsl x3, x3, #6
@@ -2011,7 +1955,7 @@ vg_rsa_private_crt_precomputed:
 	sub x13, x13, #8
 	add x13, x10, x13
 	ldr x4, [x13, #0]
-	cbz x4, 2149f
+	cbz x4, 2137f
 	ldr x13, [x0, #248]
 	lsr x13, x13, #6
 	sub x5, x12, #1
@@ -2019,138 +1963,138 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	movz x8, #1, lsl #0
 	csel x6, x8, x7, lo
-	cbz x6, 2151f
+	cbz x6, 2139f
 	movz x9, #1, lsl #0
 	ldr x8, [x0, #112]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2153:
+2141:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2153b
+	cbnz x14, 2141b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_6}
 	umov x30, v31.d[0]
+	b 2140f
+2139:
+	ldr x3, [x0, #248]
+	movz x9, #1, lsl #0
+	movz x13, #64, lsl #0
+	sub x6, x3, #1
+	cbz x6, 2142f
+2144:
+	lsr x3, x3, #1
+	add x9, x9, x9
+	sub x13, x13, #1
+	sub x6, x3, #1
+	cbnz x6, 2144b
+	b 2143f
+2142:
+2143:
+	str x9, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_4_7}
+	umov x30, v31.d[0]
+2145:
+	mov v31.d[0], x30
+	bl {vg_rsa_square_6_6}
+	umov x30, v31.d[0]
+	ldr x3, [x0, #248]
+	ldr x4, [x0, #208]
+	and x3, x3, x4
+	cbnz x3, 2146f
+	b 2147f
+2146:
+	ldr x5, [x0, #112]
+	ldr x10, [x0, #64]
+	ldr x8, [x0, #80]
+	ldr x6, [x0, #88]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x17, x5, #0
+	add x16, x8, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+2148:
+	ldr x3, [x17, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x17, x17, #8
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2148b
+	adc x3, x7, x7
+	str x3, [x16, #0]
+	add x16, x8, #0
+	add x17, x10, #0
+	add x13, x6, #0
+	add x14, x12, #0
+	subs x3, x7, x7
+2149:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x13, x13, #8
+	sub x14, x14, #1
+	cbnz x14, 2149b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	add x16, x8, #0
+	add x14, x12, #0
+2150:
+	ldr x3, [x16, #0]
+	ldr x4, [x6, #0]
+	csel x3, x4, x3, hs
+	str x3, [x5, #0]
+	add x16, x16, #8
+	add x6, x6, #8
+	add x5, x5, #8
+	sub x14, x14, #1
+	cbnz x14, 2150b
+2147:
+	ldr x3, [x0, #208]
+	lsr x3, x3, #1
+	str x3, [x0, #208]
+	cbnz x3, 2145b
+2140:
+	b 2138f
+2137:
+	ldr x3, [x0, #248]
+	movz x9, #1, lsl #0
+	movz x13, #64, lsl #0
+	sub x6, x3, #1
+	cbz x6, 2151f
+2153:
+	lsr x3, x3, #1
+	add x9, x9, x9
+	sub x13, x13, #1
+	sub x6, x3, #1
+	cbnz x6, 2153b
 	b 2152f
 2151:
-	ldr x3, [x0, #248]
-	movz x9, #1, lsl #0
-	movz x13, #64, lsl #0
-	sub x6, x3, #1
-	cbz x6, 2154f
-2156:
-	lsr x3, x3, #1
-	add x9, x9, x9
-	sub x13, x13, #1
-	sub x6, x3, #1
-	cbnz x6, 2156b
-	b 2155f
-2154:
-2155:
-	str x9, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_4_7}
-	umov x30, v31.d[0]
-2157:
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	ldr x3, [x0, #248]
-	ldr x4, [x0, #208]
-	and x3, x3, x4
-	cbnz x3, 2158f
-	b 2159f
-2158:
-	ldr x5, [x0, #112]
-	ldr x10, [x0, #64]
-	ldr x8, [x0, #80]
-	ldr x6, [x0, #88]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x17, x5, #0
-	add x16, x8, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-2160:
-	ldr x3, [x17, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x17, x17, #8
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2160b
-	adc x3, x7, x7
-	str x3, [x16, #0]
-	add x16, x8, #0
-	add x17, x10, #0
-	add x13, x6, #0
-	add x14, x12, #0
-	subs x3, x7, x7
-2161:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 2161b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	add x16, x8, #0
-	add x14, x12, #0
-2162:
-	ldr x3, [x16, #0]
-	ldr x4, [x6, #0]
-	csel x3, x4, x3, hs
-	str x3, [x5, #0]
-	add x16, x16, #8
-	add x6, x6, #8
-	add x5, x5, #8
-	sub x14, x14, #1
-	cbnz x14, 2162b
-2159:
-	ldr x3, [x0, #208]
-	lsr x3, x3, #1
-	str x3, [x0, #208]
-	cbnz x3, 2157b
 2152:
-	b 2150f
-2149:
-	ldr x3, [x0, #248]
-	movz x9, #1, lsl #0
-	movz x13, #64, lsl #0
-	sub x6, x3, #1
-	cbz x6, 2163f
-2165:
-	lsr x3, x3, #1
-	add x9, x9, x9
-	sub x13, x13, #1
-	sub x6, x3, #1
-	cbnz x6, 2165b
-	b 2164f
-2163:
-2164:
 	str x9, [x0, #208]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_7}
 	umov x30, v31.d[0]
-2166:
+2154:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #248]
 	ldr x4, [x0, #208]
 	and x3, x3, x4
-	cbnz x3, 2167f
-	b 2168f
-2167:
+	cbnz x3, 2155f
+	b 2156f
+2155:
 	ldr x5, [x0, #112]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -2161,14 +2105,14 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2169:
+2157:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2169b
+	cbnz x14, 2157b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -2176,7 +2120,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2170:
+2158:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2185,12 +2129,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2170b
+	cbnz x14, 2158b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2171:
+2159:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2199,40 +2143,40 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2171b
-2168:
+	cbnz x14, 2159b
+2156:
 	ldr x3, [x0, #208]
 	lsr x3, x3, #1
 	str x3, [x0, #208]
-	cbnz x3, 2166b
-2150:
+	cbnz x3, 2154b
+2138:
 	ldr x0, [x0, #232]
 	ldr x8, [x0, #96]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2172:
+2160:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2172b
+	cbnz x14, 2160b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #112]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-2173:
+2161:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2174:
+2162:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2174b
+	cbnz x14, 2162b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -2240,13 +2184,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2175:
+2163:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2175b
+	cbnz x14, 2163b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -2268,7 +2212,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2176:
+2164:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -2277,7 +2221,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2176b
+	cbnz x14, 2164b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -2285,7 +2229,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2177:
+2165:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2294,12 +2238,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2177b
+	cbnz x14, 2165b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2178:
+2166:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2308,43 +2252,43 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2178b
+	cbnz x14, 2166b
 	ldr x3, [x0, #176]
-	cbnz x3, 2173b
+	cbnz x3, 2161b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #112]
 	add x14, x12, #0
-2179:
+2167:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2179b
+	cbnz x14, 2167b
 	ldr x0, [x0, #128]
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2180:
+2168:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2180b
+	cbnz x14, 2168b
 	ldr x5, [x0, #240]
 	ldr x16, [x5, #112]
 	ldr x12, [x5, #48]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2181:
+2169:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2181b
+	cbnz x14, 2169b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_1_1_4}
 	umov x30, v31.d[0]
@@ -2360,27 +2304,27 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2182:
+2170:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2182b
+	cbnz x14, 2170b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #112]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-2183:
+2171:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2184:
+2172:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2184b
+	cbnz x14, 2172b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -2388,13 +2332,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2185:
+2173:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2185b
+	cbnz x14, 2173b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -2416,7 +2360,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2186:
+2174:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -2425,7 +2369,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2186b
+	cbnz x14, 2174b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -2433,7 +2377,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2187:
+2175:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2442,12 +2386,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2187b
+	cbnz x14, 2175b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2188:
+2176:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2456,9 +2400,9 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2188b
+	cbnz x14, 2176b
 	ldr x3, [x0, #176]
-	cbnz x3, 2183b
+	cbnz x3, 2171b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #200]
 	str x3, [x0, #136]
@@ -2477,13 +2421,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2189:
+2177:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2189b
+	cbnz x14, 2177b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -2494,27 +2438,27 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2190:
+2178:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2190b
+	cbnz x14, 2178b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2191:
+2179:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2191b
+	cbnz x14, 2179b
 	movz x3, #30, lsl #0
 	str x3, [x0, #160]
-2192:
+2180:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_5_5_4}
 	umov x30, v31.d[0]
@@ -2528,17 +2472,17 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #104]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2193:
+2181:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2193b
+	cbnz x14, 2181b
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2192b
+	cbnz x3, 2180b
 	movz x3, #0, lsl #0
 	str x3, [x0, #216]
 	str x3, [x0, #160]
@@ -2550,10 +2494,10 @@ vg_rsa_private_crt_precomputed:
 	movz x4, #1, lsl #0
 	movz x5, #0, lsl #0
 	csel x9, x4, x5, hs
-	cbnz x9, 2194f
-	b 2195f
-2194:
-2196:
+	cbnz x9, 2182f
+	b 2183f
+2182:
+2184:
 	ldr x3, [x0, #136]
 	ldr x4, [x0, #152]
 	add x3, x3, x4
@@ -2649,15 +2593,15 @@ vg_rsa_private_crt_precomputed:
 	movz x4, #1, lsl #0
 	movz x5, #0, lsl #0
 	csel x9, x4, x5, hs
-	cbnz x9, 2196b
-2195:
+	cbnz x9, 2184b
+2183:
 	ldr x3, [x0, #144]
 	ldr x4, [x0, #152]
 	sub x3, x3, x4
-	cbnz x3, 2197f
-	b 2198f
-2197:
-2199:
+	cbnz x3, 2185f
+	b 2186f
+2185:
+2187:
 	ldr x3, [x0, #136]
 	ldr x4, [x0, #152]
 	add x3, x3, x4
@@ -2667,6 +2611,120 @@ vg_rsa_private_crt_precomputed:
 	lsl x3, x3, #1
 	ldr x4, [x0, #168]
 	lsr x4, x4, #7
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2188f
+	b 2189f
+2188:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2189:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #6
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2190f
+	b 2191f
+2190:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2191:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #5
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2192f
+	b 2193f
+2192:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2193:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #4
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2194f
+	b 2195f
+2194:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2195:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #3
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2196f
+	b 2197f
+2196:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2197:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #2
+	movz x5, #1, lsl #0
+	and x4, x4, x5
+	orr x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #160]
+	add x3, x3, #1
+	str x3, [x0, #160]
+	sub x3, x3, #5
+	cbz x3, 2198f
+	b 2199f
+2198:
+	mov v7.d[0], x30
+	bl {vg_rsa_square_window5}
+	umov x30, v7.d[0]
+2199:
+	ldr x3, [x0, #216]
+	lsl x3, x3, #1
+	ldr x4, [x0, #168]
+	lsr x4, x4, #1
 	movz x5, #1, lsl #0
 	and x4, x4, x5
 	orr x3, x3, x4
@@ -2685,7 +2743,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x3, [x0, #216]
 	lsl x3, x3, #1
 	ldr x4, [x0, #168]
-	lsr x4, x4, #6
+	lsr x4, x4, #0
 	movz x5, #1, lsl #0
 	and x4, x4, x5
 	orr x3, x3, x4
@@ -2701,150 +2759,36 @@ vg_rsa_private_crt_precomputed:
 	bl {vg_rsa_square_window5}
 	umov x30, v7.d[0]
 2203:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #5
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2204f
-	b 2205f
-2204:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2205:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #4
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2206f
-	b 2207f
-2206:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2207:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #3
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2208f
-	b 2209f
-2208:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2209:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #2
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2210f
-	b 2211f
-2210:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2211:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #1
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2212f
-	b 2213f
-2212:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2213:
-	ldr x3, [x0, #216]
-	lsl x3, x3, #1
-	ldr x4, [x0, #168]
-	lsr x4, x4, #0
-	movz x5, #1, lsl #0
-	and x4, x4, x5
-	orr x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #160]
-	add x3, x3, #1
-	str x3, [x0, #160]
-	sub x3, x3, #5
-	cbz x3, 2214f
-	b 2215f
-2214:
-	mov v7.d[0], x30
-	bl {vg_rsa_square_window5}
-	umov x30, v7.d[0]
-2215:
 	ldr x3, [x0, #152]
 	add x3, x3, #1
 	str x3, [x0, #152]
 	ldr x3, [x0, #144]
 	ldr x4, [x0, #152]
 	sub x3, x3, x4
-	cbnz x3, 2199b
-2198:
+	cbnz x3, 2187b
+2186:
 	ldr x3, [x0, #160]
-	cbnz x3, 2216f
-	b 2217f
-2216:
-2218:
+	cbnz x3, 2204f
+	b 2205f
+2204:
+2206:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2218b
+	cbnz x3, 2206b
 	ldr x12, [x0, #48]
 	lsr x3, x12, #3
 	movz x4, #7, lsl #0
 	and x4, x12, x4
-	cbnz x3, 2219f
+	cbnz x3, 2207f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2221:
+2209:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -2857,7 +2801,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2222:
+2210:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -2867,7 +2811,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2222b
+	cbnz x14, 2210b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -2878,15 +2822,15 @@ vg_rsa_private_crt_precomputed:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #32
-	cbnz x4, 2221b
-	b 2220f
-2219:
-	cbz x4, 2223f
+	cbnz x4, 2209b
+	b 2208f
+2207:
+	cbz x4, 2211f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2225:
+2213:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -2899,7 +2843,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2226:
+2214:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -2909,7 +2853,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2226b
+	cbnz x14, 2214b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -2920,9 +2864,9 @@ vg_rsa_private_crt_precomputed:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #32
-	cbnz x4, 2225b
-	b 2224f
-2223:
+	cbnz x4, 2213b
+	b 2212f
+2211:
 	ldr x12, [x0, #48]
 	add x6, x12, #2
 	lsl x6, x6, #3
@@ -2932,7 +2876,7 @@ vg_rsa_private_crt_precomputed:
 	movz x2, #1, lsl #0
 	dup v24.2d, x2
 	ldr x17, [x0, #104]
-2227:
+2215:
 	ldr x16, [x0, #104]
 	sub x16, x17, x16
 	ldr x3, [x0, #200]
@@ -2943,7 +2887,7 @@ vg_rsa_private_crt_precomputed:
 	movi v17.2d, #0
 	movi v18.2d, #0
 	movi v19.2d, #0
-2228:
+2216:
 	cmeq v20.2d, v23.2d, v22.2d
 	ldr q21, [x16, #0]
 	bit v16.16b, v21.16b, v20.16b
@@ -2956,26 +2900,26 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, x6
 	add v23.2d, v23.2d, v24.2d
 	sub x14, x14, #1
-	cbnz x14, 2228b
+	cbnz x14, 2216b
 	str q16, [x17, #0]
 	str q17, [x17, #16]
 	str q18, [x17, #32]
 	str q19, [x17, #48]
 	add x17, x17, #64
 	sub x13, x13, #1
-	cbnz x13, 2227b
+	cbnz x13, 2215b
 	ldr x3, [x0, #200]
 	lsl x4, x6, #5
 	add x3, x3, x4
 	str x3, [x0, #208]
 	movz x3, #32, lsl #0
 	str x3, [x0, #224]
-2224:
-2220:
+2212:
+2208:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
-2217:
+2205:
 	ldr x0, [x0, #128]
 	ldr x0, [x0, #232]
 	ldr x8, [x0, #96]
@@ -2983,27 +2927,27 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2229:
+2217:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2229b
+	cbnz x14, 2217b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #72]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-2230:
+2218:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2231:
+2219:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2231b
+	cbnz x14, 2219b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -3011,13 +2955,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2232:
+2220:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2232b
+	cbnz x14, 2220b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -3039,7 +2983,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2233:
+2221:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -3048,7 +2992,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2233b
+	cbnz x14, 2221b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -3056,7 +3000,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2234:
+2222:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3065,12 +3009,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2234b
+	cbnz x14, 2222b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2235:
+2223:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3079,9 +3023,9 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2235b
+	cbnz x14, 2223b
 	ldr x3, [x0, #176]
-	cbnz x3, 2230b
+	cbnz x3, 2218b
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #96]
 	ldr x13, [x0, #80]
@@ -3089,7 +3033,7 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2236:
+2224:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3098,7 +3042,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2236b
+	cbnz x14, 2224b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	ldr x10, [x0, #64]
@@ -3106,7 +3050,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x5, [x0, #104]
 	add x14, x12, #0
 	adds x3, x7, x7
-2237:
+2225:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -3116,49 +3060,49 @@ vg_rsa_private_crt_precomputed:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2237b
+	cbnz x14, 2225b
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2238:
+2226:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2238b
+	cbnz x14, 2226b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #224]
 	ldr x2, [x5, #160]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2239:
+2227:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2240f
-	b 2241f
-2240:
+	cbz x5, 2228f
+	b 2229f
+2228:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2241:
-	cbnz x2, 2239b
+2229:
+	cbnz x2, 2227b
 	ldr x15, [x0, #192]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #72]
 	add x14, x12, #0
-2242:
+2230:
 	ldr x3, [x16, #0]
 	and x3, x3, x15
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2242b
+	cbnz x14, 2230b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_5_1}
 	umov x30, v31.d[0]
@@ -3168,23 +3112,23 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x14, x12, x12
 	add x14, x14, #2
-2243:
+2231:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2243b
+	cbnz x14, 2231b
 	ldr x5, [x0, #240]
 	ldr x16, [x5, #112]
 	ldr x12, [x5, #48]
 	ldr x17, [x0, #80]
 	add x14, x12, #0
-2244:
+2232:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2244b
+	cbnz x14, 2232b
 	ldr x5, [x0, #232]
 	ldr x11, [x5, #112]
 	ldr x13, [x5, #48]
@@ -3193,14 +3137,14 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x5, #48]
 	ldr x8, [x0, #80]
 	movz x7, #0, lsl #0
-2245:
+2233:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2246:
+2234:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3212,7 +3156,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2246b
+	cbnz x14, 2234b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -3222,7 +3166,7 @@ vg_rsa_private_crt_precomputed:
 	str x3, [x16, #8]
 	add x8, x8, #8
 	sub x13, x13, #1
-	cbnz x13, 2245b
+	cbnz x13, 2233b
 	ldr x8, [x0, #80]
 	ldr x1, [x0, #128]
 	ldr x9, [x0, #144]
@@ -3230,21 +3174,21 @@ vg_rsa_private_crt_precomputed:
 	ldr x15, [x0, #176]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2247:
+2235:
 	and x5, x2, x6
-	cbz x5, 2248f
-	b 2249f
-2248:
+	cbz x5, 2236f
+	b 2237f
+2236:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2249:
+2237:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2247b
+	cbnz x9, 2235b
 	ldr x0, [x0, #176]
 	movz x3, #1, lsl #0
 	and x0, x0, x3
@@ -3278,21 +3222,21 @@ vg_rsa_private_crt_precomputed:
 	ldr x2, [x0, #144]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2250:
+2238:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2251f
-	b 2252f
-2251:
+	cbz x5, 2239f
+	b 2240f
+2239:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2252:
-	cbnz x2, 2250b
+2240:
+	cbnz x2, 2238b
 	ldr x3, [x8, #0]
 	add x4, x3, #0
 	mul x5, x3, x4
@@ -3323,35 +3267,35 @@ vg_rsa_private_crt_precomputed:
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2253:
+2241:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2254f
-	b 2255f
-2254:
+	cbz x5, 2242f
+	b 2243f
+2242:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2255:
-	cbnz x2, 2253b
+2243:
+	cbnz x2, 2241b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #72]
 	ldr x17, [x0, #64]
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2256:
+2244:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2256b
+	cbnz x14, 2244b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	str x15, [x0, #176]
@@ -3362,11 +3306,11 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2257:
+2245:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2257b
+	cbnz x14, 2245b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -3377,7 +3321,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2258f
+	cbz x3, 2246f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -3387,14 +3331,14 @@ vg_rsa_private_crt_precomputed:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2260:
+2248:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2260b
+	cbnz x14, 2248b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -3404,7 +3348,7 @@ vg_rsa_private_crt_precomputed:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2261:
+2249:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -3416,12 +3360,11 @@ vg_rsa_private_crt_precomputed:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2261b
+	cbnz x13, 2249b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-2262:
-	ldr x8, [x0, #80]
+2250:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -3455,68 +3398,75 @@ vg_rsa_private_crt_precomputed:
 	sub x16, x16, #1
 	tst x4, x4
 	csel x1, x16, x14, eq
-	add x16, x8, #0
-	add x14, x12, #2
-2263:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2263b
-	add x16, x8, #0
+	lsl x13, x12, #3
+	sub x13, x13, #24
+	add x16, x11, x13
+	ldr x3, [x16, #8]
+	ldr x4, [x16, #0]
+	add x17, x9, x13
+	ldr x15, [x17, #8]
+	sub x14, x12, #2
+	tst x14, x14
+	csel x4, x14, x4, eq
+	mul x13, x1, x15
+	umulh x14, x1, x15
+	mul x16, x1, x5
+	umulh x17, x1, x5
+	adds x14, x14, x16
+	adc x17, x17, x7
+	subs x4, x4, x13
+	sbcs x3, x3, x14
+	sbc x2, x2, x17
+	adds x4, x4, x15
+	adcs x3, x3, x5
+	adc x16, x2, x7
+	sub x17, x1, #1
+	tst x2, x2
+	csel x1, x17, x1, mi
+	csel x2, x16, x2, mi
+	lsr x2, x2, #63
+	sub x1, x1, x2
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
-	adds x2, x7, x7
-2264:
+	add x2, x7, #0
+	movz x15, #0, lsl #0
+	sub x15, x15, #1
+	add x13, x15, #0
+	adds x3, x7, x7
+2251:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
 	adcs x4, x4, x2
 	adc x2, x3, x7
 	ldr x3, [x16, #0]
-	adds x4, x4, x3
+	adds x4, x4, x13
+	eor x13, x3, x15
+	eor x4, x4, x15
 	str x4, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2264b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-	ldr x3, [x16, #0]
-	subs x3, x7, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-2265:
-	ldr x4, [x17, #0]
-	ldr x3, [x16, #0]
-	sbcs x3, x4, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2265b
+	cbnz x14, 2251b
+	adc x4, x13, x2
+	eor x4, x4, x15
+	str x4, [x16, #0]
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2266f
+	cbz x3, 2252f
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
 	sub x15, x7, x3
-	add x16, x8, #0
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2268:
+2254:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -3525,93 +3475,58 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2268b
+	cbnz x14, 2254b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
-	b 2267f
-2266:
-2267:
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	cbz x3, 2269f
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	sub x15, x7, x3
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-2271:
-	ldr x4, [x17, #0]
-	and x4, x4, x15
-	ldr x3, [x16, #0]
-	adcs x3, x3, x4
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2271b
-	ldr x3, [x16, #0]
-	adc x3, x3, x7
-	str x3, [x16, #0]
-	b 2270f
-2269:
-2270:
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-2272:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2272b
+	b 2253f
+2252:
+2253:
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2262b
-	b 2259f
-2258:
+	cbnz x13, 2250b
+	b 2247f
+2246:
 	ldr x12, [x0, #48]
 	sub x13, x12, #2
-	cbz x13, 2273f
+	cbz x13, 2255f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	lsl x13, x12, #3
-	sub x13, x13, #16
+	sub x13, x13, #24
 	add x13, x9, x13
-	ldr x15, [x13, #8]
-	ldr x3, [x13, #0]
+	ldr x15, [x13, #16]
+	ldr x3, [x13, #8]
+	ldr x4, [x13, #0]
 	movz x10, #1, lsl #0
 	movz x13, #63, lsl #0
-2275:
+2257:
 	add x16, x15, x15
 	add x17, x10, x10
 	tst x15, x15
 	csel x15, x16, x15, pl
 	csel x10, x17, x10, pl
 	sub x13, x13, #1
-	cbnz x13, 2275b
+	cbnz x13, 2257b
+	mul x16, x3, x10
+	umulh x4, x4, x10
+	add x16, x16, x4
 	umulh x3, x3, x10
 	add x15, x15, x3
 	str x10, [x6, #8]
 	str x15, [x6, #16]
+	str x16, [x6, #24]
 	ldr x5, [x6, #16]
 	sub x2, x7, x5
 	sub x2, x2, #1
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2276:
+2258:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -3623,25 +3538,24 @@ vg_rsa_private_crt_precomputed:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2276b
+	cbnz x13, 2258b
 	str x10, [x6, #0]
 	add x8, x11, #0
 	movz x9, #1, lsl #0
 	sub x13, x12, #1
 	add x16, x8, #0
 	add x14, x12, #2
-2277:
+2259:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2277b
+	cbnz x14, 2259b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	add x13, x12, #1
 	str x13, [x0, #208]
-2278:
-	ldr x8, [x0, #80]
+2260:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -3681,68 +3595,82 @@ vg_rsa_private_crt_precomputed:
 	sub x16, x16, #1
 	tst x4, x4
 	csel x1, x16, x14, eq
-	add x16, x8, #0
-	add x14, x12, #2
-2279:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2279b
-	add x16, x8, #0
+	lsl x13, x12, #3
+	sub x13, x13, #32
+	add x16, x11, x13
+	ldr x3, [x16, #16]
+	ldr x4, [x16, #8]
+	ldr x14, [x16, #0]
+	sub x15, x12, #3
+	tst x15, x15
+	csel x14, x15, x14, eq
+	ldr x17, [x6, #8]
+	mul x3, x3, x17
+	umulh x15, x4, x17
+	add x3, x3, x15
+	mul x4, x4, x17
+	umulh x15, x14, x17
+	add x4, x4, x15
+	ldr x15, [x6, #24]
+	mul x13, x1, x15
+	umulh x14, x1, x15
+	mul x16, x1, x5
+	umulh x17, x1, x5
+	adds x14, x14, x16
+	adc x17, x17, x7
+	subs x4, x4, x13
+	sbcs x3, x3, x14
+	sbc x2, x2, x17
+	adds x4, x4, x15
+	adcs x3, x3, x5
+	adc x16, x2, x7
+	sub x17, x1, #1
+	tst x2, x2
+	csel x1, x17, x1, mi
+	csel x2, x16, x2, mi
+	lsr x2, x2, #63
+	sub x1, x1, x2
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
-	adds x2, x7, x7
-2280:
+	add x2, x7, #0
+	movz x15, #0, lsl #0
+	sub x15, x15, #1
+	add x13, x15, #0
+	adds x3, x7, x7
+2261:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
 	adcs x4, x4, x2
 	adc x2, x3, x7
 	ldr x3, [x16, #0]
-	adds x4, x4, x3
+	adds x4, x4, x13
+	eor x13, x3, x15
+	eor x4, x4, x15
 	str x4, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2280b
-	adc x2, x2, x7
-	ldr x3, [x16, #0]
-	adds x3, x3, x2
-	str x3, [x16, #0]
-	ldr x3, [x16, #8]
-	adc x3, x3, x7
-	str x3, [x16, #8]
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-	ldr x3, [x16, #0]
-	subs x3, x7, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-2281:
-	ldr x4, [x17, #0]
-	ldr x3, [x16, #0]
-	sbcs x3, x4, x3
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2281b
+	cbnz x14, 2261b
+	adc x4, x13, x2
+	eor x4, x4, x15
+	str x4, [x16, #0]
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2282f
+	cbz x3, 2262f
 	lsl x13, x12, #3
-	add x13, x8, x13
+	add x13, x11, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
 	sub x15, x7, x3
-	add x16, x8, #0
+	add x16, x11, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2284:
+2264:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -3751,59 +3679,19 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2284b
+	cbnz x14, 2264b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
-	b 2283f
-2282:
-2283:
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	cbz x3, 2285f
-	lsl x13, x12, #3
-	add x13, x8, x13
-	ldr x3, [x13, #0]
-	lsr x3, x3, #63
-	sub x15, x7, x3
-	add x16, x8, #0
-	add x17, x9, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-2287:
-	ldr x4, [x17, #0]
-	and x4, x4, x15
-	ldr x3, [x16, #0]
-	adcs x3, x3, x4
-	str x3, [x16, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2287b
-	ldr x3, [x16, #0]
-	adc x3, x3, x7
-	str x3, [x16, #0]
-	b 2286f
-2285:
-2286:
-	add x16, x8, #0
-	add x17, x11, #0
-	add x14, x12, #0
-2288:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2288b
+	b 2263f
+2262:
+2263:
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2278b
-	b 2274f
-2273:
+	cbnz x13, 2260b
+	b 2256f
+2255:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -3813,27 +3701,27 @@ vg_rsa_private_crt_precomputed:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2289f
-2291:
+	cbz x6, 2265f
+2267:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2291b
-	b 2290f
-2289:
-2290:
+	cbnz x6, 2267b
+	b 2266f
+2265:
+2266:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2292:
+2268:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2292b
+	cbnz x14, 2268b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -3841,7 +3729,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2293:
+2269:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -3852,14 +3740,14 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2294:
+2270:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2294b
+	cbnz x14, 2270b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -3867,7 +3755,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2295:
+2271:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3876,12 +3764,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2295b
+	cbnz x14, 2271b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2296:
+2272:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3890,23 +3778,23 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2296b
+	cbnz x14, 2272b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2293b
+	cbnz x13, 2269b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2297:
+2273:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2297b
-2274:
-2259:
+	cbnz x13, 2273b
+2256:
+2247:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_5_1_4}
 	umov x30, v31.d[0]
@@ -3992,63 +3880,63 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2298:
+2274:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2298b
+	cbnz x14, 2274b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #152]
 	ldr x2, [x5, #160]
 	ldr x8, [x0, #64]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2299:
+2275:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2300f
-	b 2301f
-2300:
+	cbz x5, 2276f
+	b 2277f
+2276:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2301:
-	cbnz x2, 2299b
+2277:
+	cbnz x2, 2275b
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2302:
+2278:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2302b
+	cbnz x14, 2278b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #224]
 	ldr x2, [x5, #160]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2303:
+2279:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2304f
-	b 2305f
-2304:
+	cbz x5, 2280f
+	b 2281f
+2280:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2305:
-	cbnz x2, 2303b
+2281:
+	cbnz x2, 2279b
 	ldr x0, [x0, #128]
 	ldr x0, [x0, #240]
 	ldr x8, [x0, #64]
@@ -4056,32 +3944,32 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2306:
+2282:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2306b
+	cbnz x14, 2282b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #184]
 	ldr x2, [x5, #192]
 	ldr x8, [x0, #64]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2307:
+2283:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2308f
-	b 2309f
-2308:
+	cbz x5, 2284f
+	b 2285f
+2284:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2309:
-	cbnz x2, 2307b
+2285:
+	cbnz x2, 2283b
 	ldr x0, [x0, #128]
 	ldr x0, [x0, #232]
 	ldr x12, [x0, #48]
@@ -4090,14 +3978,14 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2310:
+2286:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2310b
+	cbnz x14, 2286b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	ldr x5, [x0, #128]
@@ -4111,13 +3999,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #64]
 	add x14, x12, #0
-2311:
+2287:
 	ldr x3, [x16, #0]
 	and x3, x3, x15
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2311b
+	cbnz x14, 2287b
 	movz x4, #3, lsl #0
 	and x5, x15, x4
 	eor x5, x5, x4
@@ -4156,11 +4044,11 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2312:
+2288:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2312b
+	cbnz x14, 2288b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -4173,13 +4061,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #64]
 	add x14, x12, #0
-2313:
+2289:
 	ldr x3, [x16, #0]
 	and x3, x3, x15
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2313b
+	cbnz x14, 2289b
 	movz x4, #3, lsl #0
 	and x5, x15, x4
 	eor x5, x5, x4
@@ -4218,11 +4106,11 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2314:
+2290:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2314b
+	cbnz x14, 2290b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -4233,11 +4121,11 @@ vg_rsa_private_crt_precomputed:
 	movz x3, #0, lsl #0
 	movz x7, #0, lsl #0
 	movz x8, #1, lsl #0
-2315:
+2291:
 	add x3, x3, x5
 	subs x4, x3, x12
 	csel x4, x7, x8, hs
-	cbnz x4, 2315b
+	cbnz x4, 2291b
 	add x3, x3, x5
 	sub x3, x3, x12
 	lsl x3, x3, #6
@@ -4248,7 +4136,7 @@ vg_rsa_private_crt_precomputed:
 	sub x13, x13, #8
 	add x13, x10, x13
 	ldr x4, [x13, #0]
-	cbz x4, 2316f
+	cbz x4, 2292f
 	ldr x13, [x0, #248]
 	lsr x13, x13, #6
 	sub x5, x12, #1
@@ -4256,53 +4144,53 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	movz x8, #1, lsl #0
 	csel x6, x8, x7, lo
-	cbz x6, 2318f
+	cbz x6, 2294f
 	movz x9, #1, lsl #0
 	ldr x8, [x0, #112]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2320:
+2296:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2320b
+	cbnz x14, 2296b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_6}
 	umov x30, v31.d[0]
-	b 2319f
-2318:
+	b 2295f
+2294:
 	ldr x3, [x0, #248]
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2321f
-2323:
+	cbz x6, 2297f
+2299:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2323b
-	b 2322f
-2321:
-2322:
+	cbnz x6, 2299b
+	b 2298f
+2297:
+2298:
 	str x9, [x0, #208]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_7}
 	umov x30, v31.d[0]
-2324:
+2300:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #248]
 	ldr x4, [x0, #208]
 	and x3, x3, x4
-	cbnz x3, 2325f
-	b 2326f
-2325:
+	cbnz x3, 2301f
+	b 2302f
+2301:
 	ldr x5, [x0, #112]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -4313,10 +4201,324 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2327:
+2303:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
+	add x17, x17, #8
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2303b
+	adc x3, x7, x7
+	str x3, [x16, #0]
+	add x16, x8, #0
+	add x17, x10, #0
+	add x13, x6, #0
+	add x14, x12, #0
+	subs x3, x7, x7
+2304:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x13, x13, #8
+	sub x14, x14, #1
+	cbnz x14, 2304b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	add x16, x8, #0
+	add x14, x12, #0
+2305:
+	ldr x3, [x16, #0]
+	ldr x4, [x6, #0]
+	csel x3, x4, x3, hs
+	str x3, [x5, #0]
+	add x16, x16, #8
+	add x6, x6, #8
+	add x5, x5, #8
+	sub x14, x14, #1
+	cbnz x14, 2305b
+2302:
+	ldr x3, [x0, #208]
+	lsr x3, x3, #1
+	str x3, [x0, #208]
+	cbnz x3, 2300b
+2295:
+	b 2293f
+2292:
+	ldr x3, [x0, #248]
+	movz x9, #1, lsl #0
+	movz x13, #64, lsl #0
+	sub x6, x3, #1
+	cbz x6, 2306f
+2308:
+	lsr x3, x3, #1
+	add x9, x9, x9
+	sub x13, x13, #1
+	sub x6, x3, #1
+	cbnz x6, 2308b
+	b 2307f
+2306:
+2307:
+	str x9, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_4_7}
+	umov x30, v31.d[0]
+2309:
+	mov v31.d[0], x30
+	bl {vg_rsa_square_6_6}
+	umov x30, v31.d[0]
+	ldr x3, [x0, #248]
+	ldr x4, [x0, #208]
+	and x3, x3, x4
+	cbnz x3, 2310f
+	b 2311f
+2310:
+	ldr x5, [x0, #112]
+	ldr x10, [x0, #64]
+	ldr x8, [x0, #80]
+	ldr x6, [x0, #88]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x17, x5, #0
+	add x16, x8, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+2312:
+	ldr x3, [x17, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x17, x17, #8
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2312b
+	adc x3, x7, x7
+	str x3, [x16, #0]
+	add x16, x8, #0
+	add x17, x10, #0
+	add x13, x6, #0
+	add x14, x12, #0
+	subs x3, x7, x7
+2313:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x13, x13, #8
+	sub x14, x14, #1
+	cbnz x14, 2313b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	add x16, x8, #0
+	add x14, x12, #0
+2314:
+	ldr x3, [x16, #0]
+	ldr x4, [x6, #0]
+	csel x3, x4, x3, hs
+	str x3, [x5, #0]
+	add x16, x16, #8
+	add x6, x6, #8
+	add x5, x5, #8
+	sub x14, x14, #1
+	cbnz x14, 2314b
+2311:
+	ldr x3, [x0, #208]
+	lsr x3, x3, #1
+	str x3, [x0, #208]
+	cbnz x3, 2309b
+2293:
+	ldr x0, [x0, #240]
+	ldr x8, [x0, #96]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2315:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2315b
+	ldr x5, [x0, #128]
+	ldr x3, [x5, #112]
+	str x3, [x0, #184]
+	ldr x3, [x5, #48]
+	str x3, [x0, #176]
+2316:
+	ldr x8, [x0, #72]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2317:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2317b
+	ldr x3, [x0, #176]
+	ldr x12, [x0, #48]
+	subs x4, x3, x12
+	csel x12, x12, x3, hs
+	ldr x16, [x0, #184]
+	ldr x17, [x0, #72]
+	add x14, x12, #0
+2318:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2318b
+	str x16, [x0, #184]
+	ldr x3, [x0, #176]
+	sub x3, x3, x12
+	str x3, [x0, #176]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_4_4_7}
+	umov x30, v31.d[0]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_5_1_7}
+	umov x30, v31.d[0]
+	ldr x9, [x0, #96]
+	ldr x17, [x0, #104]
+	ldr x10, [x0, #64]
+	ldr x8, [x0, #80]
+	ldr x6, [x0, #88]
+	ldr x5, [x0, #96]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+2319:
+	ldr x3, [x9, #0]
+	ldr x4, [x17, #0]
+	adcs x3, x3, x4
+	str x3, [x16, #0]
+	add x9, x9, #8
+	add x17, x17, #8
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2319b
+	adc x3, x7, x7
+	str x3, [x16, #0]
+	add x16, x8, #0
+	add x17, x10, #0
+	add x13, x6, #0
+	add x14, x12, #0
+	subs x3, x7, x7
+2320:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x13, x13, #8
+	sub x14, x14, #1
+	cbnz x14, 2320b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	add x16, x8, #0
+	add x14, x12, #0
+2321:
+	ldr x3, [x16, #0]
+	ldr x4, [x6, #0]
+	csel x3, x4, x3, hs
+	str x3, [x5, #0]
+	add x16, x16, #8
+	add x6, x6, #8
+	add x5, x5, #8
+	sub x14, x14, #1
+	cbnz x14, 2321b
+	ldr x3, [x0, #176]
+	cbnz x3, 2316b
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #96]
+	ldr x17, [x0, #112]
+	add x14, x12, #0
+2322:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2322b
+	ldr x0, [x0, #128]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_5_6}
+	umov x30, v31.d[0]
+	ldr x0, [x0, #240]
+	ldr x8, [x0, #96]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2323:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2323b
+	ldr x5, [x0, #128]
+	ldr x3, [x5, #112]
+	str x3, [x0, #184]
+	ldr x3, [x5, #48]
+	str x3, [x0, #176]
+2324:
+	ldr x8, [x0, #72]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2325:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2325b
+	ldr x3, [x0, #176]
+	ldr x12, [x0, #48]
+	subs x4, x3, x12
+	csel x12, x12, x3, hs
+	ldr x16, [x0, #184]
+	ldr x17, [x0, #72]
+	add x14, x12, #0
+2326:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2326b
+	str x16, [x0, #184]
+	ldr x3, [x0, #176]
+	sub x3, x3, x12
+	str x3, [x0, #176]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_4_4_7}
+	umov x30, v31.d[0]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_5_1_7}
+	umov x30, v31.d[0]
+	ldr x9, [x0, #96]
+	ldr x17, [x0, #104]
+	ldr x10, [x0, #64]
+	ldr x8, [x0, #80]
+	ldr x6, [x0, #88]
+	ldr x5, [x0, #96]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+2327:
+	ldr x3, [x9, #0]
+	ldr x4, [x17, #0]
+	adcs x3, x3, x4
+	str x3, [x16, #0]
+	add x9, x9, #8
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
@@ -4352,42 +4554,248 @@ vg_rsa_private_crt_precomputed:
 	add x5, x5, #8
 	sub x14, x14, #1
 	cbnz x14, 2329b
-2326:
-	ldr x3, [x0, #208]
-	lsr x3, x3, #1
-	str x3, [x0, #208]
+	ldr x3, [x0, #176]
 	cbnz x3, 2324b
-2319:
-	b 2317f
-2316:
+	ldr x5, [x0, #128]
+	ldr x3, [x5, #216]
+	str x3, [x0, #136]
+	ldr x3, [x5, #192]
+	str x3, [x0, #144]
+	movz x3, #0, lsl #0
+	str x3, [x0, #152]
+	ldr x3, [x0, #120]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #200]
+	str x3, [x0, #208]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2330:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2330b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #96]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2331:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2331b
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #96]
+	ldr x17, [x0, #104]
+	add x14, x12, #0
+2332:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2332b
+	movz x3, #14, lsl #0
+	str x3, [x0, #160]
+2333:
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_5_5_4}
+	umov x30, v31.d[0]
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #104]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2334:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2334b
+	ldr x3, [x0, #160]
+	sub x3, x3, #1
+	str x3, [x0, #160]
+	cbnz x3, 2333b
+2335:
+	ldr x3, [x0, #136]
+	ldr x4, [x0, #152]
+	add x3, x3, x4
+	ldrb w3, [x3, #0]
+	str x3, [x0, #168]
+	movz x3, #2, lsl #0
+	str x3, [x0, #160]
+2336:
+	mov v31.d[0], x30
+	bl {vg_rsa_square_6_6}
+	umov x30, v31.d[0]
+	mov v31.d[0], x30
+	bl {vg_rsa_square_6_6}
+	umov x30, v31.d[0]
+	mov v31.d[0], x30
+	bl {vg_rsa_square_6_6}
+	umov x30, v31.d[0]
+	mov v31.d[0], x30
+	bl {vg_rsa_square_6_6}
+	umov x30, v31.d[0]
+	ldr x3, [x0, #168]
+	lsl x4, x3, #4
+	str x4, [x0, #168]
+	lsr x3, x3, #4
+	movz x4, #15, lsl #0
+	and x3, x3, x4
+	str x3, [x0, #216]
+	ldr x3, [x0, #200]
+	str x3, [x0, #208]
+	movz x3, #0, lsl #0
+	str x3, [x0, #224]
+2337:
+	ldr x3, [x0, #224]
+	ldr x4, [x0, #216]
+	eor x3, x3, x4
+	movz x4, #1, lsl #0
+	subs x3, x3, x4
+	movz x7, #0, lsl #0
+	sub x4, x7, #1
+	csel x15, x7, x4, hs
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #208]
+	ldr x17, [x0, #104]
+	add x14, x12, #0
+2338:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	eor x3, x3, x4
+	and x3, x3, x15
+	eor x4, x4, x3
+	str x4, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2338b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	ldr x3, [x0, #224]
+	add x3, x3, #1
+	str x3, [x0, #224]
+	sub x4, x3, #16
+	cbnz x4, 2337b
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
+	ldr x3, [x0, #160]
+	sub x3, x3, #1
+	str x3, [x0, #160]
+	cbnz x3, 2336b
+	ldr x3, [x0, #152]
+	add x3, x3, #1
+	str x3, [x0, #152]
+	ldr x4, [x0, #144]
+	sub x3, x4, x3
+	cbnz x3, 2335b
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_7}
+	umov x30, v31.d[0]
+	ldr x0, [x0, #128]
+	ldr x5, [x0, #232]
+	ldr x5, [x5, #48]
+	ldr x12, [x0, #48]
+	movz x3, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #1, lsl #0
+2339:
+	add x3, x3, x5
+	subs x4, x3, x12
+	csel x4, x7, x8, hs
+	cbnz x4, 2339b
+	add x3, x3, x5
+	sub x3, x3, x12
+	lsl x3, x3, #6
+	str x3, [x0, #248]
+	ldr x12, [x0, #48]
+	ldr x10, [x0, #64]
+	lsl x13, x12, #3
+	sub x13, x13, #8
+	add x13, x10, x13
+	ldr x4, [x13, #0]
+	cbz x4, 2340f
+	ldr x13, [x0, #248]
+	lsr x13, x13, #6
+	sub x5, x12, #1
+	subs x6, x13, x5
+	movz x7, #0, lsl #0
+	movz x8, #1, lsl #0
+	csel x6, x8, x7, lo
+	cbz x6, 2342f
+	movz x9, #1, lsl #0
+	ldr x8, [x0, #112]
+	movz x7, #0, lsl #0
+	add x16, x8, #0
+	add x14, x12, #2
+2344:
+	str x7, [x16, #0]
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2344b
+	lsl x16, x13, #3
+	add x16, x8, x16
+	str x9, [x16, #0]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_4_6}
+	umov x30, v31.d[0]
+	b 2343f
+2342:
 	ldr x3, [x0, #248]
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2330f
-2332:
+	cbz x6, 2345f
+2347:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2332b
-	b 2331f
-2330:
-2331:
+	cbnz x6, 2347b
+	b 2346f
+2345:
+2346:
 	str x9, [x0, #208]
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_7}
 	umov x30, v31.d[0]
-2333:
+2348:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #248]
 	ldr x4, [x0, #208]
 	and x3, x3, x4
-	cbnz x3, 2334f
-	b 2335f
-2334:
+	cbnz x3, 2349f
+	b 2350f
+2349:
 	ldr x5, [x0, #112]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -4398,239 +4806,10 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2336:
+2351:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
-	add x17, x17, #8
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2336b
-	adc x3, x7, x7
-	str x3, [x16, #0]
-	add x16, x8, #0
-	add x17, x10, #0
-	add x13, x6, #0
-	add x14, x12, #0
-	subs x3, x7, x7
-2337:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 2337b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	add x16, x8, #0
-	add x14, x12, #0
-2338:
-	ldr x3, [x16, #0]
-	ldr x4, [x6, #0]
-	csel x3, x4, x3, hs
-	str x3, [x5, #0]
-	add x16, x16, #8
-	add x6, x6, #8
-	add x5, x5, #8
-	sub x14, x14, #1
-	cbnz x14, 2338b
-2335:
-	ldr x3, [x0, #208]
-	lsr x3, x3, #1
-	str x3, [x0, #208]
-	cbnz x3, 2333b
-2317:
-	ldr x0, [x0, #240]
-	ldr x8, [x0, #96]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2339:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2339b
-	ldr x5, [x0, #128]
-	ldr x3, [x5, #112]
-	str x3, [x0, #184]
-	ldr x3, [x5, #48]
-	str x3, [x0, #176]
-2340:
-	ldr x8, [x0, #72]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2341:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2341b
-	ldr x3, [x0, #176]
-	ldr x12, [x0, #48]
-	subs x4, x3, x12
-	csel x12, x12, x3, hs
-	ldr x16, [x0, #184]
-	ldr x17, [x0, #72]
-	add x14, x12, #0
-2342:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2342b
-	str x16, [x0, #184]
-	ldr x3, [x0, #176]
-	sub x3, x3, x12
-	str x3, [x0, #176]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_4_4_7}
-	umov x30, v31.d[0]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_5_1_7}
-	umov x30, v31.d[0]
-	ldr x9, [x0, #96]
-	ldr x17, [x0, #104]
-	ldr x10, [x0, #64]
-	ldr x8, [x0, #80]
-	ldr x6, [x0, #88]
-	ldr x5, [x0, #96]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-2343:
-	ldr x3, [x9, #0]
-	ldr x4, [x17, #0]
-	adcs x3, x3, x4
-	str x3, [x16, #0]
-	add x9, x9, #8
-	add x17, x17, #8
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2343b
-	adc x3, x7, x7
-	str x3, [x16, #0]
-	add x16, x8, #0
-	add x17, x10, #0
-	add x13, x6, #0
-	add x14, x12, #0
-	subs x3, x7, x7
-2344:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 2344b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	add x16, x8, #0
-	add x14, x12, #0
-2345:
-	ldr x3, [x16, #0]
-	ldr x4, [x6, #0]
-	csel x3, x4, x3, hs
-	str x3, [x5, #0]
-	add x16, x16, #8
-	add x6, x6, #8
-	add x5, x5, #8
-	sub x14, x14, #1
-	cbnz x14, 2345b
-	ldr x3, [x0, #176]
-	cbnz x3, 2340b
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #96]
-	ldr x17, [x0, #112]
-	add x14, x12, #0
-2346:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2346b
-	ldr x0, [x0, #128]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_5_6}
-	umov x30, v31.d[0]
-	ldr x0, [x0, #240]
-	ldr x8, [x0, #96]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2347:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2347b
-	ldr x5, [x0, #128]
-	ldr x3, [x5, #112]
-	str x3, [x0, #184]
-	ldr x3, [x5, #48]
-	str x3, [x0, #176]
-2348:
-	ldr x8, [x0, #72]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2349:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2349b
-	ldr x3, [x0, #176]
-	ldr x12, [x0, #48]
-	subs x4, x3, x12
-	csel x12, x12, x3, hs
-	ldr x16, [x0, #184]
-	ldr x17, [x0, #72]
-	add x14, x12, #0
-2350:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2350b
-	str x16, [x0, #184]
-	ldr x3, [x0, #176]
-	sub x3, x3, x12
-	str x3, [x0, #176]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_4_4_7}
-	umov x30, v31.d[0]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_5_1_7}
-	umov x30, v31.d[0]
-	ldr x9, [x0, #96]
-	ldr x17, [x0, #104]
-	ldr x10, [x0, #64]
-	ldr x8, [x0, #80]
-	ldr x6, [x0, #88]
-	ldr x5, [x0, #96]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-2351:
-	ldr x3, [x9, #0]
-	ldr x4, [x17, #0]
-	adcs x3, x3, x4
-	str x3, [x16, #0]
-	add x9, x9, #8
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
@@ -4666,415 +4845,124 @@ vg_rsa_private_crt_precomputed:
 	add x5, x5, #8
 	sub x14, x14, #1
 	cbnz x14, 2353b
-	ldr x3, [x0, #176]
-	cbnz x3, 2348b
-	ldr x5, [x0, #128]
-	ldr x3, [x5, #216]
-	str x3, [x0, #136]
-	ldr x3, [x5, #192]
-	str x3, [x0, #144]
-	movz x3, #0, lsl #0
-	str x3, [x0, #152]
-	ldr x3, [x0, #120]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #200]
-	str x3, [x0, #208]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
-2354:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2354b
+2350:
 	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
+	lsr x3, x3, #1
 	str x3, [x0, #208]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #96]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
-2355:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2355b
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #96]
-	ldr x17, [x0, #104]
-	add x14, x12, #0
+	cbnz x3, 2348b
+2343:
+	b 2341f
+2340:
+	ldr x3, [x0, #248]
+	movz x9, #1, lsl #0
+	movz x13, #64, lsl #0
+	sub x6, x3, #1
+	cbz x6, 2354f
 2356:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2356b
-	movz x3, #14, lsl #0
-	str x3, [x0, #160]
+	lsr x3, x3, #1
+	add x9, x9, x9
+	sub x13, x13, #1
+	sub x6, x3, #1
+	cbnz x6, 2356b
+	b 2355f
+2354:
+2355:
+	str x9, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_4_7}
+	umov x30, v31.d[0]
 2357:
 	mov v31.d[0], x30
-	bl {vg_rsa_mul_5_5_4}
+	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #104]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
+	ldr x3, [x0, #248]
+	ldr x4, [x0, #208]
+	and x3, x3, x4
+	cbnz x3, 2358f
+	b 2359f
 2358:
+	ldr x5, [x0, #112]
+	ldr x10, [x0, #64]
+	ldr x8, [x0, #80]
+	ldr x6, [x0, #88]
+	ldr x12, [x0, #48]
+	movz x7, #0, lsl #0
+	add x17, x5, #0
+	add x16, x8, #0
+	add x14, x12, #0
+	adds x3, x7, x7
+2360:
+	ldr x3, [x17, #0]
+	adcs x3, x3, x3
+	str x3, [x16, #0]
+	add x17, x17, #8
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 2360b
+	adc x3, x7, x7
+	str x3, [x16, #0]
+	add x16, x8, #0
+	add x17, x10, #0
+	add x13, x6, #0
+	add x14, x12, #0
+	subs x3, x7, x7
+2361:
 	ldr x3, [x16, #0]
-	str x3, [x17, #0]
+	ldr x4, [x17, #0]
+	sbcs x3, x3, x4
+	str x3, [x13, #0]
 	add x16, x16, #8
 	add x17, x17, #8
+	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2358b
-	ldr x3, [x0, #160]
-	sub x3, x3, #1
-	str x3, [x0, #160]
-	cbnz x3, 2357b
-2359:
-	ldr x3, [x0, #136]
-	ldr x4, [x0, #152]
-	add x3, x3, x4
-	ldrb w3, [x3, #0]
-	str x3, [x0, #168]
-	movz x3, #2, lsl #0
-	str x3, [x0, #160]
-2360:
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	ldr x3, [x0, #168]
-	lsl x4, x3, #4
-	str x4, [x0, #168]
-	lsr x3, x3, #4
-	movz x4, #15, lsl #0
-	and x3, x3, x4
-	str x3, [x0, #216]
-	ldr x3, [x0, #200]
-	str x3, [x0, #208]
-	movz x3, #0, lsl #0
-	str x3, [x0, #224]
-2361:
-	ldr x3, [x0, #224]
-	ldr x4, [x0, #216]
-	eor x3, x3, x4
-	movz x4, #1, lsl #0
-	subs x3, x3, x4
-	movz x7, #0, lsl #0
-	sub x4, x7, #1
-	csel x15, x7, x4, hs
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #208]
-	ldr x17, [x0, #104]
+	cbnz x14, 2361b
+	ldr x3, [x16, #0]
+	sbcs x3, x3, x7
+	add x16, x8, #0
 	add x14, x12, #0
 2362:
 	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	eor x3, x3, x4
-	and x3, x3, x15
-	eor x4, x4, x3
-	str x4, [x17, #0]
+	ldr x4, [x6, #0]
+	csel x3, x4, x3, hs
+	str x3, [x5, #0]
 	add x16, x16, #8
-	add x17, x17, #8
+	add x6, x6, #8
+	add x5, x5, #8
 	sub x14, x14, #1
 	cbnz x14, 2362b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	ldr x3, [x0, #224]
-	add x3, x3, #1
-	str x3, [x0, #224]
-	sub x4, x3, #16
-	cbnz x4, 2361b
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
-	ldr x3, [x0, #160]
-	sub x3, x3, #1
-	str x3, [x0, #160]
-	cbnz x3, 2360b
-	ldr x3, [x0, #152]
-	add x3, x3, #1
-	str x3, [x0, #152]
-	ldr x4, [x0, #144]
-	sub x3, x4, x3
-	cbnz x3, 2359b
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_7}
-	umov x30, v31.d[0]
-	ldr x0, [x0, #128]
-	ldr x5, [x0, #232]
-	ldr x5, [x5, #48]
-	ldr x12, [x0, #48]
-	movz x3, #0, lsl #0
-	movz x7, #0, lsl #0
-	movz x8, #1, lsl #0
-2363:
-	add x3, x3, x5
-	subs x4, x3, x12
-	csel x4, x7, x8, hs
-	cbnz x4, 2363b
-	add x3, x3, x5
-	sub x3, x3, x12
-	lsl x3, x3, #6
-	str x3, [x0, #248]
-	ldr x12, [x0, #48]
-	ldr x10, [x0, #64]
-	lsl x13, x12, #3
-	sub x13, x13, #8
-	add x13, x10, x13
-	ldr x4, [x13, #0]
-	cbz x4, 2364f
-	ldr x13, [x0, #248]
-	lsr x13, x13, #6
-	sub x5, x12, #1
-	subs x6, x13, x5
-	movz x7, #0, lsl #0
-	movz x8, #1, lsl #0
-	csel x6, x8, x7, lo
-	cbz x6, 2366f
-	movz x9, #1, lsl #0
-	ldr x8, [x0, #112]
-	movz x7, #0, lsl #0
-	add x16, x8, #0
-	add x14, x12, #2
-2368:
-	str x7, [x16, #0]
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2368b
-	lsl x16, x13, #3
-	add x16, x8, x16
-	str x9, [x16, #0]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_4_6}
-	umov x30, v31.d[0]
-	b 2367f
-2366:
-	ldr x3, [x0, #248]
-	movz x9, #1, lsl #0
-	movz x13, #64, lsl #0
-	sub x6, x3, #1
-	cbz x6, 2369f
-2371:
-	lsr x3, x3, #1
-	add x9, x9, x9
-	sub x13, x13, #1
-	sub x6, x3, #1
-	cbnz x6, 2371b
-	b 2370f
-2369:
-2370:
-	str x9, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_4_7}
-	umov x30, v31.d[0]
-2372:
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	ldr x3, [x0, #248]
-	ldr x4, [x0, #208]
-	and x3, x3, x4
-	cbnz x3, 2373f
-	b 2374f
-2373:
-	ldr x5, [x0, #112]
-	ldr x10, [x0, #64]
-	ldr x8, [x0, #80]
-	ldr x6, [x0, #88]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x17, x5, #0
-	add x16, x8, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-2375:
-	ldr x3, [x17, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x17, x17, #8
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2375b
-	adc x3, x7, x7
-	str x3, [x16, #0]
-	add x16, x8, #0
-	add x17, x10, #0
-	add x13, x6, #0
-	add x14, x12, #0
-	subs x3, x7, x7
-2376:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 2376b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	add x16, x8, #0
-	add x14, x12, #0
-2377:
-	ldr x3, [x16, #0]
-	ldr x4, [x6, #0]
-	csel x3, x4, x3, hs
-	str x3, [x5, #0]
-	add x16, x16, #8
-	add x6, x6, #8
-	add x5, x5, #8
-	sub x14, x14, #1
-	cbnz x14, 2377b
-2374:
+2359:
 	ldr x3, [x0, #208]
 	lsr x3, x3, #1
 	str x3, [x0, #208]
-	cbnz x3, 2372b
-2367:
-	b 2365f
-2364:
-	ldr x3, [x0, #248]
-	movz x9, #1, lsl #0
-	movz x13, #64, lsl #0
-	sub x6, x3, #1
-	cbz x6, 2378f
-2380:
-	lsr x3, x3, #1
-	add x9, x9, x9
-	sub x13, x13, #1
-	sub x6, x3, #1
-	cbnz x6, 2380b
-	b 2379f
-2378:
-2379:
-	str x9, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_4_7}
-	umov x30, v31.d[0]
-2381:
-	mov v31.d[0], x30
-	bl {vg_rsa_square_6_6}
-	umov x30, v31.d[0]
-	ldr x3, [x0, #248]
-	ldr x4, [x0, #208]
-	and x3, x3, x4
-	cbnz x3, 2382f
-	b 2383f
-2382:
-	ldr x5, [x0, #112]
-	ldr x10, [x0, #64]
-	ldr x8, [x0, #80]
-	ldr x6, [x0, #88]
-	ldr x12, [x0, #48]
-	movz x7, #0, lsl #0
-	add x17, x5, #0
-	add x16, x8, #0
-	add x14, x12, #0
-	adds x3, x7, x7
-2384:
-	ldr x3, [x17, #0]
-	adcs x3, x3, x3
-	str x3, [x16, #0]
-	add x17, x17, #8
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 2384b
-	adc x3, x7, x7
-	str x3, [x16, #0]
-	add x16, x8, #0
-	add x17, x10, #0
-	add x13, x6, #0
-	add x14, x12, #0
-	subs x3, x7, x7
-2385:
-	ldr x3, [x16, #0]
-	ldr x4, [x17, #0]
-	sbcs x3, x3, x4
-	str x3, [x13, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x13, x13, #8
-	sub x14, x14, #1
-	cbnz x14, 2385b
-	ldr x3, [x16, #0]
-	sbcs x3, x3, x7
-	add x16, x8, #0
-	add x14, x12, #0
-2386:
-	ldr x3, [x16, #0]
-	ldr x4, [x6, #0]
-	csel x3, x4, x3, hs
-	str x3, [x5, #0]
-	add x16, x16, #8
-	add x6, x6, #8
-	add x5, x5, #8
-	sub x14, x14, #1
-	cbnz x14, 2386b
-2383:
-	ldr x3, [x0, #208]
-	lsr x3, x3, #1
-	str x3, [x0, #208]
-	cbnz x3, 2381b
-2365:
+	cbnz x3, 2357b
+2341:
 	ldr x0, [x0, #232]
 	ldr x8, [x0, #96]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2387:
+2363:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2387b
+	cbnz x14, 2363b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #112]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-2388:
+2364:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2389:
+2365:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2389b
+	cbnz x14, 2365b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -5082,13 +4970,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2390:
+2366:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2390b
+	cbnz x14, 2366b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -5110,7 +4998,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2391:
+2367:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -5119,7 +5007,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2391b
+	cbnz x14, 2367b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -5127,7 +5015,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2392:
+2368:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -5136,12 +5024,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2392b
+	cbnz x14, 2368b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2393:
+2369:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -5150,43 +5038,43 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2393b
+	cbnz x14, 2369b
 	ldr x3, [x0, #176]
-	cbnz x3, 2388b
+	cbnz x3, 2364b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #112]
 	add x14, x12, #0
-2394:
+2370:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2394b
+	cbnz x14, 2370b
 	ldr x0, [x0, #128]
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2395:
+2371:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2395b
+	cbnz x14, 2371b
 	ldr x5, [x0, #240]
 	ldr x16, [x5, #112]
 	ldr x12, [x5, #48]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2396:
+2372:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2396b
+	cbnz x14, 2372b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_1_1_4}
 	umov x30, v31.d[0]
@@ -5202,27 +5090,27 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2397:
+2373:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2397b
+	cbnz x14, 2373b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #112]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-2398:
+2374:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2399:
+2375:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2399b
+	cbnz x14, 2375b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -5230,13 +5118,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2400:
+2376:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2400b
+	cbnz x14, 2376b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -5258,7 +5146,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2401:
+2377:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -5267,7 +5155,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2401b
+	cbnz x14, 2377b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -5275,7 +5163,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2402:
+2378:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -5284,12 +5172,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2402b
+	cbnz x14, 2378b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2403:
+2379:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -5298,9 +5186,9 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2403b
+	cbnz x14, 2379b
 	ldr x3, [x0, #176]
-	cbnz x3, 2398b
+	cbnz x3, 2374b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #200]
 	str x3, [x0, #136]
@@ -5319,13 +5207,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2404:
+2380:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2404b
+	cbnz x14, 2380b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -5336,27 +5224,27 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2405:
+2381:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2405b
+	cbnz x14, 2381b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2406:
+2382:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2406b
+	cbnz x14, 2382b
 	movz x3, #14, lsl #0
 	str x3, [x0, #160]
-2407:
+2383:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_5_5_4}
 	umov x30, v31.d[0]
@@ -5370,18 +5258,18 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #104]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2408:
+2384:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2408b
+	cbnz x14, 2384b
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2407b
-2409:
+	cbnz x3, 2383b
+2385:
 	ldr x3, [x0, #136]
 	ldr x4, [x0, #152]
 	add x3, x3, x4
@@ -5389,7 +5277,7 @@ vg_rsa_private_crt_precomputed:
 	str x3, [x0, #168]
 	movz x3, #2, lsl #0
 	str x3, [x0, #160]
-2410:
+2386:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
@@ -5413,7 +5301,7 @@ vg_rsa_private_crt_precomputed:
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2411:
+2387:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -5426,7 +5314,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2412:
+2388:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -5436,7 +5324,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2412b
+	cbnz x14, 2388b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -5447,20 +5335,20 @@ vg_rsa_private_crt_precomputed:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #16
-	cbnz x4, 2411b
+	cbnz x4, 2387b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2410b
+	cbnz x3, 2386b
 	ldr x3, [x0, #152]
 	add x3, x3, #1
 	str x3, [x0, #152]
 	ldr x4, [x0, #144]
 	sub x3, x4, x3
-	cbnz x3, 2409b
+	cbnz x3, 2385b
 	ldr x0, [x0, #128]
 	ldr x0, [x0, #232]
 	ldr x8, [x0, #96]
@@ -5468,27 +5356,27 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2413:
+2389:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2413b
+	cbnz x14, 2389b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #72]
 	str x3, [x0, #184]
 	ldr x3, [x5, #48]
 	str x3, [x0, #176]
-2414:
+2390:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2415:
+2391:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2415b
+	cbnz x14, 2391b
 	ldr x3, [x0, #176]
 	ldr x12, [x0, #48]
 	subs x4, x3, x12
@@ -5496,13 +5384,13 @@ vg_rsa_private_crt_precomputed:
 	ldr x16, [x0, #184]
 	ldr x17, [x0, #72]
 	add x14, x12, #0
-2416:
+2392:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2416b
+	cbnz x14, 2392b
 	str x16, [x0, #184]
 	ldr x3, [x0, #176]
 	sub x3, x3, x12
@@ -5524,7 +5412,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2417:
+2393:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -5533,7 +5421,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2417b
+	cbnz x14, 2393b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -5541,7 +5429,7 @@ vg_rsa_private_crt_precomputed:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2418:
+2394:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -5550,12 +5438,12 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2418b
+	cbnz x14, 2394b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2419:
+2395:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -5564,9 +5452,9 @@ vg_rsa_private_crt_precomputed:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2419b
+	cbnz x14, 2395b
 	ldr x3, [x0, #176]
-	cbnz x3, 2414b
+	cbnz x3, 2390b
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #96]
 	ldr x13, [x0, #80]
@@ -5574,7 +5462,7 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2420:
+2396:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -5583,7 +5471,7 @@ vg_rsa_private_crt_precomputed:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2420b
+	cbnz x14, 2396b
 	sub x4, x7, #1
 	csel x15, x7, x4, hs
 	ldr x10, [x0, #64]
@@ -5591,7 +5479,7 @@ vg_rsa_private_crt_precomputed:
 	ldr x5, [x0, #104]
 	add x14, x12, #0
 	adds x3, x7, x7
-2421:
+2397:
 	ldr x3, [x10, #0]
 	and x3, x3, x15
 	ldr x4, [x8, #0]
@@ -5601,49 +5489,49 @@ vg_rsa_private_crt_precomputed:
 	add x8, x8, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2421b
+	cbnz x14, 2397b
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2422:
+2398:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2422b
+	cbnz x14, 2398b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #224]
 	ldr x2, [x5, #160]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2423:
+2399:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2424f
-	b 2425f
-2424:
+	cbz x5, 2400f
+	b 2401f
+2400:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2425:
-	cbnz x2, 2423b
+2401:
+	cbnz x2, 2399b
 	ldr x15, [x0, #192]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #72]
 	add x14, x12, #0
-2426:
+2402:
 	ldr x3, [x16, #0]
 	and x3, x3, x15
 	str x3, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2426b
+	cbnz x14, 2402b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_5_1}
 	umov x30, v31.d[0]
@@ -5653,23 +5541,23 @@ vg_rsa_private_crt_precomputed:
 	movz x7, #0, lsl #0
 	add x14, x12, x12
 	add x14, x14, #2
-2427:
+2403:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2427b
+	cbnz x14, 2403b
 	ldr x5, [x0, #240]
 	ldr x16, [x5, #112]
 	ldr x12, [x5, #48]
 	ldr x17, [x0, #80]
 	add x14, x12, #0
-2428:
+2404:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2428b
+	cbnz x14, 2404b
 	ldr x5, [x0, #232]
 	ldr x11, [x5, #112]
 	ldr x13, [x5, #48]
@@ -5678,14 +5566,14 @@ vg_rsa_private_crt_precomputed:
 	ldr x12, [x5, #48]
 	ldr x8, [x0, #80]
 	movz x7, #0, lsl #0
-2429:
+2405:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2430:
+2406:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -5697,7 +5585,7 @@ vg_rsa_private_crt_precomputed:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2430b
+	cbnz x14, 2406b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -5707,7 +5595,7 @@ vg_rsa_private_crt_precomputed:
 	str x3, [x16, #8]
 	add x8, x8, #8
 	sub x13, x13, #1
-	cbnz x13, 2429b
+	cbnz x13, 2405b
 	ldr x8, [x0, #80]
 	ldr x1, [x0, #128]
 	ldr x9, [x0, #144]
@@ -5715,21 +5603,21 @@ vg_rsa_private_crt_precomputed:
 	ldr x15, [x0, #176]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2431:
+2407:
 	and x5, x2, x6
-	cbz x5, 2432f
-	b 2433f
-2432:
+	cbz x5, 2408f
+	b 2409f
+2408:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2433:
+2409:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2431b
+	cbnz x9, 2407b
 	ldr x0, [x0, #176]
 	movz x3, #1, lsl #0
 	and x0, x0, x3
@@ -5739,11 +5627,11 @@ vg_rsa_private_crt_precomputed:
 	ldr x1, [x0, #128]
 	ldr x2, [x0, #144]
 	movz x3, #0, lsl #0
-2434:
+2410:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2434b
+	cbnz x2, 2410b
 	movz x0, #0, lsl #0
 21:
 	ret

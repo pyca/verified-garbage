@@ -59,7 +59,11 @@ def vals (v : Vals) : Nat → Nat :=
     aQI v.qI) aN v.n
 
 /-- The header words the checks write. -/
-abbrev bodySlots : List Nat := [sB, sC, sT, sF, sMask, VG.Impl.Rsa.X86.KeyRt.sCy, VG.Impl.Rsa.X86.KeyRt.sQb]
+abbrev bodySlots : List Nat := [sB, sC, sT, sF, sMask, VG.Impl.Rsa.X86.KeyRt.sCy, VG.Impl.Rsa.X86.KeyRt.sQb,
+  VG.Impl.Rsa.X86.WordModRt.oD, VG.Impl.Rsa.X86.WordModRt.oV, VG.Impl.Bignum.X86.R2Words.oMask VG.Impl.Rsa.X86.WordModRt.h0,
+  VG.Impl.Rsa.X86.WordModRt.oSteps, VG.Impl.Rsa.X86.WordModRt.oQ, VG.Impl.Rsa.X86.WordModRt.oU0,
+  VG.Impl.Rsa.X86.WordModRt.oU2, VG.Impl.Rsa.X86.WordModRt.oD1, VG.Impl.Rsa.X86.WordModRt.oDig,
+  VG.Impl.Rsa.X86.WordModRt.oJ, VG.Impl.Rsa.X86.KeyCheckRt.sG]
 
 /-- The workspace base and stack pointer are preserved. -/
 abbrev bodyRegs : List Reg := [.eax, .ecx, .edx, .ebp, .ebx, .esi]

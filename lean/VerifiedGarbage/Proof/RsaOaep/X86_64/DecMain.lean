@@ -113,7 +113,7 @@ theorem decMain_ok {s t : State} (hp : DPre s) (he : EnvD s t) (hsy : t.syms = s
   have sS : Region.Sub ⟨stackArg s 15, oRsa⟩ (scrD s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
   have A0 : LabAt t (fb s) (stackArg s 15) W (stackArg s 11) (stackArg s 12).toNat :=
     ⟨w27, by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq], (stackArg s 12).isLt,
-      Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, he.rd, hp.hrd]; simp),
+      Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, he.rd]; exact hp.hrd _ (by simp)),
       hp.dlbs.sub_right sS, hp.dKlb.sub_left (ret_subD s)⟩
   refine WP.seq (WP.mono_syms (wp_good (hashLabelT_good hgi hgu hgf oLh)
     (hashLabelT_ok hH.stream hgi hgu (Hs := mH.G) mH.hash (dtabL hp he hsy okL hmL hDmL) (Table.TJ.refl t _) rfl

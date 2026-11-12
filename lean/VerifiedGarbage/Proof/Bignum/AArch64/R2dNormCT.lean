@@ -73,7 +73,7 @@ def R2nG (L : Ws) (s : State) : Prop := R2dGoodS L s ∧ 3 ≤ L.w
 /-- After `bases`, with `w ≥ 3`. -/
 def R2nR (L : Ws) (s : State) : Prop := R2dStepR L s ∧ 3 ≤ L.w
 
-theorem pins_r2nR : Pins R2nR [.x8, .x9, .x11, .x6, .x12, .x7] :=
+theorem pins_r2nR : Pins R2nR [.x9, .x11, .x6, .x12, .x7] :=
   fun L s₁ s₂ h₁ h₂ => pins_r2dStepR L s₁ s₂ h₁.1 h₂.1
 
 theorem r2nBases_ok {L : Ws} {t : State} (h : R2nG L t) : WP isa (.block R2Div.bases) t (R2nR L) :=
@@ -97,7 +97,7 @@ structure R2nS where
 def R2nS.d (p : R2nS) : Nat := p.M * 2 ^ p.z / 2 ^ (64 * (p.L.w - 1))
 
 /-- `q̂` of `x`, `m` and `z`. -/
-def R2nS.q (p : R2nS) : Nat := min (p.X * 2 ^ p.z / 2 ^ (64 * (p.L.w - 2)) / p.d) (2 ^ 64 - 1)
+def R2nS.q (p : R2nS) : Nat := r2dQN p.X p.M p.L.w p.z
 
 /-- `stepN`'s precondition (`r2dStepN_ok`'s), with `m`, `x` and `z`. -/
 def R2nSPre (p : R2nS) (s : State) : Prop :=
@@ -105,33 +105,31 @@ def R2nSPre (p : R2nS) (s : State) : Prop :=
     (word s.mem p.L.B (slot p.L.w aTmp + 8)).toNat = 2 ^ p.z ∧
     (word s.mem p.L.B (slot p.L.w aTmp + 16)).toNat = p.d ∧ 2 ^ 63 ≤ p.d ∧
     (word s.mem p.L.B (slot p.L.w aTmp)).toNat = (2 ^ 128 - 1) / p.d - 2 ^ 64 ∧
+    (word s.mem p.L.B (slot p.L.w aTmp + 24)).toNat = p.M * 2 ^ p.z / 2 ^ (64 * (p.L.w - 2)) % 2 ^ 64 ∧
     wv s.mem p.L.B (slot p.L.w aR2) p.L.w = p.X ∧ p.X < p.M
 
 /-- After a step's first pieces: `t = 2^64 x - q̂ m` with a borrow. -/
 def R2nSMid (p : R2nS) (s : State) : Prop :=
   R2dGoodS p.L s ∧ StepRegs s p.L.B p.L.w ∧ wv s.mem p.L.B (slot p.L.w aN) p.L.w = p.M ∧
-    ∃ b : Bool, wv s.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1) + p.q * p.M =
+    ∃ b : Bool, wv s.mem p.L.B (slot p.L.w aR2) (p.L.w + 1) + p.q * p.M =
       2 ^ 64 * p.X + 2 ^ (64 * (p.L.w + 1)) * b.toNat
 
 theorem r2nSPre_mid {p : R2nS} {s : State} (h : R2nSPre p s) :
-    WP isa (seqs [.block (R2Div.bases ++ quotN), zeroAcc, mulAddRow, subPass]) s (R2nSMid p) := by
-  obtain ⟨⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, hw3⟩, hN, hz, hP, hD, hd, hv, hX, hXM⟩ := h
-  have hXd : wv s.mem p.L.B (slot p.L.w aR2) p.L.w * 2 ^ p.z / 2 ^ (64 * (p.L.w - 1)) ≤ p.d := by
-    rw [hX]; exact Nat.div_le_div_right (Nat.mul_le_mul_right _ (Nat.le_of_lt hXM))
-  refine WP.mono (r2dStepPreN_ok hg hZ hw3 hw' hN hP hz hD hd hv hXd)
+    WP isa (seqs [.block (R2Div.bases ++ quotN), .block quot3N, mulSub]) s (R2nSMid p) := by
+  obtain ⟨⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, hw3⟩, hN, hz, hP, hD, hd, hv, hDl, hX, hXM⟩ := h
+  refine WP.mono (r2dStepPreN_ok hg hZ hw3 hw' hN hP hz hD hd hv hDl (by rw [hX]; exact hXM))
     fun t ⟨g, r, hN', ⟨b, hb⟩, _, _⟩ => ⟨⟨mi, ⟨g, hZ⟩, hw, hw'⟩, r, hN', b, ?_⟩
-  have hq : r2dQN s.mem p.L.B p.L.w p.z p.d = p.q := by unfold r2dQN R2nS.q; rw [hX]
-  rw [hq, hX] at hb; exact hb
+  rw [hX] at hb; exact hb
 
 /-- Runs with the same `m`, `x` and `z` leave the same `t`. -/
 theorem r2nSMid_bind (p : R2nS) (s₁ s₂ : State) (h₁ : R2nSMid p s₁) (h₂ : R2nSMid p s₂) :
     ∃ q, R2pABPre q s₁ ∧ R2pABPre q s₂ := by
   obtain ⟨g₁, r₁, n₁, b₁, e₁⟩ := h₁
   obtain ⟨g₂, r₂, n₂, b₂, e₂⟩ := h₂
-  refine ⟨⟨p.L, p.M, wv s₁.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)⟩, ⟨g₁, r₁, n₁, rfl⟩, ⟨g₂, r₂, n₂, ?_⟩⟩
-  show wv s₂.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1) = wv s₁.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)
-  have l₁ := wv_lt s₁.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)
-  have l₂ := wv_lt s₂.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)
+  refine ⟨⟨p.L, p.M, wv s₁.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)⟩, ⟨g₁, r₁, n₁, rfl⟩, ⟨g₂, r₂, n₂, ?_⟩⟩
+  show wv s₂.mem p.L.B (slot p.L.w aR2) (p.L.w + 1) = wv s₁.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)
+  have l₁ := wv_lt s₁.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)
+  have l₂ := wv_lt s₂.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)
   generalize 2 ^ (64 * (p.L.w + 1)) = W at *
   generalize p.q * p.M = Q at *
   generalize 2 ^ 64 * p.X = X at *
@@ -141,11 +139,11 @@ theorem r2nSMid_bind (p : R2nS) (s₁ s₂ : State) (h₁ : R2nSMid p s₁) (h�
 /-- A step's first pieces leak the same, and leave the same `t`, in runs with
 the same `m`, `x` and `z`. -/
 theorem r2nStepPre_ct :
-    RelCT isa (Two R2nSPre) (seqs [.block (R2Div.bases ++ quotN), zeroAcc, mulAddRow, subPass]) (Two R2pABPre) := by
-  have hct : RelCT isa (Two R2nSPre) (seqs [.block (R2Div.bases ++ quotN), zeroAcc, mulAddRow, subPass])
+    RelCT isa (Two R2nSPre) (seqs [.block (R2Div.bases ++ quotN), .block quot3N, mulSub]) (Two R2pABPre) := by
+  have hct : RelCT isa (Two R2nSPre) (seqs [.block (R2Div.bases ++ quotN), .block quot3N, mulSub])
       fun _ _ => True := by
     refine two_map (fun (p : R2nS) => p.L) (fun _ _ h => h.1) ?_
-    show RelCT isa (Two R2nG) (.seq (.block (R2Div.bases ++ quotN)) (.seq zeroAcc (.seq mulAddRow subPass))) _
+    show RelCT isa (Two R2nG) (.seq (.block (R2Div.bases ++ quotN)) (.seq (.block quot3N) mulSub)) _
     refine RelCT.seq (RelCT.block_append (RelCT.seq
       (two_piece (Ψ := R2nR) [.x0] (pins_r2dGood id fun _ _ h => h.1) (by taint_decide)
         fun _ _ h => r2nBases_ok h)
@@ -153,16 +151,14 @@ theorem r2nStepPre_ct :
       (two_taint _ pins_r2dStepR (by taint_decide))
   exact (two_post hct fun _ _ h => r2nSPre_mid h).mono (fun _ _ h => h) fun _ _ h => two_bind r2nSMid_bind h
 
-theorem r2nStep_eq : stepN = seqs (([.block (R2Div.bases ++ quotN), zeroAcc, mulAddRow, subPass] : List (Prog isa)) ++
-    ([addBackPub, addBackPub, copyBack] : List (Prog isa))) := rfl
+theorem r2nStep_eq : stepN = seqs (([.block (R2Div.bases ++ quotN), .block quot3N, mulSub] : List (Prog isa)) ++
+    ([addBackPub] : List (Prog isa))) := rfl
 
 /-- `stepN` leaks the same in runs with the same `m`, `x` and `z`. -/
 theorem r2nStep_ct : RelCT isa (Two R2nSPre) stepN fun _ _ => True := by
   rw [r2nStep_eq]
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq r2nStepPre_ct ?_)
-  show RelCT isa (Two R2pABPre) (.seq addBackPub (.seq addBackPub copyBack)) _
-  refine RelCT.seq r2pAddBack_ct (RelCT.seq (r2pAddBack_ct.mono (fun _ _ h => r2p_two_next h) fun _ _ h => r2p_two_next h) ?_)
-  exact two_taint _ (pins_r2pABPre.r2pOf fun _ _ h => h) (by taint_decide)
+  exact RelCT.seqs_append (by simp) (by simp) (RelCT.seq r2nStepPre_ct (r2pAddBack_ct.mono (fun _ _ h => h)
+    fun _ _ _ => trivial))
 
 /-! ## The steps -/
 
@@ -189,8 +185,8 @@ def R2nSsAt (p : R2nSs) (j : Nat) (t : State) : Prop :=
 theorem r2nSsAt_sPre {p : R2nSs} {j : Nat} {t : State} (h : R2nSsAt p j t) :
     R2nSPre ⟨p.L, p.M, p.X0 * 2 ^ (64 * j) % p.M, p.z⟩ t := by
   obtain ⟨_, mi, hI, hZ, hw, hw', hz, hd, hM0⟩ := h
-  exact ⟨⟨⟨mi, ⟨hI.g, hZ⟩, by show 2 ≤ p.L.w; omega_arith, by show p.L.w < 2 ^ 31; omega_arith⟩, hw⟩, hI.n, hz, hI.p, hI.d, hd, hI.v, hI.x,
-    Nat.mod_lt _ hM0⟩
+  exact ⟨⟨⟨mi, ⟨hI.g, hZ⟩, by show 2 ≤ p.L.w; omega_arith, by show p.L.w < 2 ^ 31; omega_arith⟩, hw⟩, hI.n, hz, hI.p, hI.d, hd, hI.v,
+    hI.dl, hI.x, Nat.mod_lt _ hM0⟩
 
 theorem r2nSteps_eq : stepsN =
     .seq (.block [sth .x13 sCnt]) (.loop (.seq stepN (.block (dblCount sCnt))) (.nonzero .x .x13)) := rfl
@@ -200,8 +196,8 @@ theorem r2nSteps_ct : RelCT isa (Two R2nSsPre) stepsN fun _ _ => True := by
   rw [r2nSteps_eq]
   refine RelCT.seq (two_piece (Ψ := fun p s => 0 < p.L.w + 1 ∧ R2nSsAt p 0 s) [.x0]
     (pins_r2dGood (fun (p : R2nSs) => p.L) fun _ _ h => h.1.1) (by taint_decide) ?_) ?_
-  · rintro p s ⟨⟨⟨mi, hg, hw, hw'⟩, hw3⟩, hw30, h13, -, hN, hz, hP, hD, hd, hv, hX, hXM⟩
-    refine WP.mono (r2dStepsStartN_ok hg.1 hg.2 (by omega_arith) h13 hN hP hD hv (by rw [hX]; exact hXM)) fun t hI =>
+  · rintro p s ⟨⟨⟨mi, hg, hw, hw'⟩, hw3⟩, hw30, h13, -, hN, hz, hP, hD, hd, hv, hDl, hX, hXM⟩
+    refine WP.mono (r2dStepsStartN_ok hg.1 hg.2 (by omega_arith) h13 hN hP hD hv hDl (by rw [hX]; exact hXM)) fun t hI =>
       ⟨by omega_arith, s, mi, ?_, hg.2, hw3, hw30, hz, hd, Nat.lt_of_le_of_lt (Nat.zero_le _) hXM⟩
     rw [hX] at hI; exact hI
   refine (two_loop (Φ := R2nSsAt) (Ψ := fun _ _ => True) (fun p => p.L.w + 1) ?_ ?_).mono (fun _ _ h => h)
@@ -211,7 +207,7 @@ theorem r2nSteps_ct : RelCT isa (Two R2nSsPre) stepsN fun _ _ => True := by
         (fun _ _ h => r2nSsAt_sPre h.2) r2nStep_ct) ?_)
       (two_taint _ (pins_r2dGood (·.1.L) fun _ _ h => h) (by taint_decide))
     rintro ⟨p, j⟩ s ⟨hj, σ, mi, hI, hZ, hw, hw', hz, hd, hM0⟩
-    exact WP.mono (r2dStepN_ok hI.g hZ hw (by omega_arith) hI.n hI.p hz hI.d hd hI.v
+    exact WP.mono (r2dStepN_ok hI.g hZ hw (by omega_arith) hI.n hI.p hz hI.d hd hI.v hI.dl
       (by rw [hI.x]; exact Nat.mod_lt _ hM0)) fun t ⟨g, _, _, _⟩ => ⟨mi, ⟨g, hZ⟩, by omega_arith, by omega_arith⟩
   · rintro p j s hj ⟨σ, mi, hI, hZ, hw, hw', hz, hd, hM0⟩
     exact WP.mono (stepsIterN_ok hZ hw (by omega_arith) hz hd hM0 (by omega_arith) hj hI)
@@ -272,8 +268,9 @@ theorem r2nHead_ct : RelCT isa (Two R2nFPre) fastNHead (Two R2nSsPre) := by
   refine (two_post (Ψ := fun (q : Ws × Nat) t => ∃ z, R2nSsPre ⟨q.1, q.2, 2 ^ (64 * (q.1.w - 1)), z⟩ t) hct ?_).mono
     (fun _ _ h => h) fun _ _ h => two_bind (fun q s₁ s₂ h₁ h₂ => ?_) h
   · rintro q s ⟨⟨⟨mi, hg, hw, hw'⟩, hw3⟩, hw30, hN, hodd, hlo⟩
-    exact WP.mono (r2dFastNHead_ok hg.1 hg.2 hw3 hw30 hN hodd hlo) fun t ⟨g, h13, N, ⟨z, hz, P, D, hd, V⟩, X, hlt, _, _⟩ =>
-      ⟨z, ⟨⟨mi, ⟨g, hg.2⟩, hw, hw'⟩, hw3⟩, hw30, h13, ⟨⟨⟨mi, ⟨g, hg.2⟩, hw, hw'⟩, hw3⟩, N, hz, P, D, hd, V, X, hlt⟩⟩
+    exact WP.mono (r2dFastNHead_ok hg.1 hg.2 hw3 hw30 hN hodd hlo)
+      fun t ⟨g, h13, N, ⟨z, hz, P, D, hd, V, Dl⟩, X, hlt, _, _⟩ =>
+      ⟨z, ⟨⟨mi, ⟨g, hg.2⟩, hw, hw'⟩, hw3⟩, hw30, h13, ⟨⟨⟨mi, ⟨g, hg.2⟩, hw, hw'⟩, hw3⟩, N, hz, P, D, hd, V, Dl, X, hlt⟩⟩
   · obtain ⟨z₁, h₁⟩ := h₁
     obtain ⟨z₂, h₂⟩ := h₂
     have e : z₁ = z₂ := by
