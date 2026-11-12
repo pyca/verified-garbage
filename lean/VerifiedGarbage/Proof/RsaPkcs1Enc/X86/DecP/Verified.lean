@@ -50,7 +50,10 @@ theorem ok_narrow {P : EP} {pre : BitVec 32} {L : Nat} {σ : State} (h : (P.layP
     rcases List.mem_append.mp hr with hr | hr
     · exact List.mem_append_left _ (subro r hr)
     · exact List.mem_append_right _ hr
-  refine ⟨h.sp, rfl, rfl, h.BC, ?_, fun r hr => h.stk r (sub r hr), h.ret, ?_, h.wrw,
+  refine ⟨h.sp, fun _ hr => hr,
+    fun _ hr => (List.cons_subset_cons _ (List.cons_subset_cons _ (List.subset_append_left _ _))) hr,
+    ⟨_, Nat.le_refl _, List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_append_right _ (List.mem_singleton_self _)))⟩, h.BC, ?_, fun r hr => h.stk r (sub r hr), h.ret, ?_, h.wrw,
     fun r hr => h.fits r (sub r hr), ?_⟩
   · simp only [Lay.A, EP.argv, List.length_cons, List.length_nil]; omega
   · intro w hw r hr
