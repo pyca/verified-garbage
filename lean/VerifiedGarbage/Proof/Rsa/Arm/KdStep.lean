@@ -73,7 +73,7 @@ abbrev divRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r10, .r11, .r1
 
 /-- Put back `r7`–`r9` in a `Rest` over every register. -/
 theorem rest_back {s t : State} {B : BitVec 32} {Z w N : Nat} {ws : List Reg} (h : Ws s B Z w N)
-    (ht : Ws t B Z w N) (r : Rest ws s t) (hws : ∀ x ∈ ws, x ∈ divRegs ++ [.r7, .r8, .r9] := by decide) :
+    (ht : Ws t B Z w N) (r : Rest ws s t) (hws : ∀ x ∈ ws, x ∈ divRegs ++ ([.r7, .r8, .r9] : List Reg) := by decide) :
     Rest divRegs s t := by
   have K := r.mono hws
   refine ⟨fun x hx => ?_, K.rd, K.wr, K.sp⟩

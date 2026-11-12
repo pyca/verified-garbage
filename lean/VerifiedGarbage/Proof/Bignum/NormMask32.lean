@@ -1,6 +1,8 @@
 module
+-- separate module: target-independent arithmetic of the normalization by a word, beside `WordStep32`, for the 32-bit targets' divisions by words
 
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # A 32-bit word's normalization by doublings under a mask

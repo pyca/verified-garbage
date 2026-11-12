@@ -1,4 +1,5 @@
 module
+-- separate module: the proof of the division by words is split in a chain of modules (`KdNorm`, `KdTop`, `KdEst`, `KdStep`, `KdDiv`), so that a change rebuilds only the modules after it
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KdRun
 public import VerifiedGarbage.Proof.Framework.Arm.Keep
