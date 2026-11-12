@@ -391,6 +391,27 @@ def convG (o : Ops m α) : Seg m α
     pure [u, zn, n3, q3, ta, tb]
   | _ => pure []
 
+/-! ### An entry kept as limbs -/
+
+/-- An entry as the seven vectors it is kept as: `ta`, and for `tb`, whose first lane alone counts,
+its first four limbs as the lanes of one vector, then its last (in the places of `tb`'s first and
+last rows; the three between are left as they are). -/
+def packT (o : Ops m α) : Seg m α
+  | [u, zn, n3, q3, ta, tb] => do
+    let v ← col o tb.l0 tb.l1 tb.l2 tb.l3 0
+    pure [u, zn, n3, q3, ta, ⟨v, tb.l1, tb.l2, tb.l3, tb.l4⟩]
+  | _ => pure []
+
+/-- An entry from its seven vectors (`raw`: the vector of `tb`'s first four limbs, then that of its
+last): `packT`'s inverse, in `tb`'s first lane. -/
+def unpackT (o : Ops m α) : Seg m α
+  | [u, zn, n3, q3, ta, raw] => do
+    let t1 ← o.perm raw.l0 85
+    let t2 ← o.perm raw.l0 170
+    let t3 ← o.perm raw.l0 255
+    pure [u, zn, n3, q3, ta, ⟨raw.l0, t1, t2, t3, raw.l1⟩]
+  | _ => pure []
+
 end
 
 /-! ## The blocks -/
@@ -469,6 +490,26 @@ def convQBlk : Staged := staged (do let s ← stIn; let r ← rawQ; pure (s ++ [
 /-- The entry of the affine point at `rdx`, into `ymm20`–`ymm29`. -/
 def convGBlk : Staged := staged (do let s ← stIn; let r ← rawG; pure (s ++ [r])) [convG ssa]
 
+/-- An entry's seven vectors, from the entry in `ymm20`–`ymm29`: `ymm20`–`ymm24`, `ymm25` and `ymm29`. -/
+def packTBlk : Staged :=
+  staged (do let s ← stIn; let ta ← regs5 20; let tb ← regs5 25; pure (s ++ [ta, tb])) [packT ssa]
+
+/-- The five rows of `ta` of the entry kept as limbs, three at `rcx` and two at `rdx`, into `ymm20`–`ymm24`. -/
+def loadABlk : Staged :=
+  staged (do
+    let s ← stIn
+    let a ← emit (.ld .rcx 0); let b ← emit (.ld .rcx 32); let c ← emit (.ld .rcx 64)
+    let d ← emit (.ld .rdx 0); let e ← emit (.ld .rdx 32)
+    pure (s ++ [⟨a, b, c, d, e⟩])) [fun xs => pure xs]
+
+/-- `tb` of the entry kept as limbs, its two vectors at `rdx`, into `ymm25`–`ymm29`. -/
+def loadBBlk : Staged :=
+  staged (do
+    let s ← stIn
+    let ta ← regs5 20
+    let v ← emit (.ld .rdx 0); let w ← emit (.ld .rdx 32)
+    pure (s ++ [ta, ⟨v, w, v, v, v⟩])) [unpackT ssa]
+
 /-- The constants of an operation. -/
 def Op.consts : Op → List K4
   | .addc _ c | .andc _ c | .maddc _ _ _ c | .const c => [c]
@@ -477,7 +518,8 @@ def Op.consts : Op → List K4
 
 /-- The constants of the blocks, each once. -/
 def pool : List K4 :=
-  ((dblBlk.ops ++ addBlk.ops ++ setBlk.ops ++ outBlk.ops ++ convQBlk.ops ++ convGBlk.ops).flatMap Op.consts ++
+  ((dblBlk.ops ++ addBlk.ops ++ setBlk.ops ++ outBlk.ops ++ convQBlk.ops ++ convGBlk.ops ++ packTBlk.ops ++
+      loadABlk.ops ++ loadBBlk.ops).flatMap Op.consts ++
     [K4.lanes 0, K4.lanes 3]).eraseDups
 
 /-- The code of a block, in the pieces of its stages, and the places of the

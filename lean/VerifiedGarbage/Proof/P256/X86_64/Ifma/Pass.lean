@@ -453,6 +453,8 @@ end
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64 VG.Proof.Weierstrass.X86_64
 open VG.Proof.Weierstrass (Unch toM)
+open VG.Proof.Bignum.X86_64.Ifma (qv)
+open VG.Impl.Rsa.X86_64.CrtIfma (vreg)
 
 /-- `r9` at constant `k` of the blocks' constants. -/
 theorem signPtr_ok (s : State) (neg : Bool) :
@@ -547,7 +549,7 @@ structure LKeep (s t : State) : Prop where
   gpr : ∀ r, r ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r9, .r11] → t.gpr r = s.gpr r
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  mem : Unch (s.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s.mem t.mem
+  mem : Unch (s.gpr .rdi) [(cfg.sbase, slotsLen)] s.mem t.mem
 
 theorem LKeep.refl (s : State) : LKeep s s := ⟨fun _ _ => rfl, rfl, rfl, Unch.refl _ _ _⟩
 
@@ -569,12 +571,287 @@ theorem LKeep.of_kept {s t : State} (h : Kept s t) : LKeep s t :=
 theorem lim_other {r : Reg} (h1 : r ≠ .rcx) (h2 : r ≠ .rdx) (h3 : r ≠ .r9) : par.lim r = 0 := by
   simp only [par, h1, h2, h3, ite_false]
 
+/-! ### `Q`'s multiples kept as limbs -/
+
+/-- The first `n` entries of `Q`'s table kept as limbs, from `TOFF` of the working space, stand for
+what the words of the table's entries after the first do. -/
+def LTabN (c : Joint.Cfg) (n : Nat) (m : Mem) (base : Addr) : Prop :=
+  ∀ a, a < n → LEnt m (off base (TOFF + 200 * a))
+    (entQN (toM pN (2 ^ 256) (wordsVal m base (c.K.tbl + 96 * (a + 1) + 0) 4))
+      (toM pN (2 ^ 256) (wordsVal m base (c.K.tbl + 96 * (a + 1) + 32) 4))
+      (toM pN (2 ^ 256) (wordsVal m base (c.K.tbl + 96 * (a + 1) + 64) 4)) false 0 0 0)
+
+/-- The seven entries kept as limbs. -/
+abbrev LTab (c : Joint.Cfg) (m : Mem) (base : Addr) : Prop := LTabN c 7 m base
+
+/-- An entry kept as limbs is kept by what leaves its bytes. -/
+theorem LEnt.unch {m m' : Mem} {base : Addr} {o : Nat} {P : AP (Fin pN)} {W : List (Nat × Nat)}
+    (h : LEnt m (off base o) P) (hu : Unch base W m m') (hW : ∀ w ∈ W, o + 200 ≤ w.1 ∨ w.1 + w.2 ≤ o)
+    (ho : o + 200 ≤ 2 ^ 64) : LEnt m' (off base o) P := by
+  refine h.congr fun d k hd => ?_
+  have := hu.word (d := o + (d + 8 * k)) (fun w hw => by have := hW w hw; omega) (by omega)
+  simp only [Mont.word, off] at this
+  rw [off, Offset.add_add]
+  exact this
+
+/-- The entries kept as limbs are kept by what leaves them and the table's words. -/
+theorem LTabN.unch {c : Joint.Cfg} {n : Nat} {m m' : Mem} {base : Addr} {W : List (Nat × Nat)}
+    (h : LTabN c n m base) (hu : Unch base W m m') (ht : c.K.tbl + 768 ≤ TOFF) (hn : n ≤ 7)
+    (hW : ∀ w ∈ W, TOFF + 200 * n ≤ w.1 ∨ w.1 + w.2 ≤ c.K.tbl) : LTabN c n m' base := by
+  intro a ha
+  have e (d : Nat) (hd : d + 32 ≤ 96) : wordsVal m' base (c.K.tbl + 96 * (a + 1) + d) 4 =
+      wordsVal m base (c.K.tbl + 96 * (a + 1) + d) 4 :=
+    hu.wordsVal (fun w hw => by have := hW w hw; simp only [TOFF] at *; omega) (by simp only [TOFF] at *; omega)
+  rw [e 0 (by decide), e 32 (by decide), e 64 (by decide)]
+  exact (h a ha).unch hu (fun w hw => by have := hW w hw; simp only [TOFF] at *; omega) (by simp only [TOFF]; omega)
+
+/-- The vector registers are kept. -/
+theorem SKeep.qv {rs : List Reg} {s t : State} (h : SKeep rs s t) (r k : Nat) :
+    qv t (vreg r) k = qv s (vreg r) k := by
+  have e : t.vy (vreg r) = s.vy (vreg r) := by
+    cases vreg r with
+    | lo x => simp only [State.vy, State.ymm, h.xmm, h.ymmHi]
+    | hi x => simp only [State.vy, h.ymmH]
+  unfold VG.Proof.Bignum.X86_64.Ifma.qv
+  rw [e]
+
+/-- `rcx` and `rdx` at offsets of the working space. -/
+theorem ptr2_ok (s : State) {e z : Nat} (he : e < 2 ^ 31) (hz : z < 2 ^ 31) :
+    WP isa (.block [.mov .rcx (.reg .rdi), .alu .add .rcx (.imm (BitVec.ofNat 32 e)),
+      .mov .rdx (.reg .rdi), .alu .add .rdx (.imm (BitVec.ofNat 32 z))]) s fun t =>
+      (t.gpr .rcx = s.gpr .rdi + BitVec.ofNat 64 e ∧ t.gpr .rdx = s.gpr .rdi + BitVec.ofNat 64 z) ∧
+        Keeps [.rcx, .rdx] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, imm32_sext he, imm32_sext hz,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, Option.map_some, Option.bind_some, ite_true, ite_false, reduceCtorEq,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨⟨trivial, trivial⟩, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]
+
+/-- What the code that stores an entry runs with. -/
+theorem ctxT {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (hc : Ctx par s)
+    (h10 : s.gpr .r10 = off base KB) {o : Nat} (ho : o + 224 ≤ KB) (hsize : KB + 1760 ≤ size) : Ctx (parT o) s := by
+  have hnw := hs.nowrap
+  have hkb : KB = 6432 := rfl
+  refine ⟨fun d hd => ?_, ?_, fun b d _ _ hd => ?_, fun b d _ _ hd => ?_, fun d hd => hc.crd d hd, fun d hd => ?_,
+    fun i hi => hc.cst i hi, by show Reg.r10 ≠ Reg.rdi; decide⟩
+  · have hd' : d + 32 ≤ o + 224 := hd
+    rw [hs.rdi]
+    exact ⟨_, hs.wr, hs.contains (by omega) (by decide)⟩
+  · show o + 224 < 2 ^ 62
+    omega
+  · have hd' : d + 32 ≤ 0 := hd
+    omega
+  · have hd' : d + 32 ≤ 0 := hd
+    omega
+  · have hd' : d + 32 ≤ 8 * par.cst.length := hd
+    rw [par_cst_length] at hd'
+    show Mem.Sep (s.gpr .r10 + _) 32 (s.gpr .rdi + BitVec.ofNat 64 o) (o + 224 - o)
+    rw [h10, off, Offset.add_add, hs.rdi, Nat.add_sub_cancel_left]
+    exact Offset.sep base (Or.inr (by omega)) (by omega) (by omega)
+
+/-- What the blocks may read and write, after a change of memory that keeps their constants. -/
+theorem ctx_mem {s t : State} (hc : Ctx par s) (hg : t.gpr = s.gpr) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
+    (hm : ∀ i, i < par.cst.length → t.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (8 * i)) 64 =
+      s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (8 * i)) 64) : Ctx par t := by
+  obtain ⟨a, b, c, d, e, f, g, h⟩ := hc
+  exact ⟨by rw [hg, hwr]; exact a, b, by rw [hg, hrd, hwr]; exact c, by rw [hg]; exact d,
+    by rw [hg, hrd, hwr]; exact e, by rw [hg]; exact f, fun i hi => by rw [hg]; exact (hm i hi).trans (g i hi), h⟩
+
+/-- What the table's code keeps: the registers but the two it reads through, and memory but the
+vectors' slots and the entries. -/
+structure TKeep (base : Addr) (s t : State) : Prop where
+  gpr : ∀ r, r ∉ [Reg.rcx, .rdx] → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  mem : Unch base [(cfg.sbase, slotsLen), (TOFF, 1424)] s.mem t.mem
+
+theorem TKeep.refl (base : Addr) (s : State) : TKeep base s s := ⟨fun _ _ => rfl, rfl, rfl, Unch.refl _ _ _⟩
+
+theorem TKeep.trans {base : Addr} {s t u : State} (h₁ : TKeep base s t) (h₂ : TKeep base t u) : TKeep base s u :=
+  ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
+    (h₁.mem.trans h₂.mem).mono fun _ hw => (List.mem_append.mp hw).elim id id⟩
+
+/-- Entry `a + 1` of `Q`'s table, kept as limbs after the `a` before it. -/
+theorem tabEnt_ok {c : Joint.Cfg} (hn : c.K.M.n = 4) {s : State} {base : Addr} {size a : Nat} (ha : a < 7)
+    (hs : Scr s base size) (hc : Ctx par s) (h10 : s.gpr .r10 = off base KB)
+    (hz : ∀ r, r < 20 → ∀ k, k < 4 → qv s (vreg r) k = 0)
+    (ht : c.K.tbl + 768 ≤ TOFF) (hcache : 5920 ≤ c.cache) (hcH : c.cache + 512 ≤ 6432) (hsize : 8192 ≤ size)
+    (hq : LTabN c a s.mem base)
+    (hzz : toM pN (2 ^ 256) (wordsVal s.mem base (c.cache + 64 * (a + 1) + 0) 4) =
+      toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
+        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4))
+    (hzzz : toM pN (2 ^ 256) (wordsVal s.mem base (c.cache + 64 * (a + 1) + 32) 4) =
+      toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
+        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
+        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4)) :
+    WP isa (.block (tabEnt c (a + 1))) s fun t =>
+      Ctx par t ∧ (∀ r, r < 20 → ∀ k, k < 4 → qv t (vreg r) k = 0) ∧ LTabN c (a + 1) t.mem base ∧
+        TKeep base s t := by
+  have hnw := hs.nowrap
+  have hlo : par.lo = 5056 := rfl
+  have hwin : par.win = 5920 := rfl
+  have hto : TOFF = 3616 := rfl
+  have hkb : KB = 6432 := rfl
+  have hsb : cfg.sbase = 5056 := rfl
+  have hsl : slotsLen = 288 := rfl
+  rw [tabEnt, hn, Nat.add_sub_cancel, WP.block_append_iff]
+  refine WP.mono (WP.skeep rfl (ptr2_ok s (e := c.K.tbl + 24 * 4 * (a + 1)) (z := c.cache + 16 * 4 * (a + 1))
+    (by omega) (by omega))) fun u ⟨⟨ucx, udx⟩, ku⟩ => ?_
+  rw [hs.rdi, show c.K.tbl + 24 * 4 * (a + 1) = c.K.tbl + 96 * (a + 1) by omega] at ucx
+  rw [hs.rdi, show c.cache + 16 * 4 * (a + 1) = c.cache + 64 * (a + 1) by omega] at udx
+  have hcu : Ctx par u := by
+    refine ctx_skeep hc ku (by decide) (by decide) fun r d hr hd => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · have hd' : d + 32 ≤ 96 := hd
+      rw [ucx, Offset.add_add, hs.rdi]
+      exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
+        Offset.sep base (Or.inl (by omega)) (by omega) (by omega)⟩
+    · have hd' : d + 32 ≤ 64 := hd
+      rw [udx, Offset.add_add, hs.rdi]
+      exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
+        Offset.sep base (Or.inr (by omega)) (by omega) (by omega)⟩
+  have hzu : ∀ r, r < 20 → ∀ k, k < 4 → qv u (vreg r) k = 0 := fun r hr k hk => (ku.qv r k).trans (hz r hr k hk)
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.both (convQ_ok hcu (envOK_zero hzu)) (convQ_regs hcu))
+    fun v ⟨⟨hcv, kv, _, _, c0, c1, c2, c3, cb⟩, hrv⟩ => ?_
+  have w (r : Reg) (hr : uBase r = true) (d x : Nat) (hx : u.gpr r = off base x) :
+      wv (envOf u) (.ld r d) = (wordsVal s.mem base (x + d) 4 : Nat) := by
+    rw [wv_ld u r hr d, hx, wordsVal_off, ku.mem]
+  have hEv := entOk_Q c0 c1 c2 c3 cb (w .rcx rfl 0 _ ucx) (w .rcx rfl 32 _ ucx) (w .rcx rfl 64 _ ucx)
+    (w .rdx rfl 0 _ udx) (w .rdx rfl 32 _ udx) rfl rfl rfl hzz hzzz false 0 0 0
+  have vdi : v.gpr .rdi = base := by rw [kv.gpr, ku.gpr .rdi (by decide), hs.rdi]
+  have v10 : v.gpr .r10 = off base KB := by rw [kv.gpr, ku.gpr .r10 (by decide), h10]
+  have hsv : Scr v base size := ⟨vdi, by rw [kv.wr, ku.wr]; exact hs.wr, hnw⟩
+  refine WP.mono (store_ok ha (ctxT hsv hcv v10 (by omega) (by omega))) fun t ⟨et, ut, hrt, m1, m2, m3⟩ => ?_
+  rw [vdi] at ut m1 m2 m3
+  have tg : t.gpr = v.gpr := by rw [← et]; rfl
+  have uvt : Unch base ([(cfg.sbase, slotsLen)] ++ [(TOFF + 200 * a, 224)]) s.mem t.mem := by
+    have h1 := kv.mem
+    rw [ku.gpr .rdi (by decide), hs.rdi, ku.mem] at h1
+    exact h1.trans ut
+  have hW : ∀ w ∈ [(cfg.sbase, slotsLen)] ++ [(TOFF + 200 * a, 224)], TOFF + 200 * a ≤ w.1 ∨ w.1 + w.2 ≤ c.K.tbl := by
+    intro w hw
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl <;> dsimp only <;> omega
+  refine ⟨ctx_mem hcv tg (by rw [← et]; rfl) (by rw [← et]; rfl) fun i hi => ?_, fun r hr k hk => ?_, fun a' ha' => ?_,
+    ⟨fun r hr => ?_, ?_, ?_, uvt.cover fun w hw => ?_⟩⟩
+  · rw [par_cst_length] at hi
+    have := ut.word (d := KB + 8 * i) (fun w hw => by
+      rw [List.mem_singleton] at hw; subst hw; exact Or.inr (by dsimp only; omega)) (by omega)
+    simp only [Mont.word, off] at this
+    rw [v10, off, Offset.add_add]
+    exact this
+  · rw [hrt r hr k hk, hrv r hr k hk]
+    exact hzu r hr k hk
+  · rcases Nat.lt_succ_iff_lt_or_eq.mp ha' with h | rfl
+    · exact hq.unch uvt ht (by omega) hW a' h
+    · have e (d : Nat) (hd : d + 32 ≤ 96) : wordsVal t.mem base (c.K.tbl + 96 * (a' + 1) + d) 4 =
+          wordsVal s.mem base (c.K.tbl + 96 * (a' + 1) + d) 4 :=
+        uvt.wordsVal (fun w hw => by have := hW w hw; omega) (by omega)
+      rw [e 0 (by decide), e 32 (by decide), e 64 (by decide)]
+      refine lent_of hEv (fun i hi k hk => ?_) (fun k hk => ?_) ?_
+      · rw [off, Offset.add_add, ← Nat.add_assoc]; exact m1 i hi k hk
+      · rw [off, Offset.add_add, ← Nat.add_assoc]; exact m2 k hk
+      · rw [off, Offset.add_add, ← Nat.add_assoc]; exact m3
+  · rw [tg, kv.gpr, ku.gpr r hr]
+  · rw [show t.rd = v.rd by rw [← et]; rfl, kv.rd, ku.rd]
+  · rw [show t.wr = v.wr by rw [← et]; rfl, kv.wr, ku.wr]
+  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega, by dsimp only; omega⟩
+
+/-- The seven entries of `Q`'s table kept as limbs. -/
+theorem vtab_ok {c : Joint.Cfg} (hn : c.K.M.n = 4) {s : State} {base : Addr} {size : Nat}
+    (hs : Scr s base size) (hc : Ctx par s) (h10 : s.gpr .r10 = off base KB)
+    (hz : ∀ r, r < 20 → ∀ k, k < 4 → qv s (vreg r) k = 0)
+    (ht : c.K.tbl + 768 ≤ TOFF) (hcache : 5920 ≤ c.cache) (hcH : c.cache + 512 ≤ 6432) (hsize : 8192 ≤ size)
+    (hzz : ∀ a, a < 7 → toM pN (2 ^ 256) (wordsVal s.mem base (c.cache + 64 * (a + 1) + 0) 4) =
+      toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
+        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4))
+    (hzzz : ∀ a, a < 7 → toM pN (2 ^ 256) (wordsVal s.mem base (c.cache + 64 * (a + 1) + 32) 4) =
+      toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
+        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
+        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4)) :
+    ∀ n, n ≤ 7 → WP isa (.block ((List.range n).map fun i => tabEnt c (i + 1)).flatten) s fun t =>
+      Ctx par t ∧ (∀ r, r < 20 → ∀ k, k < 4 → qv t (vreg r) k = 0) ∧ LTabN c n t.mem base ∧ TKeep base s t
+  | 0, _ => WP.block_nil ⟨hc, hz, fun _ h => absurd h (Nat.not_lt_zero _), TKeep.refl base s⟩
+  | n + 1, hn1 => by
+    have hto : TOFF = 3616 := rfl
+    have hsb : cfg.sbase = 5056 := rfl
+    have hsl : slotsLen = 288 := rfl
+    rw [List.range_succ, List.map_append, List.flatten_append, WP.block_append_iff]
+    refine WP.mono (vtab_ok hn hs hc h10 hz ht hcache hcH hsize hzz hzzz n (by omega)) fun m ⟨hcm, hzm, hqm, km⟩ => ?_
+    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil]
+    have hsm : Scr m base size := ⟨(km.gpr .rdi (by decide)).trans hs.rdi, km.wr ▸ hs.wr, hs.nowrap⟩
+    have e (x : Nat) (hx : x + 32 ≤ c.K.tbl + 768 ∨ 5920 ≤ x) (hx' : x + 32 ≤ 2 ^ 64) :
+        wordsVal m.mem base x 4 = wordsVal s.mem base x 4 :=
+      km.mem.wordsVal (fun w hw => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+        rcases hw with rfl | rfl <;> dsimp only <;> omega) (by omega)
+    have h1 := hzz n (by omega)
+    have h2 := hzzz n (by omega)
+    rw [← e _ (Or.inr (by omega)) (by omega), ← e _ (Or.inl (by omega)) (by omega)] at h1 h2
+    exact WP.mono (tabEnt_ok hn (a := n) (by omega) hsm hcm ((km.gpr .r10 (by decide)).trans h10) hzm ht hcache hcH
+      hsize hqm h1 h2) fun t ⟨hct, hzt, hqt, kt⟩ => ⟨hct, hzt, hqt, km.trans kt⟩
+
+/-- Whether the magnitude in `r8` is one. -/
+theorem cmp1_ok (s : State) {a : Nat} (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (ha : a ≤ 15) :
+    WP isa (.block [.alu .cmp .r8 (.imm 1)]) s fun t => t.zf = some (decide (a = 1)) ∧ Keeps [] s t := by
+  have key : ∀ a, a ≤ 15 → (BitVec.ofNat 64 a - (1 : BitVec 32).signExtend 64 == 0) = decide (a = 1) := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+    RegUpd.zf_arithFlags, h8, key a ha, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, fun _ _ => rfl, rfl, rfl, rfl⟩
+
+/-- `rcx` at the limbs of the multiple of `Q` whose magnitude, `3` at least, is in `r8`, and `rdx` at
+its fourth vector. -/
+theorem entryT_ok (s : State) {base : Addr} {a : Nat} (hb : s.gpr .rdi = base) (h8 : s.gpr .r8 = BitVec.ofNat 64 a)
+    (ha : 3 ≤ a) (ha' : a ≤ 15) :
+    WP isa (.block entryT) s fun t =>
+      (t.gpr .rcx = off base (TOFF + 100 * (a - 3)) ∧ t.gpr .rdx = off base (TOFF + 100 * (a - 3) + 96)) ∧
+        Keeps [.rax, .rcx, .rdx] s t := by
+  have e1 : (BitVec.ofNat 32 (TOFF - 300)).signExtend 64 = BitVec.ofNat 64 (TOFF - 300) := by decide
+  have e2 : (96 : BitVec 32).signExtend 64 = BitVec.ofNat 64 96 := by decide
+  have key : ∀ a, a ≤ 15 → BitVec.ofNat 64 a <<< 2 + (BitVec.ofNat 64 a <<< 2) <<< 3 +
+      ((BitVec.ofNat 64 a <<< 2) <<< 3) <<< 1 = BitVec.ofNat 64 (100 * a) := by decide
+  apply WP.of_runBlock
+  simp only [entryT, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift, e1, e2,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, Option.map_some, Option.bind_some, ite_true,
+    ite_false, reduceCtorEq, h8, hb, show 1 ≤ 2 ∧ 2 ≤ 63 from by decide, show 1 ≤ 3 ∧ 3 ≤ 63 from by decide,
+    show 1 ≤ 1 ∧ 1 ≤ 63 from by decide, and_self, Option.some.injEq, exists_eq_left']
+  have hc : BitVec.ofNat 64 a <<< 2 + (BitVec.ofNat 64 a <<< 2) <<< 3 + ((BitVec.ofNat 64 a <<< 2) <<< 3) <<< 1 +
+      base + BitVec.ofNat 64 (TOFF - 300) = off base (TOFF + 100 * (a - 3)) := by
+    rw [key a ha', BitVec.add_comm _ base, off, BitVec.add_assoc, ← BitVec.ofNat_add]
+    congr 2
+    simp only [TOFF]; omega
+  refine ⟨⟨hc, ?_⟩, fun r hr => ?_, rfl, rfl, rfl⟩
+  · rw [hc, off, off, BitVec.add_assoc, ← BitVec.ofNat_add]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2, ite_false]
+
+/-- `rdx` moved on to the entry's sixth vector. -/
+theorem add64_ok (s : State) :
+    WP isa (.block [.alu .add .rdx (.imm 64)]) s fun t =>
+      t.gpr .rdx = s.gpr .rdx + BitVec.ofNat 64 64 ∧ Keeps [.rdx] s t := by
+  have e : (64 : BitVec 32).signExtend 64 = BitVec.ofNat 64 64 := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, e, RegUpd.gpr_setReg,
+    RegUpd.gpr_arithFlags, Option.bind_some, ite_true, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_singleton] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
 /-- The entry of a digit of `Q`'s scalar that is not zero: in `ymm20`–`ymm29`, with the mask of its
-sign at `r9`, from the words of the digit's multiple of `Q` in the table. -/
+sign at `r9`, from the words of `Q` in the table, or from the limbs of the digit's multiple of it. -/
 theorem qEntry_ok {c : Joint.Cfg} (hn : c.K.M.n = 4) {s : State} {base : Addr} {size : Nat} {b : BitVec 8}
     (hs : Scr s base size) (hc : Ctx par s) (hB : EnvOK s stB) (h8 : s.gpr .r8 = b.setWidth 64)
     (ha : 1 ≤ qMag b) (ha' : qMag b ≤ 15) (hodd : qMag b % 2 = 1)
-    (ht : c.K.tbl + 768 ≤ 4512) (hcache : c.cache + 512 ≤ 4512) (hsize : 5408 ≤ size) {X Y Z : Fin pN}
+    (ht : c.K.tbl + 768 ≤ TOFF) (hcache : 5920 ≤ c.cache) (hcs : c.cache + 512 ≤ size) (hc31 : c.cache < 2 ^ 31)
+    (hq : LTab c s.mem base) {X Y Z : Fin pN}
     (hx : toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * ((qMag b - 1) / 2) + 0) 4) = X)
     (hy : toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * ((qMag b - 1) / 2) + 32) 4) = Y)
     (hz : toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * ((qMag b - 1) / 2) + 64) 4) = Z)
@@ -582,59 +859,140 @@ theorem qEntry_ok {c : Joint.Cfg} (hn : c.K.M.n = 4) {s : State} {base : Addr} {
     (hzzz : toM pN (2 ^ 256) (wordsVal s.mem base (c.cache + 64 * ((qMag b - 1) / 2) + 32) 4) = Z * Z * Z) :
     WP isa (.seq (.seq (.block [.alu .cmp .r8 (.imm 128)]) (.ite .b (.block (signPtr false))
       (.block (([.mov32 .rax (.imm 256), .alu .sub .rax (.reg .r8), .mov .r8 (.reg .rax)] : List Instr) ++ signPtr true))))
-      (.block (entryQ c ++ convQPieces.flatten))) s fun t =>
+      (.seq (.block [.alu .cmp .r8 (.imm 1)]) (.ite .e (.block (entryQ c ++ convQPieces.flatten))
+        (.seq (.block (entryT ++ loadAPieces.flatten))
+          (.block (([.alu .add .rdx (.imm 64)] : List Instr) ++ loadBPieces.flatten)))))) s fun t =>
       Ctx par t ∧ EnvOK t addB ∧ SgnOk (envOf t) sgnT.l0 (!decide (b.toNat < 128)) ∧
         (∀ xn un z, AccOk (envOf s) (t5 0) (t5 5) (t5 10) (t5 15) xn un z →
           AccOk (envOf t) (t5 0) (t5 5) (t5 10) (t5 15) xn un z) ∧
         (∀ xn un z, EntOk (envOf t) (t5 20) (t5 25) (entQN X Y Z (!decide (b.toNat < 128)) xn un z)) ∧
         t.gpr .r11 = s.gpr .r11 ∧ LKeep s t := by
   have hnw := hs.nowrap
-  have hlo : par.lo = 4512 := rfl
-  have hwin : par.win = 5408 := rfl
+  have hlo : par.lo = 5056 := rfl
+  have hwin : par.win = 5920 := rfl
+  have hto : TOFF = 3616 := rfl
   apply WP.seq
-  refine WP.mono (qSign_ok s h8) fun u ⟨u8, u9, ku⟩ => ?_
-  rw [WP.block_append_iff]
-  have udi : u.gpr .rdi = base := (ku.gpr .rdi (by decide)).trans hs.rdi
-  refine WP.mono (qAddr_ok hn u udi u8 ha ha' hodd (by omega) (by omega)) fun e ⟨ecx, edx, ke⟩ => ?_
-  have kse : SKeep [.rax, .rcx, .rdx, .rbp, .r8, .r9] s e := (ku.mono (by decide)).trans (ke.mono (by decide))
-  have e9 : e.gpr .r9 = s.gpr .r10 +
+  refine WP.mono (qSign_ok s h8) fun u₀ ⟨v8, v9, kv⟩ => ?_
+  apply WP.seq
+  refine WP.mono (WP.skeep rfl (cmp1_ok u₀ v8 ha')) fun u ⟨hzf, kc⟩ => ?_
+  have ku : SKeep [.rax, .r8, .r9] s u := kv.trans (kc.mono (fun _ h => nomatch h))
+  have u8 : u.gpr .r8 = BitVec.ofNat 64 (qMag b) := (kc.gpr .r8 List.not_mem_nil).trans v8
+  have u9 : u.gpr .r9 = s.gpr .r10 +
       BitVec.ofNat 64 (32 * poolLit.idxOf (K4.lanes (if (!decide (b.toNat < 128)) = true then 3 else 0))) := by
-    rw [ke.gpr .r9 (by decide), u9]
+    rw [kc.gpr .r9 List.not_mem_nil, v9]
     cases decide (b.toNat < 128) <;> rfl
+  have udi : u.gpr .rdi = base := (ku.gpr .rdi (by decide)).trans hs.rdi
   have kb : ∀ neg : Bool, 32 * poolLit.idxOf (K4.lanes (if neg = true then 3 else 0)) + 32 ≤ 8 * par.cst.length := by
     decide +kernel
-  have hce : Ctx par e := by
-    refine ctx_skeep hc kse (by decide) (by decide) fun r d hr hd => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
-    · have hd' : d + 32 ≤ 96 := hd
-      rw [ecx, Offset.add_add, hs.rdi]
+  -- what the blocks read through `r9` after the sign
+  have h9 (e : State) (ke : SKeep [.rax, .rcx, .rdx, .rbp, .r8, .r9] s e)
+      (e9 : e.gpr .r9 = s.gpr .r10 +
+        BitVec.ofNat 64 (32 * poolLit.idxOf (K4.lanes (if (!decide (b.toNat < 128)) = true then 3 else 0)))) (d : Nat)
+      (hd : d + 32 ≤ 32) : InRegions (s.rd ++ s.wr) (e.gpr .r9 + BitVec.ofNat 64 d) 32 ∧
+        Mem.Sep (e.gpr .r9 + BitVec.ofNat 64 d) 32 (s.gpr .rdi + BitVec.ofNat 64 par.lo) (par.win - par.lo) := by
+    have hk := kb (!decide (b.toNat < 128))
+    rw [e9, Offset.add_add]
+    exact ⟨hc.crd _ (by omega), hc.csep _ (by omega)⟩
+  refine WP.ite (decide (qMag b = 1)) hzf (fun h1 => ?_) (fun h1 => ?_)
+  · rw [WP.block_append_iff]
+    refine WP.mono (qAddr_ok hn u udi u8 ha ha' hodd (by omega) (by omega)) fun e ⟨ecx, edx, ke⟩ => ?_
+    have kse : SKeep [.rax, .rcx, .rdx, .rbp, .r8, .r9] s e := (ku.mono (by decide)).trans (ke.mono (by decide))
+    have e9 := (ke.gpr .r9 (by decide)).trans u9
+    have hce : Ctx par e := by
+      refine ctx_skeep hc kse (by decide) (by decide) fun r d hr hd => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
+      · have hd' : d + 32 ≤ 96 := hd
+        rw [ecx, Offset.add_add, hs.rdi]
+        exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
+          Offset.sep base (Or.inl (by omega)) (by omega) (by omega)⟩
+      · have hd' : d + 32 ≤ 64 := hd
+        rw [edx, Offset.add_add, hs.rdi]
+        exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
+          Offset.sep base (Or.inr (by omega)) (by omega) (by omega)⟩
+      · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
+      · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
+      · exact h9 e kse e9 d hd
+    have hBe : EnvOK e stB := envOK_skeep kse (by decide) hB
+    refine WP.mono (convQ_ok hce hBe) fun t ⟨hct, kt, hEt, hacc, c0, c1, c2, c3, cb⟩ => ?_
+    have w (r : Reg) (hr : uBase r = true) (d x : Nat) (hx : e.gpr r = off base x) :
+        wv (envOf e) (.ld r d) = (wordsVal s.mem base (x + d) 4 : Nat) := by
+      rw [wv_ld e r hr d, hx, wordsVal_off, kse.mem]
+    have t9 : t.gpr .r9 = t.gpr .r10 +
+        BitVec.ofNat 64 (32 * poolLit.idxOf (K4.lanes (if (!decide (b.toNat < 128)) = true then 3 else 0))) := by
+      rw [kt.gpr, e9, kse.gpr .r10 (by decide)]
+    have hm := sgn_m hct (!decide (b.toNat < 128)) t9
+    exact ⟨hct, envOK_sgn hEt hm, sgnOk_of hm, fun xn un z h => hacc xn un z (h.congr kse.v),
+      fun xn un z => entOk_Q c0 c1 c2 c3 cb (w .rcx rfl 0 _ ecx) (w .rcx rfl 32 _ ecx) (w .rcx rfl 64 _ ecx)
+        (w .rdx rfl 0 _ edx) (w .rdx rfl 32 _ edx) hx hy hz hzz hzzz _ xn un z,
+      by rw [kt.gpr, kse.gpr .r11 (by decide)], (LKeep.of_skeep kse).trans (LKeep.of_kept kt)⟩
+  · have hne : qMag b ≠ 1 := of_decide_eq_false h1
+    have h3 : 3 ≤ qMag b := by omega
+    -- the digit's entry of the table
+    have hi : (qMag b - 3) / 2 < 7 := by omega
+    have hE : LEnt s.mem (off base (TOFF + 100 * (qMag b - 3))) (entQN X Y Z false 0 0 0) := by
+      have := hq _ hi
+      rw [show (qMag b - 3) / 2 + 1 = (qMag b - 1) / 2 by omega, hx, hy, hz,
+        show 200 * ((qMag b - 3) / 2) = 100 * (qMag b - 3) by omega] at this
+      exact this
+    have hoff : TOFF + 100 * (qMag b - 3) + 200 ≤ 5056 := by omega
+    apply WP.seq
+    rw [WP.block_append_iff]
+    refine WP.mono (WP.skeep rfl (entryT_ok u udi u8 h3 ha')) fun e ⟨⟨ecx, edx⟩, ke⟩ => ?_
+    have kse : SKeep [.rax, .rcx, .rdx, .rbp, .r8, .r9] s e := (ku.mono (by decide)).trans (ke.mono (by decide))
+    have e9 := (ke.gpr .r9 (by decide)).trans u9
+    have hce : Ctx par e := by
+      refine ctx_skeep hc kse (by decide) (by decide) fun r d hr hd => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
+      · have hd' : d + 32 ≤ 96 := hd
+        rw [ecx, Offset.add_add, hs.rdi]
+        exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
+          Offset.sep base (Or.inl (by omega)) (by omega) (by omega)⟩
+      · have hd' : d + 32 ≤ 64 := hd
+        rw [edx, Offset.add_add, hs.rdi]
+        exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
+          Offset.sep base (Or.inl (by omega)) (by omega) (by omega)⟩
+      · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
+      · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
+      · exact h9 e kse e9 d hd
+    have hBe : EnvOK e stB := envOK_skeep kse (by decide) hB
+    have hEe : LEnt e.mem (off base (TOFF + 100 * (qMag b - 3))) (entQN X Y Z false 0 0 0) := by
+      rw [kse.mem]; exact hE
+    refine WP.mono (loadA_ok hce hBe (by rw [ecx]; exact (BitVec.add_zero _).symm)
+      (by rw [edx, off, off, BitVec.add_assoc, ← BitVec.ofNat_add]) hEe) fun f ⟨hcf, kf, hBf, hacf, a0, a1, a2, a3⟩ => ?_
+    rw [WP.block_append_iff]
+    refine WP.mono (WP.skeep rfl (add64_ok f)) fun g ⟨gdx, kg⟩ => ?_
+    have fdi : f.gpr .rdi = base := by rw [kf.gpr, kse.gpr .rdi (by decide), hs.rdi]
+    have gdx' : g.gpr .rdx = off base (TOFF + 100 * (qMag b - 3)) + BitVec.ofNat 64 160 := by
+      rw [gdx, kf.gpr, edx, off, off, BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
+    have hcg : Ctx par g := by
+      refine ctx_skeep hcf kg (by decide) (by decide) fun r d hr hd => ?_
+      rw [List.mem_singleton] at hr; subst hr
+      have hd' : d + 32 ≤ 64 := hd
+      rw [gdx', off, Offset.add_add, Offset.add_add, fdi, kf.rd, kf.wr, kse.rd, kse.wr]
       exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
         Offset.sep base (Or.inl (by omega)) (by omega) (by omega)⟩
-    · have hd' : d + 32 ≤ 64 := hd
-      rw [edx, Offset.add_add, hs.rdi]
-      exact ⟨⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega) (by decide)⟩,
-        Offset.sep base (Or.inl (by omega)) (by omega) (by omega)⟩
-    · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
-    · rw [lim_other (by decide) (by decide) (by decide)] at hd; omega
-    · have hd' : d + 32 ≤ 32 := hd
-      have hk := kb (!decide (b.toNat < 128))
-      rw [e9, Offset.add_add]
-      exact ⟨hc.crd _ (by omega), hc.csep _ (by omega)⟩
-  have hBe : EnvOK e stB := envOK_skeep kse (by decide) hB
-  refine WP.mono (convQ_ok hce hBe) fun t ⟨hct, kt, hEt, hacc, c0, c1, c2, c3, cb⟩ => ?_
-  have w (r : Reg) (hr : uBase r = true) (d x : Nat) (hx : e.gpr r = off base x) :
-      wv (envOf e) (.ld r d) = (wordsVal s.mem base (x + d) 4 : Nat) := by
-    rw [wv_ld e r hr d, hx, wordsVal_off, kse.mem]
-  have t9 : t.gpr .r9 = t.gpr .r10 +
-      BitVec.ofNat 64 (32 * poolLit.idxOf (K4.lanes (if (!decide (b.toNat < 128)) = true then 3 else 0))) := by
-    rw [kt.gpr, e9, kse.gpr .r10 (by decide)]
-  have hm := sgn_m hct (!decide (b.toNat < 128)) t9
-  exact ⟨hct, envOK_sgn hEt hm, sgnOk_of hm, fun xn un z h => hacc xn un z (h.congr kse.v),
-    fun xn un z => entOk_Q c0 c1 c2 c3 cb (w .rcx rfl 0 _ ecx) (w .rcx rfl 32 _ ecx) (w .rcx rfl 64 _ ecx)
-      (w .rdx rfl 0 _ edx) (w .rdx rfl 32 _ edx) hx hy hz hzz hzzz _ xn un z,
-    by rw [kt.gpr, kse.gpr .r11 (by decide)], (LKeep.of_skeep kse).trans (LKeep.of_kept kt)⟩
+    have hBg := envOK_skeep kg (by decide) hBf
+    have hEg : LEnt g.mem (off base (TOFF + 100 * (qMag b - 3))) (entQN X Y Z false 0 0 0) := by
+      rw [kg.mem]
+      have hu := kf.mem
+      rw [kse.gpr .rdi (by decide), hs.rdi] at hu
+      exact hEe.unch hu (fun w hw => by
+        rw [List.mem_singleton] at hw; subst hw; exact Or.inl hoff) (by omega)
+    refine WP.mono (loadB_ok hcg hBg gdx' hEg) fun t ⟨hct, kt, hEt, hact, hta, hb⟩ => ?_
+    have t9 : t.gpr .r9 = t.gpr .r10 +
+        BitVec.ofNat 64 (32 * poolLit.idxOf (K4.lanes (if (!decide (b.toNat < 128)) = true then 3 else 0))) := by
+      rw [kt.gpr, kg.gpr .r9 (by decide), kg.gpr .r10 (by decide), kf.gpr, e9, kse.gpr .r10 (by decide)]
+    have hm := sgn_m hct (!decide (b.toNat < 128)) t9
+    exact ⟨hct, envOK_sgn hEt hm, sgnOk_of hm,
+      fun xn un z h => hact xn un z ((hacf xn un z (h.congr kse.v)).congr kg.v),
+      fun xn un z => ⟨hta 0 (by decide) _ (a0.congr kg.v), hta 1 (by decide) _ (a1.congr kg.v),
+        hta 2 (by decide) _ (a2.congr kg.v), hta 3 (by decide) _ (a3.congr kg.v), hb⟩,
+      by rw [kt.gpr, kg.gpr .r11 (by decide), kf.gpr, kse.gpr .r11 (by decide)],
+      (((LKeep.of_skeep kse).trans (LKeep.of_kept kf)).trans (LKeep.of_skeep kg)).trans (LKeep.of_kept kt)⟩
 
 /-! ### The entry added, or the accumulator set -/
 
@@ -723,7 +1081,8 @@ accumulator set to it. -/
 theorem qDigit_ok {c : Joint.Cfg} (hn : c.K.M.n = 4) {s : State} {base : Addr} {size : Nat} {b : BitVec 8}
     (hs : Scr s base size) (hc : Ctx par s) (hB : EnvOK s stB) (h8 : s.gpr .r8 = b.setWidth 64)
     (ha : 1 ≤ qMag b) (ha' : qMag b ≤ 15) (hodd : qMag b % 2 = 1)
-    (ht : c.K.tbl + 768 ≤ 4512) (hcache : c.cache + 512 ≤ 4512) (hsize : 5408 ≤ size) {X Y Z : Fin pN}
+    (ht : c.K.tbl + 768 ≤ TOFF) (hcache : 5920 ≤ c.cache) (hcs : c.cache + 512 ≤ size) (hc31 : c.cache < 2 ^ 31)
+    (hq : LTab c s.mem base) {X Y Z : Fin pN}
     (hx : toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * ((qMag b - 1) / 2) + 0) 4) = X)
     (hy : toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * ((qMag b - 1) / 2) + 32) 4) = Y)
     (hz : toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * ((qMag b - 1) / 2) + 64) 4) = Z)
@@ -732,13 +1091,14 @@ theorem qDigit_ok {c : Joint.Cfg} (hn : c.K.M.n = 4) {s : State} {base : Addr} {
     {acc : Option (Fin pN × Fin pN × Fin pN)} (hacc : AccSt s acc) :
     WP isa (.seq (.block [.alu .cmp .r8 (.imm 128)]) (.seq (.ite .b (.block (signPtr false))
       (.block (([.mov32 .rax (.imm 256), .alu .sub .rax (.reg .r8), .mov .r8 (.reg .rax)] : List Instr) ++ signPtr true)))
-      (.seq (.block (entryQ c ++ convQPieces.flatten)) addOrSet))) s fun t =>
+      (.seq (.block [.alu .cmp .r8 (.imm 1)]) (.seq (.ite .e (.block (entryQ c ++ convQPieces.flatten))
+        (.seq (.block (entryT ++ loadAPieces.flatten))
+          (.block (([.alu .add .rdx (.imm 64)] : List Instr) ++ loadBPieces.flatten)))) addOrSet)))) s fun t =>
       Ctx par t ∧ EnvOK t stB ∧ AccSt t (some (accStep X Y Z (!decide (b.toNat < 128)) acc)) ∧ LKeep s t := by
   apply WP.assoc
-  apply WP.assoc
   apply WP.seq
-  refine WP.mono (qEntry_ok hn hs hc hB h8 ha ha' hodd ht hcache hsize hx hy hz hzz hzzz)
-    fun u ⟨hcu, hBu, hsu, hau, heu, h11, ku⟩ => ?_
+  refine WP.mono (WP.seq_iff.mp (qEntry_ok hn hs hc hB h8 ha ha' hodd ht hcache hcs hc31 hq hx hy hz hzz hzzz))
+    fun _ h₁ => WP.assoc (WP.seq (WP.mono h₁ fun u ⟨hcu, hBu, hsu, hau, heu, h11, ku⟩ => ?_))
   have haccu : AccSt u acc := by
     cases acc with
     | none => exact h11.trans hacc

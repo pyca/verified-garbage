@@ -97,13 +97,13 @@ def slots20 : List Loc := (List.range 20).map .slot
 /-- Field vector `j` of the first twenty slots. -/
 abbrev slv (j : Nat) : F5 T := (leaves slots20).getD j zero5
 
-theorem sv_chk : chkSeg saveAcc stT stSeg slots20 = true := by decide +kernel
+theorem sv_chk : chkSegW 640 saveAcc stT stSeg slots20 = true := by decide +kernel
 
 theorem sv_iv : ivWithin stB (segT stSeg stT) stBT = true := by decide +kernel
 
 theorem sv_ov : ovOk stBT stBT [] = true := by decide +kernel
 
-theorem ld_chk : chkSeg loadAcc (leaves slots20) stSeg regs20 = true := by decide +kernel
+theorem ld_chk : chkSegW 640 loadAcc (leaves slots20) stSeg regs20 = true := by decide +kernel
 
 theorem ld_iv : ivWithin (bndsOf slots20 stBT) (segT stSeg (leaves slots20)) stBT = true := by decide +kernel
 
@@ -120,7 +120,8 @@ theorem AccOk.same {E E' : Env} {xs ys : List (F5 T)} (h : Same stBT E' ys E xs)
 theorem saveAcc_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) {xn un z : Fin pN}
     (h : AccOk (envOf s₀) (t5 0) (t5 5) (t5 10) (t5 15) xn un z) :
     WP isa (.block saveAcc) s₀ fun s =>
-      Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf slots20 stBT) ∧ AccOk (envOf s) (slv 0) (slv 1) (slv 2) (slv 3) xn un z :=
+      Ctx par s ∧ KeptW 640 s₀ s ∧ EnvOK s (bndsOf slots20 stBT) ∧
+        AccOk (envOf s) (slv 0) (slv 1) (slv 2) (slv 3) xn un z :=
   WP.mono (cut_step' sv_chk hc hB sv_iv sv_ov (rs := stT) rfl rfl (Nat.le_of_eq rfl) (fun _ _ hm => nomatch hm))
     fun _ ⟨c, k, b, hS⟩ => ⟨c, k, b, AccOk.same hS h⟩
 
@@ -128,7 +129,7 @@ theorem saveAcc_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) {xn 
 theorem loadAcc_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf slots20 stBT)) {xn un z : Fin pN}
     (h : AccOk (envOf s₀) (slv 0) (slv 1) (slv 2) (slv 3) xn un z) :
     WP isa (.block loadAcc) s₀ fun s =>
-      Ctx par s ∧ Kept s₀ s ∧ EnvOK s stB ∧ AccOk (envOf s) (t5 0) (t5 5) (t5 10) (t5 15) xn un z :=
+      Ctx par s ∧ KeptW 640 s₀ s ∧ EnvOK s stB ∧ AccOk (envOf s) (t5 0) (t5 5) (t5 10) (t5 15) xn un z :=
   WP.mono (cut_step' ld_chk hc hB ld_iv sv_ov (rs := leaves slots20) rfl rfl (Nat.le_of_eq rfl)
     (fun _ _ hm => nomatch hm)) fun _ ⟨c, k, b, hS⟩ => ⟨c, k, b, AccOk.same hS h⟩
 
@@ -191,8 +192,8 @@ theorem ectx {t : State} {base : Addr} {size : Nat} (hwr : (⟨base, size⟩ : R
     (hx₀ : x₀ + 96 ≤ 5504) (hdx : t.gpr .rdx = base + BitVec.ofNat 64 z₀) (hz₀ : z₀ + 64 ≤ 5504)
     (h9 : t.gpr .r9 = t.gpr .r10 + BitVec.ofNat 64 (32 * poolLit.idxOf (K4.lanes (if false = true then 3 else 0))))
     (hk : ∀ i, i < 220 → t.mem.readW (base + BitVec.ofNat 64 (EKB + 8 * i)) 64 = kwords.getD i 0) : Ctx par t := by
-  have hlo : par.lo = 4512 := rfl
-  have hwin : par.win = 5408 := rfl
+  have hlo : par.lo = 5056 := rfl
+  have hwin : par.win = 5920 := rfl
   have hreg (d n : Nat) (hd : d + n ≤ size) (hn : 0 < n) :
       InRegions (t.rd ++ t.wr) (base + BitVec.ofNat 64 d) n :=
     ⟨⟨base, size⟩, List.mem_append_right _ hwr, Offset.contains_base base hd (by omega)⟩
@@ -503,17 +504,15 @@ theorem vdbls_pt (hC : Law Cv) (ha : AM3 Cv) {s : State} (hc : Ctx par s) (hB : 
 
 /-! ### An iteration -/
 
-theorem Kept.rd {s₀ s : State} (h : Kept s₀ s) : s.rd = s₀.rd := by rw [← h.eq]; rfl
-
-theorem Kept.wr {s₀ s : State} (h : Kept s₀ s) : s.wr = s₀.wr := by rw [← h.eq]; rfl
-
 /-- The vectors' slots, from the working space. -/
-abbrev eS : Nat × Nat := (cfg.sbase + EO, par.win - cfg.sbase)
+abbrev eS : Nat × Nat := (cfg.sbase + EO, 640)
 
 /-- What the blocks keep of memory, from the working space. -/
-theorem kept_unch {s t : State} {base : Addr} (hdi : s.gpr .rdi = base + BitVec.ofNat 64 EO)
-    (h : Unch (s.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s.mem t.mem) : Unch base [eS] s.mem t.mem :=
-  unch_shift (by decide) (hdi ▸ h)
+theorem kept_unch {s t : State} {base : Addr} {w : Nat} (hdi : s.gpr .rdi = base + BitVec.ofNat 64 EO)
+    (h : Unch (s.gpr .rdi) [(cfg.sbase, w)] s.mem t.mem) (hw : w ≤ 640 := by decide) : Unch base [eS] s.mem t.mem :=
+  (unch_shift (by have : cfg.sbase = 5056 := rfl; simp only [EO]; omega) (hdi ▸ h)).cover fun x hx => by
+    rw [List.mem_singleton] at hx; subst hx
+    exact ⟨_, List.mem_singleton_self _, Nat.le_refl _, by dsimp only; omega⟩
 
 /-- The loop's invariant at `rbx = j`, with `rdi` at the vectors' slots, from the state `s₀`: the
 accumulator's triple is that of a point of the curve, `[S_j]P` for an odd scalar below `n`. -/
@@ -625,8 +624,8 @@ theorem vstepO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hC : Law Cv)
     rw [hdi, cdi, Offset.add_add, hmem, ← kd.2.1]
     have e' : Mont.word f.mem base (EO + (slotOff n + 8 * k')) = Mont.word d.mem base (EO + (slotOff n + 8 * k')) :=
       ent.fr.unch.word (fun w hw => by
-        have := below w hw; simp only [EO, slotOff, show cfg.sbase = 4512 from rfl]; omega)
-        (by simp only [EO, slotOff, show cfg.sbase = 4512 from rfl]; omega)
+        have := below w hw; simp only [EO, slotOff, show cfg.sbase = 5056 from rfl]; omega)
+        (by simp only [EO, slotOff, show cfg.sbase = 5056 from rfl]; omega)
     exact congrArg BitVec.toInt e'
   obtain ⟨bh, hh⟩ := slots_gap hm bc hc
   rw [WP.block_append_iff]
@@ -636,7 +635,7 @@ theorem vstepO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hC : Law Cv)
   have wi (x : Nat) (hx : x + 32 ≤ 5472) : wordsVal i.mem base x 4 = wordsVal f.mem base x 4 :=
     Ufi.wordsVal (fun w hw => by
       rw [List.mem_singleton] at hw; subst hw
-      exact Or.inl (by show x + 8 * 4 ≤ 4512 + 992; omega)) (by omega)
+      exact Or.inl (by show x + 8 * 4 ≤ 5056 + 448; omega)) (by omega)
   have tm (x : Nat) : tmv Cv K.M.n base f x = toM pN (2 ^ 256) (wordsVal f.mem base x 4) := by rw [hn4]; rfl
   have jp := ent.ent
   rw [WP.block_append_iff]
@@ -970,7 +969,7 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
   have hsz := hV.sz
   have hJ := hL.J
   have hP0 := hF.ne_infinity hC
-  rw [vwindowO, region]
+  rw [vwindowO, region, regionAt]
   simp only [Code.inline]
   rw [vloopO_inline]
   refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt)
@@ -979,12 +978,12 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
   have hF₁ := fixedO_unch hL hF F₁.unch hnw (fun x hx => hL.ro_w hx) hL.bits_w
   -- MXCSR
   apply WP.seq
-  refine WP.seq (WP.mono (mxSave_ok hs₁ (by omega)) fun s₂ ⟨⟨m₂, r₂⟩, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (mxSave_ok hs₁ (by simp only [MX]; omega)) fun s₂ ⟨⟨m₂, r₂⟩, k₂⟩ => ?_)
   have hs₂ : Scr s₂ base size := ⟨(k₂.1 .rdi (by decide)).trans hs₁.rdi, k₂.2.2 ▸ hs₁.wr, hnw⟩
   have U₂ : Unch base [(5472, 8)] s₁.mem s₂.mem := by
     rw [m₂]; exact unch_write32 (d := MX) _ base _ (by decide) (by decide) (by decide)
   obtain ⟨M₂, F₂, T₂⟩ := pre_unch hV F₁.mod hF₁ T₁ hnw (Nat.le_refl _) U₂
-  refine WP.seq (WP.seq (WP.mono (mxSet_ok hs₂ (by omega)) fun s₃ ⟨m₃, k₃⟩ => ?_))
+  refine WP.seq (WP.seq (WP.mono (mxSet_ok hs₂ (by simp only [MX]; omega)) fun s₃ ⟨m₃, k₃⟩ => ?_))
   have hs₃ : Scr s₃ base size := ⟨(k₃.1 .rdi (by decide)).trans hs₂.rdi, k₃.2.2 ▸ hs₂.wr, hnw⟩
   have U₃ : Unch base [(5472, 8)] s₂.mem s₃.mem := by
     rw [m₃]; exact unch_write32 (d := MX + 4) _ base _ (by decide) (by decide) (by decide)
@@ -995,7 +994,7 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
   refine ⟨s₄, rfl, WP.block_nil ?_⟩
   have hv : s₄.gpr .r12 = (s₁.mxcsr &&& 0xFFFF).setWidth 64 :=
     (o₄.keep .r12 (by decide)).trans ((k₃.1 .r12 (by decide)).trans r₂)
-  refine WP.mono (mxRestore_ok o₄.scr (by omega) hv) fun s₅ ⟨m₅, g₅, rd₅, wr₅⟩ => ?_
+  refine WP.mono (mxRestore_ok o₄.scr (by simp only [MX]; omega) hv) fun s₅ ⟨m₅, g₅, rd₅, wr₅⟩ => ?_
   have U₅ : Unch base [(5472, 8)] s₄.mem s₅.mem := by
     rw [m₅]; exact unch_write32 (d := MX) _ base _ (by decide) (by decide) (by decide)
   have e₅ := o₄.mem.vec hV wr₅ (lo := 5472) (n := 8) (by decide) (by decide) U₅

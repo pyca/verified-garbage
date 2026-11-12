@@ -177,11 +177,11 @@ def ivWithin (B : Bnds) (ts : List T) (bt : BT) : Bool :=
 /-- What a piece does, for integers: in the lanes with bounds in `bt`, the
 limbs in the places of its results are those of the stage's terms, within
 those bounds. -/
-theorem stage_tab {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSeg c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) {bt : BT}
+theorem stage_tab {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
+    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B) {bt : BT}
     (hiv : ivWithin B (segT seg ins) bt = true) :
     WP isa (.block c) s₀ fun s =>
-      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s₀.mem s.mem ∧
+      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem ∧
       ∀ (n : Nat) (l : Loc) (t : T), outs[n]? = some l → (segT seg ins)[n]? = some t →
         ∀ k, k < 4 → ∀ b, bt.get (n / 5) k = some b →
           ints s l k = t.int (envOf s₀) k ∧ b.1 ≤ ints s l k ∧ ints s l k ≤ b.2 := by
@@ -674,13 +674,13 @@ theorem BT.get_lt {bt : BT} {j k : Nat} {b : Int × Int} (h : bt.get j k = some 
   cases h
 
 /-- What a stage's piece of code does to what is known between the stages. -/
-theorem cut_step {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
-    (h : chkSeg c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
+theorem cut_step {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T} {outs : List Loc}
+    (h : chkSegW w c ins seg outs = true) {s₀ : State} (hc : Ctx par s₀) {B : Bnds} (hB : EnvOK s₀ B)
     {iv bt : BT} {ovs : List (Nat × Nat)} (hiv : ivWithin B (segT seg ins) iv = true) (hov : ovOk bt iv ovs = true)
     (hlen : outs.length = 5 * (Id.run (seg ins)).length) (hrows : iv.length ≤ (Id.run (seg ins)).length)
     (hcar : ∀ j k, (j, k) ∈ ovs → Carried (envOf s₀) k ((Id.run (seg ins)).getD j zero5)) :
     WP isa (.block c) s₀ fun s =>
-      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, par.win - cfg.sbase)] s₀.mem s.mem ∧
+      (∃ σ, SRel par σ s₀ s) ∧ Unch (s₀.gpr .rdi) [(cfg.sbase, w)] s₀.mem s.mem ∧
         EnvOK s (bndsOf outs bt) ∧ Same iv (envOf s) (leaves outs) (envOf s₀) (Id.run (seg ins)) := by
   refine WP.mono (stage_tab h hc hB hiv) fun s ⟨hσ, hu, hs⟩ => ⟨hσ, hu, ?_, ?_⟩
   · refine envOK_of fun n l hl k hk b hb => ?_
