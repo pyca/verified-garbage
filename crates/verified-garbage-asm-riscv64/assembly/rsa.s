@@ -6974,14 +6974,22 @@ vg_rsa_crt_values:
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -6992,156 +7000,171 @@ vg_rsa_crt_values:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-247:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 247b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-248:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 248b
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 5
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	srai s6, s2, 63
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-249:
-	ld t5, 0(t1)
+247:
+	ld t5, 8(t0)
 	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	slli t2, t4, 5
+	add t2, a2, t2
+	sd t2, 0(t0)
+	slli t2, a0, 5
+	add t2, a3, t2
+	sd t2, 0(t1)
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 249b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-250:
-	ld t5, 0(t1)
-	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 250b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
+	bnez t3, 247b
+	slli t2, a2, 59
+	srai t2, t2, 59
+	sd t2, 0(t0)
+	slli t2, a3, 59
+	srai t2, t2, 59
+	sd t2, 0(t1)
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -7152,252 +7175,238 @@ vg_rsa_crt_values:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-251:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 251b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-252:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 252b
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-253:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 253b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 7
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-254:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 254b
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
 	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
+	addi a6, zero, 0
+	addi s0, zero, 0
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	addi t5, zero, 9
+	mul t5, t5, s10
+	add t5, t5, s11
+	addi t5, t5, 256
+	ld t5, 40(t5)
+	mul a2, t4, t5
+	mul a3, a0, t5
+	ld t5, 0(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
+	add t6, t6, t4
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-	addi t4, zero, 0
-255:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
+	addi t3, t3, -1
+	beqz t3, 248f
+250:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	ld t5, 8(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
 	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	sd t4, 0(t0)
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	sd a0, 0(t1)
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 255b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
-	addi t0, zero, 7
+	bnez t3, 250b
+	j 249f
+248:
+249:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	srai t5, t4, 63
+	add t4, t4, a6
+	sltu t6, t4, a6
+	sd t4, 0(t0)
+	add t5, t5, t6
+	sd t5, 8(t0)
+	srai t5, a0, 63
+	add a0, a0, s0
+	sltu t6, a0, s0
+	sd a0, 0(t1)
+	add t5, t5, t6
+	sd t5, 8(t1)
+	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-256:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 256b
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
 	addi s7, s7, -1
 	bnez s7, 246b
 	addi a5, zero, 1
@@ -7417,7 +7426,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-257:
+251:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -7433,7 +7442,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 257b
+	bnez t3, 251b
 	addi t1, zero, 6
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -7459,7 +7468,7 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-258:
+252:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -7470,7 +7479,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 258b
+	bnez t3, 252b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7487,7 +7496,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-259:
+253:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7500,7 +7509,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 259b
+	bnez t3, 253b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7518,7 +7527,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-260:
+254:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -7529,7 +7538,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 260b
+	bnez t3, 254b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7539,6 +7548,172 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+255:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 255b
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	slli t3, t3, 3
+	add t1, t1, t3
+	ld t4, 0(t1)
+	srai t4, t4, 63
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 6
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 13
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+256:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 256b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 6
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+257:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 257b
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 11
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t5, zero, 0
+	sub t4, t5, t4
+258:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 258b
+	addi t3, s8, 1
+	srli t3, t3, 1
+	slli s7, t3, 4
+	sub s7, s7, t3
+	addi s7, s7, 10
+259:
+	addi a5, zero, 1
+	addi t0, zero, 13
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 6
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+260:
+	ld t5, 0(t2)
+	mul t6, a5, t5
+	mulhu t5, a5, t5
+	ld a4, 0(t1)
+	add t6, t6, a4
+	sltu a4, t6, a4
+	add t5, t5, a4
+	add t6, t6, t4
+	sltu a4, t6, t4
+	add t4, t5, a4
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 260b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
@@ -7560,21 +7735,11 @@ vg_rsa_crt_values:
 	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 261b
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld t4, 0(t1)
-	srai t4, t4, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
+	addi t1, zero, 11
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
@@ -7585,6 +7750,8 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
+	addi t5, zero, 0
+	sub t4, t5, t4
 262:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
@@ -7597,177 +7764,19 @@ vg_rsa_crt_values:
 	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 262b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-263:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 263b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-264:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 264b
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli s7, t3, 4
-	sub s7, s7, t3
-	addi s7, s7, 10
-265:
-	addi a5, zero, 1
-	addi t0, zero, 13
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-266:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 266b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 13
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-267:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 267b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 13
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-268:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 268b
 	addi s7, s7, -1
-	bnez s7, 265b
+	bnez s7, 259b
 	addi t0, zero, 1
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-269:
+263:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 269b
+	bnez t3, 263b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7784,7 +7793,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-270:
+264:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7797,7 +7806,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 270b
+	bnez t3, 264b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -7823,7 +7832,7 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-271:
+265:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -7834,18 +7843,18 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 271b
+	bnez t3, 265b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-272:
+266:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 272b
+	bnez t3, 266b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7857,13 +7866,13 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-273:
+267:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 273b
+	bnez t3, 267b
 	j 240f
 239:
 	addi t0, zero, 2
@@ -7876,13 +7885,13 @@ vg_rsa_crt_values:
 	addi t1, t1, 256
 	addi t3, s8, 1
 	srli t3, t3, 1
-274:
+268:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 274b
+	bnez t3, 268b
 	addi t1, zero, 2
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -7937,13 +7946,13 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-275:
+269:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 275b
+	bnez t3, 269b
 	addi t0, zero, 0
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7966,7 +7975,7 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t4, zero, 0
-276:
+270:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -7982,7 +7991,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 276b
+	bnez t3, 270b
 	sd t4, 0(t0)
 	addi t0, zero, 6
 	mul t0, t0, s10
@@ -7992,11 +8001,11 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-277:
+271:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 277b
+	bnez t3, 271b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -8005,11 +8014,11 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-278:
+272:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 278b
+	bnez t3, 272b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -8026,7 +8035,7 @@ vg_rsa_crt_values:
 	add s7, t3, t3
 	add s7, s7, t3
 	addi s7, s7, 2
-279:
+273:
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -9829,14 +9838,22 @@ vg_rsa_crt_values:
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -9847,156 +9864,171 @@ vg_rsa_crt_values:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-280:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 280b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-281:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 281b
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 5
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	srai s6, s2, 63
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-282:
-	ld t5, 0(t1)
+274:
+	ld t5, 8(t0)
 	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	slli t2, t4, 5
+	add t2, a2, t2
+	sd t2, 0(t0)
+	slli t2, a0, 5
+	add t2, a3, t2
+	sd t2, 0(t1)
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 282b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-283:
-	ld t5, 0(t1)
-	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 283b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
+	bnez t3, 274b
+	slli t2, a2, 59
+	srai t2, t2, 59
+	sd t2, 0(t0)
+	slli t2, a3, 59
+	srai t2, t2, 59
+	sd t2, 0(t1)
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -10007,254 +10039,240 @@ vg_rsa_crt_values:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-284:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 284b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-285:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 285b
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-286:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 286b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 7
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-287:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 287b
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
 	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
+	addi a6, zero, 0
+	addi s0, zero, 0
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	addi t5, zero, 9
+	mul t5, t5, s10
+	add t5, t5, s11
+	addi t5, t5, 256
+	ld t5, 40(t5)
+	mul a2, t4, t5
+	mul a3, a0, t5
+	ld t5, 0(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
+	add t6, t6, t4
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-	addi t4, zero, 0
-288:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
+	addi t3, t3, -1
+	beqz t3, 275f
+277:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	ld t5, 8(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
 	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	sd t4, 0(t0)
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	sd a0, 0(t1)
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 288b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
-	addi t0, zero, 7
+	bnez t3, 277b
+	j 276f
+275:
+276:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	srai t5, t4, 63
+	add t4, t4, a6
+	sltu t6, t4, a6
+	sd t4, 0(t0)
+	add t5, t5, t6
+	sd t5, 8(t0)
+	srai t5, a0, 63
+	add a0, a0, s0
+	sltu t6, a0, s0
+	sd a0, 0(t1)
+	add t5, t5, t6
+	sd t5, 8(t1)
+	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-289:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 289b
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
 	addi s7, s7, -1
-	bnez s7, 279b
+	bnez s7, 273b
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -10272,7 +10290,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-290:
+278:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -10288,7 +10306,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 290b
+	bnez t3, 278b
 	addi t1, zero, 6
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10314,7 +10332,7 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-291:
+279:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10325,7 +10343,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 291b
+	bnez t3, 279b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10342,7 +10360,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-292:
+280:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10355,7 +10373,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 292b
+	bnez t3, 280b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10373,7 +10391,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-293:
+281:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10384,7 +10402,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 293b
+	bnez t3, 281b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10401,7 +10419,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-294:
+282:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10414,7 +10432,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 294b
+	bnez t3, 282b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10440,7 +10458,7 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-295:
+283:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10451,7 +10469,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 295b
+	bnez t3, 283b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10468,7 +10486,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-296:
+284:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10481,7 +10499,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 296b
+	bnez t3, 284b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10499,7 +10517,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-297:
+285:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10510,18 +10528,18 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 297b
+	bnez t3, 285b
 	addi t0, zero, 1
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-298:
+286:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 298b
+	bnez t3, 286b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10538,7 +10556,7 @@ vg_rsa_crt_values:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-299:
+287:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10551,7 +10569,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 299b
+	bnez t3, 287b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10577,7 +10595,7 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2100:
+288:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10588,18 +10606,18 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2100b
+	bnez t3, 288b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2101:
+289:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2101b
+	bnez t3, 289b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10611,13 +10629,13 @@ vg_rsa_crt_values:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2102:
+290:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2102b
+	bnez t3, 290b
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10637,11 +10655,11 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2103:
+291:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2103b
+	bnez t3, 291b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10663,7 +10681,7 @@ vg_rsa_crt_values:
 	addi a4, zero, 0
 	srli t3, s9, 1
 	addi t3, t3, 1
-2104:
+292:
 	ld t5, 0(t0)
 	sll t4, t5, t2
 	or t4, t4, a4
@@ -10673,18 +10691,18 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2104b
+	bnez t3, 292b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2105:
+293:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2105b
+	bnez t3, 293b
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10694,13 +10712,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2106:
+294:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2106b
+	bnez t3, 294b
 	addi a7, zero, 4
 	mul a7, a7, s10
 	add a7, a7, s11
@@ -10729,13 +10747,13 @@ vg_rsa_crt_values:
 	ld s0, 0(t3)
 	addi a1, zero, 0
 	addi t5, zero, 63
-2107:
+295:
 	srli s1, s0, 63
 	xori s1, s1, 1
 	sll s0, s0, s1
 	add a1, a1, s1
 	addi t5, t5, -1
-	bnez t5, 2107b
+	bnez t5, 295b
 	addi s0, zero, 1
 	sll s0, s0, a1
 	slli t3, t0, 3
@@ -10758,7 +10776,7 @@ vg_rsa_crt_values:
 	sub s3, s3, s2
 	addi s4, zero, 0
 	addi t5, zero, 64
-2108:
+296:
 	srli s1, s3, 63
 	slli s3, s3, 1
 	ori s3, s3, 1
@@ -10771,7 +10789,7 @@ vg_rsa_crt_values:
 	slli s4, s4, 1
 	or s4, s4, s0
 	addi t5, t5, -1
-	bnez t5, 2108b
+	bnez t5, 296b
 	sd s4, 16(a6)
 	addi a2, zero, 3
 	mul a2, a2, s10
@@ -10785,7 +10803,7 @@ vg_rsa_crt_values:
 	add t2, t2, t3
 	addi t2, t2, -8
 	addi a1, s9, 0
-2109:
+297:
 	slli t3, t0, 3
 	add t3, t3, a2
 	addi t3, t3, -24
@@ -10867,7 +10885,7 @@ vg_rsa_crt_values:
 	addi s0, zero, 0
 	addi s4, zero, 0
 	ld t6, 0(t2)
-2110:
+298:
 	ld s2, 0(t4)
 	mul s3, s2, s1
 	mulhu s2, s2, s1
@@ -10885,7 +10903,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2110b
+	bnez t5, 298b
 	sltu s2, t6, s0
 	sub s3, t6, s0
 	sltu a3, s3, s4
@@ -10900,7 +10918,7 @@ vg_rsa_crt_values:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s1, zero, 0
-2111:
+299:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s4
@@ -10913,13 +10931,13 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2111b
+	bnez t5, 299b
 	ld s2, 0(t3)
 	add s2, s2, s1
 	sd s2, 0(t3)
 	addi t2, t2, -8
 	addi a1, a1, -1
-	bnez a1, 2109b
+	bnez a1, 297b
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10944,7 +10962,7 @@ vg_rsa_crt_values:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-2112:
+2100:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -10952,7 +10970,7 @@ vg_rsa_crt_values:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2112b
+	bnez t3, 2100b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -10980,14 +10998,14 @@ vg_rsa_crt_values:
 	addi t1, t1, -1
 	addi t0, a6, 0
 	addi t3, s4, 0
-2113:
+2101:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2113b
+	bnez t3, 2101b
 	andi t0, s4, 7
 	slli t1, s9, 2
 	xor t1, t1, s4
@@ -10997,7 +11015,7 @@ vg_rsa_crt_values:
 	addi t1, zero, 32
 	sltu t1, s4, t1
 	or t0, t0, t1
-	beqz t0, 2114f
+	beqz t0, 2102f
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11007,13 +11025,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2116:
+2104:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2116b
+	bnez t3, 2104b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11023,13 +11041,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2117:
+2105:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2117b
+	bnez t3, 2105b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11045,14 +11063,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2118:
+2106:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2118b
+	bnez t3, 2106b
 	slli s7, s9, 6
 	addi a4, zero, -1
-2119:
+2107:
 	addi t2, zero, 18
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -11074,8 +11092,8 @@ vg_rsa_crt_values:
 	andi t4, a4, 1
 	addi t2, s8, 1
 	andi t2, t2, 3
-	beqz t2, 2120f
-2122:
+	beqz t2, 2108f
+2110:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11091,14 +11109,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 2122b
-	j 2121f
-2120:
-2121:
+	bnez t2, 2110b
+	j 2109f
+2108:
+2109:
 	addi t2, s8, 1
 	srli t2, t2, 2
-	beqz t2, 2123f
-2125:
+	beqz t2, 2111f
+2113:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11150,10 +11168,10 @@ vg_rsa_crt_values:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 2125b
-	j 2124f
-2123:
-2124:
+	bnez t2, 2113b
+	j 2112f
+2111:
+2112:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -11170,7 +11188,7 @@ vg_rsa_crt_values:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 2119b
+	bnez s7, 2107b
 	addi t0, zero, 22
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11182,7 +11200,7 @@ vg_rsa_crt_values:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s8, 1
-2126:
+2114:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -11195,7 +11213,7 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2126b
+	bnez t3, 2114b
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11205,13 +11223,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2127:
+2115:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2127b
+	bnez t3, 2115b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11221,13 +11239,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2128:
+2116:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2128b
+	bnez t3, 2116b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11243,14 +11261,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2129:
+2117:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2129b
+	bnez t3, 2117b
 	slli s7, s9, 6
 	addi a4, zero, -1
-2130:
+2118:
 	addi t2, zero, 18
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -11272,8 +11290,8 @@ vg_rsa_crt_values:
 	andi t4, a4, 1
 	addi t2, s8, 1
 	andi t2, t2, 3
-	beqz t2, 2131f
-2133:
+	beqz t2, 2119f
+2121:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11289,14 +11307,14 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 2133b
-	j 2132f
-2131:
-2132:
+	bnez t2, 2121b
+	j 2120f
+2119:
+2120:
 	addi t2, s8, 1
 	srli t2, t2, 2
-	beqz t2, 2134f
-2136:
+	beqz t2, 2122f
+2124:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -11348,10 +11366,10 @@ vg_rsa_crt_values:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 2136b
-	j 2135f
-2134:
-2135:
+	bnez t2, 2124b
+	j 2123f
+2122:
+2123:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -11368,7 +11386,7 @@ vg_rsa_crt_values:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 2130b
+	bnez s7, 2118b
 	addi t0, zero, 23
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11380,7 +11398,7 @@ vg_rsa_crt_values:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s8, 1
-2137:
+2125:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -11393,9 +11411,9 @@ vg_rsa_crt_values:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2137b
-	j 2115f
-2114:
+	bnez t3, 2125b
+	j 2103f
+2102:
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11415,11 +11433,11 @@ vg_rsa_crt_values:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2138:
+2126:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2138b
+	bnez t3, 2126b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11429,13 +11447,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2139:
+2127:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2139b
+	bnez t3, 2127b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11471,13 +11489,13 @@ vg_rsa_crt_values:
 	ld s0, 0(t3)
 	addi a1, zero, 0
 	addi t5, zero, 63
-2140:
+2128:
 	srli s1, s0, 63
 	xori s1, s1, 1
 	sll s0, s0, s1
 	add a1, a1, s1
 	addi t5, t5, -1
-	bnez t5, 2140b
+	bnez t5, 2128b
 	addi s0, zero, 1
 	sll s0, s0, a1
 	slli t3, t0, 3
@@ -11500,7 +11518,7 @@ vg_rsa_crt_values:
 	sub s3, s3, s2
 	addi s4, zero, 0
 	addi t5, zero, 64
-2141:
+2129:
 	srli s1, s3, 63
 	slli s3, s3, 1
 	ori s3, s3, 1
@@ -11513,7 +11531,7 @@ vg_rsa_crt_values:
 	slli s4, s4, 1
 	or s4, s4, s0
 	addi t5, t5, -1
-	bnez t5, 2141b
+	bnez t5, 2129b
 	sd s4, 16(a6)
 	addi a2, zero, 22
 	mul a2, a2, s10
@@ -11527,7 +11545,7 @@ vg_rsa_crt_values:
 	add t2, t2, t3
 	addi t2, t2, -8
 	addi a1, s9, 0
-2142:
+2130:
 	slli t3, t0, 3
 	add t3, t3, a2
 	addi t3, t3, -24
@@ -11609,7 +11627,7 @@ vg_rsa_crt_values:
 	addi s0, zero, 0
 	addi s4, zero, 0
 	ld t6, 0(t2)
-2143:
+2131:
 	ld s2, 0(t4)
 	mul s3, s2, s1
 	mulhu s2, s2, s1
@@ -11627,7 +11645,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2143b
+	bnez t5, 2131b
 	sltu s2, t6, s0
 	sub s3, t6, s0
 	sltu a3, s3, s4
@@ -11642,7 +11660,7 @@ vg_rsa_crt_values:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s1, zero, 0
-2144:
+2132:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s4
@@ -11655,24 +11673,24 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2144b
+	bnez t5, 2132b
 	ld s2, 0(t3)
 	add s2, s2, s1
 	sd s2, 0(t3)
 	addi t2, t2, -8
 	addi a1, a1, -1
-	bnez a1, 2142b
+	bnez a1, 2130b
 	addi t0, zero, 23
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2145:
+2133:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2145b
+	bnez t3, 2133b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11682,13 +11700,13 @@ vg_rsa_crt_values:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2146:
+2134:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2146b
+	bnez t3, 2134b
 	addi t0, zero, 20
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11724,13 +11742,13 @@ vg_rsa_crt_values:
 	ld s0, 0(t3)
 	addi a1, zero, 0
 	addi t5, zero, 63
-2147:
+2135:
 	srli s1, s0, 63
 	xori s1, s1, 1
 	sll s0, s0, s1
 	add a1, a1, s1
 	addi t5, t5, -1
-	bnez t5, 2147b
+	bnez t5, 2135b
 	addi s0, zero, 1
 	sll s0, s0, a1
 	slli t3, t0, 3
@@ -11753,7 +11771,7 @@ vg_rsa_crt_values:
 	sub s3, s3, s2
 	addi s4, zero, 0
 	addi t5, zero, 64
-2148:
+2136:
 	srli s1, s3, 63
 	slli s3, s3, 1
 	ori s3, s3, 1
@@ -11766,7 +11784,7 @@ vg_rsa_crt_values:
 	slli s4, s4, 1
 	or s4, s4, s0
 	addi t5, t5, -1
-	bnez t5, 2148b
+	bnez t5, 2136b
 	sd s4, 16(a6)
 	addi a2, zero, 23
 	mul a2, a2, s10
@@ -11780,7 +11798,7 @@ vg_rsa_crt_values:
 	add t2, t2, t3
 	addi t2, t2, -8
 	addi a1, s9, 0
-2149:
+2137:
 	slli t3, t0, 3
 	add t3, t3, a2
 	addi t3, t3, -24
@@ -11862,7 +11880,7 @@ vg_rsa_crt_values:
 	addi s0, zero, 0
 	addi s4, zero, 0
 	ld t6, 0(t2)
-2150:
+2138:
 	ld s2, 0(t4)
 	mul s3, s2, s1
 	mulhu s2, s2, s1
@@ -11880,7 +11898,7 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2150b
+	bnez t5, 2138b
 	sltu s2, t6, s0
 	sub s3, t6, s0
 	sltu a3, s3, s4
@@ -11895,7 +11913,7 @@ vg_rsa_crt_values:
 	addi t4, a7, 0
 	addi t5, t0, 0
 	addi s1, zero, 0
-2151:
+2139:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	and s3, s3, s4
@@ -11908,13 +11926,13 @@ vg_rsa_crt_values:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2151b
+	bnez t5, 2139b
 	ld s2, 0(t3)
 	add s2, s2, s1
 	sd s2, 0(t3)
 	addi t2, t2, -8
 	addi a1, a1, -1
-	bnez a1, 2149b
+	bnez a1, 2137b
 	addi t0, zero, 18
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -11928,7 +11946,7 @@ vg_rsa_crt_values:
 	ld a2, 48(t0)
 	ld a3, 56(t0)
 	ld a6, 64(t0)
-2115:
+2103:
 	ld t4, 184(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -11940,14 +11958,14 @@ vg_rsa_crt_values:
 	addi t1, t1, -1
 	addi t0, a2, 0
 	addi t3, s4, 0
-2152:
+2140:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2152b
+	bnez t3, 2140b
 	addi t1, zero, 23
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -11956,14 +11974,14 @@ vg_rsa_crt_values:
 	addi t1, t1, -1
 	addi t0, a3, 0
 	addi t3, s6, 0
-2153:
+2141:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2153b
+	bnez t3, 2141b
 	ld a0, 184(s11)
 25:
 	ld s0, 0(s11)
@@ -19120,14 +19138,22 @@ vg_rsa_recover_primes_det:
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -19138,144 +19164,151 @@ vg_rsa_recover_primes_det:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-242:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 242b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-243:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 243b
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 5
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	srai s6, s2, 63
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-244:
-	ld t5, 0(t1)
+242:
+	ld t5, 8(t0)
 	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	slli t2, t4, 5
+	add t2, a2, t2
+	sd t2, 0(t0)
+	slli t2, a0, 5
+	add t2, a3, t2
+	sd t2, 0(t1)
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 244b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
-	addi t0, zero, 5
+	bnez t3, 242b
+	slli t2, a2, 59
+	srai t2, t2, 59
+	sd t2, 0(t0)
+	slli t2, a3, 59
+	srai t2, t2, 59
+	sd t2, 0(t1)
+	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-245:
-	ld t5, 0(t1)
-	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 245b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
 	addi s7, s7, -1
 	bnez s7, 241b
 	addi t0, zero, 1
@@ -19284,11 +19317,11 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-246:
+243:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 246b
+	bnez t3, 243b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -19305,7 +19338,7 @@ vg_rsa_recover_primes_det:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-247:
+244:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -19318,7 +19351,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 247b
+	bnez t3, 244b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -19344,7 +19377,7 @@ vg_rsa_recover_primes_det:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-248:
+245:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -19355,7 +19388,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 248b
+	bnez t3, 245b
 	addi t1, zero, 8
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -19366,7 +19399,7 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-249:
+246:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -19374,7 +19407,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 249b
+	bnez t3, 246b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -19395,7 +19428,7 @@ vg_rsa_recover_primes_det:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-250:
+247:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -19406,7 +19439,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 250b
+	bnez t3, 247b
 	addi t0, zero, 34
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -19416,13 +19449,13 @@ vg_rsa_recover_primes_det:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-251:
+248:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 251b
+	bnez t3, 248b
 	addi t0, zero, 28
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -19432,13 +19465,13 @@ vg_rsa_recover_primes_det:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-252:
+249:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 252b
+	bnez t3, 249b
 	slli s9, s9, 1
 	addi s9, s9, 2
 	slli s10, s10, 1
@@ -19451,7 +19484,7 @@ vg_rsa_recover_primes_det:
 	add a3, a3, s11
 	addi a3, a3, 256
 	addi s8, s9, 0
-253:
+250:
 	ld a6, 0(a2)
 	addi t0, a3, 0
 	addi t1, zero, 11
@@ -19460,7 +19493,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 256
 	addi t3, s8, 0
 	addi t4, zero, 0
-254:
+251:
 	ld t5, 0(t1)
 	mul t6, a6, t5
 	mulhu t5, a6, t5
@@ -19476,11 +19509,11 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 254b
+	bnez t3, 251b
 	addi a2, a2, 8
 	addi a3, a3, 8
 	addi s8, s8, -1
-	bnez s8, 253b
+	bnez s8, 250b
 	addi s8, s9, -2
 	srli s8, s8, 1
 	addi t0, zero, 13
@@ -19489,14 +19522,14 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-255:
+252:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 255b
+	bnez t3, 252b
 	slli s7, s9, 6
 	addi a4, zero, -1
-256:
+253:
 	addi t2, zero, 12
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -19518,8 +19551,8 @@ vg_rsa_recover_primes_det:
 	andi t4, a4, 1
 	addi t2, s8, 1
 	andi t2, t2, 3
-	beqz t2, 257f
-259:
+	beqz t2, 254f
+256:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -19535,14 +19568,14 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 259b
-	j 258f
-257:
-258:
+	bnez t2, 256b
+	j 255f
+254:
+255:
 	addi t2, s8, 1
 	srli t2, t2, 2
-	beqz t2, 260f
-262:
+	beqz t2, 257f
+259:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -19594,10 +19627,10 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 262b
-	j 261f
-260:
-261:
+	bnez t2, 259b
+	j 258f
+257:
+258:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -19614,7 +19647,7 @@ vg_rsa_recover_primes_det:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 256b
+	bnez s7, 253b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -19626,7 +19659,7 @@ vg_rsa_recover_primes_det:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s8, 1
-263:
+260:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -19639,7 +19672,7 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 263b
+	bnez t3, 260b
 	addi t0, zero, 16
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -19649,6 +19682,94 @@ vg_rsa_recover_primes_det:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t2, zero, 14
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+261:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 261b
+	sd t4, 200(s11)
+	addi s9, s9, -2
+	srli s9, s9, 1
+	srli s10, s10, 1
+	addi t0, zero, 51
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 42
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 41
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+262:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 262b
+	addi t0, zero, 52
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 24
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 51
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+263:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 263b
+	addi t0, zero, 53
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 40
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 26
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
@@ -19668,108 +19789,20 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 264b
-	sd t4, 200(s11)
-	addi s9, s9, -2
-	srli s9, s9, 1
-	srli s10, s10, 1
-	addi t0, zero, 51
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 42
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 41
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s9, 0
-	addi t4, zero, 0
-265:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 265b
-	addi t0, zero, 52
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 24
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 51
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s9, 0
-	addi t4, zero, 0
-266:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 266b
-	addi t0, zero, 53
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 40
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 26
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s9, 0
-	addi t4, zero, 0
-267:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 267b
 	addi t0, zero, 54
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-268:
+265:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 268b
+	bnez t3, 265b
 	slli s7, s9, 6
 	addi a4, zero, -1
-269:
+266:
 	addi t2, zero, 53
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -19791,8 +19824,8 @@ vg_rsa_recover_primes_det:
 	andi t4, a4, 1
 	addi t2, s9, 1
 	andi t2, t2, 3
-	beqz t2, 270f
-272:
+	beqz t2, 267f
+269:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -19808,14 +19841,14 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 272b
-	j 271f
-270:
-271:
+	bnez t2, 269b
+	j 268f
+267:
+268:
 	addi t2, s9, 1
 	srli t2, t2, 2
-	beqz t2, 273f
-275:
+	beqz t2, 270f
+272:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -19867,10 +19900,10 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 275b
-	j 274f
-273:
-274:
+	bnez t2, 272b
+	j 271f
+270:
+271:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -19887,7 +19920,7 @@ vg_rsa_recover_primes_det:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 269b
+	bnez s7, 266b
 	addi t0, zero, 54
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -19899,7 +19932,7 @@ vg_rsa_recover_primes_det:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s9, 1
-276:
+273:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -19912,7 +19945,7 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 276b
+	bnez t3, 273b
 	addi t1, zero, 54
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -19923,7 +19956,7 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-277:
+274:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -19931,7 +19964,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 277b
+	bnez t3, 274b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -19950,7 +19983,7 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-278:
+275:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -19963,7 +19996,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 278b
+	bnez t3, 275b
 	addi t0, zero, 36
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -19973,13 +20006,13 @@ vg_rsa_recover_primes_det:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-279:
+276:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 279b
+	bnez t3, 276b
 	slli s9, s9, 1
 	addi s9, s9, 2
 	slli s10, s10, 1
@@ -19992,7 +20025,7 @@ vg_rsa_recover_primes_det:
 	add a3, a3, s11
 	addi a3, a3, 256
 	addi s8, s9, 0
-280:
+277:
 	ld a6, 0(a2)
 	addi t0, a3, 0
 	addi t1, zero, 18
@@ -20001,7 +20034,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 256
 	addi t3, s8, 0
 	addi t4, zero, 0
-281:
+278:
 	ld t5, 0(t1)
 	mul t6, a6, t5
 	mulhu t5, a6, t5
@@ -20017,18 +20050,18 @@ vg_rsa_recover_primes_det:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 281b
+	bnez t3, 278b
 	addi a2, a2, 8
 	addi a3, a3, 8
 	addi s8, s8, -1
-	bnez s8, 280b
+	bnez s8, 277b
 	addi t4, zero, 0
 	addi t0, zero, 14
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 0
-282:
+279:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t4
@@ -20036,14 +20069,14 @@ vg_rsa_recover_primes_det:
 	srli t4, t5, 63
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 282b
+	bnez t3, 279b
 	addi t4, zero, 0
 	addi t0, zero, 14
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 0
-283:
+280:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t4
@@ -20051,7 +20084,7 @@ vg_rsa_recover_primes_det:
 	srli t4, t5, 63
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 283b
+	bnez t3, 280b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -20066,7 +20099,7 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-284:
+281:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -20079,7 +20112,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 284b
+	bnez t3, 281b
 	sd t4, 216(s11)
 	addi t0, zero, 16
 	mul t0, t0, s10
@@ -20095,7 +20128,7 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-285:
+282:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -20108,14 +20141,14 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 285b
+	bnez t3, 282b
 	sd t4, 224(s11)
 	addi s9, s9, -2
 	srli s9, s9, 1
 	srli s10, s10, 1
 	slli s7, s9, 6
 	addi s7, s7, 64
-286:
+283:
 	slli s9, s9, 1
 	addi s9, s9, 2
 	slli s10, s10, 1
@@ -20125,7 +20158,7 @@ vg_rsa_recover_primes_det:
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 0
-287:
+284:
 	ld t5, 0(t0)
 	slli t6, t5, 2
 	or t6, t6, t4
@@ -20133,7 +20166,7 @@ vg_rsa_recover_primes_det:
 	sd t6, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 287b
+	bnez t3, 284b
 	addi s9, s9, -2
 	srli s9, s9, 1
 	srli s10, s10, 1
@@ -20142,7 +20175,7 @@ vg_rsa_recover_primes_det:
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 0
-288:
+285:
 	ld t5, 0(t0)
 	slli t6, t5, 2
 	or t6, t6, t4
@@ -20150,7 +20183,7 @@ vg_rsa_recover_primes_det:
 	sd t6, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 288b
+	bnez t3, 285b
 	addi t0, zero, 59
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -20166,7 +20199,7 @@ vg_rsa_recover_primes_det:
 	addi t4, zero, 0
 	addi a4, zero, 1
 	addi t3, s9, 0
-289:
+286:
 	ld t6, 0(t2)
 	slli t5, t6, 2
 	or t5, t5, a4
@@ -20182,7 +20215,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 289b
+	bnez t3, 286b
 	sd t4, 232(s11)
 	addi t0, zero, 56
 	mul t0, t0, s10
@@ -20200,7 +20233,7 @@ vg_rsa_recover_primes_det:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-290:
+287:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -20211,7 +20244,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 290b
+	bnez t3, 287b
 	ld t5, 232(s11)
 	xori t4, t5, 1
 	addi t0, zero, 57
@@ -20219,7 +20252,7 @@ vg_rsa_recover_primes_det:
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 0
-291:
+288:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t4
@@ -20227,9 +20260,9 @@ vg_rsa_recover_primes_det:
 	srli t4, t5, 63
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 291b
+	bnez t3, 288b
 	addi s7, s7, -1
-	bnez s7, 286b
+	bnez s7, 283b
 	addi t1, zero, 56
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -20240,7 +20273,7 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-292:
+289:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -20248,7 +20281,7 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 292b
+	bnez t3, 289b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -20258,6 +20291,81 @@ vg_rsa_recover_primes_det:
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t1, zero, 42
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 57
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+290:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 290b
+	addi t0, zero, 60
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 53
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 62
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s9, 0
+	addi t4, zero, 0
+291:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 291b
+	addi t4, zero, 0
+	addi t0, zero, 60
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	slli t5, s9, 3
+	add t5, t0, t5
+	sd t4, 0(t5)
+	addi t3, s9, 0
+292:
+	ld t5, 0(t0)
+	ld t6, 8(t0)
+	slli t6, t6, 63
+	srli t5, t5, 1
+	or t5, t5, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 292b
+	addi t0, zero, 61
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 53
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
@@ -20281,100 +20389,25 @@ vg_rsa_recover_primes_det:
 	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 293b
-	addi t0, zero, 60
+	addi t4, zero, 0
+	addi t0, zero, 61
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 53
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 62
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	slli t5, s9, 3
+	add t5, t0, t5
+	sd t4, 0(t5)
 	addi t3, s9, 0
-	addi t4, zero, 0
 294:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
+	ld t5, 0(t0)
+	ld t6, 8(t0)
+	slli t6, t6, 63
+	srli t5, t5, 1
+	or t5, t5, t6
 	sd t5, 0(t0)
 	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 294b
-	addi t4, zero, 0
-	addi t0, zero, 60
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	slli t5, s9, 3
-	add t5, t0, t5
-	sd t4, 0(t5)
-	addi t3, s9, 0
-295:
-	ld t5, 0(t0)
-	ld t6, 8(t0)
-	slli t6, t6, 63
-	srli t5, t5, 1
-	or t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 295b
-	addi t0, zero, 61
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 53
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 57
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s9, 0
-	addi t4, zero, 0
-296:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 296b
-	addi t4, zero, 0
-	addi t0, zero, 61
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	slli t5, s9, 3
-	add t5, t0, t5
-	sd t4, 0(t5)
-	addi t3, s9, 0
-297:
-	ld t5, 0(t0)
-	ld t6, 8(t0)
-	slli t6, t6, 63
-	srli t5, t5, 1
-	or t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 297b
 	ld t5, 152(s11)
 	xori t5, t5, 1
 	ld t6, 160(s11)
@@ -20404,14 +20437,14 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, -1
 	addi t0, s3, 0
 	addi t3, s2, 0
-298:
+295:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 298b
+	bnez t3, 295b
 	addi t1, zero, 61
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -20420,14 +20453,14 @@ vg_rsa_recover_primes_det:
 	addi t1, t1, -1
 	addi t0, s4, 0
 	addi t3, s2, 0
-299:
+296:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 299b
+	bnez t3, 296b
 	ld a0, 248(s11)
 25:
 	ld s0, 0(s11)

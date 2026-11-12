@@ -2770,14 +2770,22 @@ vg_rsa_keygen_key:
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -2788,156 +2796,171 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-239:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 239b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-240:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 240b
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 5
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	srai s6, s2, 63
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-241:
-	ld t5, 0(t1)
+239:
+	ld t5, 8(t0)
 	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	slli t2, t4, 5
+	add t2, a2, t2
+	sd t2, 0(t0)
+	slli t2, a0, 5
+	add t2, a3, t2
+	sd t2, 0(t1)
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 241b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-242:
-	ld t5, 0(t1)
-	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 242b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
+	bnez t3, 239b
+	slli t2, a2, 59
+	srai t2, t2, 59
+	sd t2, 0(t0)
+	slli t2, a3, 59
+	srai t2, t2, 59
+	sd t2, 0(t1)
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -2948,252 +2971,238 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-243:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 243b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-244:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 244b
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-245:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 245b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 7
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-246:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 246b
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
 	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
+	addi a6, zero, 0
+	addi s0, zero, 0
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	addi t5, zero, 9
+	mul t5, t5, s10
+	add t5, t5, s11
+	addi t5, t5, 256
+	ld t5, 40(t5)
+	mul a2, t4, t5
+	mul a3, a0, t5
+	ld t5, 0(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
+	add t6, t6, t4
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-	addi t4, zero, 0
-247:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
+	addi t3, t3, -1
+	beqz t3, 240f
+242:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	ld t5, 8(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
 	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	sd t4, 0(t0)
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	sd a0, 0(t1)
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 247b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
-	addi t0, zero, 7
+	bnez t3, 242b
+	j 241f
+240:
+241:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	srai t5, t4, 63
+	add t4, t4, a6
+	sltu t6, t4, a6
+	sd t4, 0(t0)
+	add t5, t5, t6
+	sd t5, 8(t0)
+	srai t5, a0, 63
+	add a0, a0, s0
+	sltu t6, a0, s0
+	sd a0, 0(t1)
+	add t5, t5, t6
+	sd t5, 8(t1)
+	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-248:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 248b
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
 	addi s7, s7, -1
 	bnez s7, 238b
 	addi a5, zero, 1
@@ -3213,7 +3222,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-249:
+243:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -3229,7 +3238,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 249b
+	bnez t3, 243b
 	addi t1, zero, 6
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -3255,7 +3264,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-250:
+244:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -3266,7 +3275,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 250b
+	bnez t3, 244b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3283,7 +3292,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-251:
+245:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -3296,7 +3305,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 251b
+	bnez t3, 245b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3314,7 +3323,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-252:
+246:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -3325,7 +3334,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 252b
+	bnez t3, 246b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3335,6 +3344,172 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+247:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 247b
+	addi t1, zero, 4
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	slli t3, t3, 3
+	add t1, t1, t3
+	ld t4, 0(t1)
+	srai t4, t4, 63
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 6
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 13
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+248:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 248b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 6
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+249:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	sltu a4, t5, t6
+	sub t5, t5, t6
+	sltu t6, t5, t4
+	sub t5, t5, t4
+	or t4, a4, t6
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 249b
+	addi t0, zero, 6
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 11
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t5, zero, 0
+	sub t4, t5, t4
+250:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 250b
+	addi t3, s8, 1
+	srli t3, t3, 1
+	slli s7, t3, 4
+	sub s7, s7, t3
+	addi s7, s7, 10
+251:
+	addi a5, zero, 1
+	addi t0, zero, 13
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 6
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 6
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t3, s8, 1
+	srli t3, t3, 1
+	addi t3, t3, 1
+	addi t4, zero, 0
+252:
+	ld t5, 0(t2)
+	mul t6, a5, t5
+	mulhu t5, a5, t5
+	ld a4, 0(t1)
+	add t6, t6, a4
+	sltu a4, t6, a4
+	add t5, t5, a4
+	add t6, t6, t4
+	sltu a4, t6, t4
+	add t4, t5, a4
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 252b
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 13
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
@@ -3356,21 +3531,11 @@ vg_rsa_keygen_key:
 	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 253b
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld t4, 0(t1)
-	srai t4, t4, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
+	addi t1, zero, 11
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
@@ -3381,6 +3546,8 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
+	addi t5, zero, 0
+	sub t4, t5, t4
 254:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
@@ -3393,177 +3560,19 @@ vg_rsa_keygen_key:
 	addi t2, t2, 8
 	addi t3, t3, -1
 	bnez t3, 254b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-255:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 255b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-256:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 256b
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli s7, t3, 4
-	sub s7, s7, t3
-	addi s7, s7, 10
-257:
-	addi a5, zero, 1
-	addi t0, zero, 13
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 6
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-258:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 258b
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 13
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-259:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	sltu a4, t5, t6
-	sub t5, t5, t6
-	sltu t6, t5, t4
-	sub t5, t5, t4
-	or t4, a4, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 259b
-	addi t0, zero, 6
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 13
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t5, zero, 0
-	sub t4, t5, t4
-260:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 260b
 	addi s7, s7, -1
-	bnez s7, 257b
+	bnez s7, 251b
 	addi t0, zero, 1
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-261:
+255:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 261b
+	bnez t3, 255b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3580,7 +3589,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-262:
+256:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -3593,7 +3602,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 262b
+	bnez t3, 256b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -3619,7 +3628,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-263:
+257:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -3630,18 +3639,18 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 263b
+	bnez t3, 257b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-264:
+258:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 264b
+	bnez t3, 258b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3653,13 +3662,13 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-265:
+259:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 265b
+	bnez t3, 259b
 	addi t0, zero, 35
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3676,7 +3685,7 @@ vg_rsa_keygen_key:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-266:
+260:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -3687,7 +3696,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 266b
+	bnez t3, 260b
 	addi t0, zero, 36
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3697,13 +3706,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-267:
+261:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 267b
+	bnez t3, 261b
 	addi t0, zero, 37
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3713,27 +3722,27 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-268:
+262:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 268b
+	bnez t3, 262b
 	addi t0, zero, 38
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-269:
+263:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 269b
+	bnez t3, 263b
 	slli s7, s9, 6
 	addi a4, zero, -1
-270:
+264:
 	addi t2, zero, 36
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -3755,8 +3764,8 @@ vg_rsa_keygen_key:
 	andi t4, a4, 1
 	addi t2, s9, 1
 	andi t2, t2, 3
-	beqz t2, 271f
-273:
+	beqz t2, 265f
+267:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -3772,14 +3781,14 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 273b
-	j 272f
-271:
-272:
+	bnez t2, 267b
+	j 266f
+265:
+266:
 	addi t2, s9, 1
 	srli t2, t2, 2
-	beqz t2, 274f
-276:
+	beqz t2, 268f
+270:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -3831,10 +3840,10 @@ vg_rsa_keygen_key:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 276b
-	j 275f
-274:
-275:
+	bnez t2, 270b
+	j 269f
+268:
+269:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -3851,7 +3860,7 @@ vg_rsa_keygen_key:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 270b
+	bnez s7, 264b
 	addi t0, zero, 38
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3863,7 +3872,7 @@ vg_rsa_keygen_key:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s9, 1
-277:
+271:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -3876,7 +3885,7 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 277b
+	bnez t3, 271b
 	addi t0, zero, 21
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3894,7 +3903,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-278:
+272:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -3902,7 +3911,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 278b
+	bnez t3, 272b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -3921,7 +3930,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-279:
+273:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -3934,7 +3943,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 279b
+	bnez t3, 273b
 	sd t4, 192(s11)
 	ld t5, 192(s11)
 	xori t5, t5, 1
@@ -3957,7 +3966,7 @@ vg_rsa_keygen_key:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-280:
+274:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -3968,7 +3977,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 280b
+	bnez t3, 274b
 	addi t0, zero, 41
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3978,13 +3987,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-281:
+275:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 281b
+	bnez t3, 275b
 	addi t0, zero, 37
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -3994,27 +4003,27 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-282:
+276:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 282b
+	bnez t3, 276b
 	addi t0, zero, 42
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-283:
+277:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 283b
+	bnez t3, 277b
 	slli s7, s9, 6
 	addi a4, zero, -1
-284:
+278:
 	addi t2, zero, 41
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -4036,8 +4045,8 @@ vg_rsa_keygen_key:
 	andi t4, a4, 1
 	addi t2, s9, 1
 	andi t2, t2, 3
-	beqz t2, 285f
-287:
+	beqz t2, 279f
+281:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -4053,14 +4062,14 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 287b
-	j 286f
-285:
-286:
+	bnez t2, 281b
+	j 280f
+279:
+280:
 	addi t2, s9, 1
 	srli t2, t2, 2
-	beqz t2, 288f
-290:
+	beqz t2, 282f
+284:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -4112,10 +4121,10 @@ vg_rsa_keygen_key:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 290b
-	j 289f
-288:
-289:
+	bnez t2, 284b
+	j 283f
+282:
+283:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -4132,7 +4141,7 @@ vg_rsa_keygen_key:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 284b
+	bnez s7, 278b
 	addi t0, zero, 42
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -4144,7 +4153,7 @@ vg_rsa_keygen_key:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s9, 1
-291:
+285:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -4157,7 +4166,7 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 291b
+	bnez t3, 285b
 	addi t0, zero, 0
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -4167,13 +4176,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-292:
+286:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 292b
+	bnez t3, 286b
 	addi t0, zero, 8
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -4183,13 +4192,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-293:
+287:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 293b
+	bnez t3, 287b
 	addi s8, zero, 2
 	addi t0, zero, 2
 	mul t0, t0, s10
@@ -4201,13 +4210,13 @@ vg_rsa_keygen_key:
 	addi t1, t1, 256
 	addi t3, s8, 1
 	srli t3, t3, 1
-294:
+288:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 294b
+	bnez t3, 288b
 	addi t1, zero, 2
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -4262,13 +4271,13 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-295:
+289:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 295b
+	bnez t3, 289b
 	addi t0, zero, 0
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -4291,7 +4300,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t4, zero, 0
-296:
+290:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -4307,7 +4316,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 296b
+	bnez t3, 290b
 	sd t4, 0(t0)
 	addi t0, zero, 6
 	mul t0, t0, s10
@@ -4317,11 +4326,11 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-297:
+291:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 297b
+	bnez t3, 291b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -4330,11 +4339,11 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-298:
+292:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 298b
+	bnez t3, 292b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -4351,7 +4360,7 @@ vg_rsa_keygen_key:
 	add s7, t3, t3
 	add s7, s7, t3
 	addi s7, s7, 2
-299:
+293:
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6154,14 +6163,22 @@ vg_rsa_keygen_key:
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -6172,156 +6189,171 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2100:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2100b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2101:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2101b
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 5
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	srai s6, s2, 63
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-2102:
-	ld t5, 0(t1)
+294:
+	ld t5, 8(t0)
 	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	slli t2, t4, 5
+	add t2, a2, t2
+	sd t2, 0(t0)
+	slli t2, a0, 5
+	add t2, a3, t2
+	sd t2, 0(t1)
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2102b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-2103:
-	ld t5, 0(t1)
-	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2103b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
+	bnez t3, 294b
+	slli t2, a2, 59
+	srai t2, t2, 59
+	sd t2, 0(t0)
+	slli t2, a3, 59
+	srai t2, t2, 59
+	sd t2, 0(t1)
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -6332,254 +6364,240 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2104:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2104b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2105:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2105b
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-2106:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2106b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 7
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-2107:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2107b
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
 	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
+	addi a6, zero, 0
+	addi s0, zero, 0
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	addi t5, zero, 9
+	mul t5, t5, s10
+	add t5, t5, s11
+	addi t5, t5, 256
+	ld t5, 40(t5)
+	mul a2, t4, t5
+	mul a3, a0, t5
+	ld t5, 0(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
+	add t6, t6, t4
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-	addi t4, zero, 0
-2108:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
+	addi t3, t3, -1
+	beqz t3, 295f
+297:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	ld t5, 8(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
 	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	sd t4, 0(t0)
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	sd a0, 0(t1)
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2108b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
-	addi t0, zero, 7
+	bnez t3, 297b
+	j 296f
+295:
+296:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	srai t5, t4, 63
+	add t4, t4, a6
+	sltu t6, t4, a6
+	sd t4, 0(t0)
+	add t5, t5, t6
+	sd t5, 8(t0)
+	srai t5, a0, 63
+	add a0, a0, s0
+	sltu t6, a0, s0
+	sd a0, 0(t1)
+	add t5, t5, t6
+	sd t5, 8(t1)
+	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-2109:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2109b
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
 	addi s7, s7, -1
-	bnez s7, 299b
+	bnez s7, 293b
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -6597,7 +6615,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2110:
+298:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -6613,7 +6631,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2110b
+	bnez t3, 298b
 	addi t1, zero, 6
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -6639,7 +6657,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2111:
+299:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -6650,7 +6668,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2111b
+	bnez t3, 299b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6667,7 +6685,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2112:
+2100:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -6680,7 +6698,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2112b
+	bnez t3, 2100b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6698,7 +6716,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2113:
+2101:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -6709,7 +6727,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2113b
+	bnez t3, 2101b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6726,7 +6744,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2114:
+2102:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -6739,7 +6757,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2114b
+	bnez t3, 2102b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -6765,7 +6783,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2115:
+2103:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -6776,7 +6794,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2115b
+	bnez t3, 2103b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6793,7 +6811,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2116:
+2104:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -6806,7 +6824,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2116b
+	bnez t3, 2104b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6824,7 +6842,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2117:
+2105:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -6835,13 +6853,13 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2117b
+	bnez t3, 2105b
 	addi t3, s8, 1
 	srli t3, t3, 1
 	slli s7, t3, 4
 	sub s7, s7, t3
 	addi s7, s7, 10
-2118:
+2106:
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -6859,7 +6877,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2119:
+2107:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -6875,7 +6893,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2119b
+	bnez t3, 2107b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6892,7 +6910,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2120:
+2108:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -6905,7 +6923,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2120b
+	bnez t3, 2108b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6923,7 +6941,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2121:
+2109:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -6934,20 +6952,20 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2121b
+	bnez t3, 2109b
 	addi s7, s7, -1
-	bnez s7, 2118b
+	bnez s7, 2106b
 	addi t0, zero, 1
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2122:
+2110:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2122b
+	bnez t3, 2110b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -6964,7 +6982,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2123:
+2111:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -6977,7 +6995,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2123b
+	bnez t3, 2111b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -7003,7 +7021,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2124:
+2112:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -7014,18 +7032,18 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2124b
+	bnez t3, 2112b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2125:
+2113:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2125b
+	bnez t3, 2113b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7037,13 +7055,13 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2126:
+2114:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2126b
+	bnez t3, 2114b
 	addi t1, zero, 1
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -7054,7 +7072,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-2127:
+2115:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -7062,7 +7080,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2127b
+	bnez t3, 2115b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -7081,7 +7099,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2128:
+2116:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7094,7 +7112,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2128b
+	bnez t3, 2116b
 	addi t0, zero, 44
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7104,13 +7122,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2129:
+2117:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2129b
+	bnez t3, 2117b
 	addi a2, zero, 41
 	mul a2, a2, s10
 	add a2, a2, s11
@@ -7120,7 +7138,7 @@ vg_rsa_keygen_key:
 	add a3, a3, s11
 	addi a3, a3, 256
 	addi s8, s9, 0
-2130:
+2118:
 	ld a6, 0(a2)
 	addi t0, a3, 0
 	addi t1, zero, 43
@@ -7129,7 +7147,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 256
 	addi t3, s8, 0
 	addi t4, zero, 0
-2131:
+2119:
 	ld t5, 0(t1)
 	mul t6, a6, t5
 	mulhu t5, a6, t5
@@ -7145,11 +7163,11 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2131b
+	bnez t3, 2119b
 	addi a2, a2, 8
 	addi a3, a3, 8
 	addi s8, s8, -1
-	bnez s8, 2130b
+	bnez s8, 2118b
 	addi t0, zero, 45
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7159,13 +7177,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2132:
+2120:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2132b
+	bnez t3, 2120b
 	addi a2, zero, 42
 	mul a2, a2, s10
 	add a2, a2, s11
@@ -7175,7 +7193,7 @@ vg_rsa_keygen_key:
 	add a3, a3, s11
 	addi a3, a3, 256
 	addi s8, s9, 0
-2133:
+2121:
 	ld a6, 0(a2)
 	addi t0, a3, 0
 	addi t1, zero, 43
@@ -7184,7 +7202,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 256
 	addi t3, s8, 0
 	addi t4, zero, 0
-2134:
+2122:
 	ld t5, 0(t1)
 	mul t6, a6, t5
 	mulhu t5, a6, t5
@@ -7200,11 +7218,11 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2134b
+	bnez t3, 2122b
 	addi a2, a2, 8
 	addi a3, a3, 8
 	addi s8, s8, -1
-	bnez s8, 2133b
+	bnez s8, 2121b
 	addi t0, zero, 46
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7219,7 +7237,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2135:
+2123:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7232,7 +7250,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2135b
+	bnez t3, 2123b
 	addi t0, zero, 55
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7247,7 +7265,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2136:
+2124:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7260,21 +7278,21 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2136b
+	bnez t3, 2124b
 	addi t0, zero, 38
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2137:
+2125:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2137b
+	bnez t3, 2125b
 	slli s7, s9, 6
 	addi a4, zero, -1
-2138:
+2126:
 	addi t2, zero, 55
 	mul t2, t2, s10
 	add t2, t2, s11
@@ -7296,8 +7314,8 @@ vg_rsa_keygen_key:
 	andi t4, a4, 1
 	addi t2, s9, 1
 	andi t2, t2, 3
-	beqz t2, 2139f
-2141:
+	beqz t2, 2127f
+2129:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -7313,14 +7331,14 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 2141b
-	j 2140f
-2139:
-2140:
+	bnez t2, 2129b
+	j 2128f
+2127:
+2128:
 	addi t2, s9, 1
 	srli t2, t2, 2
-	beqz t2, 2142f
-2144:
+	beqz t2, 2130f
+2132:
 	ld t5, 0(t0)
 	slli t6, t5, 1
 	or t6, t6, t3
@@ -7372,10 +7390,10 @@ vg_rsa_keygen_key:
 	addi t0, t0, 32
 	addi t1, t1, 32
 	addi t2, t2, -1
-	bnez t2, 2144b
-	j 2143f
-2142:
-2143:
+	bnez t2, 2132b
+	j 2131f
+2130:
+2131:
 	srli t5, t6, 63
 	addi a4, t5, -1
 	andi a5, a4, 1
@@ -7392,7 +7410,7 @@ vg_rsa_keygen_key:
 	or t5, t5, a5
 	sd t5, 0(t2)
 	addi s7, s7, -1
-	bnez s7, 2138b
+	bnez s7, 2126b
 	addi t0, zero, 38
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7404,7 +7422,7 @@ vg_rsa_keygen_key:
 	xori a4, a4, -1
 	addi t4, zero, 0
 	addi t3, s9, 1
-2145:
+2133:
 	ld t5, 0(t0)
 	ld t6, 0(t1)
 	and t6, t6, a4
@@ -7417,7 +7435,7 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2145b
+	bnez t3, 2133b
 	addi t0, zero, 46
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7432,7 +7450,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2146:
+2134:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7445,7 +7463,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2146b
+	bnez t3, 2134b
 	addi t0, zero, 47
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7460,7 +7478,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2147:
+2135:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7473,7 +7491,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2147b
+	bnez t3, 2135b
 	addi t0, zero, 28
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7488,7 +7506,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2148:
+2136:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7501,7 +7519,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2148b
+	bnez t3, 2136b
 	sd t4, 168(s11)
 	ld t5, 168(s11)
 	xori t5, t5, 1
@@ -7518,7 +7536,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-2149:
+2137:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -7526,7 +7544,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2149b
+	bnez t3, 2137b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -7557,7 +7575,7 @@ vg_rsa_keygen_key:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-2150:
+2138:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -7568,9 +7586,9 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2150b
+	bnez t3, 2138b
 	ld t5, 176(s11)
-	bnez t5, 2151f
+	bnez t5, 2139f
 	addi t0, zero, 36
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7592,7 +7610,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2153:
+2141:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -7605,7 +7623,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2153b
+	bnez t3, 2141b
 	sd t4, 160(s11)
 	ld t5, 160(s11)
 	xori t5, t5, 1
@@ -7628,7 +7646,7 @@ vg_rsa_keygen_key:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-2154:
+2142:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -7639,7 +7657,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2154b
+	bnez t3, 2142b
 	addi t0, zero, 0
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7649,13 +7667,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2155:
+2143:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2155b
+	bnez t3, 2143b
 	addi t0, zero, 8
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7665,13 +7683,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2156:
+2144:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2156b
+	bnez t3, 2144b
 	srli s8, a1, 1
 	addi t0, zero, 2
 	mul t0, t0, s10
@@ -7683,13 +7701,13 @@ vg_rsa_keygen_key:
 	addi t1, t1, 256
 	addi t3, s8, 1
 	srli t3, t3, 1
-2157:
+2145:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2157b
+	bnez t3, 2145b
 	addi t1, zero, 2
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -7744,13 +7762,13 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2158:
+2146:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2158b
+	bnez t3, 2146b
 	addi t0, zero, 0
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7773,7 +7791,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t4, zero, 0
-2159:
+2147:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -7789,7 +7807,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2159b
+	bnez t3, 2147b
 	sd t4, 0(t0)
 	addi t0, zero, 6
 	mul t0, t0, s10
@@ -7799,11 +7817,11 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-2160:
+2148:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2160b
+	bnez t3, 2148b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7812,11 +7830,11 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-2161:
+2149:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2161b
+	bnez t3, 2149b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -7833,7 +7851,7 @@ vg_rsa_keygen_key:
 	add s7, t3, t3
 	add s7, s7, t3
 	addi s7, s7, 2
-2162:
+2150:
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -9636,14 +9654,22 @@ vg_rsa_keygen_key:
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -9654,156 +9680,171 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2163:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2163b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2164:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2164b
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 5
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	srai s6, s2, 63
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-2165:
-	ld t5, 0(t1)
+2151:
+	ld t5, 8(t0)
 	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	slli t2, t4, 5
+	add t2, a2, t2
+	sd t2, 0(t0)
+	slli t2, a0, 5
+	add t2, a3, t2
+	sd t2, 0(t1)
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2165b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-2166:
-	ld t5, 0(t1)
-	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2166b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
+	bnez t3, 2151b
+	slli t2, a2, 59
+	srai t2, t2, 59
+	sd t2, 0(t0)
+	slli t2, a3, 59
+	srai t2, t2, 59
+	sd t2, 0(t1)
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -9814,254 +9855,240 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2167:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2167b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2168:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2168b
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-2169:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2169b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 7
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-2170:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2170b
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
 	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
+	addi a6, zero, 0
+	addi s0, zero, 0
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	addi t5, zero, 9
+	mul t5, t5, s10
+	add t5, t5, s11
+	addi t5, t5, 256
+	ld t5, 40(t5)
+	mul a2, t4, t5
+	mul a3, a0, t5
+	ld t5, 0(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
+	add t6, t6, t4
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-	addi t4, zero, 0
-2171:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
+	addi t3, t3, -1
+	beqz t3, 2152f
+2154:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	ld t5, 8(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
 	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	sd t4, 0(t0)
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	sd a0, 0(t1)
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2171b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
-	addi t0, zero, 7
+	bnez t3, 2154b
+	j 2153f
+2152:
+2153:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	srai t5, t4, 63
+	add t4, t4, a6
+	sltu t6, t4, a6
+	sd t4, 0(t0)
+	add t5, t5, t6
+	sd t5, 8(t0)
+	srai t5, a0, 63
+	add a0, a0, s0
+	sltu t6, a0, s0
+	sd a0, 0(t1)
+	add t5, t5, t6
+	sd t5, 8(t1)
+	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-2172:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2172b
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
 	addi s7, s7, -1
-	bnez s7, 2162b
+	bnez s7, 2150b
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -10079,7 +10106,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2173:
+2155:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -10095,7 +10122,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2173b
+	bnez t3, 2155b
 	addi t1, zero, 6
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10121,7 +10148,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2174:
+2156:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10132,7 +10159,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2174b
+	bnez t3, 2156b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10149,7 +10176,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2175:
+2157:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10162,7 +10189,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2175b
+	bnez t3, 2157b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10180,7 +10207,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2176:
+2158:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10191,7 +10218,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2176b
+	bnez t3, 2158b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10208,7 +10235,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2177:
+2159:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10221,7 +10248,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2177b
+	bnez t3, 2159b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10247,7 +10274,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2178:
+2160:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10258,7 +10285,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2178b
+	bnez t3, 2160b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10275,7 +10302,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2179:
+2161:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10288,7 +10315,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2179b
+	bnez t3, 2161b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10306,7 +10333,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2180:
+2162:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10317,13 +10344,13 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2180b
+	bnez t3, 2162b
 	addi t3, s8, 1
 	srli t3, t3, 1
 	slli s7, t3, 4
 	sub s7, s7, t3
 	addi s7, s7, 10
-2181:
+2163:
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -10341,7 +10368,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2182:
+2164:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -10357,7 +10384,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2182b
+	bnez t3, 2164b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10374,7 +10401,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2183:
+2165:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10387,7 +10414,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2183b
+	bnez t3, 2165b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10405,7 +10432,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2184:
+2166:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10416,20 +10443,20 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2184b
+	bnez t3, 2166b
 	addi s7, s7, -1
-	bnez s7, 2181b
+	bnez s7, 2163b
 	addi t0, zero, 1
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2185:
+2167:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2185b
+	bnez t3, 2167b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10446,7 +10473,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2186:
+2168:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10459,7 +10486,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2186b
+	bnez t3, 2168b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10485,7 +10512,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2187:
+2169:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10496,18 +10523,18 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2187b
+	bnez t3, 2169b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2188:
+2170:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2188b
+	bnez t3, 2170b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10519,13 +10546,13 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2189:
+2171:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2189b
+	bnez t3, 2171b
 	addi t1, zero, 1
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10536,7 +10563,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-2190:
+2172:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -10544,7 +10571,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2190b
+	bnez t3, 2172b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -10576,7 +10603,7 @@ vg_rsa_keygen_key:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-2191:
+2173:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10587,9 +10614,9 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2191b
-	j 2152f
-2151:
+	bnez t3, 2173b
+	j 2140f
+2139:
 	addi t0, zero, 49
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10599,14 +10626,14 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2192:
+2174:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2192b
-2152:
+	bnez t3, 2174b
+2140:
 	addi t0, zero, 28
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10621,7 +10648,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2193:
+2175:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10634,7 +10661,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2193b
+	bnez t3, 2175b
 	sd t4, 152(s11)
 	ld t5, 152(s11)
 	ld t6, 200(s11)
@@ -10661,7 +10688,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2194:
+2176:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -10674,7 +10701,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2194b
+	bnez t3, 2176b
 	sd t4, 160(s11)
 	ld t5, 160(s11)
 	xori t5, t5, 1
@@ -10697,7 +10724,7 @@ vg_rsa_keygen_key:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-2195:
+2177:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -10708,7 +10735,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2195b
+	bnez t3, 2177b
 	addi t0, zero, 0
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10718,13 +10745,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2196:
+2178:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2196b
+	bnez t3, 2178b
 	addi t0, zero, 8
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10734,13 +10761,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2197:
+2179:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2197b
+	bnez t3, 2179b
 	srli s8, a1, 2
 	addi t0, zero, 2
 	mul t0, t0, s10
@@ -10752,13 +10779,13 @@ vg_rsa_keygen_key:
 	addi t1, t1, 256
 	addi t3, s8, 1
 	srli t3, t3, 1
-2198:
+2180:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2198b
+	bnez t3, 2180b
 	addi t1, zero, 2
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -10813,13 +10840,13 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2199:
+2181:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2199b
+	bnez t3, 2181b
 	addi t0, zero, 0
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10842,7 +10869,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t4, zero, 0
-2200:
+2182:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -10858,7 +10885,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2200b
+	bnez t3, 2182b
 	sd t4, 0(t0)
 	addi t0, zero, 6
 	mul t0, t0, s10
@@ -10868,11 +10895,11 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-2201:
+2183:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2201b
+	bnez t3, 2183b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10881,11 +10908,11 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t5, zero, 0
-2202:
+2184:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2202b
+	bnez t3, 2184b
 	addi t0, zero, 7
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -10902,7 +10929,7 @@ vg_rsa_keygen_key:
 	add s7, t3, t3
 	add s7, s7, t3
 	addi s7, s7, 2
-2203:
+2185:
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -12705,14 +12732,22 @@ vg_rsa_keygen_key:
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -12723,156 +12758,171 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2204:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2204b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 4
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 5
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2205:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2205b
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 4
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 5
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
+	srai s6, s2, 63
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-2206:
-	ld t5, 0(t1)
+2186:
+	ld t5, 8(t0)
 	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
+	mul t2, a5, t5
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a5, t5
+	add a4, a4, t2
+	and t2, s3, t5
+	sub a4, a4, t2
+	mul t2, a7, t6
+	add t4, t4, t2
+	sltu t2, t4, t2
+	add a4, a4, t2
+	mulhu t2, a7, t6
+	add a4, a4, t2
+	and t2, s4, t6
+	sub a4, a4, t2
+	mul t2, s1, t5
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s1, t5
+	add a1, a1, t2
+	and t2, s5, t5
+	sub a1, a1, t2
+	mul t2, s2, t6
+	add a0, a0, t2
+	sltu t2, a0, t2
+	add a1, a1, t2
+	mulhu t2, s2, t6
+	add a1, a1, t2
+	and t2, s6, t6
+	sub a1, a1, t2
+	slli t2, t4, 5
+	add t2, a2, t2
+	sd t2, 0(t0)
+	slli t2, a0, 5
+	add t2, a3, t2
+	sd t2, 0(t1)
+	srli a2, t4, 59
+	addi t4, a4, 0
+	srai a4, a4, 63
+	srli a3, a0, 59
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2206b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
-	addi t0, zero, 5
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-2207:
-	ld t5, 0(t1)
-	ld t6, 8(t1)
-	srli t5, t5, 59
-	slli t6, t6, 5
-	add t5, t5, t6
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2207b
-	ld t5, 0(t1)
-	srai t5, t5, 59
-	sd t5, 0(t0)
+	bnez t3, 2186b
+	slli t2, a2, 59
+	srai t2, t2, 59
+	sd t2, 0(t0)
+	slli t2, a3, 59
+	srai t2, t2, 59
+	sd t2, 0(t1)
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
+	addi t0, zero, 11
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s0, 0(t0)
+	sd s1, 8(t0)
+	sd s2, 16(t0)
+	sd s3, 24(t0)
+	sd s4, 32(t0)
+	sd s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	sd s6, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a2, 24(t0)
+	sd a3, 32(t0)
+	sd a6, 40(t0)
 	addi a5, zero, 9
 	mul a5, a5, s10
 	add a5, a5, s11
@@ -12883,254 +12933,240 @@ vg_rsa_keygen_key:
 	add a7, a7, s11
 	addi a7, a7, 256
 	ld a7, 16(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2208:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2208b
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 6
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 7
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi a5, zero, 9
-	mul a5, a5, s10
-	add a5, a5, s11
-	addi a5, a5, 256
-	ld a5, 24(a5)
-	addi a7, zero, 9
-	mul a7, a7, s10
-	add a7, a7, s11
-	addi a7, a7, 256
-	ld a7, 32(a7)
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-	addi t4, zero, 0
-	addi a4, zero, 0
-2209:
-	ld t5, 0(t1)
-	mul t6, a5, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a5, t5
-	add a4, a4, t6
-	srai t6, a5, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	ld t5, 0(t2)
-	mul t6, a7, t5
-	add t4, t4, t6
-	sltu t6, t4, t6
-	add a4, a4, t6
-	mulhu t6, a7, t5
-	add a4, a4, t6
-	srai t6, a7, 63
-	and t6, t6, t5
-	sub a4, a4, t6
-	sd t4, 0(t0)
-	addi t4, a4, 0
-	srai a4, a4, 63
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2209b
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 11
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 11
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 2
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t4, zero, 0
-2210:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
-	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2210b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
+	addi s1, zero, 9
+	mul s1, s1, s10
+	add s1, s1, s11
+	addi s1, s1, 256
+	ld s1, 24(s1)
+	addi s2, zero, 9
+	mul s2, s2, s10
+	add s2, s2, s11
+	addi s2, s2, 256
+	ld s2, 32(s2)
+	srai s3, a5, 63
+	srai s4, a7, 63
+	srai s5, s1, 63
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 11
+	addi t1, zero, 7
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-2211:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2211b
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s8, 1
-	srli t3, t3, 1
-	slli t3, t3, 3
-	add t1, t1, t3
-	ld a7, 0(t1)
-	srai a7, a7, 63
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t6, zero, 9
-	mul t6, t6, s10
-	add t6, t6, s11
-	addi t6, t6, 256
-	ld t6, 40(t6)
-	ld t5, 0(t0)
-	mul a5, t5, t6
-	addi t0, zero, 12
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
+	addi t4, zero, 0
+	addi a4, zero, 0
+	addi a0, zero, 0
+	addi a1, zero, 0
 	addi t2, zero, 2
 	mul t2, t2, s10
 	add t2, t2, s11
 	addi t2, t2, 256
+	addi a6, zero, 0
+	addi s0, zero, 0
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	addi t5, zero, 9
+	mul t5, t5, s10
+	add t5, t5, s11
+	addi t5, t5, 256
+	ld t5, 40(t5)
+	mul a2, t4, t5
+	mul a3, a0, t5
+	ld t5, 0(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
+	add t6, t6, t4
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t3, s8, 1
 	srli t3, t3, 1
-	addi t4, zero, 0
-2212:
-	ld t5, 0(t2)
-	mul t6, a5, t5
-	mulhu t5, a5, t5
-	ld a4, 0(t1)
-	add t6, t6, a4
-	sltu a4, t6, a4
-	add t5, t5, a4
+	addi t3, t3, -1
+	beqz t3, 2187f
+2189:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	ld t5, 8(t2)
+	mul s6, a2, t5
+	add s6, s6, t4
+	sltu t4, s6, t4
+	mulhu t6, a2, t5
 	add t6, t6, t4
-	sltu a4, t6, t4
-	add t4, t5, a4
-	sd t6, 0(t0)
+	add t4, s6, a6
+	sltu s6, t4, a6
+	add a6, t6, s6
+	sd t4, 0(t0)
+	mul s6, a3, t5
+	add s6, s6, a0
+	sltu a0, s6, a0
+	mulhu t6, a3, t5
+	add t6, t6, a0
+	add a0, s6, s0
+	sltu s6, a0, s0
+	add s0, t6, s6
+	sd a0, 0(t1)
+	addi t4, a4, 0
+	srai a4, a4, 63
+	addi a0, a1, 0
+	srai a1, a1, 63
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2212b
-	ld t5, 0(t0)
-	add t5, t5, t4
-	sltu t4, t5, t4
-	sd t5, 0(t0)
-	add a7, a7, t4
-	sd a7, 8(t0)
-	addi t0, zero, 7
+	bnez t3, 2189b
+	j 2188f
+2187:
+2188:
+	ld t5, 8(t0)
+	ld t6, 8(t1)
+	mul s6, a5, t5
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a5, t5
+	add a4, a4, s6
+	and s6, s3, t5
+	sub a4, a4, s6
+	mul s6, a7, t6
+	add t4, t4, s6
+	sltu s6, t4, s6
+	add a4, a4, s6
+	mulhu s6, a7, t6
+	add a4, a4, s6
+	and s6, s4, t6
+	sub a4, a4, s6
+	mul s6, s1, t5
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s1, t5
+	add a1, a1, s6
+	and s6, s5, t5
+	sub a1, a1, s6
+	mul s6, s2, t6
+	add a0, a0, s6
+	sltu s6, a0, s6
+	add a1, a1, s6
+	mulhu s6, s2, t6
+	add a1, a1, s6
+	srai s6, s2, 63
+	and s6, s6, t6
+	sub a1, a1, s6
+	srai t5, t4, 63
+	add t4, t4, a6
+	sltu t6, t4, a6
+	sd t4, 0(t0)
+	add t5, t5, t6
+	sd t5, 8(t0)
+	srai t5, a0, 63
+	add a0, a0, s0
+	sltu t6, a0, s0
+	sd a0, 0(t1)
+	add t5, t5, t6
+	sd t5, 8(t1)
+	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
-	addi t1, zero, 12
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t1, t1, 8
-	addi t3, s8, 1
-	srli t3, t3, 1
-	addi t3, t3, 1
-2213:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2213b
+	ld s0, 0(t0)
+	ld s1, 8(t0)
+	ld s2, 16(t0)
+	ld s3, 24(t0)
+	ld s4, 32(t0)
+	ld s5, 40(t0)
+	addi t0, zero, 12
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	ld s6, 0(t0)
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	ld a3, 32(t0)
+	ld a6, 40(t0)
 	addi s7, s7, -1
-	bnez s7, 2203b
+	bnez s7, 2185b
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -13148,7 +13184,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2214:
+2190:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -13164,7 +13200,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2214b
+	bnez t3, 2190b
 	addi t1, zero, 6
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -13190,7 +13226,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2215:
+2191:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -13201,7 +13237,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2215b
+	bnez t3, 2191b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13218,7 +13254,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2216:
+2192:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -13231,7 +13267,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2216b
+	bnez t3, 2192b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13249,7 +13285,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2217:
+2193:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -13260,7 +13296,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2217b
+	bnez t3, 2193b
 	addi t0, zero, 13
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13277,7 +13313,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2218:
+2194:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -13290,7 +13326,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2218b
+	bnez t3, 2194b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -13316,7 +13352,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2219:
+2195:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -13327,7 +13363,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2219b
+	bnez t3, 2195b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13344,7 +13380,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2220:
+2196:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -13357,7 +13393,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2220b
+	bnez t3, 2196b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13375,7 +13411,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2221:
+2197:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -13386,13 +13422,13 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2221b
+	bnez t3, 2197b
 	addi t3, s8, 1
 	srli t3, t3, 1
 	slli s7, t3, 4
 	sub s7, s7, t3
 	addi s7, s7, 10
-2222:
+2198:
 	addi a5, zero, 1
 	addi t0, zero, 13
 	mul t0, t0, s10
@@ -13410,7 +13446,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2223:
+2199:
 	ld t5, 0(t2)
 	mul t6, a5, t5
 	mulhu t5, a5, t5
@@ -13426,7 +13462,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2223b
+	bnez t3, 2199b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13443,7 +13479,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2224:
+2200:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -13456,7 +13492,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2224b
+	bnez t3, 2200b
 	addi t0, zero, 6
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13474,7 +13510,7 @@ vg_rsa_keygen_key:
 	addi t3, t3, 1
 	addi t5, zero, 0
 	sub t4, t5, t4
-2225:
+2201:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -13485,20 +13521,20 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2225b
+	bnez t3, 2201b
 	addi s7, s7, -1
-	bnez s7, 2222b
+	bnez s7, 2198b
 	addi t0, zero, 1
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2226:
+2202:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2226b
+	bnez t3, 2202b
 	addi t0, zero, 11
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13515,7 +13551,7 @@ vg_rsa_keygen_key:
 	srli t3, t3, 1
 	addi t3, t3, 1
 	addi t4, zero, 0
-2227:
+2203:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -13528,7 +13564,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2227b
+	bnez t3, 2203b
 	addi t1, zero, 4
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -13554,7 +13590,7 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2228:
+2204:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -13565,18 +13601,18 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2228b
+	bnez t3, 2204b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t3, s9, 1
 	addi t5, zero, 0
-2229:
+2205:
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t3, t3, -1
-	bnez t3, 2229b
+	bnez t3, 2205b
 	addi t0, zero, 3
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -13588,13 +13624,13 @@ vg_rsa_keygen_key:
 	addi t3, s8, 1
 	srli t3, t3, 1
 	addi t3, t3, 1
-2230:
+2206:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2230b
+	bnez t3, 2206b
 	addi t1, zero, 1
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -13605,7 +13641,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-2231:
+2207:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -13613,7 +13649,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2231b
+	bnez t3, 2207b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -13627,13 +13663,13 @@ vg_rsa_keygen_key:
 	add t1, t1, s11
 	addi t1, t1, 256
 	addi t3, s9, 0
-2232:
+2208:
 	ld t5, 0(t1)
 	sd t5, 0(t0)
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2232b
+	bnez t3, 2208b
 	addi t1, zero, 26
 	mul t1, t1, s10
 	add t1, t1, s11
@@ -13644,7 +13680,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t4, zero, 0
 	addi t3, s9, 0
-2233:
+2209:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t5, t5, t6
@@ -13652,7 +13688,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2233b
+	bnez t3, 2209b
 	addi t5, zero, 0
 	sltu t5, t5, t4
 	xori t5, t5, 1
@@ -13673,7 +13709,7 @@ vg_rsa_keygen_key:
 	addi t5, zero, 0
 	sub t4, t5, t4
 	addi t3, s9, 0
-2234:
+2210:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	xor t6, t6, t5
@@ -13684,12 +13720,441 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2234b
+	bnez t3, 2210b
 	addi t0, zero, 41
 	mul t0, t0, s10
 	add t0, t0, s11
 	addi t0, t0, 256
 	addi t1, zero, 49
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2211:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2211b
+	addi t0, zero, 37
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 29
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2212:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2212b
+	addi t0, zero, 50
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+2213:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 2213b
+	slli s7, s9, 6
+	addi a4, zero, -1
+2214:
+	addi t2, zero, 41
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	srli t3, t5, 63
+	addi t0, zero, 50
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 37
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	andi t4, a4, 1
+	addi t2, s9, 1
+	andi t2, t2, 3
+	beqz t2, 2215f
+2217:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, -1
+	bnez t2, 2217b
+	j 2216f
+2215:
+2216:
+	addi t2, s9, 1
+	srli t2, t2, 2
+	beqz t2, 2218f
+2220:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	ld t5, 8(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 8(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 8(t0)
+	ld t5, 16(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 16(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 16(t0)
+	ld t5, 24(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 24(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 24(t0)
+	addi t0, t0, 32
+	addi t1, t1, 32
+	addi t2, t2, -1
+	bnez t2, 2220b
+	j 2219f
+2218:
+2219:
+	srli t5, t6, 63
+	addi a4, t5, -1
+	andi a5, a4, 1
+	addi t2, zero, 41
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	slli t5, t5, 1
+	or t5, t5, a5
+	sd t5, 0(t2)
+	addi s7, s7, -1
+	bnez s7, 2214b
+	addi t0, zero, 50
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 37
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	xori a4, a4, -1
+	addi t4, zero, 0
+	addi t3, s9, 1
+2221:
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	and t6, t6, a4
+	add t5, t5, t4
+	sltu a5, t5, t4
+	add t5, t5, t6
+	sltu t4, t5, t6
+	or t4, t4, a5
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2221b
+	addi t1, zero, 27
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 10
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t4, zero, 0
+	addi t3, s9, 0
+2222:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t5, t5, t6
+	or t4, t4, t5
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2222b
+	addi t5, zero, 0
+	sltu t5, t5, t4
+	xori t5, t5, 1
+	sd t5, 168(s11)
+	addi t0, zero, 29
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 27
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t2, zero, 15
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	ld t4, 168(s11)
+	addi t5, zero, 0
+	sub t4, t5, t4
+	addi t3, s9, 0
+2223:
+	ld t5, 0(t1)
+	ld t6, 0(t2)
+	xor t6, t6, t5
+	and t6, t6, t4
+	xor t6, t6, t5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, 8
+	addi t3, t3, -1
+	bnez t3, 2223b
+	addi t0, zero, 41
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 49
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2224:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2224b
+	addi t0, zero, 37
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 29
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	addi t3, s9, 0
+2225:
+	ld t5, 0(t1)
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2225b
+	addi t0, zero, 51
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t3, s9, 1
+	addi t5, zero, 0
+2226:
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t3, t3, -1
+	bnez t3, 2226b
+	slli s7, s9, 6
+	addi a4, zero, -1
+2227:
+	addi t2, zero, 41
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	srli t3, t5, 63
+	addi t0, zero, 51
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 37
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	andi t4, a4, 1
+	addi t2, s9, 1
+	andi t2, t2, 3
+	beqz t2, 2228f
+2230:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t2, t2, -1
+	bnez t2, 2230b
+	j 2229f
+2228:
+2229:
+	addi t2, s9, 1
+	srli t2, t2, 2
+	beqz t2, 2231f
+2233:
+	ld t5, 0(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 0(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 0(t0)
+	ld t5, 8(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 8(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 8(t0)
+	ld t5, 16(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 16(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 16(t0)
+	ld t5, 24(t0)
+	slli t6, t5, 1
+	or t6, t6, t3
+	srli t3, t5, 63
+	ld t5, 24(t1)
+	xor t5, t5, a4
+	add t6, t6, t4
+	sltu a5, t6, t4
+	add t6, t6, t5
+	sltu t4, t6, t5
+	or t4, t4, a5
+	sd t6, 24(t0)
+	addi t0, t0, 32
+	addi t1, t1, 32
+	addi t2, t2, -1
+	bnez t2, 2233b
+	j 2232f
+2231:
+2232:
+	srli t5, t6, 63
+	addi a4, t5, -1
+	andi a5, a4, 1
+	addi t2, zero, 41
+	mul t2, t2, s10
+	add t2, t2, s11
+	addi t2, t2, 256
+	addi t5, s7, -1
+	srli t5, t5, 6
+	slli t5, t5, 3
+	add t2, t2, t5
+	ld t5, 0(t2)
+	slli t5, t5, 1
+	or t5, t5, a5
+	sd t5, 0(t2)
+	addi s7, s7, -1
+	bnez s7, 2227b
+	addi t0, zero, 51
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 37
+	mul t1, t1, s10
+	add t1, t1, s11
+	addi t1, t1, 256
+	xori a4, a4, -1
+	addi t4, zero, 0
+	addi t3, s9, 1
+2234:
+	ld t5, 0(t0)
+	ld t6, 0(t1)
+	and t6, t6, a4
+	add t5, t5, t4
+	sltu a5, t5, t4
+	add t5, t5, t6
+	sltu t4, t5, t6
+	or t4, t4, a5
+	sd t5, 0(t0)
+	addi t0, t0, 8
+	addi t1, t1, 8
+	addi t3, t3, -1
+	bnez t3, 2234b
+	addi t0, zero, 53
+	mul t0, t0, s10
+	add t0, t0, s11
+	addi t0, t0, 256
+	addi t1, zero, 10
 	mul t1, t1, s10
 	add t1, t1, s11
 	addi t1, t1, 256
@@ -13701,435 +14166,6 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t3, t3, -1
 	bnez t3, 2235b
-	addi t0, zero, 37
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 29
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s9, 0
-2236:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2236b
-	addi t0, zero, 50
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s9, 1
-	addi t5, zero, 0
-2237:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 2237b
-	slli s7, s9, 6
-	addi a4, zero, -1
-2238:
-	addi t2, zero, 41
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t5, s7, -1
-	srli t5, t5, 6
-	slli t5, t5, 3
-	add t2, t2, t5
-	ld t5, 0(t2)
-	srli t3, t5, 63
-	addi t0, zero, 50
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 37
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	andi t4, a4, 1
-	addi t2, s9, 1
-	andi t2, t2, 3
-	beqz t2, 2239f
-2241:
-	ld t5, 0(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 0(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, -1
-	bnez t2, 2241b
-	j 2240f
-2239:
-2240:
-	addi t2, s9, 1
-	srli t2, t2, 2
-	beqz t2, 2242f
-2244:
-	ld t5, 0(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 0(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 0(t0)
-	ld t5, 8(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 8(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 8(t0)
-	ld t5, 16(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 16(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 16(t0)
-	ld t5, 24(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 24(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 24(t0)
-	addi t0, t0, 32
-	addi t1, t1, 32
-	addi t2, t2, -1
-	bnez t2, 2244b
-	j 2243f
-2242:
-2243:
-	srli t5, t6, 63
-	addi a4, t5, -1
-	andi a5, a4, 1
-	addi t2, zero, 41
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t5, s7, -1
-	srli t5, t5, 6
-	slli t5, t5, 3
-	add t2, t2, t5
-	ld t5, 0(t2)
-	slli t5, t5, 1
-	or t5, t5, a5
-	sd t5, 0(t2)
-	addi s7, s7, -1
-	bnez s7, 2238b
-	addi t0, zero, 50
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 37
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	xori a4, a4, -1
-	addi t4, zero, 0
-	addi t3, s9, 1
-2245:
-	ld t5, 0(t0)
-	ld t6, 0(t1)
-	and t6, t6, a4
-	add t5, t5, t4
-	sltu a5, t5, t4
-	add t5, t5, t6
-	sltu t4, t5, t6
-	or t4, t4, a5
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2245b
-	addi t1, zero, 27
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 10
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t4, zero, 0
-	addi t3, s9, 0
-2246:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t5, t5, t6
-	or t4, t4, t5
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2246b
-	addi t5, zero, 0
-	sltu t5, t5, t4
-	xori t5, t5, 1
-	sd t5, 168(s11)
-	addi t0, zero, 29
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 27
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t2, zero, 15
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	ld t4, 168(s11)
-	addi t5, zero, 0
-	sub t4, t5, t4
-	addi t3, s9, 0
-2247:
-	ld t5, 0(t1)
-	ld t6, 0(t2)
-	xor t6, t6, t5
-	and t6, t6, t4
-	xor t6, t6, t5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, 8
-	addi t3, t3, -1
-	bnez t3, 2247b
-	addi t0, zero, 41
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 49
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s9, 0
-2248:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2248b
-	addi t0, zero, 37
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 29
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s9, 0
-2249:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2249b
-	addi t0, zero, 51
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t3, s9, 1
-	addi t5, zero, 0
-2250:
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t3, t3, -1
-	bnez t3, 2250b
-	slli s7, s9, 6
-	addi a4, zero, -1
-2251:
-	addi t2, zero, 41
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t5, s7, -1
-	srli t5, t5, 6
-	slli t5, t5, 3
-	add t2, t2, t5
-	ld t5, 0(t2)
-	srli t3, t5, 63
-	addi t0, zero, 51
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 37
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	andi t4, a4, 1
-	addi t2, s9, 1
-	andi t2, t2, 3
-	beqz t2, 2252f
-2254:
-	ld t5, 0(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 0(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t2, t2, -1
-	bnez t2, 2254b
-	j 2253f
-2252:
-2253:
-	addi t2, s9, 1
-	srli t2, t2, 2
-	beqz t2, 2255f
-2257:
-	ld t5, 0(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 0(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 0(t0)
-	ld t5, 8(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 8(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 8(t0)
-	ld t5, 16(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 16(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 16(t0)
-	ld t5, 24(t0)
-	slli t6, t5, 1
-	or t6, t6, t3
-	srli t3, t5, 63
-	ld t5, 24(t1)
-	xor t5, t5, a4
-	add t6, t6, t4
-	sltu a5, t6, t4
-	add t6, t6, t5
-	sltu t4, t6, t5
-	or t4, t4, a5
-	sd t6, 24(t0)
-	addi t0, t0, 32
-	addi t1, t1, 32
-	addi t2, t2, -1
-	bnez t2, 2257b
-	j 2256f
-2255:
-2256:
-	srli t5, t6, 63
-	addi a4, t5, -1
-	andi a5, a4, 1
-	addi t2, zero, 41
-	mul t2, t2, s10
-	add t2, t2, s11
-	addi t2, t2, 256
-	addi t5, s7, -1
-	srli t5, t5, 6
-	slli t5, t5, 3
-	add t2, t2, t5
-	ld t5, 0(t2)
-	slli t5, t5, 1
-	or t5, t5, a5
-	sd t5, 0(t2)
-	addi s7, s7, -1
-	bnez s7, 2251b
-	addi t0, zero, 51
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 37
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	xori a4, a4, -1
-	addi t4, zero, 0
-	addi t3, s9, 1
-2258:
-	ld t5, 0(t0)
-	ld t6, 0(t1)
-	and t6, t6, a4
-	add t5, t5, t4
-	sltu a5, t5, t4
-	add t5, t5, t6
-	sltu t4, t5, t6
-	or t4, t4, a5
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2258b
-	addi t0, zero, 53
-	mul t0, t0, s10
-	add t0, t0, s11
-	addi t0, t0, 256
-	addi t1, zero, 10
-	mul t1, t1, s10
-	add t1, t1, s11
-	addi t1, t1, 256
-	addi t3, s9, 0
-2259:
-	ld t5, 0(t1)
-	sd t5, 0(t0)
-	addi t0, t0, 8
-	addi t1, t1, 8
-	addi t3, t3, -1
-	bnez t3, 2259b
 	addi a2, zero, 24
 	mul a2, a2, s10
 	add a2, a2, s11
@@ -14139,7 +14175,7 @@ vg_rsa_keygen_key:
 	add a3, a3, s11
 	addi a3, a3, 256
 	addi s8, s9, 0
-2260:
+2236:
 	ld a6, 0(a2)
 	addi t0, a3, 0
 	addi t1, zero, 25
@@ -14148,7 +14184,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 256
 	addi t3, s8, 0
 	addi t4, zero, 0
-2261:
+2237:
 	ld t5, 0(t1)
 	mul t6, a6, t5
 	mulhu t5, a6, t5
@@ -14164,11 +14200,11 @@ vg_rsa_keygen_key:
 	addi t0, t0, 8
 	addi t1, t1, 8
 	addi t3, t3, -1
-	bnez t3, 2261b
+	bnez t3, 2237b
 	addi a2, a2, 8
 	addi a3, a3, 8
 	addi s8, s8, -1
-	bnez s8, 2260b
+	bnez s8, 2236b
 	addi t0, zero, 28
 	mul t0, t0, s10
 	add t0, t0, s11
@@ -14183,7 +14219,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2262:
+2238:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -14196,7 +14232,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2262b
+	bnez t3, 2238b
 	sd t4, 168(s11)
 	ld t5, 168(s11)
 	xori t5, t5, 1
@@ -14240,7 +14276,7 @@ vg_rsa_keygen_key:
 	addi t2, t2, 256
 	addi t3, s9, 0
 	addi t4, zero, 0
-2263:
+2239:
 	ld t5, 0(t1)
 	ld t6, 0(t2)
 	sltu a4, t5, t6
@@ -14253,7 +14289,7 @@ vg_rsa_keygen_key:
 	addi t1, t1, 8
 	addi t2, t2, 8
 	addi t3, t3, -1
-	bnez t3, 2263b
+	bnez t3, 2239b
 	sd t4, 168(s11)
 	ld t5, 192(s11)
 	xori t5, t5, 1
@@ -14281,14 +14317,14 @@ vg_rsa_keygen_key:
 	addi t1, t1, -1
 	addi t0, s0, 0
 	addi t3, a5, 0
-2264:
+2240:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2264b
+	bnez t3, 2240b
 	ld t4, 216(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -14300,14 +14336,14 @@ vg_rsa_keygen_key:
 	addi t1, t1, -1
 	addi t0, s1, 0
 	addi t3, a5, 0
-2265:
+2241:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2265b
+	bnez t3, 2241b
 	ld t4, 216(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -14319,14 +14355,14 @@ vg_rsa_keygen_key:
 	addi t1, t1, -1
 	addi t0, s2, 0
 	addi t3, a1, 0
-2266:
+2242:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2266b
+	bnez t3, 2242b
 	ld t4, 216(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -14338,14 +14374,14 @@ vg_rsa_keygen_key:
 	addi t1, t1, -1
 	addi t0, s3, 0
 	addi t3, a1, 0
-2267:
+2243:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2267b
+	bnez t3, 2243b
 	ld t4, 216(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -14357,14 +14393,14 @@ vg_rsa_keygen_key:
 	addi t1, t1, -1
 	addi t0, s4, 0
 	addi t3, a1, 0
-2268:
+2244:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2268b
+	bnez t3, 2244b
 	ld t4, 216(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -14376,14 +14412,14 @@ vg_rsa_keygen_key:
 	addi t1, t1, -1
 	addi t0, s5, 0
 	addi t3, a1, 0
-2269:
+2245:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2269b
+	bnez t3, 2245b
 	ld t4, 216(s11)
 	addi t5, zero, 0
 	sub t4, t5, t4
@@ -14395,14 +14431,14 @@ vg_rsa_keygen_key:
 	addi t1, t1, -1
 	addi t0, s6, 0
 	addi t3, a1, 0
-2270:
+2246:
 	lbu t5, 0(t1)
 	and t5, t5, t4
 	sb t5, 0(t0)
 	addi t0, t0, 1
 	addi t1, t1, -1
 	addi t3, t3, -1
-	bnez t3, 2270b
+	bnez t3, 2246b
 	ld a0, 208(s11)
 	slli a0, a0, 1
 	ld t5, 216(s11)

@@ -285,16 +285,86 @@ theorem S6.pins : Pins S6 normRegs := by
     · rw [wx.s10, wy.s10, hw]
   · exact CB.pins sm cx cy r hr
 
-theorem valid_exit_rel : RelCT isa (Two S5) (.seq valid (.block restore)) fun _ _ => True := by
-  have hpref : RelCT isa (Two S5) normPrefix (Two S6) :=
-    two_post (two_taint bodyRegs (fun _ _ _ ⟨x, hx, cx, _⟩ ⟨y, hy, cy, _⟩ => CB.pins (hx.same hy) cx cy)
-      (by taint_decide)) (fun _ _ hs => normPrefix_ok hs)
-  have hsuff : RelCT isa (Two S6) normSuffix (fun _ _ => True) :=
-    two_taint normRegs S6.pins (by taint_decide)
-  intro s1 s2 tr1 tr2 t1 t2 hp e1 e2
-  exact (RelCT.seq hpref hsuff) _ _ _ _ _ _ hp (norm_split e1) (norm_split e2)
+/-- The arithmetic after the prefix, up to the stores: its taint analysis
+needs only the public registers after the prefix. -/
+def mid : Prog isa := .seq (.seq twosCount twosLoop) (seqs [gcd, divA, divB, minus4n, sqrt, factors])
 
-theorem code_rel : RelCT isa (Two C0) code fun _ _ => True := by
+/-- Before the stores: the public registers of the body and the working space,
+again. The arithmetic borrows the body's registers (the inverse's passes keep
+them in the working space), so the analysis takes them as secret after it, and
+correctness pins them again. -/
+def S7 (d : Dt) (t : State) : Prop :=
+  ∃ s0, C0 d s0 ∧ CB s0 s0.mem t ∧ VG.Proof.Rsa.RISCV64.Keys.Ws t (bOf s0) (zOf s0) (wOf s0) nArr
+
+abbrev storeRegs : List Reg := [.s9, .s10] ++ bodyRegs
+
+theorem S7.pins : Pins S7 storeRegs := by
+  rintro d s1 s2 ⟨x, hx, cx, wx⟩ ⟨y, hy, cy, wy⟩ r hr
+  have sm := hx.same hy
+  have hk : kOf x = kOf y := congrArg BitVec.toNat (sm.regs .a5 (by decide))
+  have hw : wOf x = wOf y := by simp only [wOf, hk]
+  rcases List.mem_append.mp hr with hr | hr
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [wx.s9, wy.s9, hw]
+    · rw [wx.s10, wy.s10, hw]
+  · exact CB.pins sm cx cy r hr
+
+/-- Reassociate `valid` and the exit at the stores. -/
+theorem stores_split {s t : State} {tr : List Leak} (e : Exec isa (.seq valid (.block restore)) s tr t) :
+    Exec isa (.seq (.seq normPrefix mid) (.seq stores (.block restore))) s tr t := by
+  have e' := norm_split e
+  cases e' with
+  | seq ep es =>
+    cases es with
+    | seq et er =>
+      cases er with
+      | seq eg est =>
+        simpa only [List.append_assoc, mid] using Exec.seq (Exec.seq ep (Exec.seq et eg)) est
+
+/-- `valid`'s execution without the stores, as the prefix and `mid`. -/
+theorem pre_split {s t : State} {tr : List Leak}
+    (e : Exec isa (seqs [setup, loads, prod, det]) s tr t) : Exec isa (.seq normPrefix mid) s tr t := by
+  have e0 : Exec isa (.seq setup (.seq loads (.seq prod (.seq deMinus (.seq (.seq twosInit
+      (.seq (.block twosLow) (.seq twosCount twosLoop))) (seqs [gcd, divA, divB, minus4n, sqrt, factors]))))))
+      s tr t := e
+  cases e0 with
+  | seq e1 r1 =>
+    cases r1 with
+    | seq e2 r2 =>
+      cases r2 with
+      | seq e3 r3 =>
+        cases r3 with
+        | seq e4 r4 =>
+          cases r4 with
+          | seq e5 r5 =>
+            cases e5 with
+            | seq e51 r51 =>
+              cases r51 with
+              | seq e52 e53 =>
+                simpa only [List.append_assoc, normPrefix, mid, seqs] using
+                  Exec.seq (Exec.seq e1 (Exec.seq e2 (Exec.seq e3 (Exec.seq e4 (Exec.seq e51 e52)))))
+                    (Exec.seq e53 r5)
+
+theorem zero_of_eval0 {s : State} (h : isa.eval (.zero .s0) s = some true) : s.gpr .s0 = 0 := by
+  rw [Steps.eval_zero] at h; simpa using h
+
+theorem valid_exit_rel (hF : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (.seq normPrefix mid) s (S7 d)) :
+    RelCT isa (Two fun d s => S5 d s ∧ s.gpr .s0 = 0) (.seq valid (.block restore)) fun _ _ => True := by
+  have hpref : RelCT isa (Two fun d s => S5 d s ∧ s.gpr .s0 = 0) normPrefix (Two S6) :=
+    RelCT.mono (two_post (two_taint bodyRegs (fun _ _ _ ⟨x, hx, cx, _⟩ ⟨y, hy, cy, _⟩ => CB.pins (hx.same hy) cx cy)
+      (by taint_decide)) (fun _ _ hs => normPrefix_ok hs))
+      (fun _ _ ⟨a, ⟨h1, _⟩, ⟨h2, _⟩, hsp⟩ => ⟨a, h1, h2, hsp⟩) fun _ _ h => h
+  have hmid : RelCT isa (Two S6) mid (fun _ _ => True) := two_taint normRegs S6.pins (by taint_decide)
+  have hfirst : RelCT isa (Two fun d s => S5 d s ∧ s.gpr .s0 = 0) (.seq normPrefix mid) (Two S7) :=
+    two_post (RelCT.seq hpref hmid) fun d s ⟨h5, h0⟩ => hF d s h5 h0
+  have hlast : RelCT isa (Two S7) (.seq stores (.block restore)) (fun _ _ => True) :=
+    two_taint storeRegs S7.pins (by taint_decide)
+  intro s1 s2 tr1 tr2 t1 t2 hp e1 e2
+  exact (RelCT.seq hfirst hlast) _ _ _ _ _ _ hp (stores_split e1) (stores_split e2)
+
+theorem code_rel (hF : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (.seq normPrefix mid) s (S7 d)) :
+    RelCT isa (Two C0) code fun _ _ => True := by
   unfold code
   rw [entry_eq, save_eq]
   refine RelCT.seq (R := Two S2) (RelCT.block_append (RelCT.seq (R := Two S1) ?_ ?_)) ?_
@@ -357,16 +427,20 @@ theorem code_rel : RelCT isa (Two C0) code fun _ _ => True := by
         congr 1
         rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, x0, y0, (hx.same hy).mv]
       · -- A valid modulus.
-        exact RelCT.mono valid_exit_rel (fun _ _ h => h.1) (fun _ _ h => h)
+        refine RelCT.mono (valid_exit_rel hF) ?_ (fun _ _ h => h)
+        rintro s₁ s₂ ⟨⟨a, ⟨x, hx, cx, x0⟩, ⟨y, hy, cy, y0⟩, hsp⟩, hc⟩
+        have z1 := zero_of_eval0 hc
+        exact ⟨a, ⟨⟨x, hx, cx, x0⟩, z1⟩, ⟨⟨y, hy, cy, y0⟩, y0.mpr ((hx.same hy).mv.mp (x0.mp z1))⟩, hsp⟩
       · -- An invalid modulus.
         refine RelCT.mono (two_taint (Φ := S5) bodyRegs ?_ (by taint_decide)) (fun _ _ h => h.1)
           fun _ _ h => h
         rintro a s₁ s₂ ⟨x, hx, cx, -⟩ ⟨y, hy, cy, -⟩ r hr
         exact CB.pins (hx.same hy) cx cy r hr
 
-theorem code_ct : ConstantTime isa (Spec.Rsa.recoverPrimesDetContract RISCV64.abi).pre
+theorem code_ct (hF : ∀ d s, S5 d s → s.gpr .s0 = 0 → WP isa (.seq normPrefix mid) s (S7 d)) :
+    ConstantTime isa (Spec.Rsa.recoverPrimesDetContract RISCV64.abi).pre
     (Spec.Rsa.recoverPrimesDetContract RISCV64.abi).pub code :=
-  RelCT.constantTime (code_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
+  RelCT.constantTime ((code_rel hF).mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, (pub_data hp).symm⟩, (same_of (pub_data hp)).sp⟩) fun _ _ h => h)
 
 end VG.Proof.Rsa.RISCV64.RecDet
