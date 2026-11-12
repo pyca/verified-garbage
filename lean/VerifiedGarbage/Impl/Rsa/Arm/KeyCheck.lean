@@ -187,7 +187,7 @@ def crtChecksW : List (Prog isa) := [KeyDiv.mulLo aVQ aP aQ] ++ eqA aVQ aN ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
   ltA aDP aM1 ++ [KeyDiv.mulLo aA aE aDP (some 2)] ++ divK aA aM1 (some 2) ++ eqA aVR aOne ++
   ltA aDQ aM2 ++ [KeyDiv.mulLo aA aE aDQ (some 2)] ++ divK aA aM2 (some 2) ++ eqA aVR aOne ++
-  ltA aQI aP ++ [KeyDiv.mulLo aT aQ aQI] ++ divK aT aP ++ eqA aVR aOne
+  ltA aQI aP ++ [KeyDiv.mulLo aT aQI aQ] ++ divK aT aP ++ eqA aVR aOne
 
 /-- The checks of `d` for a balanced key: its remainders by words. -/
 def dChecksW : List (Prog isa) := ltA aD aN ++ divK aD aM1 ++ eqA aVR aDP ++ divK aD aM2 ++ eqA aVR aDQ

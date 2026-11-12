@@ -325,9 +325,9 @@ theorem mulInit_ok {s : State} {B : BitVec 32} {Z w N o y : Nat} (x : Nat) (h : 
 /-- `mulLo`'s rows, from the invariant before row 0. -/
 theorem mulLoop_ok {s0 v : State} {B : BitVec 32} {Z w N o x y Y : Nat} (I0 : MulInv s0 v B Z w N o x y Y 0)
     (ho : o < N) (hx : x < N) (hy : y < N) (hN : N ≤ 256) (hox : o ≠ x) (hoy : o ≠ y) (hw : w % 2 = 0)
-    (hw2 : 2 ≤ w) (n : Option Nat) (hn : RowsOk n w) {X : Nat} (hX : num s0.mem B w x = X)
-    (hXl : X < 2 ^ (32 * rowsN n w)) :
-    WP isa (.loop (mulRow o x y n) .ne) v fun v' => Ws v' B Z w N ∧ num v'.mem B w o = X * Y % 2 ^ (32 * w) ∧
+    (hw2 : 2 ≤ w) (n : Option Nat) (hn : RowsOk n w) {X : Nat} (hX : num s0.mem B w x = X) :
+    WP isa (.loop (mulRow o x y n) .ne) v fun v' => Ws v' B Z w N ∧
+      num v'.mem B w o = X % 2 ^ (32 * rowsN n w) * Y % 2 ^ (32 * w) ∧
       Keep B w [o] [sJ] s0.mem v'.mem ∧ Rest divRegs s0 v' := by
   have gx := I0.ws.fit64 hx
   obtain ⟨hR1, hR⟩ := hn.facts hw2
@@ -341,27 +341,28 @@ theorem mulLoop_ok {s0 v : State} {B : BitVec 32} {Z w N o x y Y : Nat} (I0 : Mu
     · change some (!v'.z) = some false
       rw [z']; simp only [e, decide_true, Bool.not_true]
     · refine ⟨I'.ws, ?_, I'.keep, I'.rest⟩
-      have hXY : X * Y < 2 ^ (32 * w) := by
-        have := Nat.mul_lt_mul_of_lt_of_le hXl (Nat.le_of_lt I'.hYl) (Nat.two_pow_pos _)
+      have hXY : X % 2 ^ (32 * rowsN n w) * Y < 2 ^ (32 * w) := by
+        have := Nat.mul_lt_mul_of_lt_of_le (Nat.mod_lt X (Nat.two_pow_pos (32 * rowsN n w))) (Nat.le_of_lt I'.hYl)
+          (Nat.two_pow_pos _)
         rw [← Nat.pow_add] at this
         exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
       rw [I'.val, e, Nat.mod_eq_of_lt hXY, val32_low _ _ _ (show rowsN n w ≤ w by omega)]
       have := I'.keep.num (j := x) (by simpa using hox) (by decide) gx
       simp only [num] at this hX ⊢
-      rw [this, hX, Nat.mod_eq_of_lt hXl]
+      rw [this, hX]
   · right
     refine ⟨?_, rowsN n w - (i + 1), by omega, i + 1, rfl, by omega, I'⟩
     change some (!v'.z) = some true
     rw [z']; simp only [e, decide_false, Bool.not_false]
 
-/-- `mulLo o x y n`: `[o] := X Y` for `X = [x]` of `n` words (`w / 2` for `none`) and `Y = [y]`
-of `w / 2`, `w` even. -/
+/-- `mulLo o x y n`: `[o] := X' Y` for `X'` the low `n` words of `X = [x]` (`w / 2` for `none`) and
+`Y = [y]` of `w / 2`, `w` even. -/
 theorem mulLo_ok {s : State} {B : BitVec 32} {Z w N o x y : Nat} (h : Ws s B Z w N) (ho : o < N) (hx : x < N)
     (hy : y < N) (hN : N ≤ 256) (hox : o ≠ x) (hoy : o ≠ y) (ho0 : o ≠ 0)
     (h16 : slot s.mem B 16 = w) (hw : w % 2 = 0) (hw2 : 2 ≤ w) {n : Option Nat} {X Y : Nat}
-    (hX : num s.mem B w x = X) (hXl : X < 2 ^ (32 * rowsN n w)) (hY : num s.mem B w y = Y)
+    (hX : num s.mem B w x = X) (hY : num s.mem B w y = Y)
     (hYl : Y < 2 ^ (32 * (w / 2))) (hz : num s.mem B w 0 = 0) (hn : RowsOk n w := by trivial) :
-    WP isa (mulLo o x y n) s fun v => Ws v B Z w N ∧ num v.mem B w o = X * Y % 2 ^ (32 * w) ∧
+    WP isa (mulLo o x y n) s fun v => Ws v B Z w N ∧ num v.mem B w o = X % 2 ^ (32 * rowsN n w) * Y % 2 ^ (32 * w) ∧
       Keep B w [o] [sJ] s.mem v.mem ∧ Rest divRegs s v := by
   rw [mulLo]
   simp only [VG.Impl.Rsa.Arm.Keys.seqs]
@@ -370,6 +371,6 @@ theorem mulLo_ok {s : State} {B : BitVec 32} {Z w N o x y : Nat} (h : Ws s B Z w
   rw [WP.seq_iff]
   refine WP.mono h1 fun v I0 => ?_
   rw [hY] at I0
-  exact mulLoop_ok I0 ho hx hy hN hox hoy hw hw2 n hn hX hXl
+  exact mulLoop_ok I0 ho hx hy hN hox hoy hw hw2 n hn hX
 
 end VG.Proof.Rsa.Arm.KeyDiv
