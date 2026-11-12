@@ -6,7 +6,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Instance
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.Timing
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimingW
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdDone
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.X86.RtShape
 public import VerifiedGarbage.TCB.X86.Print
