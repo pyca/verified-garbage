@@ -576,12 +576,12 @@ theorem sub_ok {s : State} {B : Addr} {Z N eA eN eT : Nat} (hs : Scr s B Z)
   exact ⟨c, hc, hv, hI.out, hI.keep⟩
 
 /-- `wordLoop 0 addMBody` over `N` words: `[rbx] := ([r10] & mask c) + [r8]`,
-its carry in `rbp`. -/
+its carry in `rbp` (`[r8]` may be `[rbx]` itself). -/
 theorem addM_ok {s : State} {B : Addr} {Z N eo eN eA : Nat} {c : Bool} (hs : Scr s B Z)
     (hbx : s.gpr .rbx = off B eo) (h10 : s.gpr .r10 = off B eN) (h8 : s.gpr .r8 = off B eA)
     (h15 : s.gpr .r15 = mask c) (h12 : s.gpr .r12 = BitVec.ofNat 64 N) (hbp : s.gpr .rbp = mask false)
     (hN : 1 ≤ N) (hN' : N < 2 ^ 31) (ho : eo + 8 * N ≤ Z) (hNz : eN + 8 * N ≤ Z) (hA : eA + 8 * N ≤ Z)
-    (sN : eN + 8 * N ≤ eo ∨ eo + 8 * N ≤ eN) (sA : eA + 8 * N ≤ eo ∨ eo + 8 * N ≤ eA) :
+    (sN : eN + 8 * N ≤ eo ∨ eo + 8 * N ≤ eN) (sA : eA + 8 * N ≤ eo ∨ eo ≤ eA) :
     WP isa (wordLoop 0 addMBody) s fun t => ∃ c' : Bool, t.gpr .rbp = mask c' ∧
       wv t.mem B eo N + 2 ^ (64 * N) * c'.toNat = (if c then wv s.mem B eN N else 0) + wv s.mem B eA N ∧
       Outside B eo (8 * N) s.mem t.mem ∧ Keep [.rax, .rbp, .r14] s t := by
