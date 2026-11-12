@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.CT
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.KeyCT
 import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Correct
+import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Verified
 import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Sig
@@ -27,6 +28,7 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.CT
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.KeyCT
 meta import VerifiedGarbage.Proof.EntropyRequest
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Correct
+meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Verified
 meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Bignum.Layout
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -593,7 +595,7 @@ theorem key_pub_of {s₁ s₂ : State} (hr : ∀ r ∈ RISCV64.argRegs, s₁.gpr
     | rw [hk, he]
 
 theorem key_call_ct [InvLaw] : RelCT isa (Two CallKCT) keyCall fun _ _ => True := by
-  refine RelCT.callEx (k := Key.fnContract) (fun s' h' => Key.code_correct s' h') Key.key_ct
+  refine RelCT.callEx (k := Key.fnContract) (fun s' h' => Key.code_correct s' h') Key.key_ct_full
     fun w₁ w₂ ⟨q, h₁, h₂, _⟩ => ?_
   obtain ⟨s₁, u₁, c₁, m₁, k₁, r₁, mw₁, kw₁⟩ := h₁
   obtain ⟨s₂, u₂, c₂, m₂, k₂, r₂, mw₂, kw₂⟩ := h₂

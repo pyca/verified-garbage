@@ -20,17 +20,20 @@ and 5, `ν + 1` words in two's complement; the coefficients `a`, `b` in arrays
 end); `m` with a zero word `ν` in array 2; `d`, the batch's matrix and
 `-m⁻¹ mod 2^64` in words of array 9 (the window). Each batch runs 59 divsteps
 on the low words of `f` and `g` (`Proof/Divstep/WordDef.lean`'s `wstep`,
-unrolled, in `t0`–`t6`, `a4`, `a5` and `a7`), then:
+unrolled, in `t0`–`t6`, `a4`, `a5` and `a7`), then two passes over the
+words, as libsecp256k1's `update_fg` and `update_de`, each in place:
 
-* `lin`: `[o] = u [a] + v [b]` modulo `2^(64 (ν + 1))`, a word at a time with
-  a signed 128-bit accumulator (`t4`, `a4`): each product's low word by
-  `mul`, its high word by `mulhu` less the word where the coefficient is
-  negative (the model has no `mulhsu`);
-* `shr`: `[o] = [a] / 2^59`, arithmetic, `ν + 1` words, for the new `f` and
-  `g`;
-* `mred`: `[o] = (t + k m) / 2^64` for the new `a`, `b`, `k = t₀ (-m⁻¹) mod
-  2^64`: `k m` added to `t` in place (`mac`), the carry into its word `ν` and
-  its sign into word `ν + 1`, then its words `1 … ν + 1`.
+* `updateG`: the new `f` and `g`, `(u f + v g) / 2^59` and
+  `(q f + r g) / 2^59`, both from one read of each word: two signed 128-bit
+  accumulators, a product's low word by `mul` and its high word by `mulhu`
+  less the word where the coefficient is negative (the model has no
+  `mulhsu`), and each low word, with the top five bits of the one before,
+  stored a word down;
+* `updateAB`: the new `a` and `b`, `(t + k m) / 2^64` for
+  `t = u a + v b` and `q a + r b` and `k = t₀ (-m⁻¹) mod 2^64`, with `k m`
+  added to each low word by an unsigned carry, the sum stored a word down.
+
+Both borrow twelve registers (`spill1`, `spill2`), kept in arrays 11 and 12.
 
 `n` stays in `s8` and the count of the batches left in `s7`, so every loop's
 count and every address depends only on `w`, `n` and the base, all in
@@ -136,49 +139,144 @@ def save : List Instr :=
 
 /-! ## The array operations -/
 
-/-- A signed coefficient `c` (in `cr`) times the word at `[p]`, added to the
-signed accumulator `(t4, a4)`: the low word by `mul`, the high word by
-`mulhu` less the word if `c < 0`, through `t5` and `t6`. -/
-def linTerm (cr p : Reg) : List Instr :=
-  [.load .d .t5 p 0, .mul .t6 cr .t5, .add .t4 .t4 .t6, .sltu .t6 .t4 .t6, .add .a4 .a4 .t6,
-    .mulhu .t6 cr .t5, .add .a4 .a4 .t6, .shift .sra .d .t6 cr 63, .logic .and .t6 .t6 .t5,
-    .sub .a4 .a4 .t6]
+/-- A signed coefficient `c` (in `cr`, its sign's mask in `mr`) times the
+word `x`, added to the signed accumulator `(lo, hi)`: the low word by `mul`,
+the high word by `mulhu` less `x` if `c < 0`, through `p`. -/
+def term (cr mr x lo hi p : Reg) : List Instr :=
+  [.mul p cr x, .add lo lo p, .sltu p lo p, .add hi hi p, .mulhu p cr x, .add hi hi p,
+    .logic .and p mr x, .sub hi hi p]
 
-/-- One word of `u [a] + v [b]` (`u`, `v` in `a5`, `a7`): the accumulator's
-low word to `[o]`, then the accumulator shifted down a word. -/
-def linBody : List Instr :=
-  linTerm .a5 .t1 ++ linTerm .a7 .t2 ++
-    [.store .d .t4 .t0 0, .addi .t4 .a4 0, .shift .sra .d .a4 .a4 63, .addi .t0 .t0 8, .addi .t1 .t1 8,
-      .addi .t2 .t2 8]
+/-! ### The pass over `f` and `g`
 
-/-- `[o] = c₁ [a] + c₂ [b]` modulo `2^(64 (ν + 1))`, the coefficients the
-window's words at `c₁` and `c₂`. -/
-def lin (c1 c2 o a b : Nat) : Prog isa := .seq
-  (.block (ptr .t0 o ++ ptr .t1 a ++ ptr .t2 b ++ ldW .a5 c1 ++ ldW .a7 c2 ++ cntN1 ++ [.li .t4 0, .li .a4 0]))
-  (countLoop .t3 linBody)
+`u`, `v`, `q`, `r` in `a5`, `a7`, `s1`, `s2` and their signs' masks in
+`s3`–`s6`; the pointers at word `i - 1` of `f` and `g` in `t0` and `t1`, and
+word `i` read into `t5` and `t6`; `u f + v g` accumulated in `(t4, a4)` and
+`q f + r g` in `(a0, a1)`, signed, through `t2`; and the top five bits of
+their last low words in `a2` and `a3`. Each low word, with the five bits of
+the one before, is word `i - 1` of the new `f` or `g`, in place. -/
 
-/-- One word of `[a] >> 59`: the word's top five bits and the next's low 59. -/
-def shrBody : List Instr :=
-  [.load .d .t5 .t1 0, .load .d .t6 .t1 8, .shift .srl .d .t5 .t5 59, .shift .sll .d .t6 .t6 5,
-    .add .t5 .t5 .t6, .store .d .t5 .t0 0, .addi .t0 .t0 8, .addi .t1 .t1 8]
+/-- Word `i` of `f` and `g` at offset `o` of the pointers, into both
+accumulators. -/
+def fgHead (o : Nat) : List Instr :=
+  [.load .d .t5 .t0 o, .load .d .t6 .t1 o] ++ term .a5 .s3 .t5 .t4 .a4 .t2 ++ term .a7 .s4 .t6 .t4 .a4 .t2 ++
+    term .s1 .s5 .t5 .a0 .a1 .t2 ++ term .s2 .s6 .t6 .a0 .a1 .t2
 
-/-- `[o] = [a] / 2^59`, arithmetic, `ν + 1` words: `ν` from pairs of words,
-then the top one from its sign. -/
-def shr (o a : Nat) : Prog isa := seqs [
-  .block (ptr .t0 o ++ ptr .t1 a ++ cntN), countLoop .t3 shrBody,
-  .block [.load .d .t5 .t1 0, .shift .sra .d .t5 .t5 59, .store .d .t5 .t0 0]]
+/-- The low words' top five bits kept, and the accumulators shifted down a
+word. -/
+def fgShift : List Instr :=
+  [.shift .srl .d .a2 .t4 59, .addi .t4 .a4 0, .shift .sra .d .a4 .a4 63,
+    .shift .srl .d .a3 .a0 59, .addi .a0 .a1 0, .shift .sra .d .a1 .a1 63]
 
-/-- `[o] = (t + k m) / 2^64` (`ν + 1` words), for `t = [t]` (`ν + 1` words,
-two's complement) and `k = t₀ (-m⁻¹) mod 2^64`: `t`'s sign into `a7`, `k m`
-added in place over `ν` words, the carry into its word `ν` and its sign and
-the carry out of that into word `ν + 1`; then its words `1 … ν + 1`. -/
-def mred (t o : Nat) : Prog isa := seqs [
-  .block (topOf t ++ [.load .d .a7 .t1 0, .shift .sra .d .a7 .a7 63] ++ ptr .t0 t ++ ldW .t6 wIv ++
-    [.load .d .t5 .t0 0, .mul .a5 .t5 .t6]),
-  mac t t aMz cntN,
-  .block [.load .d .t5 .t0 0, .add .t5 .t5 .t4, .sltu .t4 .t5 .t4, .store .d .t5 .t0 0, .add .a7 .a7 .t4,
-    .store .d .a7 .t0 8],
-  .seq (.block (ptr .t0 o ++ ptr .t1 t ++ [.addi .t1 .t1 8] ++ cntN1)) (countLoop .t3 copyBody)]
+/-- Word `i - 1` of the new `f` and `g`: the five bits before and the low
+word's low 59. -/
+def fgOut : List Instr :=
+  [.shift .sll .d .t2 .t4 5, .add .t2 .a2 .t2, .store .d .t2 .t0 0,
+    .shift .sll .d .t2 .a0 5, .add .t2 .a3 .t2, .store .d .t2 .t1 0]
+
+/-- A word `i ≥ 1`. -/
+def fgBody : List Instr := fgHead 8 ++ fgOut ++ fgShift ++ [.addi .t0 .t0 8, .addi .t1 .t1 8]
+
+/-- The new `f`'s and `g`'s top words: the last five bits, sign-extended. -/
+def fgTop : List Instr :=
+  [.shift .sll .d .t2 .a2 59, .shift .sra .d .t2 .t2 59, .store .d .t2 .t0 0,
+    .shift .sll .d .t2 .a3 59, .shift .sra .d .t2 .t2 59, .store .d .t2 .t1 0]
+
+/-- The matrix from the window, `u`, `v`, `q`, `r` into `a5`, `a7`, `s1`,
+`s2`. -/
+def ldMat : List Instr := ldW .a5 wU ++ ldW .a7 wV ++ ldW .s1 wQ ++ ldW .s2 wR
+
+/-- The pass's start: the matrix and three of its masks (`s3`–`s5`), the
+pointers at `[a]` and `[b]` in `t0` and `t1`, the accumulators zero. -/
+def passSetup (a b : Nat) : List Instr :=
+  ldMat ++ [.shift .sra .d .s3 .a5 63, .shift .sra .d .s4 .a7 63, .shift .sra .d .s5 .s1 63] ++
+    ptr .t0 a ++ ptr .t1 b ++ [.li .t4 0, .li .a4 0, .li .a0 0, .li .a1 0]
+
+/-- The registers `rs` stored to the words from `o` at `t0`. -/
+def stD : List Reg → Nat → List Instr
+  | [], _ => []
+  | r :: rs, o => .store .d r .t0 o :: stD rs (o + 8)
+
+/-- And loaded from them. -/
+def ldD : List Reg → Nat → List Instr
+  | [], _ => []
+  | r :: rs, o => .load .d r .t0 o :: ldD rs (o + 8)
+
+/-- The halves of `spill1` and `spill2`, kept in arrays 11 and 12. -/
+def spill1 : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5]
+def spill2 : List Reg := [.s6, .a0, .a1, .a2, .a3, .a6]
+
+/-- `spill1` and `spill2` to the first six words of arrays 11 and 12. -/
+def spill : List Instr := ptr .t0 aT1 ++ stD spill1 0 ++ ptr .t0 aT2 ++ stD spill2 0
+
+/-- And back. -/
+def restore : List Instr := ptr .t0 aT1 ++ ldD spill1 0 ++ ptr .t0 aT2 ++ ldD spill2 0
+
+/-- The new `f` and `g`, `(u f + v g) / 2^59` and `(q f + r g) / 2^59`, in
+place, `ν + 1` words: word 0 into the accumulators, then `ν` words, then the
+top words. -/
+def updateG : Prog isa := seqs [
+  .block (spill ++ passSetup aF aG ++ [.shift .sra .d .s6 .s2 63] ++ fgHead 0 ++ fgShift ++ cntN),
+  countLoop .t3 fgBody, .block (fgTop ++ restore)]
+
+/-! ### The pass over `a` and `b`
+
+As over `f` and `g`, with `m` (array 2, its word `ν` zero) at word `i - 1` in
+`t2`, and `t2`'s role as the products' register taken by `s6`. `r`'s mask
+is made at each word (`s6`), for want of a register. The low words `t` of
+`u a + v b` and `q a + r b` from word 0 make `k₁ = t (-m⁻¹)` and `k₂` (`a2`,
+`a3`), and from each word on `k m` is added to the accumulator's low word
+with an unsigned carry (`a6`, `s0`), as `mac`: so word 0 of each sum is zero
+and word `i` is word `i - 1` of `(t + k m) / 2^64`, in place. At the top
+word, where `m`'s is zero, the sum's word `ν + 1` is the sign of the low
+word `t` (as a number of `ν + 1` words) and the carry. -/
+
+/-- `term` with `r`'s mask made from `s2`. -/
+def termR : List Instr :=
+  [.mul .s6 .s2 .t6, .add .a0 .a0 .s6, .sltu .s6 .a0 .s6, .add .a1 .a1 .s6, .mulhu .s6 .s2 .t6,
+    .add .a1 .a1 .s6, .shift .sra .d .s6 .s2 63, .logic .and .s6 .s6 .t6, .sub .a1 .a1 .s6]
+
+/-- Word `i` of `a` and `b` at offset `o` of the pointers, into both
+accumulators. -/
+def abHead (o : Nat) : List Instr :=
+  [.load .d .t5 .t0 o, .load .d .t6 .t1 o] ++ term .a5 .s3 .t5 .t4 .a4 .s6 ++ term .a7 .s4 .t6 .t4 .a4 .s6 ++
+    term .s1 .s5 .t5 .a0 .a1 .s6 ++ termR
+
+/-- `k m_i` (`m_i` in `t5`) added to the low word `lo`, with the carry `c`,
+through `s6` and `t6`, as `macBody`. -/
+def macW (k lo c : Reg) : List Instr :=
+  [.mul .s6 k .t5, .add .s6 .s6 lo, .sltu lo .s6 lo, .mulhu .t6 k .t5, .add .t6 .t6 lo, .add lo .s6 c,
+    .sltu .s6 lo c, .add c .t6 .s6]
+
+/-- The accumulators shifted down a word. -/
+def abShift : List Instr :=
+  [.addi .t4 .a4 0, .shift .sra .d .a4 .a4 63, .addi .a0 .a1 0, .shift .sra .d .a1 .a1 63]
+
+/-- Word 0: `k₁` and `k₂` from the low words and `-m⁻¹` (the window's), and
+`k m₀` added. -/
+def abFirst : List Instr :=
+  abHead 0 ++ ldW .t5 wIv ++ [.mul .a2 .t4 .t5, .mul .a3 .a0 .t5, .load .d .t5 .t2 0] ++
+    macW .a2 .t4 .a6 ++ macW .a3 .a0 .s0 ++ abShift
+
+/-- A word `1 ≤ i < ν`. -/
+def abBody : List Instr :=
+  abHead 8 ++ [.load .d .t5 .t2 8] ++ macW .a2 .t4 .a6 ++ [.store .d .t4 .t0 0] ++ macW .a3 .a0 .s0 ++
+    [.store .d .a0 .t1 0] ++ abShift ++ [.addi .t0 .t0 8, .addi .t1 .t1 8, .addi .t2 .t2 8]
+
+/-- Word `ν`, where `m`'s is zero: the low words with the carries are words
+`ν - 1`, and the low words' signs with the carries out words `ν`. -/
+def abLast : List Instr :=
+  abHead 8 ++ [.shift .sra .d .t5 .t4 63, .add .t4 .t4 .a6, .sltu .t6 .t4 .a6, .store .d .t4 .t0 0,
+    .add .t5 .t5 .t6, .store .d .t5 .t0 8,
+    .shift .sra .d .t5 .a0 63, .add .a0 .a0 .s0, .sltu .t6 .a0 .s0, .store .d .a0 .t1 0,
+    .add .t5 .t5 .t6, .store .d .t5 .t1 8]
+
+/-- The new `a` and `b`, `(t + k m) / 2^64` for `t = u a + v b` and
+`q a + r b`, in place, `ν + 1` words: word 0, then words `1 … ν - 1`, then
+word `ν`. -/
+def updateAB : Prog isa := seqs [
+  .block (spill ++ passSetup aA aB ++ ptr .t2 aMz ++ [.li .a6 0, .li .s0 0] ++ abFirst ++ cntN ++
+    [.addi .t3 .t3 (-1)]),
+  .ite (.zero .t3) (.block []) (countLoop .t3 abBody), .block (abLast ++ restore)]
 
 /-- `[o] = [x] - m` where that does not borrow, else `[x]`, `ν + 1` words:
 the difference into `[s]`, then selected by the borrow. -/
@@ -186,12 +284,6 @@ def csub (o x s : Nat) : Prog isa := seqs [
   .block (ptr .t0 s ++ ptr .t1 x ++ ptr .t2 aMz ++ cntN1 ++ [.li .t4 0]), countLoop .t3 subBody,
   .block (ptr .t0 o ++ ptr .t1 s ++ ptr .t2 x ++ cntN1 ++ [.li .t5 0, .sub .t4 .t5 .t4]),
   countLoop .t3 selBody]
-
-/-- The new `f` and `g`. -/
-def updateG : Prog isa := seqs [lin wU wV aT1 aF aG, lin wQ wR aT2 aF aG, shr aF aT1, shr aG aT2]
-
-/-- The new `a` and `b`. -/
-def updateAB : Prog isa := seqs [lin wU wV aT1 aA aB, lin wQ wR aT2 aA aB, mred aT1 aA, mred aT2 aB]
 
 /-- The new `f`, `g`, `a` and `b`. -/
 def update : Prog isa := .seq updateG updateAB
