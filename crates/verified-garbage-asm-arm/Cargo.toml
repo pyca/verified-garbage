@@ -23,3 +23,6 @@ path = "src/lib.rs"
 
 [dependencies]
 verified-garbage-cpu = { path = "../verified-garbage-cpu" }
+
+[lints]
+workspace = true
