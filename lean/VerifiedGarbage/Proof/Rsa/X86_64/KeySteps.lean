@@ -77,6 +77,17 @@ theorem mulXRK (h : KCtx s t B Z w minv N) :
   WP.mono (mulXR_ok h.good h.hZ h.w1 h.w2) fun _ ⟨hv, ha, hk⟩ =>
     ⟨h.arr ha (by decide) (by decide) (by decide) hk, hv, ha⟩
 
+theorem mulPQK (h : KCtx s t B Z w minv N) {pl ql : Nat}
+    (hpl : word s.mem B (8 * sPlen) = BitVec.ofNat 64 pl) (hql : word s.mem B (8 * sQlen) = BitVec.ofNat 64 ql)
+    (pl1 : 1 ≤ pl) (ql1 : 1 ≤ ql) (pl2 : pl ≤ 8 * w) (ql2 : ql ≤ 8 * w) :
+    WP isa (seqs mulPQ) t fun t' => KCtx s t' B Z w minv N ∧
+      wv t'.mem B (slot w aAcc) (2 * w + 2) =
+        wv t.mem B (slot w aX) ((pl + 7) / 8) * wv t.mem B (slot w aR) ((ql + 7) / 8) ∧
+      Arrays B w [aAcc, aTmp] t.mem t'.mem :=
+  WP.mono (mulPQ_ok h.good h.hZ h.w1 h.w2 (by rw [h.hdr sPlen (by decide) (by decide)]; exact hpl)
+    (by rw [h.hdr sQlen (by decide) (by decide)]; exact hql) pl1 ql1 pl2 ql2) fun _ ⟨hv, ha, hk⟩ =>
+    ⟨h.arr ha (by decide) (by decide) (by decide) hk, hv, ha⟩
+
 end
 
 theorem wsa {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ []) {s : State} {Q : State → Prop}

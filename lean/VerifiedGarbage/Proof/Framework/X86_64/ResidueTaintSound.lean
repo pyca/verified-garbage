@@ -436,9 +436,90 @@ theorem post_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s₂' :
     · exact ha
   · exact ha
 
+/-! ## Loads from the argument area -/
+
+theorem aa_add (s : State) (τ : FT) (o i : Nat) : aa s τ o + BitVec.ofNat 64 i = aa s τ (o + i) := by
+  simp only [aa, wa]
+  rw [show τ.room + τ.depth + 8 + (o + i) = τ.room + τ.depth + 8 + o + i by omega, BitVec.add_assoc,
+    BitVec.ofNat_add_ofNat]
+
+theorem aa_eq {s₁ s₂ : State} {τ : FT} (h : s₁.gpr .rsp = s₂.gpr .rsp) : aa s₁ τ = aa s₂ τ := by
+  funext o; simp only [aa, wa, wb, h]
+
+/-- Where a load `argOff` places reads. -/
+theorem argOff_ea {τ : FT} {m : MemOp} {o : Nat} (h : argOff τ m = some o) (s : State) :
+    s.ea m = aa s τ o := by
+  unfold argOff at h
+  split at h <;> [rename_i hc; cases h]
+  obtain ⟨hb, hi, hd⟩ := hc
+  simp only [Option.some.injEq] at h
+  have hdisp : m.disp = ((τ.depth + 8 + o : Nat) : Int) := by omega
+  simp only [State.ea, hi, hb]
+  rw [hdisp, BitVec.ofInt_natCast]
+  simp only [aa, wa, wb]
+  rw [show τ.room + τ.depth + 8 + o = τ.room + (τ.depth + 8 + o) by omega,
+    BitVec.ofNat_add τ.room (τ.depth + 8 + o), ← BitVec.add_assoc, BitVec.sub_add_cancel]
+
+theorem exec_mov32_mem {d : Reg} {m : MemOp} {s s' : State} (h : exec (.mov32 d (.mem m)) s = some s') :
+    s'.gpr d = (s.mem.readW (s.ea m) 32).setWidth 64 ∧ s'.wr = s.wr := by
+  simp only [reduceExec, readSrc32, State.load32, Option.map_eq_some_iff] at h
+  obtain ⟨v, hv, rfl⟩ := h
+  split at hv <;> cases hv
+  simp only [State.setReg32, State.setReg, ↓reduceIte, and_self]
+
+theorem argPost_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s₂' : State}
+    (hsp : s₁.gpr .rsp = s₂.gpr .rsp) (o₁ : One τ s₁) (o₂ : One τ s₂) (hsa : SaEq τ s₁ s₂)
+    (ha : Taint.Agree t' s₁' s₂') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    Taint.Agree (argPost τ i t') s₁' s₂' := by
+  have hpub : ∀ {o w : Nat}, saPub τ o w = true → ∀ j < w,
+      s₁.mem (aa s₁ τ o + BitVec.ofNat 64 j) = s₂.mem (aa s₁ τ o + BitVec.ofNat 64 j) := by
+    intro o w h j hj
+    simp only [saPub, List.any_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
+    obtain ⟨e, he, h1, h2⟩ := h
+    have := hsa e he (o + j) (by omega) (by omega)
+    rw [← aa_eq hsp] at this
+    rw [aa_add]; exact this
+  unfold argPost
+  split
+  · rename_i d m
+    split
+    · rename_i o ho
+      obtain ⟨g₁, w₁⟩ := exec_mov_mem e₁
+      obtain ⟨g₂, w₂⟩ := exec_mov_mem e₂
+      have ha' : Taint.Agree (if saPub τ o 8 = true then { t' with regs := t'.regs.insert d } else t') s₁' s₂' := by
+        split
+        · rename_i hp
+          refine ha.addReg ?_
+          rw [g₁, g₂, argOff_ea ho, argOff_ea ho, ← aa_eq hsp]
+          exact Mem.readW_congr fun j hj => hpub hp j hj
+        · exact ha
+      dsimp only
+      split
+      · rename_i e hf
+        have hq := List.mem_of_find?_eq_some hf
+        have hq1 : e.1 = o := by simpa using List.find?_some hf
+        refine ha'.addBase ?_ ?_
+        · rw [g₁, argOff_ea ho, ← hq1, o₁.sp e hq]; simp only [region, w₁]
+        · rw [g₂, argOff_ea ho, ← hq1, o₂.sp e hq]; simp only [region, w₂]
+      · exact ha'
+    · exact ha
+  · rename_i d m
+    split
+    · rename_i o ho
+      split
+      · rename_i hp
+        obtain ⟨g₁, -⟩ := exec_mov32_mem e₁
+        obtain ⟨g₂, -⟩ := exec_mov32_mem e₂
+        refine ha.addReg ?_
+        rw [g₁, g₂, argOff_ea ho, argOff_ea ho, ← aa_eq hsp]
+        exact congrArg (BitVec.setWidth 64) (Mem.readW_congr fun j hj => hpub hp j hj)
+      · exact ha
+    · exact ha
+  · exact ha
+
 theorem baseStep_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s₂' : State}
-    (ha : Taint.Agree τ.t s₁ s₂) (o₁ : One τ s₁) (o₂ : One τ s₂) (h : baseStep τ i = some t')
-    (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    (ha : Taint.Agree τ.t s₁ s₂) (hsp : s₁.gpr .rsp = s₂.gpr .rsp) (o₁ : One τ s₁) (o₂ : One τ s₂)
+    (hsa : SaEq τ s₁ s₂) (h : baseStep τ i = some t') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Taint.Agree t' s₁' s₂' := by
   unfold baseStep at h
   split at h
@@ -447,7 +528,63 @@ theorem baseStep_sound {τ : FT} {i : Instr} {t' : Taint.T} {s₁ s₂ s₁' s�
     exact special_sound ha o₁ o₂ hs e₁ e₂
   · obtain ⟨t'', ht, rfl⟩ := Option.map_eq_some_iff.mp h
     obtain ⟨had, hb⟩ := X86_64.taint.step_sound ha ht e₁ e₂
-    exact ⟨had, post_sound ha.wf₁ ha.wf₂ o₁ o₂ hb e₁ e₂⟩
+    exact ⟨had, argPost_sound hsp o₁ o₂ hsa (post_sound ha.wf₁ ha.wf₂ o₁ o₂ hb e₁ e₂) e₁ e₂⟩
+
+/-! ## The argument area, kept -/
+
+/-- A byte of the argument area is not in the `n` bytes at window index `i`
+if they end below it. -/
+theorem aa_sep {τ : FT} {s : State} (hr : τ.room ≤ (s.gpr .rsp).toNat)
+    (htop : (s.gpr .rsp).toNat + τ.depth + 8 + τ.an ≤ 2 ^ 64) {k : Nat} (hk : k < τ.an) {i n : Nat}
+    (hi : i + n ≤ τ.room + τ.depth + 8) : ¬ (aa s τ k - wa s τ i).toNat < n := by
+  simp only [aa, wa]
+  rw [Offset.sub_toNat _ (by omega) (by omega)]
+  omega
+
+theorem aa_shift {s s' : State} {τ τ' : FT}
+    (h : s'.gpr .rsp - BitVec.ofNat 64 τ'.room = s.gpr .rsp - BitVec.ofNat 64 τ.room)
+    (hd : τ'.room + τ'.depth = τ.room + τ.depth) : aa s' τ' = aa s τ := by
+  have hw : wb s' τ' = wb s τ := h
+  funext k; simp only [aa, wa]; rw [hw, hd]
+
+/-- `aFree`, for a state of the same argument area. -/
+theorem aFree_of {τ τ' : FT} {s s' : State} (haa : aa s' τ' = aa s τ) (han : τ'.an = τ.an)
+    (h : ∀ k < τ.an, ∀ r ∈ s'.wr, ¬ r.Contains (aa s τ k) 1) :
+    ∀ k < τ'.an, ∀ r ∈ s'.wr, ¬ r.Contains (aa s' τ' k) 1 := by
+  rw [haa, han]; exact h
+
+/-- `One.sp`, for a state of the same argument area. -/
+theorem sp_of {τ τ' : FT} {s s' : State} (haa : aa s' τ' = aa s τ)
+    (h : ∀ e ∈ τ'.sp, s'.mem.readW (aa s τ e.1) 64 = (region s' e.2.1).base + BitVec.ofNat 64 e.2.2) :
+    ∀ e ∈ τ'.sp, s'.mem.readW (aa s' τ' e.1) 64 = (region s' e.2.1).base + BitVec.ofNat 64 e.2.2 := by
+  rw [haa]; exact h
+
+/-- The pointers of `sp` are kept by a change of memory that keeps the
+argument area, the regions and its address. -/
+theorem sp_keep {τ τ' : FT} {s s' : State} (o : One τ s) (hfit : ∀ e ∈ τ.sp, e.1 + 8 ≤ τ.an)
+    (hm : ∀ k < τ.an, s'.mem (aa s τ k) = s.mem (aa s τ k)) (hwr : s'.wr = s.wr)
+    (haa : aa s' τ' = aa s τ) (hsp : τ'.sp = τ.sp) :
+    ∀ e ∈ τ'.sp, s'.mem.readW (aa s' τ' e.1) 64 = (region s' e.2.1).base + BitVec.ofNat 64 e.2.2 := by
+  intro e he
+  rw [hsp] at he
+  rw [haa, show region s' e.2.1 = region s e.2.1 by simp only [region, hwr], ← o.sp e he]
+  apply Mem.readW_congr
+  intro j hj
+  simp only [Nat.reduceDiv] at hj
+  rw [aa_add]
+  exact hm _ (by have := hfit e he; omega)
+
+/-- So are the public bytes of `sa`. -/
+theorem sa_keep {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (inv : RInv τ s₁ s₂)
+    (hm₁ : ∀ k < τ.an, s₁'.mem (aa s₁ τ k) = s₁.mem (aa s₁ τ k))
+    (hm₂ : ∀ k < τ.an, s₂'.mem (aa s₁ τ k) = s₂.mem (aa s₁ τ k))
+    (haa₁ : aa s₁' τ' = aa s₁ τ) (haa₂ : aa s₂' τ' = aa s₂ τ) (hsa : τ'.sa = τ.sa) : SaEq τ' s₁' s₂' := by
+  intro e he k h1 h2
+  rw [hsa] at he
+  have hk := inv.saFit e he
+  rw [haa₁, haa₂, ← aa_eq inv.rsp, hm₁ k (by omega), hm₂ k (by omega)]
+  have := inv.saEq e he k h1 h2
+  rwa [← aa_eq inv.rsp] at this
 
 /-! ## Bounds, flags and pointers in slots -/
 
@@ -663,18 +800,29 @@ theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
   cases hs
   have hl : t'.lens = τ.t.lens := by simpa using hl
   have inv := ha hok
-  obtain ⟨had, hb⟩ := baseStep_sound inv.base inv.one₁ inv.one₂ ht e₁ e₂
+  obtain ⟨had, hb⟩ := baseStep_sound inv.base inv.rsp inv.one₁ inv.one₂ inv.saEq ht e₁ e₂
   have r₁ := exec_rsp hsp e₁
   have r₂ := exec_rsp hsp e₂
   obtain ⟨w₁, f₁⟩ := exec_frame e₁
   obtain ⟨w₂, f₂⟩ := exec_frame e₂
   have hfit := mbAfter_fit (i := i) inv.mbFit
+  have hm₁ : ∀ k < τ.an, s₁'.mem (aa s₁ τ k) = s₁.mem (aa s₁ τ k) := fun k hk => f₁ _ (inv.aFree k hk)
+  have hm₂ : ∀ k < τ.an, s₂'.mem (aa s₁ τ k) = s₂.mem (aa s₁ τ k) :=
+    fun k hk => f₂ _ (by rw [← inv.wr]; exact inv.aFree k hk)
+  have haa₁ : ∀ τ' : FT, τ'.room = τ.room → τ'.depth = τ.depth → aa s₁' τ' = aa s₁ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [r₁, h1]) (by rw [h1, h2])
+  have haa₂ : ∀ τ' : FT, τ'.room = τ.room → τ'.depth = τ.depth → aa s₂' τ' = aa s₂ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [r₂, h1]) (by rw [h1, h2])
   refine ⟨had, fun _ => ⟨hb, by rw [r₁, r₂, inv.rsp], by rw [exec_unknowns e₁, exec_unknowns e₂, inv.unk],
     by rw [w₁, w₂, inv.wr], fun h => by rw [w₁]; exact inv.lens (hl ▸ h), by rw [w₁]; exact inv.nfr,
     by rw [r₁]; exact inv.room, by rw [r₁]; exact inv.top, ?_, ?_, inv.rasIn, inv.rasSorted, ?_, ?_,
     fun e he => by rw [hl]; exact hfit e he,
-    ⟨ub_step inv.one₁ e₁, fl_step e₁, mb_step inv.base.wf₁ inv.one₁ inv.mbFit e₁⟩,
-    ⟨ub_step inv.one₂ e₂, fl_step e₂, mb_step inv.base.wf₂ inv.one₂ inv.mbFit e₂⟩, ?_⟩⟩
+    ⟨ub_step inv.one₁ e₁, fl_step e₁, mb_step inv.base.wf₁ inv.one₁ inv.mbFit e₁,
+      sp_keep inv.one₁ inv.spFit hm₁ w₁ (haa₁ _ rfl rfl) rfl⟩,
+    ⟨ub_step inv.one₂ e₂, fl_step e₂, mb_step inv.base.wf₂ inv.one₂ inv.mbFit e₂,
+      sp_keep inv.one₂ inv.spFit (by rw [← aa_eq inv.rsp]; exact hm₂) w₂ (haa₂ _ rfl rfl) rfl⟩, ?_,
+    by rw [r₁]; exact inv.aTop, aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rwa [w₁] at hr),
+    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit⟩⟩
   · intro i hi; simp only [region, w₁, r₁]; exact inv.frames i hi
   · intro i h₁ h₂; simp only [region, w₁, wb, r₁]; rw [w₁] at h₂; exact inv.others i h₁ h₂
   · intro j hj i hi; simp only [region, raSlot, wa, wb, w₁, r₁]; exact inv.rasFr j hj i hi
@@ -699,9 +847,11 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
     (hb : Taint.Agree σ.t s₁ s₂) (hl : σ.t.lens = τ.t.lens)
     (hsec : ∀ j, ¬ InSec σ.sec j → ¬ InSec τ.sec j)
     (hub : ∀ p ∈ σ.ub, ∃ n, (p.1, n) ∈ τ.ub ∧ n ≤ p.2) (hfl : σ.fl = none ∨ σ.fl = τ.fl)
-    (hmb : ∀ e ∈ σ.mb, e ∈ τ.mb) (hfw : σ.fw = τ.fw) : RInv σ s₁ s₂ := by
+    (hmb : ∀ e ∈ σ.mb, e ∈ τ.mb) (hfw : σ.fw = τ.fw) (han : σ.an = τ.an)
+    (hsa : ∀ e ∈ σ.sa, e ∈ τ.sa) (hsp : ∀ e ∈ σ.sp, e ∈ τ.sp) : RInv σ s₁ s₂ := by
   have e : ∀ s, wa s σ = wa s τ := fun s => by funext j; simp only [wa, wb, hr]
   have e' : ∀ s, raSlot s σ = raSlot s τ := fun s => by funext j; simp only [raSlot, e]
+  have ea : ∀ s, aa s σ = aa s τ := fun s => by funext j; simp only [aa, e, hr, hd]
   have one : ∀ {s}, One τ s → One σ s := fun o =>
     ⟨fun p hp => by
       obtain ⟨n, hn, hle⟩ := hub p hp
@@ -710,9 +860,14 @@ theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (
       rcases hfl with h' | h'
       · rw [h'] at h; cases h
       · exact o.fl a b (h' ▸ h),
-     fun e he => o.mb e (hmb e he)⟩
+     fun e he => o.mb e (hmb e he),
+     fun e he => by rw [ea]; exact o.sp e (hsp e he)⟩
   refine ⟨hb, inv.rsp, inv.unk, inv.wr, fun x => inv.lens (hl ▸ x), hn ▸ inv.nfr, hr ▸ inv.room,
-    hd ▸ inv.top, ?_, ?_, ?_, hra ▸ inv.rasSorted, ?_, ?_, ?_, one inv.one₁, one inv.one₂, ?_⟩
+    hd ▸ inv.top, ?_, ?_, ?_, hra ▸ inv.rasSorted, ?_, ?_, ?_, one inv.one₁, one inv.one₂, ?_,
+    by rw [hd, han]; exact inv.aTop, fun k hk r hr' => by rw [ea]; exact inv.aFree k (han ▸ hk) r hr',
+    fun e he => han ▸ inv.saFit e (hsa e he),
+    fun e he k h1 h2 => by rw [ea, ea]; exact inv.saEq e (hsa e he) k h1 h2,
+    fun e he => han ▸ inv.spFit e (hsp e he)⟩
   · rw [hn, hd]; exact inv.frames
   · intro i h₁ h₂; simp only [wb, hr, hd]; exact inv.others i (hn ▸ h₁) h₂
   · rw [hra, hr, hd]; exact inv.rasIn
@@ -743,11 +898,12 @@ theorem meet_left {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₁ s₁ s
   split
   · rename_i hc
     simp only [Bool.and_eq_true, beq_iff_eq] at hc
-    obtain ⟨⟨⟨⟨⟨⟨⟨h1, -⟩, -⟩, -⟩, -⟩, -⟩, hl⟩, -⟩ := hc
+    obtain ⟨⟨⟨⟨⟨⟨⟨⟨h1, -⟩, -⟩, -⟩, -⟩, -⟩, hl⟩, -⟩, -⟩ := hc
     intro _
     refine (h h1).weaken rfl rfl rfl rfl (Taint.meet_left (h h1).base) (by simp [Taint.meet, hl])
       (fun j hn => inSec_append_left hn) (fun p hp => (mem_ubMeet hp).1) ?_
-      (fun e he => (List.mem_filter.mp he).1) rfl
+      (fun e he => (List.mem_filter.mp he).1) rfl rfl (fun e he => (List.mem_filter.mp he).1)
+      (fun e he => (List.mem_filter.mp he).1)
     simp only
     split <;> [exact .inr rfl; exact .inl rfl]
   · exact fun h => absurd h (by decide)
@@ -757,11 +913,12 @@ theorem meet_right {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₂ s₁ 
   split
   · rename_i hc
     simp only [Bool.and_eq_true, beq_iff_eq] at hc
-    obtain ⟨⟨⟨⟨⟨⟨⟨-, h2⟩, hn⟩, hd⟩, hr⟩, hra⟩, hl⟩, hfw⟩ := hc
+    obtain ⟨⟨⟨⟨⟨⟨⟨⟨-, h2⟩, hn⟩, hd⟩, hr⟩, hra⟩, hl⟩, hfw⟩, han⟩ := hc
     intro _
     refine (h h2).weaken hn hd hr hra (Taint.meet_right (h h2).base) (by simp [Taint.meet, hl])
       (fun j hn => inSec_append_right hn) (fun p hp => (mem_ubMeet hp).2) ?_
-      (fun e he => by simpa using (List.mem_filter.mp he).2) hfw
+      (fun e he => by simpa using (List.mem_filter.mp he).2) hfw han
+      (fun e he => by simpa using (List.mem_filter.mp he).2) (fun e he => by simpa using (List.mem_filter.mp he).2)
     simp only
     split
     · rename_i hf; simp only [beq_iff_eq] at hf; exact .inr hf
@@ -772,13 +929,14 @@ theorem le_sound {τ σ : FT} {s₁ s₂ : State} (hle : le τ σ = true) (h : A
   intro hτ
   simp only [le, hτ, Bool.not_true, Bool.false_or, Bool.and_eq_true, beq_iff_eq, List.all_eq_true,
     List.contains_iff_mem] at hle
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩, hub⟩, hfl⟩, hmb⟩, hfw⟩ := hle
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩, hub⟩, hfl⟩, hmb⟩, hfw⟩, han⟩, hsa⟩, hsp⟩ := hle
   have inv := h hs
   have hbase := Taint.le_sound (Taint.leK_eq ▸ hb) inv.base
   have hl : τ.t.lens = σ.t.lens := by
     have hb' := hb
     rw [Taint.leK_eq] at hb'; simp only [Taint.le, Bool.and_eq_true, beq_iff_eq] at hb'; exact hb'.1.1.1.1.2
   refine inv.weaken hn hd hr hra hbase hl (fun j hnot ⟨p, hp, h'⟩ => hnot ⟨p, hsec p hp, h'⟩) ?_ ?_ hmb hfw
+    han hsa hsp
   · intro p hp
     have h := hub p hp
     cases hn : ubOf σ.ub p.1 with
@@ -988,11 +1146,23 @@ theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ 
   have hwa8 : wa s₁ τ (τ.room - 8) = s₁.gpr .rsp - BitVec.ofNat 64 8 := by
     simp only [wa, wb]; rw [← Offset.sub_ofNat_eq _ h8]
   have hrg : ∀ i, region s₁' i = region s₁ i := fun i => by simp only [region, c₁.wr]
+  -- The argument area, above the return address the call writes.
+  have haa₁ : ∀ τ' : FT, τ'.room = τ.room - 8 → τ'.depth = τ.depth + 8 → aa s₁' τ' = aa s₁ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₁) (by rw [h1, h2]; omega)
+  have haa₂ : ∀ τ' : FT, τ'.room = τ.room - 8 → τ'.depth = τ.depth + 8 → aa s₂' τ' = aa s₂ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₂) (by rw [h1, h2]; omega)
+  have hm₁ : ∀ k < τ.an, s₁'.mem (aa s₁ τ k) = s₁.mem (aa s₁ τ k) := fun k hk =>
+    hout₁ _ (by rw [← hwa8]; exact aa_sep inv.room (inv.aTop (by omega)) hk (by omega))
+  have hm₂ : ∀ k < τ.an, s₂'.mem (aa s₁ τ k) = s₂.mem (aa s₁ τ k) := fun k hk =>
+    hout₂ _ (by rw [← hwa8]; exact aa_sep inv.room (inv.aTop (by omega)) hk (by omega))
   refine ⟨agree_killSp inv.base (by rw [c₁.sp, c₂.sp, inv.rsp]) c₁.gpr c₂.gpr c₁.flags c₂.flags c₁.xmm c₂.xmm
       c₁.wr c₂.wr hm,
     by rw [c₁.sp, c₂.sp, inv.rsp], by rw [c₁.unk, c₂.unk, inv.unk], by rw [c₁.wr, c₂.wr, inv.wr],
     fun h => by rw [c₁.wr]; exact inv.lens h, by rw [c₁.wr]; exact inv.nfr,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_,
+    fun h => by dsimp only at h ⊢; rw [c₁.sp, hr8]; have := inv.aTop h; omega,
+    aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rwa [c₁.wr] at hr),
+    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit⟩
   · dsimp only; rw [c₁.sp]; omega
   · dsimp only; rw [c₁.sp]; omega
   · intro i hi
@@ -1033,16 +1203,18 @@ theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ 
       have := inv.dead j (by omega) hn hw
       rwa [← wa_eq inv.rsp] at this
     · exact h
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_⟩
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_, ?_⟩
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₁.gpr _ hp.2]; exact inv.one₁.ub p hp.1
     · exact mb_out (τ := τ) inv.base.wf₁ inv.one₁ inv.mbFit c₁.wr
         (fun y ⟨r, hr, hc⟩ => hout₁ y (fun hy => hfree₁ y hy r hr hc))
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_⟩
+    · exact sp_keep inv.one₁ inv.spFit hm₁ c₁.wr (haa₁ _ rfl rfl) rfl
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_, ?_⟩
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₂.gpr _ hp.2]; exact inv.one₂.ub p hp.1
     · exact mb_out (τ := τ) inv.base.wf₂ inv.one₂ inv.mbFit c₂.wr
         (fun y ⟨r, hr, hc⟩ => hout₂ y (fun hy => hfree₁ y hy r (inv.wr ▸ hr) hc))
+    · exact sp_keep inv.one₂ inv.spFit (by rw [← aa_eq inv.rsp]; exact hm₂) c₂.wr (haa₂ _ rfl rfl) rfl
   · intro i hi; simp only [hrg, wa, wb]; rw [hsh₁]; exact inv.fw i hi
 
 theorem retFx {a b c : State} (h : isa.ret a b = some c) :
@@ -1116,10 +1288,19 @@ theorem ret_sound {τ τ' : FT} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Ag
       ⟨hk.wf₁.1, fun p hp => (List.mem_append.mp hp).elim (hsp₁ p) (hk.wf₁.2 p)⟩,
       ⟨hk.wf₂.1, fun p hp => (List.mem_append.mp hp).elim (hsp₂ p) (hk.wf₂.2 p)⟩,
       hk.ok, hk.slots, hk.lo, hk.xr⟩
+  have haa₁ : ∀ τ' : FT, τ'.room = τ.room + 8 → τ'.depth = τ.depth - 8 → aa c₁ τ' = aa b₁ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₁) (by rw [h1, h2]; omega)
+  have haa₂ : ∀ τ' : FT, τ'.room = τ.room + 8 → τ'.depth = τ.depth - 8 → aa c₂ τ' = aa b₂ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₂) (by rw [h1, h2]; omega)
+  have hm₁ : ∀ k < τ.an, c₁.mem (aa b₁ τ k) = b₁.mem (aa b₁ τ k) := fun _ _ => by rw [m₁]
+  have hm₂ : ∀ k < τ.an, c₂.mem (aa b₁ τ k) = b₂.mem (aa b₁ τ k) := fun _ _ => by rw [m₂]
   refine ⟨hbase,
     by rw [sp₁, sp₂, inv.rsp], by rw [u₁, u₂, inv.unk], by rw [w₁, w₂, inv.wr],
     fun h => by rw [w₁]; exact inv.lens h, by rw [w₁]; exact inv.nfr,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_, ?_,
+    fun h => by dsimp only at h ⊢; rw [sp₁, hr8]; have := inv.aTop h; omega,
+    aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rwa [w₁] at hr),
+    inv.saFit, sa_keep inv hm₁ hm₂ (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl, inv.spFit⟩
   · dsimp only; rw [sp₁]; omega
   · dsimp only; rw [sp₁]; omega
   · intro i hi
@@ -1156,14 +1337,16 @@ theorem ret_sound {τ τ' : FT} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Ag
     rw [hsh₁] at hw
     rw [hsh₁, hsh₂, m₁, m₂]
     exact inv.dead j (by omega) hn hw
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_⟩
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_, ?_⟩
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [g₁ _ hp.2]; exact inv.one₁.ub p hp.1
     · exact mb_out (τ := τ) inv.base.wf₁ inv.one₁ inv.mbFit w₁ (fun y _ => by rw [m₁])
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_⟩
+    · exact sp_keep inv.one₁ inv.spFit hm₁ w₁ (haa₁ _ rfl rfl) rfl
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_, ?_⟩
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [g₂ _ hp.2]; exact inv.one₂.ub p hp.1
     · exact mb_out (τ := τ) inv.base.wf₂ inv.one₂ inv.mbFit w₂ (fun y _ => by rw [m₂])
+    · exact sp_keep inv.one₂ inv.spFit (fun _ _ => by rw [m₂]) w₂ (haa₂ _ rfl rfl) rfl
   · intro i hi; simp only [hrg, wa, wb]; rw [hsh₁]; exact inv.fw i hi
 
 /-! ## Soundness: frames -/
@@ -1312,9 +1495,24 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
       · simp only at hk₁ hk₂ ⊢
         rw [hba, hba₂, c₁.mem, c₂.mem]
         exact inv.base.slots q hq k hk₁ hk₂
+  -- The argument area, above the new frame.
+  have haa₁ : ∀ τ' : FT, τ'.room = τ.room - b → τ'.depth = τ.depth + b → aa s₁' τ' = aa s₁ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₁) (by rw [h1, h2]; omega)
+  have haa₂ : ∀ τ' : FT, τ'.room = τ.room - b → τ'.depth = τ.depth + b → aa s₂' τ' = aa s₂ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₂) (by rw [h1, h2]; omega)
+  have hwb : wa s₁ τ (τ.room - b) = s₁.gpr .rsp - BitVec.ofNat 64 b := by
+    have := hwab 0
+    simp only [Nat.add_zero, BitVec.add_zero] at this
+    exact this
   refine ⟨hbase, by rw [c₁.sp, c₂.sp, inv.rsp], by rw [c₁.unk, c₂.unk, inv.unk], hwr₂.symm,
     fun h => by simp [shiftIn] at h, by rw [c₁.wr]; simp only [List.length_cons]; have := inv.nfr; omega,
-    ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_, ?_,
+    fun h => by dsimp only at h ⊢; rw [c₁.sp, hrb]; have := inv.aTop h; omega, aFree_of (haa₁ _ rfl rfl) rfl ?_, inv.saFit,
+    sa_keep inv (fun _ _ => by rw [c₁.mem]) (fun _ _ => by rw [c₂.mem]) (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl,
+    fun e he => by
+      simp only [List.mem_map] at he
+      obtain ⟨e, he, rfl⟩ := he
+      exact inv.spFit e he⟩
   · dsimp only; rw [c₁.sp]; omega
   · dsimp only; rw [c₁.sp]; omega
   · intro i hi
@@ -1356,20 +1554,28 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     obtain ⟨e, he, rfl⟩ := he
     simp only [shiftIn, List.getD_cons_succ]
     exact inv.mbFit e he
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_⟩
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₁ _ rfl rfl) fun e he => ?_⟩
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₁.gpr _ hp.2]; exact inv.one₁.ub p hp.1
     · simp only [List.mem_map] at he
       obtain ⟨e, he, rfl⟩ := he
       simp only [hba, hrs, c₁.mem]
       exact inv.one₁.mb e he
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_⟩
+    · simp only [List.mem_map] at he
+      obtain ⟨e, he, rfl⟩ := he
+      rw [hrs, c₁.mem]
+      exact inv.one₁.sp e he
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₂ _ rfl rfl) fun e he => ?_⟩
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₂.gpr _ hp.2]; exact inv.one₂.ub p hp.1
     · simp only [List.mem_map] at he
       obtain ⟨e, he, rfl⟩ := he
       simp only [hba₂, hrs₂, c₂.mem]
       exact inv.one₂.mb e he
+    · simp only [List.mem_map] at he
+      obtain ⟨e, he, rfl⟩ := he
+      rw [hrs₂, c₂.mem]
+      exact inv.one₂.sp e he
   · intro i hi
     simp only [wa, wb]
     rw [hsh₁]
@@ -1380,6 +1586,14 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
       rw [hr0, List.getElem_cons_zero]
       exact this.symm
     | succ i => rw [hrs, List.getElem_cons_succ]; exact inv.fw i (Nat.lt_of_succ_lt_succ hi)
+  · intro k hk r hr
+    rw [c₁.wr] at hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · have := aa_sep inv.room (inv.aTop (by omega)) hk (i := τ.room - b) (n := b) (by omega)
+      rw [hwb] at this
+      simp only [Region.Contains]
+      omega
+    · exact inv.aFree k hk r hr
 
 /-- What the free of a frame of `b` bytes does to the state. -/
 structure FreeFx (b : Nat) (s s' : State) : Prop where
@@ -1499,8 +1713,29 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       simp only at hk₁ hk₂ ⊢
       rw [hba, hba₂, c₁'.mem, c₂'.mem, Nat.sub_add_cancel (by omega)]
       exact inv.base.slots q hq k hk₁ hk₂
+  -- The argument area, above the frame freed.
+  have haa₁ : ∀ τ' : FT, τ'.room = τ.room + b → τ'.depth = τ.depth - b → aa c₁ τ' = aa b₁ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₁) (by rw [h1, h2]; omega)
+  have haa₂ : ∀ τ' : FT, τ'.room = τ.room + b → τ'.depth = τ.depth - b → aa c₂ τ' = aa b₂ τ :=
+    fun τ' h1 h2 => aa_shift (by rw [h1]; exact hsh₂) (by rw [h1, h2]; omega)
+  have hsp' : ∀ {e : Nat × Nat × Nat},
+      e ∈ τ.sp.filterMap (fun e => if e.2.1 = 0 then none else some (e.1, e.2.1 - 1, e.2.2)) →
+      ∃ q ∈ τ.sp, q.2.1 ≠ 0 ∧ e = (q.1, q.2.1 - 1, q.2.2) := by
+    intro e he
+    simp only [List.mem_filterMap] at he
+    obtain ⟨q, hq, hq'⟩ := he
+    split at hq' <;> [cases hq'; rename_i hq0]
+    cases hq'
+    exact ⟨q, hq, hq0, rfl⟩
   refine ⟨hbase, by rw [c₁'.sp, c₂'.sp, inv.rsp], by rw [c₁'.unk, c₂'.unk, inv.unk], hwr₂.symm,
-    ?_, by dsimp only; have := inv.nfr; omega, ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, by dsimp only; have := inv.nfr; omega, ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_, ?_,
+    fun h => by dsimp only at h ⊢; rw [c₁'.sp, hrb]; have := inv.aTop h; omega,
+    aFree_of (haa₁ _ rfl rfl) rfl fun k hk r hr => inv.aFree k hk r (by rw [hw1]; exact List.mem_cons_of_mem _ hr),
+    inv.saFit,
+    sa_keep inv (fun _ _ => by rw [c₁'.mem]) (fun _ _ => by rw [c₂'.mem]) (haa₁ _ rfl rfl) (haa₂ _ rfl rfl) rfl,
+    fun e he => by
+      obtain ⟨q, hq, -, rfl⟩ := hsp' he
+      exact inv.spFit q hq⟩
   · intro h
     have hF' := hF
     rw [hw1, hlt] at hF'
@@ -1583,7 +1818,11 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
     rw [hk, List.getD_cons_succ] at this
     simp only [hk, Nat.add_sub_cancel]
     exact this
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_⟩
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₁ _ rfl rfl) fun e he => ?_⟩
+    rotate_left 2
+    · obtain ⟨q, hq, hq0, rfl⟩ := hsp' he
+      rw [hrt, c₁'.mem, Nat.sub_add_cancel (by omega)]
+      exact inv.one₁.sp q hq
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₁'.gpr _ hp.2]; exact inv.one₁.ub p hp.1
     · simp only [List.mem_filterMap] at he
@@ -1593,7 +1832,11 @@ theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Sta
       simp only
       rw [hba, hrt, c₁'.mem, Nat.sub_add_cancel (by omega), Nat.sub_add_cancel (by omega)]
       exact inv.one₁.mb q hq
-  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_⟩
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_, sp_of (haa₂ _ rfl rfl) fun e he => ?_⟩
+    rotate_left 2
+    · obtain ⟨q, hq, hq0, rfl⟩ := hsp' he
+      rw [hrt₂, c₂'.mem, Nat.sub_add_cancel (by omega)]
+      exact inv.one₂.sp q hq
     · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
       rw [c₂'.gpr _ hp.2]; exact inv.one₂.ub p hp.1
     · simp only [List.mem_filterMap] at he
@@ -1622,21 +1865,31 @@ theorem natsEq_eq (a b : List Nat) : natsEq a b = (a == b) := by
 
 /-- What `step` adds to the base step is nothing for an instruction `isPlain` says is. -/
 theorem plain_facts {i : Instr} (h : isPlain i = true) (τ : FT) :
-    special τ i = none ∧ (∀ t, post τ i t = t) ∧ ubNew τ i = none ∧ flOf i = none ∧
+    special τ i = none ∧ (∀ t, argPost τ i (post τ i t) = t) ∧ ubNew τ i = none ∧ flOf i = none ∧
     mbAfter τ i = τ.mb ∧ ∀ r, Taint.clobbers i r = (Taint.dstOf i == some r) := by
   cases i
   case alu op d src | alu32 op d src =>
     cases op <;> cases src <;>
-      simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-  case mov d src | mov32 d src =>
-    cases src <;> simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+      simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+  case mov d src =>
+    cases src <;> simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+  case mov32 d src =>
+    cases src
+    case mem m =>
+      have ho : argOff τ m = none := by
+        unfold argOff
+        split
+        · next hc => simp [isPlain, regEq_eq, hc.1, hc.2.1] at h
+        · rfl
+      simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+    all_goals simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
   case xop op =>
     cases op
     case bin op x x' =>
-      cases op <;> simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-    all_goals simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+      cases op <;> simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+    all_goals simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
   case vmovdquStore l _ _ => cases l <;> simp_all [isPlain]
-  all_goals simp_all [isPlain, flOf, special, post, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+  all_goals simp_all [isPlain, flOf, special, post, argPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
 
 theorem ubDrop_eq {i : Instr} (hc : ∀ r, Taint.clobbers i r = (Taint.dstOf i == some r)) (ub : List (Reg × Nat)) :
     ubDrop (Taint.dstOf i) ub = ubKill ub i := by
@@ -1656,10 +1909,10 @@ theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = fal
     (fastFn (Taint.stepKDFn i) (Taint.dstOf i)).run τ = step τ i := by
   obtain ⟨hs, hp, hu, hf, hm, hc⟩ := plain_facts h τ
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show post τ i = id from funext hp, Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext hp, Option.map_id]; rfl
   unfold step
   rw [hb, hu, hf, hm, hsp]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
   cases ok
   · rfl
   · simp only [fastFn, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
@@ -1668,17 +1921,17 @@ theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = fal
     | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ubDrop_eq hc]
 
 theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
-    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, post τ i t = t)
+    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
     (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none) (hc : ∀ r, Taint.clobbers i r = false)
     (hm : ∀ τ, mbAfter τ i = mbStore τ m w src) (τ : FT) :
     (fastStore (Taint.stepKDFn i) m w src).run τ = step τ i := by
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show post τ i = id from funext (hp τ), Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]; rfl
   have hk : ubKill τ.ub i = τ.ub := by
     simp only [ubKill, hc, Bool.not_false]; exact List.filter_eq_self.mpr fun _ _ => rfl
   unfold step
   rw [hb, hu, hf, hm, hsp, hk]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
   cases ok
   · rfl
   · simp only [fastStore, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
@@ -1709,15 +1962,15 @@ theorem storeR_eq (m : MemOp) (w : Nat) (r : Reg) :
   simp only [Taint.storeStepKD, storeSlotsR_eq]
 
 theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)}
-    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, post τ i t = t)
+    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
     (hf : flOf i = none) (hm : ∀ τ, mbAfter τ i = τ.mb)
     (hu : ∀ τ, (ubNew τ i).toList ++ ubKill τ.ub i = u τ.ub) (τ : FT) :
     (fastU (Taint.stepKDFn i) u).run τ = step τ i := by
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show post τ i = id from funext (hp τ), Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]; rfl
   unfold step
   rw [hb, hf, hm, hsp, hu τ]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
   cases ok
   · rfl
   · simp only [fastU, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
@@ -1737,29 +1990,37 @@ theorem post_mb_nil {τ : FT} (h : τ.mb = []) (d : Reg) (m : MemOp) (t : Taint.
   simp only [post, h, List.find?_nil]
   split <;> rfl
 
+theorem argPost_nil {τ : FT} (ha : τ.sa = []) (hp : τ.sp = []) (i : Instr) (t : Taint.T) :
+    argPost τ i t = t := by
+  unfold argPost saPub
+  simp only [ha, hp, List.any_nil, Bool.false_eq_true, ↓reduceIte, List.find?_nil]
+  split <;> (try split) <;> rfl
+
+theorem argPost_lens (τ : FT) (i : Instr) (t : Taint.T) : (argPost τ i t).lens = t.lens := by
+  unfold argPost; split <;> (try split) <;> (try split) <;> (try split) <;> rfl
+
 theorem post_lens (τ : FT) (i : Instr) (t : Taint.T) : (post τ i t).lens = t.lens := by
   unfold post; split <;> (try split) <;> (try split) <;> rfl
 
 theorem fastLoad_eq {d : Reg} {m : MemOp} (hsp : isa.writesSp (.mov d (.mem m)) = false) (τ : FT) :
     (fastLoad (Taint.stepKDFn (.mov d (.mem m))) d (.mov d (.mem m))).run τ = step τ (.mov d (.mem m)) := by
   have hb : baseStep τ (.mov d (.mem m)) =
-      ((Taint.stepKDFn (.mov d (.mem m))).run τ.t).map (post τ (.mov d (.mem m))) := rfl
+      ((Taint.stepKDFn (.mov d (.mem m))).run τ.t).map
+        fun t' => argPost τ (.mov d (.mem m)) (post τ (.mov d (.mem m)) t') := rfl
   have hk : ubKill τ.ub (.mov d (.mem m)) = ubDrop (some d) τ.ub :=
     (ubDrop_eq (i := .mov d (.mem m)) (fun _ => rfl) τ.ub).symm
   have hm : mbAfter τ (.mov d (.mem m)) = τ.mb := rfl
   unfold step
   rw [hb, hk, hm, hsp, show ubNew τ (.mov d (.mem m)) = none from rfl, show flOf (.mov d (.mem m)) = none from rfl]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
   cases ok
   · rfl
   · simp only [fastLoad, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
     cases (Taint.stepKDFn (.mov d (.mem m))).run t with
     | none => rfl
     | some t' =>
-      simp only [Option.map_some, post_lens, Bool.cond_eq_ite, Option.toList, List.nil_append]
-      cases mb with
-      | nil => rw [post_mb_nil rfl]
-      | cons e mb => rfl
+      simp only [Option.map_some, argPost_lens, post_lens, Bool.cond_eq_ite, Option.toList, List.nil_append]
+      cases mb <;> cases sa <;> cases sp <;> (try simp only [post_mb_nil, argPost_nil]) <;> rfl
 
 theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
   unfold stepFn
@@ -1854,7 +2115,7 @@ theorem any_eq4 (l : List (Nat × Nat × Nat × Nat)) (p : Nat × Nat × Nat × 
 theorem leF_eq : leF = le := by
   funext τ σ
   simp only [leF, le, KList.beq_eq, natsEq_eq, leKF_eq, ← leK_eq, any_eq2, any_eq4, KList.all_eq, ubOfK_eq,
-    KList.ble_eq]
+    KList.ble_eq, mem3_eq]
 
 theorem eqs3_eq : ∀ {as bs : List (Nat × Nat × Nat)}, eqs3 as bs = true → as = bs
   | [], [], _ => rfl
@@ -1881,7 +2142,8 @@ theorem meetT_eq : meetT = Taint.meet := by
 
 theorem meetF_eq : meetF = meet := by
   funext τ₁ τ₂
-  simp only [meetF, meet, KList.beq_eq, natsEq_eq, meetT_eq, ubOfK_eq, KList.filter_eq, any_eq4, Bool.cond_eq_ite]
+  simp only [meetF, meet, KList.beq_eq, natsEq_eq, meetT_eq, ubOfK_eq, KList.filter_eq, any_eq2, any_eq4, mem3_eq,
+    Bool.cond_eq_ite]
 
 /-! ## The analysis -/
 

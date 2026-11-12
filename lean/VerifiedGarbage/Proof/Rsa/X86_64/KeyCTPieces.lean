@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time of the pieces
@@ -194,5 +196,35 @@ theorem mulXRK_ct : RelCT isa (Two KK) (seqs mulXR) (Two KK) := by
         (regsAre_cons e regsAre_nil))))
   · obtain ⟨s₀, minv, N, c, hs⟩ := h
     exact WP.mono (mulXRK c) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩
+
+theorem mulPQK_ct : RelCT isa (Two KK) (seqs mulPQ) (Two KK) := by
+  refine kk_ct ?_ fun p s h => ?_
+  · unfold mulPQ
+    refine RelCT.seqs_append (by simp [VG.Impl.Rsa.X86_64.Crt.zeroAccs]) (by simp)
+      (RelCT.seq (two_post (two_map (fun p : KPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun _ _ h => h.goodW) zeroAccs_ct)
+        fun _ _ h => zeroAccsK_ok h) ?_)
+    simp only [seqs]
+    refine hdr_ct pins_kk (rs := [.r11, .r10, .r9, .r12, .r8]) (fun p => [(.r11, kb p aX),
+      (.r10, BitVec.ofNat 64 ((p.pl + 7) / 8)), (.r9, kb p aR), (.r12, BitVec.ofNat 64 ((p.ql + 7) / 8)),
+      (.r8, kb p aAcc)]) (fun _ => rfl) (by taint_decide) (by taint_decide) fun p s h => ?_
+    obtain ⟨hdi, hl, _, hb'⟩ := h.lds
+    obtain ⟨s₀, minv, N, cx, hs⟩ := h
+    have hpl : word s.mem p.B (8 * sPlen) = BitVec.ofNat 64 p.pl := by
+      rw [cx.hdr sPlen (by decide) (by decide)]; exact hs.hPl
+    have hql : word s.mem p.B (8 * sQlen) = BitVec.ofNat 64 p.ql := by
+      rw [cx.hdr sQlen (by decide) (by decide)]; exact hs.hQl
+    have := hs.pl2; have := hs.ql2; have := hs.word_w2
+    exact WP.mono (WP.keep [.r11, .r10, .r9, .r12, .r8] (Q := fun t => t.gpr .r11 = kb p aX ∧
+        t.gpr .r10 = BitVec.ofNat 64 ((p.pl + 7) / 8) ∧ t.gpr .r9 = kb p aR ∧
+        t.gpr .r12 = BitVec.ofNat 64 ((p.ql + 7) / 8) ∧ t.gpr .r8 = kb p aAcc)
+      (by
+        xrun [State.ea, hdr, hdi, hdrOff, hl sPlen (by decide), hl sQlen (by decide), hl (sArr aX) (by decide),
+          hl (sArr aR) (by decide), hl (sArr aAcc) (by decide), hpl, hql, hb' aX (by decide), hb' aR (by decide),
+          hb' aAcc (by decide)]
+        exact ⟨ceil8_bv (by omega), ceil8_bv (by omega)⟩) rfl)
+      fun t ⟨⟨a, b, c, d, e⟩, _⟩ => regsAre_cons a (regsAre_cons b (regsAre_cons c (regsAre_cons d
+        (regsAre_cons e regsAre_nil))))
+  · obtain ⟨s₀, minv, N, c, hs⟩ := h
+    exact WP.mono (mulPQK c hs.hPl hs.hQl hs.pl1 hs.ql1 hs.pl2 hs.ql2) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩
 
 end VG.Proof.Rsa.X86_64.Key

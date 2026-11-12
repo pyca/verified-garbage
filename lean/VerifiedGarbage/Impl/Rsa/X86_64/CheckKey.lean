@@ -102,7 +102,7 @@ def main : Prog isa := seqs (
   -- `d < n`
   loadNum aX sD sDlen ++ ltMask aX aN ++
   -- `p q = n`
-  loadNum aX sP sPlen ++ loadNum aR sQ sQlen ++ mulXR ++ Crt.eqCheck ++
+  loadNum aX sP sPlen ++ loadNum aR sQ sQlen ++ mulPQ ++ Crt.eqCheck ++
   [.seq (.block guard) (.ite .e (seqs wordChecks) (seqs bitChecks)),
     .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)])
 

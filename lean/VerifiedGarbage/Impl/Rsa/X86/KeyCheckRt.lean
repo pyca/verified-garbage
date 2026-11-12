@@ -98,10 +98,13 @@ def qInvWord : List (Prog isa) := ltA full aQI aP ++
 /-- The three product checks by word steps, under the guard. -/
 def wordProducts : Prog isa := seqs (eWord full aDP aM1 ++ eWord full aDQ aM2 ++ qInvWord full)
 
-/-- `p q = n`: the product (`2 w` words in `aVQ` and `aVR`) compared with `n`. -/
+/-- `p q = n`: the product (`2 w` words in `aVQ` and `aVR`, over the primes' `w / 2` words where the
+guard holds) compared with `n`. -/
 def start : Prog isa :=
   seqs [.block (setOne (lay full) aOne), .block (bitOf (lay full) sMask aP),
-    WordModRt.mulWide (lay full) aVQ aP aQ, WordModRt.eqWide (lay full) sF aVQ aN, .block acc]
+    .block (WordModRt.balanced (lay full) 1 (pLenArg full) (qLenArg full) aN sG),
+    WordModRt.ifBalanced sG (WordModRt.mulHalf (lay full) aVQ aP aQ) (WordModRt.mulWide (lay full) aVQ aP aQ),
+    WordModRt.eqWide (lay full) sF aVQ aN, .block acc]
 
 /-- `p - 1` and `q - 1`, the guard, then `word` under the guard, else `other`. -/
 def crtChecks (word other : Prog isa) : Prog isa := seqs (

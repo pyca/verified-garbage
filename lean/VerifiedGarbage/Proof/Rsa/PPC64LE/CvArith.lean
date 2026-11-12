@@ -51,7 +51,7 @@ theorem arithAB_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (
   have nw := h.nowrap
   have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   rw [wp_seqs_append (by unfold partA; exact List.cons_ne_nil _ _) (by unfold partB; exact List.cons_ne_nil _ _)]
-  refine WP.mono (partA_ok h hi h20 hpL hpw hP) fun t1 ⟨h1, k1, o1, e1, b2, hM, top1, r1⟩ => ?_
+  refine WP.mono (partA_ok h hi h20 h22 hpL hpw hqw hP hQ) fun t1 ⟨h1, k1, o1, e1, b2, hM, top1, r1⟩ => ?_
   have keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
     k1.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
   have z1 : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num t1.mem B w j = 0 := by
@@ -88,7 +88,7 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
   rw [arith_eq, wp_seqs_append (by unfold partA; exact List.cons_ne_nil _ _)
     (by unfold partB; exact List.cons_ne_nil _ _)]
   have hpw' : pL < 2 ^ 32 := by have := h.wle; omega_arith
-  refine WP.mono (partA_ok h hi h20 hpL hpw hP) fun t1 ⟨h1, k1, o1, e1, b2, hM, top1, r1⟩ => ?_
+  refine WP.mono (partA_ok h hi h20 h22 hpL hpw hqw hP hQ) fun t1 ⟨h1, k1, o1, e1, b2, hM, top1, r1⟩ => ?_
   have keepA : ∀ j, j < nArr → j ∉ partAArrs → num t1.mem B w j = num s.mem B w j := fun j hj hn =>
     k1.num (fun x hx e => hn (by subst e; exact hx)) (by decide) (fit _ hj)
   rw [wp_seqs_append (by unfold partB; exact List.cons_ne_nil _ _)
@@ -128,7 +128,7 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
     have hnW : Nv < 2 ^ (32 * w) := by rw [← hi.n]; exact val32_lt _ _ _ _
     have key := VG.Proof.Rsa.maskM_iff (P := P) (Q := Q) (N := Nv) (L := P * Q % 2 ^ (32 * w))
       (M := if slot t1.mem B sE2 = 1 then 0 else 1) (V := num t2.mem B w 1) (j := 32 * w) hQN hqW hnW rfl
-      (fun podd p2 => by rw [← hM podd p2]; split <;> simp_all)
+      (fun podd p2 hL => by rw [← hM podd p2 hL]; split <;> simp_all)
     have iff : (slot t1.mem B sPodd = 1 ∧ slot t1.mem B sE1 = 1 ∧ slot t1.mem B sE2 = 1 ∧
         num t2.mem B w 1 = 1) ↔ maskOf P Q (Nv / P) (Nv % P) (num t2.mem B w 1) = true := by
       simp only [maskOf, decide_eq_true_eq]

@@ -59,6 +59,25 @@ def mulLo (o x y : Nat) (len : Reg) : Prog isa := seqs [
   .block (mulLoInit o), countLoop .r8 [.store .w .r0 .r5 0, .addi .r5 .r5 4],
   .block (mulLoSet x len), .loop (mulLoRow o x y) (.nonzero .d .r4)]
 
+/-! ## `mulHalf` -/
+
+/-- One row of `mulHalf`: digit `i` of `[x]` (at `r10`) times `[y]`'s `r12` low digits added at digit
+`i` of `[o]`, the carry stored to the digit above them. -/
+def mulHalfRow (o x y : Nat) : Prog isa :=
+  .seq (.block ([.load .w .r11 .r10 0] ++ ptr .r5 o ++ ptr .r6 x ++ [.sub .r6 .r10 .r6, .add .r5 .r5 .r6,
+      .addi .r6 .r5 0] ++ ptr .r7 y ++ [.addi .r8 .r12 0, .li .r9 0]))
+    (.seq (countLoop .r8 macBody) (.block [.store .w .r9 .r5 0, .addi .r10 .r10 4, .subi .r4 .r4 1]))
+
+/-- `x`'s pointer, and `⌈len / 4⌉` into both counts. -/
+def mulHalfSet (x : Nat) (len : Reg) : List Instr :=
+  ptr .r10 x ++ [.addi .r4 len 3, .lsr .d .r4 .r4 2, .addi .r12 .r4 0]
+
+/-- `[o] := [x] [y]`, for `[x]` and `[y]` of `⌈len / 4⌉ ≤ w / 2` digits: `[o]` zeroed, then a row for
+each of `[x]`'s digits. -/
+def mulHalf (o x y : Nat) (len : Reg) : Prog isa := seqs [
+  .block (mulLoInit o), countLoop .r8 [.store .w .r0 .r5 0, .addi .r5 .r5 4],
+  .block (mulHalfSet x len), .loop (mulHalfRow o x y) (.nonzero .d .r4)]
+
 /-! ## `montMul` -/
 
 /-- `-m⁻¹ mod 2^32` into digit 0 of `[t]`, `K = ⌈len / 4⌉ + 1` into `r12`,

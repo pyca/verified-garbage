@@ -182,7 +182,7 @@ theorem invPart_ct [InvLaw] : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
 theorem cvMain_ct [InvLaw] : RelCT isa (Two GM) main fun _ _ => True := by
   rw [main_eq]
   exact (ct_app (by simp) (by simp [loadA]) (ct_one head_ct)
-    (ct_app (by simp [loadA]) (by simp [pqCheck]) loads_ct
+    (ct_app (by simp [loadA]) (by simp [pqCheck]) loadsB_ct
     (ct_app (by simp [pqCheck]) (by simp [invPart]) pqCheck_ct
     (ct_app (by simp [invPart]) (by simp) invPart_ct
     (ct_app (by simp) (by simp)

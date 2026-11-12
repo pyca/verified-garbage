@@ -122,14 +122,17 @@ theorem cvLoads_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : C
   · rw [outside_arr o₄ (Nat.le_refl _) (by decide) (by omega_arith) (by decide) hZ hn]; exact hv₃
 
 /-- The registers for the product; no operand value determines an address. -/
-theorem productSetup_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
+theorem productSetup_ok {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z w)
+    (hpl : word s.mem B (8 * sPl) = BitVec.ofNat 64 pl) (hql : word s.mem B (8 * sQl) = BitVec.ofNat 64 ql)
+    (pb : pl < 2 ^ 60) (qb : ql < 2 ^ 60) :
     WP isa (.block productSetup) s fun t =>
       t.gpr .r11 = off B (slot w aP) ∧ t.gpr .r9 = off B (slot w aQ) ∧
-      t.gpr .r8 = off B (slot w aU) ∧ t.gpr .r10 = BitVec.ofNat 64 w ∧
-      t.gpr .r12 = BitVec.ofNat 64 w ∧ t.mem = s.mem ∧
+      t.gpr .r8 = off B (slot w aU) ∧ t.gpr .r10 = BitVec.ofNat 64 ((pl + 7) / 8) ∧
+      t.gpr .r12 = BitVec.ofNat 64 ((ql + 7) / 8) ∧ t.mem = s.mem ∧
       Keep [.r12, .r9, .r11, .rax, .r8, .r10] s t := by
   rw [show productSetup = ws ++ ((base aP .r11 ++ (base aQ .rax ++ base aU .r8)) ++
-    ([.mov .r9 (.reg .rax), .mov .r10 (.reg .r12)] : List Instr)) by
+    ([.mov .r9 (.reg .rax), .mov .r10 (.mem (hdr sPl)), .alu .add .r10 (.imm 7), .shift .shr .r10 3,
+      .mov .r12 (.mem (hdr sQl)), .alu .add .r12 (.imm 7), .shift .shr .r12 3] : List Instr)) by
       simp only [productSetup, List.append_assoc]]
   rw [WP.block_append_iff]
   refine WP.mono h.ws_ok fun t₁ ⟨h12, h9, hm₁, k₁⟩ => ?_
@@ -137,15 +140,25 @@ theorem productSetup_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
   refine WP.mono (base3_ok aP aQ aU (r₁ := .r11) (r₂ := .rax) (r₃ := .r8)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     ((k₁.gpr (by decide)).trans h.rdi) h9 (by decide) (by decide)) fun t₂ ⟨h11, ha, h8, hm₂, k₂⟩ => ?_
-  refine WP.mono (WP.keep [.r9, .r10] (Q := fun t => t.gpr .r9 = off B (slot w aQ) ∧
-    t.gpr .r10 = BitVec.ofNat 64 w ∧ t.mem = t₂.mem) (by
-    xrun [ha, (k₂.gpr (by decide) : t₂.gpr .r12 = _), h12]) rfl) fun t ⟨⟨h9', h10, hm₃⟩, k₃⟩ => ?_
-  exact ⟨(k₃.gpr (by decide)).trans h11, h9', (k₃.gpr (by decide)).trans h8, h10,
-    (k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12), hm₃.trans (hm₂.trans hm₁),
-    ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+  have hs₂ := h.scr.congr (k₁.trans k₂).2.2
+  have hl : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi =>
+    hs₂.ld (by have := h.h256; omega)
+  have hdi : t₂.gpr .rdi = B := ((k₁.trans k₂).gpr (by decide)).trans h.rdi
+  have hpl₂ : word t₂.mem B (8 * sPl) = BitVec.ofNat 64 pl := by rw [hm₂, hm₁]; exact hpl
+  have hql₂ : word t₂.mem B (8 * sQl) = BitVec.ofNat 64 ql := by rw [hm₂, hm₁]; exact hql
+  refine WP.mono (WP.keep [.r9, .r10, .r12] (Q := fun t => t.gpr .r9 = off B (slot w aQ) ∧
+    t.gpr .r10 = BitVec.ofNat 64 ((pl + 7) / 8) ∧ t.gpr .r12 = BitVec.ofNat 64 ((ql + 7) / 8) ∧ t.mem = t₂.mem) (by
+    xrun [ha, State.ea, hdr, hdi, hdrOff, hl sPl (by decide), hl sQl (by decide), hpl₂, hql₂]
+    exact ⟨ceil8_bv pb, ceil8_bv qb⟩) rfl) fun t ⟨⟨h9', h10, h12', hm₃⟩, k₃⟩ => ?_
+  exact ⟨(k₃.gpr (by decide)).trans h11, h9', (k₃.gpr (by decide)).trans h8, h10, h12',
+    hm₃.trans (hm₂.trans hm₁), ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
-/-- The product computation at the modulus width, from a cleared accumulator. -/
-theorem product_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
+/-- The product of `p` (below `256^p_len`) and `q` (below `256^q_len`), over their
+`⌈p_len / 8⌉` and `⌈q_len / 8⌉` words, from a cleared accumulator. -/
+theorem product_ok {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z w)
+    (hpl : word s.mem B (8 * sPl) = BitVec.ofNat 64 pl) (hql : word s.mem B (8 * sQl) = BitVec.ofNat 64 ql)
+    (pl1 : 1 ≤ pl) (ql1 : 1 ≤ ql) (hwp : (pl + 7) / 8 ≤ w) (hwq : (ql + 7) / 8 ≤ w)
+    (hP : wv s.mem B (slot w aP) w < 256 ^ pl) (hQ : wv s.mem B (slot w aQ) w < 256 ^ ql)
     (hz : wv s.mem B (slot w aU) (2 * w + 2) = 0) :
     WP isa (.seq (.block productSetup) Impl.Rsa.X86_64.Crt.mulRows) s fun t =>
       wv t.mem B (slot w aU) (2 * w + 2) = wv s.mem B (slot w aP) w * wv s.mem B (slot w aQ) w ∧
@@ -156,15 +169,37 @@ theorem product_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
     have := h.sl (show 4 < 16 by decide)
     simp only [slot, aU] at *
     omega
-  refine WP.seq (WP.mono (productSetup_ok h) fun s₁ ⟨h11, h9, h8, h10, h12, hm, k₁⟩ => ?_)
+  have sP := h.sl (show aP < 16 by decide)
+  have sQ := h.sl (show aQ < 16 by decide)
+  have hz' := (wv_eq_zero_iff _ _ _ _).mp hz
+  have hn := h.scr.nowrap
+  refine WP.seq (WP.mono (productSetup_ok h hpl hql (by omega) (by omega))
+    fun s₁ ⟨h11, h9, h8, h10, h12, hm, k₁⟩ => ?_)
+  generalize hwp' : (pl + 7) / 8 = wp at *
+  generalize hwq' : (ql + 7) / 8 = wq at *
+  have hPw : wv s₁.mem B (slot w aP) wp = wv s.mem B (slot w aP) w := by
+    have hb : wv s.mem B (slot w aP) w < 2 ^ (64 * wp) := Nat.lt_of_lt_of_le hP (by
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, ← hwp']; exact Nat.pow_le_pow_right (by decide) (by omega))
+    rw [hm, wv_low_of_lt hwp hb]
+  have hQw : wv s₁.mem B (slot w aQ) wq = wv s.mem B (slot w aQ) w := by
+    have hb : wv s.mem B (slot w aQ) w < 2 ^ (64 * wq) := Nat.lt_of_lt_of_le hQ (by
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, ← hwq']; exact Nat.pow_le_pow_right (by decide) (by omega))
+    rw [hm, wv_low_of_lt hwq hb]
+  have z₁ : wv s₁.mem B (slot w aU) (wp + wq + 2) = 0 := by
+    rw [hm]; exact wv_zero fun i hi => hz' i (by omega)
   refine WP.mono (mulRows_ok (h.scr.congr k₁.2.2) h11 h9 h10 h12 h8 (by omega) (by omega)
-    (by omega) (by simpa only [Nat.two_mul] using hA)
-    (by have := h.sl (show aP < 16 by decide); omega)
-    (by have := h.sl (show aQ < 16 by decide); omega)
+    (by omega) (by omega) (by omega) (by omega)
     (Or.inl (by simp [slot, aP, aU]; omega)) (Or.inr (by simp [slot, aQ, aU]; omega))
-    (by rw [← Nat.two_mul, hm, hz]; exact Nat.two_pow_pos _)) fun t ⟨hv, ho, k₂⟩ => ?_
-  simp only [← Nat.two_mul, hm, hz, Nat.zero_add] at hv ho
-  exact ⟨hv, ho, (k₁.trans k₂).mono (by decide)⟩
+    (by rw [z₁]; exact Nat.two_pow_pos _)) fun t ⟨hv, ho, k₂⟩ => ?_
+  rw [z₁, Nat.zero_add, hPw, hQw] at hv
+  refine ⟨?_, by rw [← hm]; exact ho.mono (Nat.le_refl _) (by omega), (k₁.trans k₂).mono (by decide)⟩
+  have e := wv_add t.mem B (slot w aU) (wp + wq + 2) (2 * w + 2 - (wp + wq + 2))
+  have z : wv t.mem B (slot w aU + 8 * (wp + wq + 2)) (2 * w + 2 - (wp + wq + 2)) = 0 := wv_zero fun i hi => by
+    rw [ho.word (by omega) (by omega), hm,
+      show slot w aU + 8 * (wp + wq + 2) + 8 * i = slot w aU + 8 * (wp + wq + 2 + i) by omega]
+    exact hz' _ (by omega)
+  rw [show wp + wq + 2 + (2 * w + 2 - (wp + wq + 2)) = 2 * w + 2 by omega, z, Nat.mul_zero, Nat.add_zero, hv] at e
+  exact e
 
 /-- A product occupies the first `2 w + 2` words of arrays 2 and 3. -/
 theorem CvS.product {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s)
@@ -179,8 +214,9 @@ theorem CvS.product {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s)
     omega) hk hr
 
 /-- The mask of `p q = n` from the full product, including its high words. -/
-theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (_L : CvLens I) {c : Bool}
-    (hc : mword s.mem I.B = mask c) :
+theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
+    (hc : mword s.mem I.B = mask c) (hPb : wv s.mem I.B (slot (wk I.k) aP) (wk I.k) < 256 ^ I.pl)
+    (hQb : wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) < 256 ^ I.ql) :
     WP isa (seqs pqCheck) s fun t =>
       CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (wv s.mem I.B (slot (wk I.k) aP) (wk I.k) *
         wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) = wv s.mem I.B (slot (wk I.k) aN) (wk I.k))) ∧
@@ -210,7 +246,10 @@ theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (_L : 
     (zeroAccs_ok h.ws.good.1 h.ws.good.2 (by omega)) fun s₁ ⟨hz₁, o₁, k₁⟩ => ?_)
   have h₁ := h.product o₁ k₁ (by decide)
   refine wp_seqs_append (by simp) (by simp [Impl.Rsa.X86_64.Crt.eqCheck])
-    (WP.mono (product_ok h₁.ws (wv_zero hz₁)) fun s₃ ⟨hv₃, o₃, k₃⟩ => ?_)
+    (WP.mono (product_ok h₁.ws h₁.args.pl h₁.args.ql L.pl1 L.ql1
+      (by have := L.pl2; unfold wk; omega) (by have := L.ql2; unfold wk; omega)
+      (by rw [outside_keep o₁ _ (Or.inr (Or.inl rfl))]; exact hPb)
+      (by rw [outside_keep o₁ _ (Or.inr (Or.inr (Or.inl rfl)))]; exact hQb) (wv_zero hz₁)) fun s₃ ⟨hv₃, o₃, k₃⟩ => ?_)
   have h₃ := h₁.product o₃ k₃ (by decide)
   refine WP.mono (eqCheck_ok h₃.ws.good.1 h₃.ws.good.2 (by omega) (by omega)) fun t ⟨hm₄, o₄, k₄⟩ => ?_
   have h₄ := h₃.step (Frm.of_outside o₄ (List.mem_singleton_self _))

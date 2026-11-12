@@ -209,11 +209,17 @@ def divB (len : Reg) (a r : Nat) : List (Prog isa) :=
 
 /-- `p` odd, `p q mod 2^(32 w)` compared with `n`, Montgomery's `n` modulo
 `p | 1` (with 1 in `aDR3`) compared with 0, the check of the inverse, `qInv`
-computed, and `d` divided by `p - 1` and by `q - 1`: by words for a balanced
-key (`shape`, both divisions on one branch), else bit-serial. -/
+computed, and `d` divided by `p - 1` and by `q - 1`. For a balanced key
+(`shape`): the product over the primes' `w / 2` digits, `0` for Montgomery's `n`
+(there `p q` is exact in `w` digits, so `p q mod 2^(32 w) = n` already gives
+`n mod p = 0`), and both divisions by words; else the product truncated to `w`
+digits, Montgomery's `n`, and the divisions bit-serial. -/
 def arith : Prog isa := seqs ([
-  .block (bitOf sPodd aP), MontKey.mulLo aDR aP aQ .r20, eqS sE1 aDR aDQ, copy aDD aP,
-  .block (orOne aDD ++ setOne aDR3), MontKey.montMul aDT aDQ aDR3 aDD aDR2 .r20 MontKey.cntW,
+  .block (bitOf sPodd aP), .block shape,
+  .ite (.zero .d .r0) (MontKey.mulHalf aDR aP aQ .r20) (MontKey.mulLo aDR aP aQ .r20),
+  eqS sE1 aDR aDQ, .block shape,
+  .ite (.zero .d .r0) (copy aDT aZero) (seqs [copy aDD aP, .block (orOne aDD ++ setOne aDR3),
+    MontKey.montMul aDT aDQ aDR3 aDD aDR2 .r20 MontKey.cntW]),
   eqS sE2 aDT aZero] ++ invSetup ++ [
   .block shape, .ite (.zero .d .r0) InvBatch.inverseS InvBatch.inverse, eqS sE3 1 aOne,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),

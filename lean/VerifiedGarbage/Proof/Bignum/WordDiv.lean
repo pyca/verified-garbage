@@ -1,5 +1,5 @@
 module
--- separate module: target-independent, for every target's division by words (AArch64's, PPC64LE's, x86's)
+-- separate module: target-independent, for every target's division by words (AArch64's, ARMv7's, PPC64LE's, x86's)
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

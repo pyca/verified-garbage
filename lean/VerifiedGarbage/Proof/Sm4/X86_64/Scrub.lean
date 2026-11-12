@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
+public import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Sm4.CbcScratch
 import VerifiedGarbage.Proof.Sm4.FbScratch
@@ -37,6 +38,7 @@ meta import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
+meta import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
 meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Sm4.CbcScratch
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
@@ -48,7 +50,7 @@ meta import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalLit
 /-!
 # SM4 on x86-64, without secret residue
 
-The ECB, CBC, CFB128, OFB and CTR functions, each followed by
+Key expansion and the ECB, CBC, CFB128, OFB and CTR functions, each followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
 registers and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
@@ -58,8 +60,8 @@ frames that keep their working space on the stack already show
 
 `vg_sm4_ctr_final` is not here: its analysis does not succeed. It calls
 `vg_sm4_ctr`'s code as the internal `vg_sm4_ctr_core`
-(`Impl.Sm4.X86_64.ctrFramed`). Nor is key expansion: SM4-GCM calls
-`vg_sm4_expand_key` by name with its code as it is.
+(`Impl.Sm4.X86_64.ctrFramed`). SM4-GCM calls `vg_sm4_expand_key`'s code as
+the internal `vg_sm4_expand_key_core` (`Impl.Sm4Gcm.X86_64.keyFn`).
 -/
 
 @[expose] public section
@@ -69,6 +71,9 @@ namespace VG.Proof.Sm4.X86_64.Scrub
 open VG.X86_64 VG.X86_64.Scrub
 
 /-! ## Postconditions -/
+
+theorem expandKeyOut : PostOut (Spec.Sm4.expandKeyContract X86_64.abi 3144) (Spec.Sm4.expandKeySig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.expandKeyPostOut_local _)
 
 theorem ecbEncryptOut : PostOut (Spec.Sm4.ecbContract X86_64.abi .encrypt 3144) (Spec.Sm4.ecbSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ecbPostOut_local _ .encrypt)
@@ -104,6 +109,25 @@ theorem ctrOut : PostOut (Spec.Sm4.ctrContract X86_64.abi 3216) (Spec.Sm4.ctrSig
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrPostOut_local _)
 
 /-! ## The registrations -/
+
+/-- `vg_sm4_expand_key`'s code. -/
+abbrev expandKeyCode : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey
+
+def expandKeyKs : List Nat := keep_for% Spec.Sm4.expandKeyApi.sig 3144 expandKeyCode []
+
+theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sm4.expandKeyApi.sig 3144 []) expandKeyCode
+      h).any (RScrub.resOkB · 3144 expandKeyKs (Impl.Scrub.X86_64.chunks 3144)) = true :=
+  RScrub.Analysed.ok_of expandKeyKs (by taint_decide)
+
+open VG.X86_64.RScrub in
+/-- `vg_sm4_expand_key`. -/
+def expandKeyReg : Registration Spec.Sm4.expandKeyApi X86_64.target :=
+  withScrub {
+    code := expandKeyCode
+    stack := 3144
+    verified := Proof.Sm4.X86_64.expandKey_framed } expandKeyOut [] (pubOk_nil _) (some ⟨expandKeyKs, expandKeyOk⟩)
 
 /-- `vg_sm4_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=

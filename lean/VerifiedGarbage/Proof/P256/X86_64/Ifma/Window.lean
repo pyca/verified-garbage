@@ -21,7 +21,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 # P-256 on x86-64 with AVX512_IFMA: the joint multiplication with the loop in vectors
 
 `vloop_ok`: the loop over the digits leaves the rows of the sum's triple in the slots, or nothing if
-every digit was zero.
+every digit was zero. `vwindow_ok`: `R` is `[u]G + [v]Q`, by the loop in vectors or, where that leaves `Z`
+zero, by `Joint.window`, which the loop in vectors leaves the input of (`VFin`).
 -/
 
 @[expose] public section
@@ -153,30 +154,19 @@ theorem unch_same {base : Addr} {W : List (Nat × Nat)} {m₁ m₂ m₃ : Mem} (
     (h₂ : Unch base W m₂ m₃) : Unch base W m₁ m₃ :=
   (h₁.trans h₂).mono fun _ hw => (List.mem_append.mp hw).elim id id
 
-/-- What the vectors' code starts from: the joint multiplication's invariant with `R = O`, the field
-elements `E` in its slots, and the generator's table. -/
+/-- What the vectors' code starts from: what it has of the joint multiplication, with the field elements
+`E` in the slots it only reads, and the generator's table. -/
 structure VBase (c : Joint.Cfg) (base T : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)
     (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv) (s : State) : Prop where
-  core : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) .infinity s
-  live : ∀ x ∈ jointLive c, tmv Cv c.K.M.n base s x = E x
+  core : VCore c base T size u v Q row E s
   gtab : GTab base T size s
-
-theorem live_unch {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat} {G Q A : Point C}
-    {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State} (hV : VLay c size)
-    (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s)
-    (hdi : t.gpr .rdi = s.gpr .rdi) (hwr : t.wr = s.wr) (hu : Unch base vW s.mem t.mem) :
-    ∀ x ∈ jointLive c, tmv C c.K.M.n base t x = tmv C c.K.M.n base s x :=
-  (Inv.of_unch h.field ⟨hdi.trans h.field.scr.rdi, hwr ▸ h.field.scr.wr, h.field.scr.nowrap⟩ hu hV.liveB hV.live
-    hV.mo).val
 
 theorem VBase.unch {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s t : State} (hV : VLay c size)
     (h : VBase c base T size u v Q row E s) (hdi : t.gpr .rdi = s.gpr .rdi) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) (hs : t.syms = s.syms) (hu : Unch base vW s.mem t.mem) :
     VBase c base T size u v Q row E t :=
-  ⟨jointCore_unch hV h.core hdi hrd hwr hu hs,
-    fun x hx => (live_unch hV h.core hdi hwr hu x hx).trans (h.live x hx),
-    ⟨by rw [hrd, hwr]; exact h.gtab.1, h.gtab.2⟩⟩
+  ⟨h.core.unch hV hdi hrd hwr hu hs, ⟨by rw [hrd, hwr]; exact h.gtab.1, h.gtab.2⟩⟩
 
 /-- What the vectors' code keeps: the registers but its own, and memory but the vectors' part of the
 working space. -/
@@ -215,7 +205,7 @@ theorem vinit_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point C
     have := hx (6432, 1760) (List.mem_singleton_self _)
     simp only [KB]; dsimp only at this; omega)
   have fdi : f.gpr .rdi = s.gpr .rdi := kf.gpr .rdi (by decide)
-  have cf := jointCore_unch hV h.core fdi kf.rd kf.wr (uf.mono (by decide)) sf
+  have cf := h.core.unch hV fdi kf.rd kf.wr (uf.mono (by decide)) sf
   have hsf := cf.field.scr
   rw [WP.block_append_iff]
   refine WP.mono_syms (WP.skeep rfl (vregs_ok f _)) fun a ⟨⟨a10, a11, ab, acx, adx, a9⟩, ka⟩ sa => ?_
@@ -258,13 +248,11 @@ theorem vinit_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point C
       rw [a10, ka.mem, Offset.add_add, hw, kwords_eq, List.getD_eq_getElem?_getD, List.getElem?_map,
         List.getD_eq_getElem?_getD]
       cases par.cst[i]? <;> rfl
-  have ca := jointCore_vkeep hV cf va sa
+  have ca := cf.vkeep hV va sa
   refine WP.mono_syms (zero_ok 20 a) fun t ⟨hz, hg, hm, hrd, hwr⟩ st => ?_
   have vt : VKeep a t := ⟨fun r _ => congrFun hg r, hrd, hwr, by rw [hm]; exact Unch.refl _ _ _⟩
-  have fl := live_unch hV h.core fdi kf.wr (uf.mono (by decide))
   have ut : Unch base [(6432, 1760)] s.mem t.mem := by rw [hm, ka.mem]; exact uf
-  refine ⟨⟨⟨jointCore_vkeep hV ca vt st,
-    fun x hx => (live_vkeep hV ca vt x hx).trans ((live_vkeep hV cf va x hx).trans ((fl x hx).trans (h.live x hx))),
+  refine ⟨⟨⟨ca.vkeep hV vt st,
     ⟨by rw [hrd, hwr, ka.rd, ka.wr, kf.rd, kf.wr]; exact h.gtab.1, h.gtab.2⟩⟩, ctx_congr hca hg hm hrd hwr,
     hz, by rw [hg]; exact a11, ?_, by rw [hg]; exact a10⟩, ⟨fun r hr => ?_,
     hrd.trans (ka.rd.trans kf.rd), hwr.trans (ka.wr.trans kf.wr), ut.mono (by decide)⟩,
@@ -276,60 +264,52 @@ theorem vinit_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point C
       rcases h' with h' | h' | h' | h' | h' | h' <;> simp [h'])), kf.gpr r (fun h' => hr (by
       rw [List.mem_singleton] at h'; subst h'; decide))]
 
-/-- `Q`'s multiples kept as limbs: the loop's invariant. -/
+/-- `Q`'s multiples as limbs, and the accumulator's vectors zero again: the loop's invariant. -/
 theorem vtabs_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
     (h : VBase c base T size u v Q row E s) (hc : Ctx par s) (hz : ∀ r, r < 20 → ∀ k, k < 4 → qv s (vreg r) k = 0)
     (h11 : s.gpr .r11 = 0) (hb : s.gpr .rbx = BitVec.ofNat 64 257) (h10 : s.gpr .r10 = base + BitVec.ofNat 64 KB) :
-    WP isa (.block ((List.range 7).map fun i => tabEnt c (i + 1)).flatten) s fun t =>
+    WP isa (.seq (vtab c) (.block zeroAcc)) s fun t =>
       VInv c base T (base + BitVec.ofNat 64 KB) size u v Q row E 257 none t ∧ WKeep base s t ∧
         t.gpr .r12 = s.gpr .r12 := by
   have hn := hV.n
-  have tw (x d : Nat) (hx : x = d) : toM pN (2 ^ 256) (wordsVal s.mem base d 4) = tmv Cv c.K.M.n base s x := by
-    subst hx; unfold tmv; rw [hn]; rfl
-  have hzz : ∀ a, a < 7 → toM pN (2 ^ 256) (wordsVal s.mem base (c.cache + 64 * (a + 1) + 0) 4) =
-      toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
-        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) := by
-    intro a ha
-    rw [tw (c.cache + 16 * c.K.M.n * (a + 1)) _ (by rw [hn]; omega),
-      tw (c.K.tblPt (a + 1 + 1)).z _ (by rw [tblPt_z, hn] <;> omega)]
-    exact h.core.stable.cache2 (a + 1) (by omega)
-  have hzzz : ∀ a, a < 7 → toM pN (2 ^ 256) (wordsVal s.mem base (c.cache + 64 * (a + 1) + 32) 4) =
-      toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
-        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) *
-        toM pN (2 ^ 256) (wordsVal s.mem base (c.K.tbl + 96 * (a + 1) + 64) 4) := by
-    intro a ha
-    rw [tw (c.cache + 16 * c.K.M.n * (a + 1) + 8 * c.K.M.n) _ (by rw [hn] <;> omega),
-      tw (c.K.tblPt (a + 1 + 1)).z _ (by rw [tblPt_z, hn] <;> omega)]
-    have c2 := h.core.stable.cache2 (a + 1) (by omega)
-    have c3 := h.core.stable.cache3 (a + 1) (by omega)
-    rw [c2] at c3
-    exact c3
-  refine WP.mono_syms (vtab_ok hn h.core.field.scr hc h10 hz hV.tbl hV.cache hV.cacheH hV.pool hzz hzzz 7
-    (Nat.le_refl 7)) fun t ⟨hct, hzt, hqt, kt⟩ st => ?_
-  have ut : Unch base vW s.mem t.mem := kt.mem.mono (by decide)
-  have tdi := kt.gpr .rdi (by decide)
-  exact ⟨⟨jointCore_unch hV h.core tdi kt.rd kt.wr ut st,
-      fun x hx => (live_unch hV h.core tdi kt.wr ut x hx).trans (h.live x hx),
-      ⟨by rw [kt.rd, kt.wr]; exact h.gtab.1, h.gtab.2⟩, hct, envOK_zero hzt, hqt, (kt.gpr .r11 (by decide)).trans h11,
-      (kt.gpr .rbx (by decide)).trans hb, (kt.gpr .r10 (by decide)).trans h10⟩,
-    ⟨fun r hr => kt.gpr r (fun h' => hr (by
+  have tw (x : Nat) : toM pN (2 ^ 256) (wordsVal s.mem base x 4) = tmv Cv c.K.M.n base s x := by
+    unfold tmv; rw [hn]; rfl
+  apply WP.seq
+  refine WP.mono_syms (vtab_ok h.core.field.scr hc (envOK_zero hz) h10 hV.pool hV.px hV.py
+    ((tw _).trans (h.core.ro _ (by simp [winRo]))) ((tw _).trans (h.core.ro _ (by simp [winRo]))))
+    fun a ⟨hca, ka, hqa⟩ sa => ?_
+  have ua : Unch base vW s.mem a.mem := ka.mem.mono (by decide)
+  have adi := ka.gpr .rdi (by decide)
+  refine WP.mono_syms (zero_ok 20 a) fun t ⟨hzt, hg, hm, hrd, hwr⟩ st => ?_
+  have ut : Unch base vW s.mem t.mem := by rw [hm]; exact ua
+  have tdi : t.gpr .rdi = s.gpr .rdi := by rw [hg]; exact adi
+  refine ⟨⟨h.core.unch hV tdi (hrd.trans ka.rd) (hwr.trans ka.wr) ut (st.trans sa),
+      ⟨by rw [hrd, hwr, ka.rd, ka.wr]; exact h.gtab.1, h.gtab.2⟩, ctx_congr hca hg hm hrd hwr, envOK_zero hzt,
+      by rw [hm]; exact hqa, ?_, by rw [hg]; exact (ka.gpr .rbx (by decide)).trans hb,
+      by rw [hg]; exact (ka.gpr .r10 (by decide)).trans h10⟩,
+    ⟨fun r hr => ?_, hrd.trans ka.rd, hwr.trans ka.wr, ut⟩, by rw [hg]; exact ka.gpr .r12 (by decide)⟩
+  · show t.gpr .r11 = 0
+    rw [hg]; exact (ka.gpr .r11 (by decide)).trans h11
+  · rw [hg]
+    exact ka.gpr r (fun h' => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h' ⊢
-      rcases h' with h' | h' <;> simp [h'])), kt.rd, kt.wr, ut⟩, kt.gpr .r12 (by decide)⟩
+      rcases h' with h' | h' | h' | h' <;> simp [h']))
 
 /-! ### The loop -/
 
 theorem vdigits_ok {c : Joint.Cfg} {base T K : Addr} {size u v : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
-    (hL : JointLayout c size) (h9 : c.gw = 9) (h : VInv c base T K size u v Q row E 257 none s) :
+    (h9 : c.gw = 9) (h : VInv c base T K size u v Q row E 257 none s) :
     WP isa (.loop (vstep c) .ne) s fun t =>
-      VInv c base T K size u v Q row E 0 (accN c row E u v 257) t ∧ VKeep s t := by
+      VInv c base T K size u v Q row E 0 (accN c row (tqE c E) u v 257) t ∧ VKeep s t := by
   apply countLoop_ok (Inv := fun j t =>
-    VInv c base T K size u v Q row E j (accN c row E u v (257 - j)) t ∧ VKeep s t) (n := 257)
+    VInv c base T K size u v Q row E j (accN c row (tqE c E) u v (257 - j)) t ∧ VKeep s t) (n := 257)
   · intro j a hj1 hj ⟨hi, hk⟩
     have he : j - 1 + 1 = j := by omega
-    have hi' : VInv c base T K size u v Q row E (j - 1 + 1) (accN c row E u v (257 - j)) a := by rw [he]; exact hi
-    refine WP.mono (vstep_ok hV hL h9 (j := j - 1) (by omega) hi')
+    have hi' : VInv c base T K size u v Q row E (j - 1 + 1) (accN c row (tqE c E) u v (257 - j)) a := by
+      rw [he]; exact hi
+    refine WP.mono (vstep_ok hV h9 (j := j - 1) (by omega) hi')
       fun t ⟨⟨it, tz⟩, kt⟩ => ⟨⟨?_, hk.trans kt⟩, tz⟩
     have e : 257 - (j - 1) = (257 - j) + 1 := by omega
     rw [e, accN, show 256 - (257 - j) = j - 1 by omega]
@@ -371,8 +351,7 @@ def OutSt (t : State) : Option (Fin pN × Fin pN × Fin pN) → Prop
 structure VOut (c : Joint.Cfg) (base T : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)
     (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv)
     (acc : Option (Fin pN × Fin pN × Fin pN)) (t : State) : Prop where
-  core : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) .infinity t
-  live : ∀ x ∈ jointLive c, tmv Cv c.K.M.n base t x = E x
+  core : VCore c base T size u v Q row E t
   out : OutSt t acc
 
 /-- Out of the vectors, if the accumulator is set. -/
@@ -391,7 +370,7 @@ theorem vout_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Poin
   | none =>
     have h0 : b.gpr .r11 = 0 := ib.acc
     exact WP.ite true (by show d.zf = _; rw [dz, h0]; rfl)
-      (fun _ => WP.block_nil ⟨⟨id.core, id.live, id.acc⟩, vd⟩) (fun h => nomatch h)
+      (fun _ => WP.block_nil ⟨⟨id.core, id.acc⟩, vd⟩) (fun h => nomatch h)
   | some x =>
     refine WP.ite false (by show d.zf = _; rw [dz, ib.acc.1]; rfl) (fun h => nomatch h) (fun _ => ?_)
     rw [WP.block_append_iff]
@@ -399,17 +378,15 @@ theorem vout_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Poin
     refine WP.mono_syms (storeOut_ok hce hBe he) fun t ⟨kt, ht⟩ st => ?_
     have ve : VKeep d e := .of_lkeep (.of_kept ke)
     have vt : VKeep e t := .of_lkeep (.of_kept kt)
-    have ce := jointCore_vkeep hV id.core ve se
-    exact ⟨⟨jointCore_vkeep hV ce vt st,
-      fun y hy => (live_vkeep hV ce vt y hy).trans ((live_vkeep hV id.core ve y hy).trans (id.live y hy)),
-      by rw [kt.gpr, ke.gpr]; exact id.acc.1, ht⟩, (vd.trans ve).trans vt⟩
+    have ce := id.core.vkeep hV ve se
+    exact ⟨⟨ce.vkeep hV vt st, by rw [kt.gpr, ke.gpr]; exact id.acc.1, ht⟩, (vd.trans ve).trans vt⟩
 
 /-- The loop over the digits. -/
 theorem vloop_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
-    (hL : JointLayout c size) (h9 : c.gw = 9) (h : VBase c base T size u v Q row E s) :
-    WP isa (vloop c) s fun t => VOut c base T size u v Q row E (accN c row E u v 257) t ∧ WKeep base s t ∧
-      t.gpr .r12 = s.gpr .r12 := by
+    (h9 : c.gw = 9) (h : VBase c base T size u v Q row E s) :
+    WP isa (vloop c) s fun t => VOut c base T size u v Q row E (accN c row (tqE c E) u v 257) t ∧
+      WKeep base s t ∧ t.gpr .r12 = s.gpr .r12 := by
   rw [vloop]
   apply WP.seq
   refine WP.mono (vinit_ok hV h) fun a₀ ⟨⟨b₀, c₀, z₀, h11, hb, h10⟩, k₀, r₀⟩ => ?_
@@ -419,7 +396,7 @@ theorem vloop_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point C
   have ra := ra'.trans r₀
   have adi := ia.core.field.scr.rdi
   apply WP.seq
-  refine WP.mono (vdigits_ok hV hL h9 ia) fun b ⟨ib, kb⟩ => ?_
+  refine WP.mono (vdigits_ok hV h9 ia) fun b ⟨ib, kb⟩ => ?_
   have bdi := ib.core.field.scr.rdi
   exact WP.mono (vout_ok hV ib) fun t ⟨ot, kt⟩ => ⟨ot, (ka.trans (.of_vkeep adi kb)).trans (.of_vkeep bdi kt),
     by rw [kt.gpr .r12 (by decide), kb.gpr .r12 (by decide), ra]⟩
@@ -734,14 +711,57 @@ theorem pk_regs {n : Nat} (hn : n = 4) :
     ∀ r ∈ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12], r ∈ clob n := by
   subst hn; decide
 
+theorem jointWork_R (c : Joint.Cfg) : ∀ x ∈ jacCoords c.K.R, x ∈ jointWork c := by
+  intro w hw
+  simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
+  simp only [jointWork, winOther, List.mem_append, List.mem_cons]
+  rcases hw with rfl | rfl | rfl <;> simp
+
+/-- The loop's input and the fields it only reads are kept by code that writes only the joint
+multiplication's working slots. -/
+theorem jwi_work {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s t : State} (hL : JointLayout c size)
+    (hs : Scr s base size) (htmp : c.K.M.tmp + 8 * c.K.M.n ≤ size)
+    (hw : JointWindowInput c Cv base T size u v Q row s) (kw : ProgKeep c.K.M base (jointWork c) s t)
+    (hy : t.syms = s.syms) :
+    JointWindowInput c Cv base T size u v Q row t ∧
+      ∀ x ∈ winRo c.K, tmv Cv c.K.M.n base t x = tmv Cv c.K.M.n base s x := by
+  have hnw := hs.nowrap
+  have hro (x : Nat) (hx : x ∈ winRo c.K) : tmv Cv c.K.M.n base t x = tmv Cv c.K.M.n base s x := by
+    have hr : (x, 8 * c.K.M.n) ∈ jointStableRanges c :=
+      List.mem_append_left _ (List.mem_map.mpr ⟨x, List.mem_append_left _ (List.mem_append_left _ hx), rfl⟩)
+    unfold tmv
+    rw [kw.unch.wordsVal (hL.stableSep _ hr) (by have := hL.stableBounds _ hr; dsimp only at this; omega)]
+  have hbits (d l : Nat) (ho : (d, l) ∈ jointStableRanges c) (j : Nat) (hj : j < l) :
+      t.mem (off base (d + j)) = s.mem (off base (d + j)) := by
+    apply kw.unch.byte
+    · intro w hw'
+      have := hL.stableSep _ ho w hw'
+      dsimp only at this ⊢; omega
+    · have := hL.stableBounds _ ho; dsimp only at this; omega
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, JointGenerator.workKeep hL htmp s t kw hy hw.external⟩, hro⟩
+  · rw [hro _ (by simp [winRo]), hro _ (by simp [winRo]), hro _ (by simp [winRo])]
+    exact hw.point
+  · rw [hro _ (by simp [winRo])]
+    exact hw.affine
+  · rw [hro _ (by simp [winRo])]
+    exact hw.zero
+  · intro j hj
+    rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
+    exact hw.peer j hj
+  · intro j hj
+    rw [hbits c.gBits _ (by simp [jointStableRanges]) j hj]
+    exact hw.generator j hj
+
 /-- A lane of the slots into a coordinate of `R`. -/
 theorem lane_ok {c : Joint.Cfg} {base : Addr} {size : Nat} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
-    (hL : JointLayout c size) (hi : Inv c.K.M base size Cv.p (· ∈ jointSlots c) (jointLive c) E s) {l dst : Nat}
+    (hL : Lay c.K.M size (· ∈ nafSlots c.K))
+    (hi : Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K ++ jacCoords c.K.R) E s) {l dst : Nat}
     (hl : l < 4) (hd : dst ∈ jacCoords c.K.R) {x : Fin pN} (cc : Nat)
     (hc : Car (envOf s) l sl5 (x * D ((cc * 2 ^ 256 % pN : Nat) : Int))) :
     WP isa (.block (packLane c.K.M l dst)) s fun t =>
       ProgKeep c.K.M base [dst] s t ∧
-      Inv c.K.M base size Cv.p (· ∈ jointSlots c) (jointLive c)
+      Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K ++ jacCoords c.K.R)
         (fun y => toM Cv.p (2 ^ (64 * c.K.M.n)) (wordsVal t.mem base y c.K.M.n)) t ∧
       toM Cv.p (2 ^ (64 * c.K.M.n)) (wordsVal t.mem base dst c.K.M.n) = Fin.ofNat pN cc * x ∧
       ∀ i, i < 5 → ∀ k, k < 4 → (envOf t).m .rdi (slotOff i) k = (envOf s).m .rdi (slotOff i) k := by
@@ -749,9 +769,9 @@ theorem lane_ok {c : Joint.Cfg} {base : Addr} {size : Nat} {E : Nat → Fe Cv} {
   have hs := hi.scr
   have hnw := hs.nowrap
   have hbig := hV.big
-  have hSl : dst ∈ jointSlots c := hi.sl dst (jointLive_R c dst hd)
-  have hle := hL.lay.le dst hSl
-  have hliv := hV.live dst (jointLive_R c dst hd) (5056, 288) (by simp [vW])
+  have hSl : dst ∈ nafSlots c.K := hi.sl dst (List.mem_append_right _ hd)
+  have hle := hL.le dst hSl
+  have hliv := hV.live dst (List.mem_append_right _ hd) (5056, 288) (by simp [vW])
   rw [hn] at hle hliv
   dsimp only at hliv
   refine WP.mono (packLane_ok hs hV.big hn hi.mod.mo hi.mod.val (by decide +kernel) hl hle hc)
@@ -763,7 +783,7 @@ theorem lane_ok {c : Joint.Cfg} {base : Addr} {size : Nat} {E : Nat → Fe Cv} {
     rw [List.mem_singleton] at hy; subst hy
     rw [hn, hv]
     exact Nat.mod_lt _ (Nat.pos_of_ne_zero (NeZero.ne _))
-  have it := (Inv.of_progKeep hL.lay hi kp (fun y hy => by rw [List.mem_singleton] at hy; subst hy; exact hSl)
+  have it := (Inv.of_progKeep hL hi kp (fun y hy => by rw [List.mem_singleton] at hy; subst hy; exact hSl)
     hlt).sub (fun y hy => List.mem_append_right _ hy)
   refine ⟨kp, it, ?_, fun i hi' k hk => ?_⟩
   · rw [hn, hv]
@@ -784,39 +804,45 @@ def PackSt (t : State) : Option (Fin pN × Fin pN × Fin pN) → Prop
   | some a => t.gpr .rbx = 1 ∧
       Car3 (envOf t) sl5 (a.2.1 * D (c4R : Nat)) (a.2.2 * D (c2R : Nat)) (a.1 * D (c4R : Nat))
 
-/-- The field elements of the joint multiplication's slots after the accumulator's triple is in `R`. -/
-def Efin (c : Joint.Cfg) (E : Nat → Fe Cv) : Option (Fin pN × Fin pN × Fin pN) → Nat → Fe Cv
-  | none, y => E y
-  | some a, y => if y = c.K.R.x then (4 * a.1 : Fin pN) else if y = c.K.R.y then (4 * a.2.1 : Fin pN)
-      else if y = c.K.R.z then (2 * a.2.2 : Fin pN) else E y
+/-- `R`'s `Z` after the accumulator's triple is put in `R`, if it was set. -/
+def zFin : Option (Fin pN × Fin pN × Fin pN) → Fe Cv
+  | none => 0
+  | some a => (2 * a.2.2 : Fin pN)
 
-theorem Efin_congr {c : Joint.Cfg} {E E' : Nat → Fe Cv} (acc : Option (Fin pN × Fin pN × Fin pN)) {y : Nat}
-    (h : E y = E' y) : Efin c E acc y = Efin c E' acc y := by
-  cases acc with
-  | none => exact h
-  | some a => simp only [Efin, h]
+/-- What the loop in vectors leaves: the fields it only reads, `E`, and the loop's input, as it found them;
+`R`'s `Z`, which is that of the accumulator; and `R` is `A` unless that `Z` is zero. -/
+structure VFin (c : Joint.Cfg) (base T : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)
+    (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv)
+    (acc : Option (Fin pN × Fin pN × Fin pN)) (A : Point Cv) (w : State) : Prop where
+  field : Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K ++ jacCoords c.K.R) (tmv Cv c.K.M.n base w) w
+  ro : ∀ x ∈ winRo c.K, tmv Cv c.K.M.n base w x = E x
+  z : tmv Cv c.K.M.n base w c.K.R.z = zFin acc
+  point : zFin acc ≠ 0 → InvJ Cv (tmv Cv c.K.M.n base w c.K.R.x) (tmv Cv c.K.M.n base w c.K.R.y)
+    (tmv Cv c.K.M.n base w c.K.R.z) A
+  input : JointWindowInput c Cv base T size u v Q row w
 
 /-- The accumulator's triple into `R`, if it was set: `R` is the accumulator's point, or its `Z` is zero. -/
 theorem packR_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
-    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {t : State} (hV : VLay c size) (hL : JointLayout c size)
-    (h : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) .infinity t)
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {t : State} (hV : VLay c size)
+    (hL : JointLayout c size) (hN : Lay c.K.M size (· ∈ nafSlots c.K)) (h : VCore c base T size u v Q row E t)
     {acc : Option (Fin pN × Fin pN × Fin pN)} {A : Point Cv} (hpt : AccPt acc A) (hout : PackSt t acc) :
-    WP isa (packR c) t fun w => ∃ B, JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) B w ∧
-      (B = A ∨ tmv Cv c.K.M.n base w c.K.R.z = 0) ∧
-      (∀ y ∈ jointLive c, tmv Cv c.K.M.n base w y = Efin c (tmv Cv c.K.M.n base t) acc y) ∧
-      ProgKeep c.K.M base (jacCoords c.K.R) t w := by
+    WP isa (packR c) t fun w =>
+      VFin c base T size u v Q row E acc A w ∧ ProgKeep c.K.M base (jacCoords c.K.R) t w := by
   rw [packR]
   apply WP.seq
   refine WP.mono_syms (test_ok t .rbx) fun a ⟨az, ka⟩ sa => ?_
-  have ca := h.of_keeps ka (by decide) (fun n hn1 hn2 ho => (h.external n hn1 hn2 ho).of_keeps ka sa)
   have kpa : ProgKeep c.K.M base (jacCoords c.K.R) t a := jointKeeps_prog ka (fun _ hr => absurd hr List.not_mem_nil)
+  have ea : tmv Cv c.K.M.n base a = tmv Cv c.K.M.n base t := by funext x; unfold tmv; rw [ka.2.1]
+  have fa : Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K ++ jacCoords c.K.R) (tmv Cv c.K.M.n base a) a := by
+    rw [ea]; exact h.field.of_keeps ka (by decide)
+  have wa := jwi_work hL h.field.scr h.field.mod.tmp h.input
+    (jointKeeps_prog ka (fun _ hr => absurd hr List.not_mem_nil)) sa
+  have roa : ∀ x ∈ winRo c.K, tmv Cv c.K.M.n base a x = E x := fun x hx => by rw [ea]; exact h.ro x hx
   cases acc with
   | none =>
     have hb : t.gpr .rbx = 0 := hout
-    have hA : A = .infinity := hpt
     exact WP.ite true (by show a.zf = _; rw [az, hb]; rfl)
-      (fun _ => WP.block_nil ⟨.infinity, ca, Or.inl hA.symm,
-        fun y _ => by show tmv Cv c.K.M.n base a y = tmv Cv c.K.M.n base t y; unfold tmv; rw [ka.2.1], kpa⟩)
+      (fun _ => WP.block_nil ⟨⟨fa, roa, by rw [ea]; exact h.rz, fun hne => absurd rfl hne, wa.1⟩, kpa⟩)
       (fun h => nomatch h)
   | some x =>
     obtain ⟨hb, c3⟩ := hout
@@ -825,59 +851,38 @@ theorem packR_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point C
       intro i _ k _
       show (a.mem.readW (a.gpr .rdi + _) 64).toInt = (t.mem.readW (t.gpr .rdi + _) 64).toInt
       rw [ka.2.1, ka.1 .rdi List.not_mem_nil]
-    have hSl : ∀ y ∈ jacCoords c.K.R, y ∈ jointSlots c := fun y hy => ca.field.sl y (jointLive_R c y hy)
+    have hSl : ∀ y ∈ jacCoords c.K.R, y ∈ nafSlots c.K := fun y hy => fa.sl y (List.mem_append_right _ hy)
     have mx : c.K.R.x ∈ jacCoords c.K.R := by simp [jacCoords]
     have my : c.K.R.y ∈ jacCoords c.K.R := by simp [jacCoords]
     have mz : c.K.R.z ∈ jacCoords c.K.R := by simp [jacCoords]
     have sub1 {y : Nat} (hy : y ∈ jacCoords c.K.R) : ∀ w ∈ [y], w ∈ jacCoords c.K.R := by
       intro w hw; rw [List.mem_singleton] at hw; subst hw; exact hy
-    have sl1 {y : Nat} (hy : y ∈ jacCoords c.K.R) : ∀ w ∈ [y], w ∈ jointSlots c := fun w hw => hSl w (sub1 hy w hw)
+    have sl1 {y : Nat} (hy : y ∈ jacCoords c.K.R) : ∀ w ∈ [y], w ∈ nafSlots c.K := fun w hw => hSl w (sub1 hy w hw)
     rw [List.append_assoc, WP.block_append_iff]
-    refine WP.mono_syms (lane_ok hV hL ca.field (l := 3) (by decide) mx 4
+    refine WP.mono_syms (lane_ok hV hN fa (l := 3) (by decide) mx 4
       (lim_sl5_congr (fun i hi => same i hi 3 (by decide)) c3.x)) fun b1 ⟨k1, i1, v1, s1⟩ y1 => ?_
     rw [WP.block_append_iff]
-    refine WP.mono_syms (lane_ok hV hL i1 (l := 0) (by decide) my 4
+    refine WP.mono_syms (lane_ok hV hN i1 (l := 0) (by decide) my 4
       (lim_sl5_congr (fun i hi => (s1 i hi 0 (by decide)).trans (same i hi 0 (by decide))) c3.y))
       fun b2 ⟨k2, i2, v2, s2⟩ y2 => ?_
-    refine WP.mono_syms (lane_ok hV hL i2 (l := 1) (by decide) mz 2
+    refine WP.mono_syms (lane_ok hV hN i2 (l := 1) (by decide) mz 2
       (lim_sl5_congr (fun i hi => ((s2 i hi 1 (by decide)).trans (s1 i hi 1 (by decide))).trans
         (same i hi 1 (by decide))) c3.z)) fun b3 ⟨k3, i3, v3, _⟩ y3 => ?_
     have ex : toM Cv.p (2 ^ (64 * c.K.M.n)) (wordsVal b3.mem base c.K.R.x c.K.M.n) = (4 * x.1 : Fin pN) := by
-      rw [k3.slot hL.lay i2.scr (sl1 mz) (hSl _ mx) (by rw [List.mem_singleton]; exact hV.rxz),
-        k2.slot hL.lay i1.scr (sl1 my) (hSl _ mx) (by rw [List.mem_singleton]; exact hV.rxy), v1]
+      rw [k3.slot hN i2.scr (sl1 mz) (hSl _ mx) (by rw [List.mem_singleton]; exact hV.rxz),
+        k2.slot hN i1.scr (sl1 my) (hSl _ mx) (by rw [List.mem_singleton]; exact hV.rxy), v1]
       rfl
     have ey : toM Cv.p (2 ^ (64 * c.K.M.n)) (wordsVal b3.mem base c.K.R.y c.K.M.n) = (4 * x.2.1 : Fin pN) := by
-      rw [k3.slot hL.lay i2.scr (sl1 mz) (hSl _ my) (by rw [List.mem_singleton]; exact hV.ryz), v2]
+      rw [k3.slot hN i2.scr (sl1 mz) (hSl _ my) (by rw [List.mem_singleton]; exact hV.ryz), v2]
       rfl
     have ez : toM Cv.p (2 ^ (64 * c.K.M.n)) (wordsVal b3.mem base c.K.R.z c.K.M.n) = (2 * x.2.2 : Fin pN) := v3
     have kr : ProgKeep c.K.M base (jacCoords c.K.R) a b3 :=
       ((k1.mono (sub1 mx)).trans (k2.mono (sub1 my))).trans (k3.mono (sub1 mz))
-    have kw : ProgKeep c.K.M base (jointWork c) a b3 := kr.mono (by
-      intro w hw
-      simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
-      simp only [jointWork, winOther, List.mem_append, List.mem_cons]
-      rcases hw with rfl | rfl | rfl <;> simp)
-    have hgen := JointGenerator.workKeep hL ca.field.mod.tmp a b3 kw (y3.trans (y2.trans y1)) ca.external
-    have hfin : ∀ y ∈ jointLive c, tmv Cv c.K.M.n base b3 y = Efin c (tmv Cv c.K.M.n base t) (some x) y := by
-      intro y hy
-      by_cases h1 : y = c.K.R.x
-      · subst h1; simp only [Efin, ↓reduceIte]; exact ex
-      by_cases h2 : y = c.K.R.y
-      · subst h2; simp only [Efin, h1, ↓reduceIte]; exact ey
-      by_cases h3 : y = c.K.R.z
-      · subst h3; simp only [Efin, h1, h2, ↓reduceIte]; exact ez
-      simp only [Efin, h1, h2, h3, ↓reduceIte]
-      have hn : y ∉ jacCoords c.K.R := by
-        simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false, not_or]
-        exact ⟨h1, h2, h3⟩
-      show toM Cv.p _ (wordsVal b3.mem base y c.K.M.n) = toM Cv.p _ (wordsVal t.mem base y c.K.M.n)
-      rw [kr.slot hL.lay ca.field.scr hSl (ca.field.sl y hy) hn, ka.2.1]
+    have wb := jwi_work hL fa.scr fa.mod.tmp wa.1 (kr.mono (jointWork_R c)) (y3.trans (y2.trans y1))
+    refine ⟨⟨i3, fun y hy => (wb.2 y hy).trans (roa y hy), ez, fun hne => ?_, wb.1⟩, kpa.trans kr⟩
     rcases (hpt : Pinv x.1 x.2.1 x.2.2 A) with hz | hJ
-    · have ez0 : toM Cv.p (2 ^ (64 * c.K.M.n)) (wordsVal b3.mem base c.K.R.z c.K.M.n) = 0 := by
-        rw [ez, hz]; rfl
-      exact ⟨.infinity, JointCore.next ca hL kw i3 (Or.inl ⟨rfl, ez0⟩) hgen, Or.inr ez0, hfin, kpa.trans kr⟩
-    · refine ⟨A, JointCore.next ca hL kw i3 ?_ hgen, Or.inl rfl, hfin, kpa.trans kr⟩
-      show InvJ Cv (toM Cv.p _ _) (toM Cv.p _ _) (toM Cv.p _ _) A
+    · exact absurd (show (2 * x.2.2 : Fin pN) = 0 by rw [hz]; rfl) hne
+    · show InvJ Cv (toM Cv.p _ _) (toM Cv.p _ _) (toM Cv.p _ _) A
       rw [ex, ey, ez]
       exact hJ
 
@@ -904,17 +909,16 @@ theorem car3_congr {s t : State} (h : ∀ i, i < 5 → ∀ k, (envOf t).m .rdi (
 structure VPack (c : Joint.Cfg) (base T : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)
     (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv)
     (acc : Option (Fin pN × Fin pN × Fin pN)) (t : State) : Prop where
-  core : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) .infinity t
-  live : ∀ x ∈ jointLive c, tmv Cv c.K.M.n base t x = E x
+  core : VCore c base T size u v Q row E t
   pack : PackSt t acc
 
 /-- The loop, with MXCSR saved. -/
 theorem vloop_vs {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
-    (hL : JointLayout c size) (h9 : c.gw = 9) (h : VBase c base T size u v Q row E s) (hx : MxOk s) :
+    (h9 : c.gw = 9) (h : VBase c base T size u v Q row E s) (hx : MxOk s) :
     WP isa (vloop c) s fun t =>
-      (VOut c base T size u v Q row E (accN c row E u v 257) t ∧ MxOk t) ∧ WKeep base s t :=
-  WP.mono (vloop_ok hV hL h9 h) fun _ ⟨ot, kt, rt⟩ =>
+      (VOut c base T size u v Q row E (accN c row (tqE c E) u v 257) t ∧ MxOk t) ∧ WKeep base s t :=
+  WP.mono (vloop_ok hV h9 h) fun _ ⟨ot, kt, rt⟩ =>
     let ⟨w, hw⟩ := hx
     ⟨⟨ot, w, rt.trans hw⟩, kt⟩
 
@@ -930,13 +934,11 @@ theorem vmov_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv
   refine WP.mono_syms (WP.skeep rfl (mov_ok s .rbx .r11)) fun a ⟨hb, ka⟩ sa => ?_
   refine WP.mono_syms (vzu_ok a) fun t ⟨tg, tm, trd, twr⟩ st => ?_
   have va : VKeep s a := .of_skeep ka
-  have ca := jointCore_vkeep hV h.core va sa
+  have ca := h.core.vkeep hV va sa
   have ut : Unch base vW a.mem t.mem := by rw [tm]; exact Unch.refl _ _ _
   have ws := WKeep.of_vkeep h.core.field.scr.rdi va
-  refine ⟨⟨⟨jointCore_unch hV ca (by rw [tg]) trd twr ut st,
-    fun x hx' => (live_unch hV ca (by rw [tg]) twr ut x hx').trans ((live_vkeep hV h.core va x hx').trans
-      (h.live x hx')), ?_⟩, ?_⟩, ⟨fun r hr => (congrFun tg r).trans (ws.gpr r hr), trd.trans ka.rd, twr.trans ka.wr,
-      unch_same ws.mem ut⟩⟩
+  refine ⟨⟨⟨ca.unch hV (by rw [tg]) trd twr ut st, ?_⟩, ?_⟩,
+    ⟨fun r hr => (congrFun tg r).trans (ws.gpr r hr), trd.trans ka.rd, twr.trans ka.wr, unch_same ws.mem ut⟩⟩
   · have hout := h.out
     have em : ∀ i, i < 5 → ∀ k, (envOf t).m .rdi (slotOff i) k = (envOf s).m .rdi (slotOff i) k := by
       intro i _ k
@@ -976,9 +978,7 @@ theorem mxRestore_vs {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Poi
     rw [ofs_add base (by simp only [slotOff, hsl]; omega)]
     simp only [slotOff, hsl]
     omega
-  refine ⟨⟨jointCore_unch hV h.core (by rw [tg]) trd twr ut st,
-    fun x hx' => (live_unch hV h.core (by rw [tg]) twr ut x hx').trans (h.live x hx'), ?_⟩,
-    fun r _ => congrFun tg r, trd, twr, ut⟩
+  refine ⟨⟨h.core.unch hV (by rw [tg]) trd twr ut st, ?_⟩, fun r _ => congrFun tg r, trd, twr, ut⟩
   have hp := h.pack
   cases acc with
   | none => exact (by rw [tg] : t.gpr .rbx = s.gpr .rbx).trans hp
@@ -987,42 +987,47 @@ theorem mxRestore_vs {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Poi
       lim_sl5_congr (fun i hi => em i hi 0 (by decide)) hp.2.y, lim_sl5_congr (fun i hi => em i hi 1 (by decide)) hp.2.z,
       lim_sl5_congr (fun i hi => em i hi 3 (by decide)) hp.2.x⟩
 
-/-- The loop over the digits in vectors, from `R = O`: `R` is the accumulator's point, or its `Z` is zero;
-the slots hold what the accumulator makes of them. -/
+/-- The loop over the digits in vectors, from `R = O`: `R` is the accumulator's point, or its `Z` is zero. -/
 theorem vmain_vs {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q A : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
-    (hL : JointLayout c size) (h9 : c.gw = 9) (h : VBase c base T size u v Q row E s)
-    (hpt : AccPt (accN c row E u v 257) A) :
-    WP isa (vmain c) s fun w => (∃ B, JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) B w ∧
-      (B = A ∨ tmv Cv c.K.M.n base w c.K.R.z = 0) ∧
-      ∀ y ∈ jointLive c, tmv Cv c.K.M.n base w y = Efin c E (accN c row E u v 257) y) ∧ VFrame c base s w := by
+    (hL : JointLayout c size) (hN : Lay c.K.M size (· ∈ nafSlots c.K)) (h9 : c.gw = 9)
+    (h : VBase c base T size u v Q row E s) (hpt : AccPt (accN c row (tqE c E) u v 257) A) :
+    WP isa (vmain c) s fun w =>
+      VFin c base T size u v Q row E (accN c row (tqE c E) u v 257) A w ∧ VFrame c base s w := by
   rw [vmain, regionAt]
   apply WP.seq
   refine WP.seq (WP.mono (mxSave_vs hV h) fun s₁ ⟨⟨b₁, x₁⟩, k₁⟩ => ?_)
   refine WP.seq (WP.seq (WP.mono (mxSet_vs hV b₁ x₁) fun s₂ ⟨⟨b₂, x₂⟩, k₂⟩ => ?_))
-  refine WP.seq (WP.seq (WP.mono (vloop_vs hV hL h9 b₂ x₂) fun s₃ ⟨⟨o₃, x₃⟩, k₃⟩ => ?_))
+  refine WP.seq (WP.seq (WP.mono (vloop_vs hV h9 b₂ x₂) fun s₃ ⟨⟨o₃, x₃⟩, k₃⟩ => ?_))
   refine WP.mono (vmov_ok hV o₃ x₃) fun s₄ ⟨⟨p₄, x₄⟩, k₄⟩ => ?_
   rw [WP.block_cons_iff]
   refine ⟨s₄, rfl, WP.block_nil ?_⟩
   refine WP.mono (mxRestore_vs hV p₄ x₄) fun s₅ ⟨p₅, k₅⟩ => ?_
   have ks := (((k₁.trans k₂).trans k₃).trans k₄).trans k₅
-  refine WP.mono (packR_ok hV hL p₅.core hpt p₅.pack) fun w ⟨B, cw, hB, hE, kw⟩ => ⟨⟨B, cw, hB, fun y hy => ?_⟩, ?_⟩
-  · rw [hE y hy]
-    exact Efin_congr _ (p₅.live y hy)
-  · exact ⟨fun r hr => (kw.gpr r (fun h' => hr (List.mem_cons_of_mem _ h'))).trans
-      (ks.gpr r (fun h' => hr (vk_regs hV.n r h'))), kw.rd.trans ks.rd, kw.wr.trans ks.wr, ks.mem.trans kw.unch⟩
+  refine WP.mono (packR_ok hV hL hN p₅.core hpt p₅.pack) fun w ⟨fw, kw⟩ => ⟨fw, ?_⟩
+  exact ⟨fun r hr => (kw.gpr r (fun h' => hr (List.mem_cons_of_mem _ h'))).trans
+    (ks.gpr r (fun h' => hr (vk_regs hV.n r h'))), kw.rd.trans ks.rd, kw.wr.trans ks.wr, ks.mem.trans kw.unch⟩
+
+/-- `Q`'s affine coordinates, among the field elements the loop only reads, are `Q`'s. -/
+theorem vcore_affine {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State}
+    (h : VCore c base T size u v Q row E s) : InvJ Cv (E c.K.P.x) (E c.K.P.y) 1 Q := by
+  have hp := h.input.point
+  rw [h.input.affine, h.ro _ (by simp [winRo]), h.ro _ (by simp [winRo])] at hp
+  exact hp
 
 /-- The loop over the digits in vectors, from `R = O`: `R` is the sum, or its `Z` is zero. -/
-theorem vmain_ok (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
-    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s : State} (hV : VLay c size) (hL : JointLayout c size)
-    (h9 : c.gw = 9) (hG : onCurve Cv G = true) (hQ : onCurve Cv Q = true)
-    (h : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) .infinity s)
-    (hT : GTab base T size s) (hu : u < 2 ^ 256) (hv : v < 2 ^ 256) :
-    WP isa (vmain c) s fun w => ∃ B, JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) B w ∧
-      (B = Spec.Weierstrass.add (mul u G) (mul v Q) ∨ tmv Cv c.K.M.n base w c.K.R.z = 0) ∧ VFrame c base s w := by
-  have hpt := accN_pt hC ha row h9 (E := tmv Cv c.K.M.n base s) h.stable.table hG hQ hu hv 257 (Nat.le_refl _)
+theorem vmain_ok (hC : Law Cv) (hO : PrimeOrder Cv) (ha : AM3 Cv) {c : Joint.Cfg} {base T : Addr} {size u v : Nat}
+    {G Q : Point Cv} {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State}
+    (hV : VLay c size) (hL : JointLayout c size) (hN : Lay c.K.M size (· ∈ nafSlots c.K)) (h9 : c.gw = 9)
+    (hG : onCurve Cv G = true) (hQ : onCurve Cv Q = true) (h : VBase c base T size u v Q row E s)
+    (hu : u < 2 ^ 256) (hv : v < 2 ^ 256) :
+    WP isa (vmain c) s fun w =>
+      VFin c base T size u v Q row E (accN c row (tqE c E) u v 257) (Spec.Weierstrass.add (mul u G) (mul v Q)) w ∧
+        VFrame c base s w := by
+  have hpt := accN_pt hC ha row h9 (tabQ_pts hC hO ha hQ (vcore_affine h.core)) hG hQ hu hv 257 (Nat.le_refl _)
   rw [show 257 - 257 = 0 from rfl, jointPoint_zero (gw := 9)] at hpt
-  exact WP.mono (vmain_vs hV hL h9 ⟨h, fun _ _ => rfl, hT⟩ hpt) fun w ⟨⟨B, cw, hB, _⟩, fw⟩ => ⟨B, cw, hB, fw⟩
+  exact vmain_vs hV hL hN h9 h hpt
 
 /-! ### The joint multiplication -/
 
@@ -1039,55 +1044,47 @@ theorem vRanges_sub (c : Joint.Cfg) {W : List Nat} (hW : ∀ x ∈ W, x ∈ join
     exact List.mem_append_left _ (List.mem_map_of_mem (hW x hx))
   · exact List.mem_append_right _ hw
 
-theorem jointWork_sl (c : Joint.Cfg) : ∀ x ∈ jointWork c, x ∈ jointSlots c := by
-  intro x hx
-  simp only [jointWork, jointSlots, nafSlots, List.mem_append] at hx ⊢
-  grind
-
-theorem jointWork_R (c : Joint.Cfg) : ∀ x ∈ jacCoords c.K.R, x ∈ jointWork c := by
-  intro w hw
-  simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
-  simp only [jointWork, winOther, List.mem_append, List.mem_cons]
-  rcases hw with rfl | rfl | rfl <;> simp
-
-/-- What the tables' code leaves. -/
-structure VInit (c : Joint.Cfg) (base T : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)
-    (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (a : State) : Prop where
-  field : Inv c.K.M base size Cv.p (· ∈ jointSlots c) (jointLive c) (tmv Cv c.K.M.n base a) a
-  stable : JointStable c Cv base Q u v a
-  gen : JointGenerator c Cv base T size row a
-  gtab : GTab base T size a
-
-/-- The table of `Q`'s odd multiples and its cache. -/
-theorem vtables_ok (hC : Law Cv) {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
-    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s : State} (hInit : JointInitLayout c size)
-    (hm : UnitMod Cv.p (2 ^ (64 * c.K.M.n))) (hd : JDblOk Cv c.dbl) (hOne : c.K.one < Cv.p)
-    (hQ : onCurve Cv Q = true) (hZ : c.coZ = true → PrimeOrder Cv ∧ 17 ≤ Cv.n ∧ AM3 Cv)
+/-- `R = O`, for the vectors' code. -/
+theorem vseed_ok (hC : Law Cv) {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s : State} (hL : JointLayout c size)
+    (hN : Lay c.K.M size (· ∈ nafSlots c.K)) (hOne : c.K.one < Cv.p)
     (hi : Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K) (tmv Cv c.K.M.n base s) s)
     (hw : JointWindowInput c Cv base T size u v Q row s) (hT : GTab base T size s) :
-    WP isa (Code.seq (Joint.tableCode c) (Joint.cacheCode c)).inline s fun a =>
-      VInit c base T size u v Q row a ∧ a.rd = s.rd ∧ a.wr = s.wr ∧ Unch base (vRanges c) s.mem a.mem := by
-  refine WP.mono_syms (jointTables_ok hInit hm hC hd hOne hQ hi hw.point hw.affine hZ hw.zero hw.peer hw.generator
-    hw.external) fun a ⟨ka, ia, sa, ea⟩ ya => ?_
-  exact ⟨⟨ia, sa, ea, ⟨by rw [ka.regs.rd, ka.regs.wr]; exact hT.1, hT.2⟩⟩, ka.regs.rd, ka.regs.wr,
-    ka.unch.mono (vRanges_sub c fun x hx => List.mem_append_left _ hx)⟩
+    WP isa (.block (Jacobian.infinity c.K c.K.R)) s fun b =>
+      VBase c base T size u v Q row (tmv Cv c.K.M.n base s) b ∧ b.rd = s.rd ∧ b.wr = s.wr ∧
+        Unch base (vRanges c) s.mem b.mem := by
+  have hR : ∀ x ∈ [c.K.R.x, c.K.R.y, c.K.R.z], x ∈ nafSlots c.K := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    simp only [nafSlots, winOther, List.mem_append, List.mem_cons]
+    rcases hx with rfl | rfl | rfl <;> simp
+  refine WP.mono_syms (infinityPoint_ok hN hR hi hOne) fun a ⟨E', ka, ia, pa⟩ sa => ?_
+  have kw : ProgKeep c.K.M base (jointWork c) s a := ka.mono (by
+    intro x hx
+    simp only [rcbW, jointWork, winOther, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+    grind)
+  have wa := jwi_work hL hi.scr hi.mod.tmp hw kw sa
+  have ia' : Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K ++ jacCoords c.K.R) E' a :=
+    ia.sub (fun x hx => by
+      rcases List.mem_append.mp hx with h | h
+      · exact List.mem_append_right _ h
+      · exact List.mem_append_left _ h)
+  refine ⟨⟨⟨ia'.to_tmv, wa.2, ?_, wa.1⟩, ⟨by rw [ka.rd, ka.wr]; exact hT.1, hT.2⟩⟩, ka.rd, ka.wr,
+    kw.unch.mono (vRanges_sub c fun x hx => List.mem_append_right _ hx)⟩
+  exact (ia.val _ (by simp)).trans ((pa.z_zero_iff hC).mpr rfl)
 
-/-- `R = O`, for the vectors' code. -/
-theorem vseed_ok {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
-    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {a : State} (hL : JointLayout c size)
-    (hOne : c.K.one < Cv.p) (h : VInit c base T size u v Q row a) :
-    WP isa (.block (Jacobian.infinity c.K c.K.R ++
-      ([.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))] : List Instr))) a fun b =>
-      VBase c base T size u v Q row (tmv Cv c.K.M.n base b) b ∧ b.rd = a.rd ∧ b.wr = a.wr ∧
-        Unch base (vRanges c) a.mem b.mem := by
-  refine WP.mono_syms (jointSeed_ok hL hOne h.field h.stable h.gen) fun b ⟨kb, cb, _⟩ yb => ?_
-  exact ⟨⟨cb, fun _ _ => rfl, ⟨by rw [kb.regs.rd, kb.regs.wr]; exact h.gtab.1, h.gtab.2⟩⟩, kb.regs.rd, kb.regs.wr,
-    kb.unch.mono (vRanges_sub c fun x hx => List.mem_append_right _ hx)⟩
+/-- What the joint multiplication leaves for the comparison: `R`'s coordinates, reduced, are `A`'s. -/
+structure VRes (c : Joint.Cfg) (base : Addr) (size : Nat) (A : Point Cv) (t : State) : Prop where
+  scr : Scr t base size
+  x : wordsVal t.mem base c.K.R.x c.K.M.n < Cv.p
+  z : wordsVal t.mem base c.K.R.z c.K.M.n < Cv.p
+  point : InvJ Cv (tmv Cv c.K.M.n base t c.K.R.x) (tmv Cv c.K.M.n base t c.K.R.y) (tmv Cv c.K.M.n base t c.K.R.z) A
 
-/-- `Joint.window` with the loop in vectors: `R = [u]G + [v]Q`. -/
-theorem vwindow_ok (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {double : Prog isa} {base T : Addr}
-    {size u v : Nat} {G Q : Point Cv} {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s : State}
-    (hV : VLay c size) (hL : JointAddLayout c size) (hInit : JointInitLayout c size) (h9 : c.gw = 9)
+/-- The joint multiplication with the loop in vectors, and `Joint.window` where that leaves `Z` zero:
+`R = [u]G + [v]Q`. -/
+theorem vwindow_ok (hC : Law Cv) (hO : PrimeOrder Cv) (ha : AM3 Cv) {c : Joint.Cfg} {double : Prog isa}
+    {base T : Addr} {size u v : Nat} {G Q : Point Cv} {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)}
+    {s : State} (hV : VLay c size) (hL : JointAddLayout c size) (hInit : JointInitLayout c size) (h9 : c.gw = 9)
     (hm : UnitMod Cv.p (2 ^ (64 * c.K.M.n))) (hd : JDblOk Cv c.dbl) (hD : JointDoubler c Cv size double)
     (hOne : c.K.one < Cv.p) (hOneVal : toM Cv.p (2 ^ (64 * c.K.M.n)) c.K.one = 1)
     (hG : onCurve Cv G = true) (hQ : onCurve Cv Q = true) (hZ : c.coZ = true → PrimeOrder Cv ∧ 17 ≤ Cv.n ∧ AM3 Cv)
@@ -1095,56 +1092,52 @@ theorem vwindow_ok (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {double : Prog is
     (hi : Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K) (tmv Cv c.K.M.n base s) s)
     (hw : JointWindowInput c Cv base T size u v Q row s) (hT : GTab base T size s) :
     WP isa (vwindow c double).inline s fun t =>
-      JointCore c Cv base size Q u v (JointGenerator c Cv base T size row)
-        (Spec.Weierstrass.add (mul u G) (mul v Q)) t ∧ t.gpr .rbx = 0 ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      VRes c base size (Spec.Weierstrass.add (mul u G) (mul v Q)) t ∧ t.gpr .rbx = 0 ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Unch base (vRanges c) s.mem t.mem := by
   have hLl := hL.lookup.layout
+  have hN := hInit.naf.lay
   have hn := hV.n
-  have htop := joint_top_le c
   rw [vwindow]
   simp only [Code.inline]
-  apply WP.assoc
   apply WP.seq
-  refine WP.mono (vtables_ok hC hInit hm hd hOne hQ hZ hi hw hT) fun a ⟨ia, rda, wra, ua⟩ => ?_
+  refine WP.mono (vseed_ok hC hLl hN hOne hi hw hT) fun b ⟨hb, rdb, wrb, ub⟩ => ?_
   apply WP.seq
-  refine WP.mono (vseed_ok hLl hOne ia) fun b ⟨hb, rdb, wrb, ub⟩ => ?_
-  apply WP.seq
-  refine WP.mono_syms (vmain_ok hC ha hV hLl h9 hG hQ hb.core hb.gtab (by rw [hn] at hu; exact hu)
-    (by rw [hn] at hv; exact hv)) fun d ⟨B, cd, hB, fd⟩ yd => ?_
-  have ud : Unch base (vRanges c) b.mem d.mem := fd.mem.mono (by
+  refine WP.mono (vmain_ok hC hO ha hV hLl hN h9 hG hQ hb (by rw [hn] at hu; exact hu)
+    (by rw [hn] at hv; exact hv)) fun d ⟨fd, kd⟩ => ?_
+  have ud : Unch base (vRanges c) b.mem d.mem := kd.mem.mono (by
     intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · exact List.mem_append_right _ hw
     · exact vRanges_sub c (fun x hx => List.mem_append_right _ (jointWork_R c x hx)) w hw)
-  have mz : c.K.R.z ∈ jacCoords c.K.R := by simp [jacCoords]
+  have mz : c.K.R.z ∈ winRo c.K ++ jacCoords c.K.R := List.mem_append_right _ (by simp [jacCoords])
+  have mx : c.K.R.x ∈ winRo c.K ++ jacCoords c.K.R := List.mem_append_right _ (by simp [jacCoords])
+  have my : c.K.R.y ∈ winRo c.K ++ jacCoords c.K.R := List.mem_append_right _ (by simp [jacCoords])
   apply WP.seq
-  refine WP.mono_syms (zeroField_ok hLl.lay hm cd.field (jointLive_R c _ mz)) fun e ⟨ez, ie, ke⟩ ye => ?_
+  refine WP.mono_syms (zeroField_ok hN hm fd.field mz) fun e ⟨ez, ie, ke⟩ ye => ?_
   have kw : ProgKeep c.K.M base (jointWork c) d e := ke.mono (fun _ h => absurd h List.not_mem_nil)
-  have ge := JointGenerator.workKeep hLl cd.field.mod.tmp d e kw ye cd.external
+  have we := jwi_work hLl fd.field.scr fd.field.mod.tmp fd.input kw ye
   have ue : Unch base (vRanges c) d.mem e.mem :=
     kw.unch.mono (vRanges_sub c fun x hx => List.mem_append_right _ hx)
-  have rde : e.rd = s.rd := by rw [ke.rd, fd.rd, rdb, rda]
-  have wre : e.wr = s.wr := by rw [ke.wr, fd.wr, wrb, wra]
-  have use : Unch base (vRanges c) s.mem e.mem := unch_same (unch_same (unch_same ua ub) ud) ue
+  have rde : e.rd = s.rd := by rw [ke.rd, kd.rd, rdb]
+  have wre : e.wr = s.wr := by rw [ke.wr, kd.wr, wrb]
+  have use : Unch base (vRanges c) s.mem e.mem := unch_same (unch_same ub ud) ue
   refine WP.ite (decide (tmv Cv c.K.M.n base d c.K.R.z = 0)) ez (fun hz => ?_) (fun hnz => ?_)
-  · have hz' : tmv Cv c.K.M.n base d c.K.R.z = 0 := of_decide_eq_true hz
-    have ce : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) .infinity e :=
-      JointCore.next cd hLl kw ie (Or.inl ⟨rfl, hz'⟩) ge
-    apply WP.seq
-    refine WP.mono_syms (jointCounter_ok e (by rw [hn] at htop; omega)) fun f ⟨fb, kf⟩ yf => ?_
-    have cf := ce.of_keeps kf (by decide) (fun n hn1 hn2 ho => (ce.external n hn1 hn2 ho).of_keeps kf yf)
-    refine WP.mono (jointMulRun_ok hL hm hC hd hD hOne hOneVal hG hQ hu hv cf fb) fun t ⟨kt, ct, tb⟩ => ?_
-    refine ⟨ct, tb, by rw [kt.regs.rd, kf.2.2.1, rde], by rw [kt.regs.wr, kf.2.2.2, wre], ?_⟩
-    have ut : Unch base (vRanges c) f.mem t.mem :=
-      kt.unch.mono (vRanges_sub c fun x hx => List.mem_append_right _ hx)
-    rw [kf.2.1] at ut
-    exact unch_same use ut
-  · have hnz' : ¬tmv Cv c.K.M.n base d c.K.R.z = 0 := of_decide_eq_false hnz
-    have eB := hB.resolve_right hnz'
-    have ce : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row)
-        (Spec.Weierstrass.add (mul u G) (mul v Q)) e := JointCore.next cd hLl kw ie (eB ▸ cd.point) ge
-    refine WP.mono_syms (jointCounter_ok e (n := 0) (by decide)) fun t ⟨tb, kt⟩ yt => ?_
-    exact ⟨ce.of_keeps kt (by decide) (fun n hn1 hn2 ho => (ce.external n hn1 hn2 ho).of_keeps kt yt), tb,
-      by rw [kt.2.2.1, rde], by rw [kt.2.2.2, wre], by rw [kt.2.1]; exact use⟩
+  · -- `Z` is zero: the whole of `Joint.window`
+    refine WP.mono (jointMulWindow_ok hL hInit hm hC hd hD hOne hOneVal hG hQ hZ hu hv
+      (ie.sub (fun x hx => List.mem_append_left _ hx)).to_tmv we.1) fun t ⟨kt, ct, tb⟩ => ?_
+    refine ⟨⟨ct.field.scr, ct.field.lt _ (jointLive_R c _ (by simp [jacCoords])),
+      ct.field.lt _ (jointLive_R c _ (by simp [jacCoords])), ct.point⟩, tb, by rw [kt.regs.rd, rde],
+      by rw [kt.regs.wr, wre], unch_same use (kt.unch.mono (vRanges_sub c fun x hx => hx))⟩
+  · -- `Z` is not zero: `R` is the sum
+    have hnz' : ¬tmv Cv c.K.M.n base d c.K.R.z = 0 := of_decide_eq_false hnz
+    have hp := fd.point (by rw [← fd.z]; exact hnz')
+    refine WP.mono (jointCounter_ok e (n := 0) (by decide)) fun t ⟨tb, kt⟩ => ?_
+    have tv (y : Nat) (hy : y ∈ winRo c.K ++ jacCoords c.K.R) :
+        tmv Cv c.K.M.n base t y = tmv Cv c.K.M.n base d y := by
+      unfold tmv; rw [kt.2.1]; exact ie.val y hy
+    refine ⟨⟨ie.scr.of_keeps kt (by decide), by rw [kt.2.1]; exact ie.lt _ mx, by rw [kt.2.1]; exact ie.lt _ mz, ?_⟩,
+      tb, by rw [kt.2.2.1, rde], by rw [kt.2.2.2, wre], by rw [kt.2.1]; exact use⟩
+    rw [tv _ mx, tv _ my, tv _ mz]
+    exact hp
 
 end VG.Proof.P256.X86_64.Ifma
