@@ -438,11 +438,12 @@ theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {pub
 
 theorem pubOk_nil (k : Contract isa) : PubOk k [] := fun _ _ _ _ _ _ _ h => absurd h List.not_mem_nil
 
-/-- `resOk_reg`, with no bytes of the buffers known public. -/
+/-- `resOk_reg`, with no bytes of the buffers known public, from the analysis
+ending as `resOkF` checks (which the kernel evaluates faster than `resOkB`). -/
 theorem resOk_reg0 {api : Api} (r : Registration api target) (ks : List Nat) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
+    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkF · r.stack ks (chunks r.stack)) = true) :
     ResOk r.code r.contract r.stack ks (chunks r.stack) :=
-  resOk_reg r ks (pubs := []) rfl (pubOk_nil _) hc
+  resOk_reg r ks (pubs := []) rfl (pubOk_nil _) (any_resOkB hc)
 
 /-- The granules of `r.stack` bytes of stack that `scrub` must wipe after
 the code `code` of signature `sig`, from the analysis (none if it fails,
