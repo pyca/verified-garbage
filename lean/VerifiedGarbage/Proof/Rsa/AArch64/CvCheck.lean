@@ -143,15 +143,6 @@ theorem mask_check {c : Bool} {A B1 B2 PQ : Prop} [Decidable A] [Decidable B1] [
   · have := hA a
     simp_all
 
-/-- `⌈a / 8⌉`, as `addImm 7; lsr 3` computes it. -/
-theorem ceil8_bv {a : Nat} (ha : a < 2 ^ 60) :
-    (BitVec.ofNat 64 a + 7#64) >>> 3 = BitVec.ofNat 64 ((a + 7) / 8) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    show (7#64).toNat = 7 from rfl]
-  rw [Nat.mod_eq_of_lt (by omega_arith : a < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith : a + 7 < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega_arith : (a + 7) / 8 < 2 ^ 64)]
-
 /-- `pqCheck`'s setup for `mulRows`: `p`'s base and words into `x11` and
 `x13`, `q`'s into `x9` and `x12`, and the product's base `aU` into `x8`. -/
 theorem pqSetup_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) :

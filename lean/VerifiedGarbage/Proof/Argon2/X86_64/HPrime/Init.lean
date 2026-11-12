@@ -54,9 +54,12 @@ namespace VG.Proof.Argon2.X86_64.HPrime
 
 open VG VG.X86_64
 
-/-- The symbols and code of one BLAKE2b streaming backend. -/
+/-- The symbols and code of one BLAKE2b streaming backend. `init` is
+`vg_blake2b_init`'s code, called as an internal function of its own,
+`vg_blake2b_init_core`, since `vg_blake2b_init` also clears what it leaves
+(`Proof.Blake2.X86_64.initBReg`). -/
 def hash (v : Proof.Blake2.X86_64.Backend) : Impl.Argon2.X86_64.HPrime.Hash where
-  initName := Spec.Blake2.initBApi.name
+  initName := "vg_blake2b_init_core"
   init := v.init
   updateName := v.updateName
   update := v.update

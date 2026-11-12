@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.MulMod
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.MontKey
+public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyDiv
 
 /-! # The checks of an RSA private key on PPC64LE
 
@@ -22,20 +24,25 @@ then written to its array from the register.
 Then every check is computed whatever its outcome, and and'ed into the
 header's `sMask`, which is returned:
 
-* `p q = n`: `p` odd, `n / p = q` and `n mod p = 0`, by the fixed-iteration
-  division (`Impl/Rsa/PPC64LE/Div.lean`, `divP`: at the divisor's width,
-  from its length). Then `p` and `q` are odd, and
-  clearing their low bits gives `p - 1` and `q - 1`.
+* `p q = n`: `p` odd, `p q ≡ n (mod 2^(32 w))` (`MontKey.mulLo`) and
+  `n ≡ 0 (mod p)`, as Montgomery's `n 2^(-32 w) mod p` (`MontKey.montMul`)
+  is 0: for an odd `p` they are `p q = n` (`Proof/Rsa/MontCheckMath.lean`).
+  Montgomery's modulus is `p | 1`, in the division's divisor array, so it
+  is odd whatever `p`. Then `p` and `q` are odd, and clearing their low bits
+  gives `p - 1` and `q - 1`.
 * `dP < p - 1`, `dQ < q - 1` and `qInv < p`: the borrow of a subtraction.
 * `e dP ≡ 1 (mod p - 1)`, `e dQ ≡ 1 (mod q - 1)`: `mulMod` over the 33 bits
-  of `e`, compared with 1; `q qInv ≡ 1 (mod p)`: `mulMod` over the
-  `8 q_len` bits of `q`.
+  of `e`, compared with 1; `q qInv ≡ 1 (mod p)`: Montgomery's `q qInv` and
+  `1 · 1` compared.
 
 `vg_rsa_check_key` then checks `d < n` (a borrow), and `d ≡ 1/e` modulo
-`p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` (two
-more divisions) with `dP` and `dQ`: once the checks above hold, `dP` is the
-inverse of `e` modulo `p - 1`, and `d e ≡ 1 (mod p - 1)` exactly when
-`d ≡ dP`.
+`p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` with `dP`
+and `dQ`: once the checks above hold, `dP` is the inverse of `e` modulo
+`p - 1`, and `d e ≡ 1 (mod p - 1)` exactly when `d ≡ dP`. For a balanced key
+of full words (`shape`, from the lengths alone) the remainders are by words
+(`KeyDiv.divW`), exact for a divisor whose top word is not zero, as `p - 1`
+and `q - 1` are when `p q = n` (`n`'s first byte is not zero); otherwise
+bit-serial (`Div.divP`).
 
 Addresses and branches depend only on the pointers, the lengths, `n` and `e`.
 -/
@@ -141,23 +148,74 @@ def mulA (y x m : Nat) (cnt : List Instr) : List (Prog isa) :=
 
 /-- `33` steps, for `e < 2^33`. -/
 def cnt33 : List Instr := [.li .r4 33]
-/-- `8 q_len` steps, for `q < 2^(8 q_len)`. -/
-def cntQ : List Instr := [.lsl .r4 .r21 3]
 
-/-- `1`, the mask `p` odd, and `n` divided by `p`. -/
-def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP)] ++ divA .r19 aN aP
+/-- `[a] := [x] [y] 2^(-32 w) mod (p | 1)`, the modulus in `aVD`, `p_len` in `r19`. -/
+def montP (a x y : Nat) : Prog isa := MontKey.montMul a x y aVD aT .r19 MontKey.cntW
 
-/-- After the division: `n / p = q`, `n mod p = 0`, `p - 1` and `q - 1`, and
+/-- `montP`, `⌈q_len / 4⌉` steps: for `[x]` of `q_len` bytes. -/
+def montPq (a x y : Nat) : Prog isa := MontKey.montMul a x y aVD aT .r19 (MontKey.cntLen .r21)
+
+/-- `r0 := 0` exactly for a balanced key of full words: `p_len` (`r19`) a
+multiple of 8 and at least 32, equal to `q_len` (`r21`) and to `2 w` (`r29`),
+so that `n_len` is about twice it. From registers that `KeyDiv.divW` does
+not restore from memory. -/
+def shape : List Instr :=
+  [.li .r0 7, .logic .and .r0 .r19 .r0, .lsl .r3 .r29 1, .logic .xor .r3 .r3 .r19, .logic .or .r0 .r0 .r3,
+    .logic .xor .r3 .r19 .r21, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r19 5, .li .r12 0, .sub .r3 .r12 .r3,
+    .lsr .d .r3 .r3 63, .li .r12 1, .logic .xor .r3 .r3 .r12, .logic .or .r0 .r0 .r3]
+
+/-- `p q mod 2^(32 w)` in `aVQ` and `p | 1` in `aVD`; for a balanced key (`shape`), the product over
+the primes' `w / 2` digits and `0` in `aVR`: there `p q` is exact in `w` digits, so
+`p q mod 2^(32 w) = n` already gives `n mod p = 0`; else the product truncated to `w` digits and
+Montgomery's `n 2^(-32 w) mod (p | 1)`. -/
+def nModP : Prog isa :=
+  .ite (.zero .d .r0)
+    (seqs [MontKey.mulHalf aVQ aP aQ .r19, copy aVR aZ, copy aVD aP, .block (orOne aVD)])
+    (seqs [MontKey.mulLo aVQ aP aQ .r19, copy aVD aP, .block (orOne aVD), montP aVR aN aOne])
+
+/-- `1`, the mask `p` odd, `p q mod 2^(32 w)` in `aVQ`, `p | 1` in `aVD` and
+`0` (or Montgomery's `n 2^(-32 w) mod (p | 1)`) in `aVR`. -/
+def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), .block shape, nModP]
+
+/-- `[aA]` and `[aY]` equal exactly when `q qInv ≡ 1 (mod p)`: for a balanced key
+(`shape`), `q qInv` (`MontKey.mulLo`, exact in `w` digits) by words modulo `p`
+and `1`; else Montgomery's `q qInv` and `1 · 1` modulo `p | 1`, over `⌈q_len / 4⌉`
+steps. -/
+def qInvMod : Prog isa :=
+  .ite (.zero .d .r0)
+    (seqs [MontKey.mulLo aX aQ aQI .r21, copy aY aP, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW,
+      copy aY aOne])
+    (seqs [montPq aA aQ aQI, montPq aY aOne aOne])
+
+/-- `r4 := 8`: `e`'s two digits, as a length in bytes for `MontKey.mulLo`. -/
+def len8 : List Instr := [.li .r4 8]
+
+/-- `[aA] := e [x] mod [m]` (`e < 2^33` in `aE`): for a balanced key (`shape`),
+`e [x]` exactly (`MontKey.mulLo` over `e`'s two digits) by words modulo `[m]`;
+else bit-serially over `33` steps (`mulA`). -/
+def eMod (x m : Nat) : Prog isa :=
+  .ite (.zero .d .r0)
+    (seqs [.block len8, MontKey.mulLo aX aE x .r4, copy aY m, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW])
+    (seqs (mulA aE x m cnt33))
+
+/-- Then: `p q ≡ n (mod 2^(32 w))`, `n ≡ 0 (mod p)`, `p - 1` and `q - 1`, and
 the checks of `dP`, `dQ` and `qInv`. -/
-def crtChecks : List (Prog isa) := eqA aVQ aQ ++ eqA aVR aZ ++
+def crtChecks : List (Prog isa) := eqA aVQ aN ++ eqA aVR aZ ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
-  ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
-  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
-  ltA aQI aP ++ mulA aQ aQI aP cntQ ++ eqA aA aOne
+  ltA aDP aM1 ++ [.block shape, eMod aDP aM1] ++ eqA aA aOne ++
+  ltA aDQ aM2 ++ [.block shape, eMod aDQ aM2] ++ eqA aA aOne ++
+  ltA aQI aP ++ [.block shape, qInvMod] ++ eqA aA aY
+
+/-- `[a] mod [d]` in `aVR`: for a balanced key (`shape`), by words
+(`KeyDiv.divW`, `[d]` of `w / 4` words copied to `aVD`, its top word made
+not zero, `aVQ` the save area); else bit-serial (`divA`). -/
+def divK (len : Reg) (a d : Nat) : List (Prog isa) :=
+  [.block shape, .ite (.zero .d .r0) (seqs [copy aVD d, .block (KeyDiv.fixTop aVD), KeyDiv.divW a aVR aVD aVT aVQ])
+    (seqs (divA len a d))]
 
 /-- The checks of `d`: `d < n`, `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`. -/
 def dChecks : List (Prog isa) :=
-  ltA aD aN ++ divA .r19 aD aM1 ++ eqA aVR aDP ++ divA .r21 aD aM2 ++ eqA aVR aDQ
+  ltA aD aN ++ divK .r19 aD aM1 ++ eqA aVR aDP ++ divK .r21 aD aM2 ++ eqA aVR aDQ
 
 /-! ## Exit -/
 

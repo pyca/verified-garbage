@@ -1889,17 +1889,14 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+5856], rax
 28:
 	mov rcx, r8
-	and rcx, 1
-	test rcx, rcx
-	je 29f
-	mov rcx, r8
 	and rcx, 511
-	cmp rcx, 256
-	jb 211f
-	sub rcx, 512
-	jmp 212f
-211:
-212:
+	xor rcx, 256
+	sub rcx, 256
+	mov rax, r8
+	and rax, 1
+	mov edx, 0
+	sub rdx, rax
+	and rcx, rdx
 	mov rax, rcx
 	shr rax, 63
 	mov edx, 0
@@ -1910,45 +1907,26 @@ vg_ecdsa_p256_verify_ifma:
 	sbb r11, rdx
 	sbb r12, rdx
 	mov WORD PTR [rdi+rbx*2+5344], cx
-	shr r8, 9
-	mov rax, r9
-	shl rax, 55
+	and rcx, 1
+	mov rdx, rcx
+	shl rdx, 3
+	add rdx, 1
+	mov ecx, 64
+	sub rcx, rdx
+	shrx r8, r8, rdx
+	shlx rax, r9, rcx
 	or r8, rax
-	shr r9, 9
-	mov rax, r10
-	shl rax, 55
+	shrx r9, r9, rdx
+	shlx rax, r10, rcx
 	or r9, rax
-	shr r10, 9
-	mov rax, r11
-	shl rax, 55
+	shrx r10, r10, rdx
+	shlx rax, r11, rcx
 	or r10, rax
-	shr r11, 9
-	mov rax, r12
-	shl rax, 55
+	shrx r11, r11, rdx
+	shlx rax, r12, rcx
 	or r11, rax
-	shr r12, 9
-	add rbx, 9
-	jmp 210f
-29:
-	shr r8, 1
-	mov rax, r9
-	shl rax, 63
-	or r8, rax
-	shr r9, 1
-	mov rax, r10
-	shl rax, 63
-	or r9, rax
-	shr r10, 1
-	mov rax, r11
-	shl rax, 63
-	or r10, rax
-	shr r11, 1
-	mov rax, r12
-	shl rax, 63
-	or r11, rax
-	shr r12, 1
-	add rbx, 1
-210:
+	shrx r12, r12, rdx
+	add rbx, rdx
 	cmp rbx, 257
 	jb 28b
 	mov r8, QWORD PTR [rdi+1184]
@@ -2023,19 +2001,16 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+2648], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+2656], rax
-213:
-	mov rcx, r8
-	and rcx, 1
-	test rcx, rcx
-	je 214f
+29:
 	mov rcx, r8
 	and rcx, 31
-	cmp rcx, 16
-	jb 216f
-	sub rcx, 32
-	jmp 217f
-216:
-217:
+	xor rcx, 16
+	sub rcx, 16
+	mov rax, r8
+	and rax, 1
+	mov edx, 0
+	sub rdx, rax
+	and rcx, rdx
 	mov rax, rcx
 	shr rax, 63
 	mov edx, 0
@@ -2046,47 +2021,28 @@ vg_ecdsa_p256_verify_ifma:
 	sbb r11, rdx
 	sbb r12, rdx
 	mov BYTE PTR [rdi+rbx*1+2400], cl
-	shr r8, 5
-	mov rax, r9
-	shl rax, 59
+	and rcx, 1
+	mov rdx, rcx
+	shl rdx, 2
+	add rdx, 1
+	mov ecx, 64
+	sub rcx, rdx
+	shrx r8, r8, rdx
+	shlx rax, r9, rcx
 	or r8, rax
-	shr r9, 5
-	mov rax, r10
-	shl rax, 59
+	shrx r9, r9, rdx
+	shlx rax, r10, rcx
 	or r9, rax
-	shr r10, 5
-	mov rax, r11
-	shl rax, 59
+	shrx r10, r10, rdx
+	shlx rax, r11, rcx
 	or r10, rax
-	shr r11, 5
-	mov rax, r12
-	shl rax, 59
+	shrx r11, r11, rdx
+	shlx rax, r12, rcx
 	or r11, rax
-	shr r12, 5
-	add rbx, 5
-	jmp 215f
-214:
-	shr r8, 1
-	mov rax, r9
-	shl rax, 63
-	or r8, rax
-	shr r9, 1
-	mov rax, r10
-	shl rax, 63
-	or r9, rax
-	shr r10, 1
-	mov rax, r11
-	shl rax, 63
-	or r10, rax
-	shr r11, 1
-	mov rax, r12
-	shl rax, 63
-	or r11, rax
-	shr r12, 1
-	add rbx, 1
-215:
+	shrx r12, r12, rdx
+	add rbx, rdx
 	cmp rbx, 257
-	jb 213b
+	jb 29b
 	movabs rax, 0
 	mov QWORD PTR [rdi+512], rax
 	movabs rax, 0
@@ -3358,7 +3314,7 @@ vg_ecdsa_p256_verify_ifma:
 	vmovdqa64 ymm17, ymm30
 	vmovdqa64 ymm19, ymm29
 	mov eax, 7
-218:
+210:
 	vmovdqu64 ymm31, YMMWORD PTR [r10+352]
 	vmovdqa64 ymm30, ymm10
 	vpternlogq ymm30, ymm15, ymm31, 216
@@ -4325,7 +4281,7 @@ vg_ecdsa_p256_verify_ifma:
 	vmovdqu64 YMMWORD PTR [rbp+192], ymm9
 	add rbp, 200
 	sub rax, 1
-	jne 218b
+	jne 210b
 	vpxorq ymm0, ymm0, ymm0
 	vpxorq ymm1, ymm1, ymm1
 	vpxorq ymm2, ymm2, ymm2
@@ -4346,10 +4302,10 @@ vg_ecdsa_p256_verify_ifma:
 	vpxorq ymm17, ymm17, ymm17
 	vpxorq ymm18, ymm18, ymm18
 	vpxorq ymm19, ymm19, ymm19
-219:
+211:
 	sub rbx, 1
 	test r11, r11
-	je 220f
+	je 212f
 	vpermq ymm31, ymm15, 102
 	vpermq ymm30, ymm16, 102
 	vpermq ymm29, ymm17, 102
@@ -5086,24 +5042,24 @@ vg_ecdsa_p256_verify_ifma:
 	vmovdqa64 ymm14, ymm30
 	vmovdqa64 ymm19, ymm16
 	vmovdqa64 ymm16, ymm29
-	jmp 221f
-220:
-221:
+	jmp 213f
+212:
+213:
 	movzx r8d, BYTE PTR [rdi+rbx*1+2400]
 	test r8, r8
-	je 222f
+	je 214f
 	cmp r8, 128
-	jb 224f
+	jb 216f
 	mov eax, 256
 	sub rax, r8
 	mov r8, rax
 	mov r9, r10
 	add r9, 1728
-	jmp 225f
-224:
+	jmp 217f
+216:
 	mov r9, r10
 	add r9, 128
-225:
+217:
 	mov rcx, r8
 	shl rcx, 2
 	mov rax, rcx
@@ -5127,7 +5083,7 @@ vg_ecdsa_p256_verify_ifma:
 	vpermq ymm27, ymm25, 170
 	vpermq ymm28, ymm25, 255
 	test r11, r11
-	je 226f
+	je 218f
 	vmovdqu64 ymm31, YMMWORD PTR [r9]
 	vpermq ymm30, ymm10, 87
 	vpermq ymm19, ymm11, 87
@@ -6166,8 +6122,8 @@ vg_ecdsa_p256_verify_ifma:
 	vmovdqa64 ymm8, ymm28
 	vmovdqa64 ymm9, ymm26
 	vmovdqa64 ymm19, ymm27
-	jmp 227f
-226:
+	jmp 219f
+218:
 	vmovdqu64 ymm31, YMMWORD PTR [r9]
 	vpsraq ymm30, ymm24, 48
 	vmovdqu64 ymm29, YMMWORD PTR [r10+224]
@@ -6339,25 +6295,25 @@ vg_ecdsa_p256_verify_ifma:
 	vpmadd52luq ymm18, ymm30, YMMWORD PTR [r10+320]
 	vpmadd52huq ymm19, ymm30, YMMWORD PTR [r10+320]
 	mov r11d, 1
-227:
-	jmp 223f
-222:
-223:
+219:
+	jmp 215f
+214:
+215:
 	movzx r8d, WORD PTR [rdi+rbx*2+5344]
 	test r8, r8
-	je 228f
+	je 220f
 	cmp r8, 256
-	jb 230f
+	jb 222f
 	mov eax, 65536
 	sub rax, r8
 	mov r8, rax
 	mov r9, r10
 	add r9, 1728
-	jmp 231f
-230:
+	jmp 223f
+222:
 	mov r9, r10
 	add r9, 128
-231:
+223:
 	mov rax, r8
 	sub rax, 1
 	shl rax, 6
@@ -6421,7 +6377,7 @@ vg_ecdsa_p256_verify_ifma:
 	vmovdqu64 ymm28, YMMWORD PTR [r10+1664]
 	vmovdqu64 ymm29, YMMWORD PTR [r10+1696]
 	test r11, r11
-	je 232f
+	je 224f
 	vmovdqu64 ymm31, YMMWORD PTR [r9]
 	vpermq ymm30, ymm10, 87
 	vpermq ymm19, ymm11, 87
@@ -7460,8 +7416,8 @@ vg_ecdsa_p256_verify_ifma:
 	vmovdqa64 ymm8, ymm28
 	vmovdqa64 ymm9, ymm26
 	vmovdqa64 ymm19, ymm27
-	jmp 233f
-232:
+	jmp 225f
+224:
 	vmovdqu64 ymm31, YMMWORD PTR [r9]
 	vpsraq ymm30, ymm24, 48
 	vmovdqu64 ymm29, YMMWORD PTR [r10+224]
@@ -7633,14 +7589,14 @@ vg_ecdsa_p256_verify_ifma:
 	vpmadd52luq ymm18, ymm30, YMMWORD PTR [r10+320]
 	vpmadd52huq ymm19, ymm30, YMMWORD PTR [r10+320]
 	mov r11d, 1
-233:
-	jmp 229f
-228:
-229:
+225:
+	jmp 221f
+220:
+221:
 	test rbx, rbx
-	jne 219b
+	jne 211b
 	test r11, r11
-	je 234f
+	je 226f
 	vmovdqu64 ymm31, YMMWORD PTR [r10]
 	vpternlogq ymm0, ymm5, ymm31, 216
 	vmovdqu64 ymm31, YMMWORD PTR [r10]
@@ -7878,16 +7834,16 @@ vg_ecdsa_p256_verify_ifma:
 	vmovdqu64 YMMWORD PTR [rdi+5120], ymm2
 	vmovdqu64 YMMWORD PTR [rdi+5152], ymm3
 	vmovdqu64 YMMWORD PTR [rdi+5184], ymm4
-	jmp 235f
-234:
-235:
+	jmp 227f
+226:
+227:
 	mov rbx, r11
 	vzeroupper
 	lfence
 	mov DWORD PTR [rdi+5864], r12d
 	ldmxcsr DWORD PTR [rdi+5864]
 	test rbx, rbx
-	je 236f
+	je 228f
 	mov r8, QWORD PTR [rdi+5080]
 	mov rax, QWORD PTR [rdi+5112]
 	mov r9, rax
@@ -8002,18 +7958,18 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+584], r9
 	mov QWORD PTR [rdi+592], r10
 	mov QWORD PTR [rdi+600], r11
-	jmp 237f
-236:
-237:
+	jmp 229f
+228:
+229:
 	mov rdx, QWORD PTR [rdi+576]
 	or rdx, QWORD PTR [rdi+584]
 	or rdx, QWORD PTR [rdi+592]
 	or rdx, QWORD PTR [rdi+600]
 	test rdx, rdx
-	je 238f
+	je 230f
 	mov ebx, 0
-	jmp 239f
-238:
+	jmp 231f
+230:
 	mov rax, QWORD PTR [rdi+1280]
 	mov QWORD PTR [rdi+2752], rax
 	mov rax, QWORD PTR [rdi+1288]
@@ -9047,7 +9003,7 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+584], r9
 	mov QWORD PTR [rdi+592], r10
 	mov QWORD PTR [rdi+600], r11
-240:
+232:
 	mov r8, QWORD PTR [rdi+704]
 	mov r9, QWORD PTR [rdi+712]
 	mov r10, QWORD PTR [rdi+720]
@@ -10042,7 +9998,7 @@ vg_ecdsa_p256_verify_ifma:
 	movdqu XMMWORD PTR [rdx+80], xmm5
 	add rbx, 1
 	cmp rbx, 8
-	jb 240b
+	jb 232b
 	mov rax, QWORD PTR [rdi+704]
 	mov QWORD PTR [rdi+3520], rax
 	mov rax, QWORD PTR [rdi+712]
@@ -10068,7 +10024,7 @@ vg_ecdsa_p256_verify_ifma:
 	mov rax, QWORD PTR [rdi+600]
 	mov QWORD PTR [rdi+3608], rax
 	mov ebx, 0
-241:
+233:
 	mov rax, rbx
 	mov ecx, 96
 	mul rcx
@@ -10329,7 +10285,7 @@ vg_ecdsa_p256_verify_ifma:
 	movdqu XMMWORD PTR [rdx+48], xmm3
 	add rbx, 1
 	cmp rbx, 8
-	jb 241b
+	jb 233b
 	movabs rax, 0
 	mov QWORD PTR [rdi+512], rax
 	movabs rax, 0
@@ -10357,9 +10313,9 @@ vg_ecdsa_p256_verify_ifma:
 	mov ebx, 256
 	movzx r8d, BYTE PTR [rdi+rbx*1+2400]
 	test r8, r8
-	je 242f
+	je 234f
 	cmp r8, 128
-	jb 244f
+	jb 236f
 	mov eax, 256
 	sub rax, r8
 	mov r8, rax
@@ -10417,8 +10373,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+744], r9
 	mov QWORD PTR [rdi+752], r10
 	mov QWORD PTR [rdi+760], r11
-	jmp 245f
-244:
+	jmp 237f
+236:
 	mov rax, r8
 	sub rax, 1
 	shr rax, 1
@@ -10453,19 +10409,19 @@ vg_ecdsa_p256_verify_ifma:
 	movdqu XMMWORD PTR [rdi+5088], xmm2
 	movdqu xmm3, XMMWORD PTR [rdx+48]
 	movdqu XMMWORD PTR [rdi+5104], xmm3
-245:
+237:
 	mov rdx, QWORD PTR [rdi+576]
 	or rdx, QWORD PTR [rdi+584]
 	or rdx, QWORD PTR [rdi+592]
 	or rdx, QWORD PTR [rdi+600]
 	test rdx, rdx
-	je 246f
+	je 238f
 	mov rdx, QWORD PTR [rdi+768]
 	or rdx, QWORD PTR [rdi+776]
 	or rdx, QWORD PTR [rdi+784]
 	or rdx, QWORD PTR [rdi+792]
 	test rdx, rdx
-	je 248f
+	je 240f
 	mov rdx, QWORD PTR [rdi+576]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+584]
@@ -11233,7 +11189,7 @@ vg_ecdsa_p256_verify_ifma:
 	or rdx, QWORD PTR [rdi+912]
 	or rdx, QWORD PTR [rdi+920]
 	test rdx, rdx
-	je 250f
+	je 242f
 	mov rdx, QWORD PTR [rdi+896]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+904]
@@ -12290,14 +12246,14 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+680], r13
 	mov QWORD PTR [rdi+688], r14
 	mov QWORD PTR [rdi+696], r15
-	jmp 251f
-250:
+	jmp 243f
+242:
 	mov rdx, QWORD PTR [rdi+960]
 	or rdx, QWORD PTR [rdi+968]
 	or rdx, QWORD PTR [rdi+976]
 	or rdx, QWORD PTR [rdi+984]
 	test rdx, rdx
-	je 252f
+	je 244f
 	movabs rax, 0
 	mov QWORD PTR [rdi+608], rax
 	movabs rax, 0
@@ -12322,8 +12278,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+696], rax
-	jmp 253f
-252:
+	jmp 245f
+244:
 	mov rdx, QWORD PTR [rdi+576]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+584]
@@ -13549,10 +13505,10 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+648], r9
 	mov QWORD PTR [rdi+656], r10
 	mov QWORD PTR [rdi+664], r11
-253:
-251:
-	jmp 249f
-248:
+245:
+243:
+	jmp 241f
+240:
 	mov rax, QWORD PTR [rdi+512]
 	mov QWORD PTR [rdi+608], rax
 	mov rax, QWORD PTR [rdi+520]
@@ -13577,9 +13533,9 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	mov rax, QWORD PTR [rdi+600]
 	mov QWORD PTR [rdi+696], rax
-249:
-	jmp 247f
-246:
+241:
+	jmp 239f
+238:
 	mov rax, QWORD PTR [rdi+704]
 	mov QWORD PTR [rdi+608], rax
 	mov rax, QWORD PTR [rdi+712]
@@ -13604,7 +13560,7 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	mov rax, QWORD PTR [rdi+792]
 	mov QWORD PTR [rdi+696], rax
-247:
+239:
 	mov rax, QWORD PTR [rdi+608]
 	mov QWORD PTR [rdi+512], rax
 	mov rax, QWORD PTR [rdi+616]
@@ -13629,14 +13585,14 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+592], rax
 	mov rax, QWORD PTR [rdi+696]
 	mov QWORD PTR [rdi+600], rax
-	jmp 243f
-242:
-243:
+	jmp 235f
+234:
+235:
 	movzx r8d, WORD PTR [rdi+rbx*2+5344]
 	test r8, r8
-	je 254f
+	je 246f
 	cmp r8, 256
-	jb 256f
+	jb 248f
 	mov eax, 65536
 	sub rax, r8
 	mov r8, rax
@@ -13681,8 +13637,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+744], r9
 	mov QWORD PTR [rdi+752], r10
 	mov QWORD PTR [rdi+760], r11
-	jmp 257f
-256:
+	jmp 249f
+248:
 	mov rax, r8
 	sub rax, 1
 	shl rax, 6
@@ -13704,13 +13660,13 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+784], rax
 	movabs rax, 4294967294
 	mov QWORD PTR [rdi+792], rax
-257:
+249:
 	mov rdx, QWORD PTR [rdi+576]
 	or rdx, QWORD PTR [rdi+584]
 	or rdx, QWORD PTR [rdi+592]
 	or rdx, QWORD PTR [rdi+600]
 	test rdx, rdx
-	je 258f
+	je 250f
 	mov rax, QWORD PTR [rdi+512]
 	mov QWORD PTR [rdi+864], rax
 	mov rax, QWORD PTR [rdi+520]
@@ -14250,7 +14206,7 @@ vg_ecdsa_p256_verify_ifma:
 	or rdx, QWORD PTR [rdi+912]
 	or rdx, QWORD PTR [rdi+920]
 	test rdx, rdx
-	je 260f
+	je 252f
 	mov rdx, QWORD PTR [rdi+896]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+904]
@@ -15185,14 +15141,14 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+680], r13
 	mov QWORD PTR [rdi+688], r14
 	mov QWORD PTR [rdi+696], r15
-	jmp 261f
-260:
+	jmp 253f
+252:
 	mov rdx, QWORD PTR [rdi+960]
 	or rdx, QWORD PTR [rdi+968]
 	or rdx, QWORD PTR [rdi+976]
 	or rdx, QWORD PTR [rdi+984]
 	test rdx, rdx
-	je 262f
+	je 254f
 	movabs rax, 0
 	mov QWORD PTR [rdi+608], rax
 	movabs rax, 0
@@ -15217,8 +15173,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+696], rax
-	jmp 263f
-262:
+	jmp 255f
+254:
 	mov rdx, QWORD PTR [rdi+576]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+584]
@@ -16444,10 +16400,10 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+648], r9
 	mov QWORD PTR [rdi+656], r10
 	mov QWORD PTR [rdi+664], r11
-263:
-261:
-	jmp 259f
-258:
+255:
+253:
+	jmp 251f
+250:
 	mov rax, QWORD PTR [rdi+704]
 	mov QWORD PTR [rdi+608], rax
 	mov rax, QWORD PTR [rdi+712]
@@ -16472,7 +16428,7 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	mov rax, QWORD PTR [rdi+792]
 	mov QWORD PTR [rdi+696], rax
-259:
+251:
 	mov rax, QWORD PTR [rdi+608]
 	mov QWORD PTR [rdi+512], rax
 	mov rax, QWORD PTR [rdi+616]
@@ -16497,10 +16453,10 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+592], rax
 	mov rax, QWORD PTR [rdi+696]
 	mov QWORD PTR [rdi+600], rax
-	jmp 255f
-254:
-255:
-264:
+	jmp 247f
+246:
+247:
+256:
 	sub rbx, 1
 	mov r8, QWORD PTR [rdi+544]
 	mov r9, QWORD PTR [rdi+552]
@@ -17693,9 +17649,9 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+568], r11
 	movzx r8d, BYTE PTR [rdi+rbx*1+2400]
 	test r8, r8
-	je 265f
+	je 257f
 	cmp r8, 128
-	jb 267f
+	jb 259f
 	mov eax, 256
 	sub rax, r8
 	mov r8, rax
@@ -17753,8 +17709,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+744], r9
 	mov QWORD PTR [rdi+752], r10
 	mov QWORD PTR [rdi+760], r11
-	jmp 268f
-267:
+	jmp 260f
+259:
 	mov rax, r8
 	sub rax, 1
 	shr rax, 1
@@ -17789,19 +17745,19 @@ vg_ecdsa_p256_verify_ifma:
 	movdqu XMMWORD PTR [rdi+5088], xmm2
 	movdqu xmm3, XMMWORD PTR [rdx+48]
 	movdqu XMMWORD PTR [rdi+5104], xmm3
-268:
+260:
 	mov rdx, QWORD PTR [rdi+576]
 	or rdx, QWORD PTR [rdi+584]
 	or rdx, QWORD PTR [rdi+592]
 	or rdx, QWORD PTR [rdi+600]
 	test rdx, rdx
-	je 269f
+	je 261f
 	mov rdx, QWORD PTR [rdi+768]
 	or rdx, QWORD PTR [rdi+776]
 	or rdx, QWORD PTR [rdi+784]
 	or rdx, QWORD PTR [rdi+792]
 	test rdx, rdx
-	je 271f
+	je 263f
 	mov rdx, QWORD PTR [rdi+576]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+584]
@@ -18569,7 +18525,7 @@ vg_ecdsa_p256_verify_ifma:
 	or rdx, QWORD PTR [rdi+912]
 	or rdx, QWORD PTR [rdi+920]
 	test rdx, rdx
-	je 273f
+	je 265f
 	mov rdx, QWORD PTR [rdi+896]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+904]
@@ -19626,14 +19582,14 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+680], r13
 	mov QWORD PTR [rdi+688], r14
 	mov QWORD PTR [rdi+696], r15
-	jmp 274f
-273:
+	jmp 266f
+265:
 	mov rdx, QWORD PTR [rdi+960]
 	or rdx, QWORD PTR [rdi+968]
 	or rdx, QWORD PTR [rdi+976]
 	or rdx, QWORD PTR [rdi+984]
 	test rdx, rdx
-	je 275f
+	je 267f
 	movabs rax, 0
 	mov QWORD PTR [rdi+608], rax
 	movabs rax, 0
@@ -19658,8 +19614,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+696], rax
-	jmp 276f
-275:
+	jmp 268f
+267:
 	mov rdx, QWORD PTR [rdi+576]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+584]
@@ -20885,10 +20841,10 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+648], r9
 	mov QWORD PTR [rdi+656], r10
 	mov QWORD PTR [rdi+664], r11
-276:
-274:
-	jmp 272f
-271:
+268:
+266:
+	jmp 264f
+263:
 	mov rax, QWORD PTR [rdi+512]
 	mov QWORD PTR [rdi+608], rax
 	mov rax, QWORD PTR [rdi+520]
@@ -20913,9 +20869,9 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	mov rax, QWORD PTR [rdi+600]
 	mov QWORD PTR [rdi+696], rax
-272:
-	jmp 270f
-269:
+264:
+	jmp 262f
+261:
 	mov rax, QWORD PTR [rdi+704]
 	mov QWORD PTR [rdi+608], rax
 	mov rax, QWORD PTR [rdi+712]
@@ -20940,7 +20896,7 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	mov rax, QWORD PTR [rdi+792]
 	mov QWORD PTR [rdi+696], rax
-270:
+262:
 	mov rax, QWORD PTR [rdi+608]
 	mov QWORD PTR [rdi+512], rax
 	mov rax, QWORD PTR [rdi+616]
@@ -20965,14 +20921,14 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+592], rax
 	mov rax, QWORD PTR [rdi+696]
 	mov QWORD PTR [rdi+600], rax
-	jmp 266f
-265:
-266:
+	jmp 258f
+257:
+258:
 	movzx r8d, WORD PTR [rdi+rbx*2+5344]
 	test r8, r8
-	je 277f
+	je 269f
 	cmp r8, 256
-	jb 279f
+	jb 271f
 	mov eax, 65536
 	sub rax, r8
 	mov r8, rax
@@ -21017,8 +20973,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+744], r9
 	mov QWORD PTR [rdi+752], r10
 	mov QWORD PTR [rdi+760], r11
-	jmp 280f
-279:
+	jmp 272f
+271:
 	mov rax, r8
 	sub rax, 1
 	shl rax, 6
@@ -21040,13 +20996,13 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+784], rax
 	movabs rax, 4294967294
 	mov QWORD PTR [rdi+792], rax
-280:
+272:
 	mov rdx, QWORD PTR [rdi+576]
 	or rdx, QWORD PTR [rdi+584]
 	or rdx, QWORD PTR [rdi+592]
 	or rdx, QWORD PTR [rdi+600]
 	test rdx, rdx
-	je 281f
+	je 273f
 	mov rax, QWORD PTR [rdi+512]
 	mov QWORD PTR [rdi+864], rax
 	mov rax, QWORD PTR [rdi+520]
@@ -21586,7 +21542,7 @@ vg_ecdsa_p256_verify_ifma:
 	or rdx, QWORD PTR [rdi+912]
 	or rdx, QWORD PTR [rdi+920]
 	test rdx, rdx
-	je 283f
+	je 275f
 	mov rdx, QWORD PTR [rdi+896]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+904]
@@ -22521,14 +22477,14 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+680], r13
 	mov QWORD PTR [rdi+688], r14
 	mov QWORD PTR [rdi+696], r15
-	jmp 284f
-283:
+	jmp 276f
+275:
 	mov rdx, QWORD PTR [rdi+960]
 	or rdx, QWORD PTR [rdi+968]
 	or rdx, QWORD PTR [rdi+976]
 	or rdx, QWORD PTR [rdi+984]
 	test rdx, rdx
-	je 285f
+	je 277f
 	movabs rax, 0
 	mov QWORD PTR [rdi+608], rax
 	movabs rax, 0
@@ -22553,8 +22509,8 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+696], rax
-	jmp 286f
-285:
+	jmp 278f
+277:
 	mov rdx, QWORD PTR [rdi+576]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+584]
@@ -23780,10 +23736,10 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+648], r9
 	mov QWORD PTR [rdi+656], r10
 	mov QWORD PTR [rdi+664], r11
-286:
-284:
-	jmp 282f
-281:
+278:
+276:
+	jmp 274f
+273:
 	mov rax, QWORD PTR [rdi+704]
 	mov QWORD PTR [rdi+608], rax
 	mov rax, QWORD PTR [rdi+712]
@@ -23808,7 +23764,7 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+688], rax
 	mov rax, QWORD PTR [rdi+792]
 	mov QWORD PTR [rdi+696], rax
-282:
+274:
 	mov rax, QWORD PTR [rdi+608]
 	mov QWORD PTR [rdi+512], rax
 	mov rax, QWORD PTR [rdi+616]
@@ -23833,12 +23789,12 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+592], rax
 	mov rax, QWORD PTR [rdi+696]
 	mov QWORD PTR [rdi+600], rax
-	jmp 278f
-277:
-278:
+	jmp 270f
+269:
+270:
 	test rbx, rbx
-	jne 264b
-239:
+	jne 256b
+231:
 	mov rdx, QWORD PTR [rdi+576]
 	xor ebp, ebp
 	mulx r10, r9, QWORD PTR [rdi+584]

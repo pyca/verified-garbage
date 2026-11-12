@@ -226,12 +226,15 @@ def divWA (a d : Nat) : List (Prog isa) :=
 /-- `[aVQ] := [y] [x] mod 2^(64 w)`. -/
 def mulQ (y x : Nat) : List (Prog isa) := [copy aVQ aZ, RecoverDet.mulLow aVQ y x]
 
+/-- `[aVQ] := [y] [x]`, for `[y]` and `[x]` of `w / 2` words. -/
+def mulQH (y x : Nat) : List (Prog isa) := [copy aVQ aZ, RecoverDet.mulHalf aVQ y x]
+
 /-- `[y] [x] mod [d]`, by words, compared with 1. -/
 def mulModOne (y x d : Nat) : List (Prog isa) := mulQ y x ++ divWA aVQ d ++ eqA aVR aOne
 
 /-- The checks of `vg_rsa_check_crt_key`, by words. -/
 def crtChecksW : List (Prog isa) :=
-  mulQ aP aQ ++ eqA aVQ aN ++ ltA aQI aP ++ mulModOne aQ aQI aP ++
+  mulQH aP aQ ++ eqA aVQ aN ++ ltA aQI aP ++ mulModOne aQ aQI aP ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
   ltA aDP aM1 ++ mulModOne aE aDP aM1 ++ ltA aDQ aM2 ++ mulModOne aE aDQ aM2
 

@@ -27,7 +27,11 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
   by batches of divsteps), which exists if the gcd it computes is 1, on
   numbers of the primes' digits of 32 bits `⌈max(p_len, q_len) / 4⌉` (`s8`,
   computed without a branch), in arrays 0–14, which hold nothing the rest
-  needs by then.
+  needs by then. For a balanced key (`shape`), the inverse leaves out its
+  `6 (n + 1)` doublings modulo `p | 1` (`InvBatch.inverseS`), and `tail`
+  multiplies it by `2^(6 (w + 1))` modulo `p | 1` by one shift and one
+  division by words (`WordDiv.divW`) instead; `qInv` is written last, after
+  the registers `divW` writes are restored.
 * `dP` and `dQ` are the remainders of `d` divided by `p` and by `q` with
   their low bits cleared: `p - 1` and `q - 1` for odd primes, which `p q = n`
   makes them; the divisions pass over `⌈p_len / 8⌉` and `⌈q_len / 8⌉` words.
@@ -109,11 +113,21 @@ def loads : Prog isa := seqs [load aDQ .s1 .s2, load aP .s3 .s4, load aQ .s5 .s6
 def divChecks : Prog isa := seqs [
   copy aDD aP, .block (bitOf sPodd aP), divL aDQ aDR aDD .s4, eqS sE1 aDQ aQ, eqS sE2 aDR aZero]
 
+/-- `t0 := 0` exactly for a balanced key: `p_len` (`s4`) a multiple of 8 and
+at least 32, equal to `q_len` (`s6`) and to `4 w` (`s9`). -/
+def shape : List Instr :=
+  [.logicImm .and .t0 .s4 7, .shift .sll .d .t1 .s9 2, .logic .xor .t1 .t1 .s4, .logic .or .t0 .t0 .t1,
+    .logic .xor .t1 .s4 .s6, .logic .or .t0 .t0 .t1, .li .t1 32, .sltu .t1 .s4 .t1, .logic .or .t0 .t0 .t1]
+
+/-- `[aDR] := p q mod 2^(64 w)`: over the primes' `w / 2` words for a balanced key (`shape`). -/
+def pqProduct : Prog isa :=
+  .seq (.block shape) (.ite (.zero .t0) (RecoverDet.mulHalf aDR aP aQ) (RecoverDet.mulLow aDR aP aQ))
+
 /-- `p` odd, and `p q mod 2^(64 w) = n` into `sE1` (`sE2` := 1, as `0 = 0`), for
 `p q < 2^(64 w)`; `a2`, `a3`, `a6` kept in `s0`, `s7`, `a5` around the product. -/
 def mulChecks : Prog isa := seqs [
   .block (bitOf sPodd aP), .block [mov .s0 .a2, mov .s7 .a3, mov .a5 .a6],
-  RecoverDet.mulLow aDR aP aQ,
+  pqProduct,
   .block [mov .a2 .s0, mov .a3 .s7, mov .a6 .a5],
   eqS sE1 aDR aDQ, eqS sE2 aZero aZero]
 
@@ -130,42 +144,17 @@ def nCalc : List Instr :=
   [.sltu .t6 .s4 .s6, .li .t5 0, .sub .t6 .t5 .t6, .sub .t5 .s4 .s6, .logic .and .t5 .t5 .t6,
     .sub .t5 .s4 .t5, .addi .t5 .t5 3, .shift .srl .d .s8 .t5 2]
 
-/-- The inverse's start: `x = q`, `m = p | 1`, the primes' digits in `s8`, and
-`[aOne] = 1`. -/
-def invSetup : List (Prog isa) :=
-  [copy InvBatch.aX aQ, copy InvBatch.aMin aP, .block (orOne InvBatch.aMin ++ nCalc), InvBatch.zeroW aOne,
-    .block (setOne aOne)]
-
-/-- The mask `0 - [sMask]` into `t4`. -/
-def mask : List Instr := [.load .d .t4 .s11 sMask, .li .t5 0, .sub .t4 .t5 .t4]
-
-/-- `qInv`, the gcd's check, the checks' mask and `qInv` written under it. -/
-def invPart : Prog isa := seqs (invSetup ++ [
-  InvBatch.inverse, eqS sE3 1 aOne,
-  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3 ++ mask),
-  storeBytes 3 .a6 .s4])
-
-/-- `d` divided by `p - 1` and by `q - 1`. -/
-def dParts : Prog isa := seqs [
-  copy aDQ aD, copy aDD aP, .block (clrLow aDD), divL aDQ aDR2 aDD .s4,
-  copy aDQ aD, copy aDD aQ, .block (clrLow aDD), divL aDQ aDR3 aDD .s6]
-
-/-! ### A balanced key, by words
+/-! ### A balanced key
 
 When `p_len` (`s4`) and `q_len` (`s6`) are equal, a multiple of 8, at least
-32, and four times `w` (`s9`), `p - 1` and `q - 1` are numbers of `v = w / 2`
-words, and the remainders are by words (`WordDiv.divW`), exact for a divisor
-whose top word is not zero, as `p - 1` and `q - 1` are when `p q = n`, which
-the mask requires. The registers `divW` writes that the rest reads are kept
-in `aDQ`, which this path does not use otherwise. -/
+32, and four times `w` (`s9`), `p`, `q`, `p - 1` and `q - 1` are numbers of
+`v = w / 2` words, and the inverse's scaling and the remainders of `d` are by
+words (`WordDiv.divW`), exact for a divisor whose top word is not zero, as
+those numbers' are when `p q = n`, which the mask requires. The registers
+`divW` writes that the rest reads are kept in `aDQ`, which these parts do not
+use otherwise. -/
 
-/-- `t0 := 0` exactly for a balanced key: `p_len` (`s4`) a multiple of 8 and
-at least 32, equal to `q_len` (`s6`) and to `4 w` (`s9`). -/
-def shape : List Instr :=
-  [.logicImm .and .t0 .s4 7, .shift .sll .d .t1 .s9 2, .logic .xor .t1 .t1 .s4, .logic .or .t0 .t0 .t1,
-    .logic .xor .t1 .s4 .s6, .logic .or .t0 .t0 .t1, .li .t1 32, .sltu .t1 .s4 .t1, .logic .or .t0 .t0 .t1]
-
-/-- The registers kept in `aDQ` around the divisions by words. -/
+/-- The registers kept in `aDQ` around the work by words. -/
 def kept : List Reg := [.s1, .s2, .s3, .s4, .a0, .a1, .a2, .a3, .a6]
 
 /-- `kept` into `aDQ`'s first words. -/
@@ -177,6 +166,63 @@ def saveK : List Instr :=
 def restoreK : List Instr :=
   ptr .t0 aDQ ++ [.load .d .s1 .t0 0, .load .d .s2 .t0 8, .load .d .s3 .t0 16, .load .d .s4 .t0 24,
     .load .d .a0 .t0 32, .load .d .a1 .t0 40, .load .d .a2 .t0 48, .load .d .a3 .t0 56, .load .d .a6 .t0 64]
+
+/-- The inverse's divisor and `divW`'s temporary in the tail: arrays of the
+inverse that it no longer needs. -/
+def aTD : Nat := InvBatch.aF
+def aTT : Nat := InvBatch.aG
+
+/-- For `K = 6 (w + 1) = 64 Q + T` (`0 < T < 64` for `w` even): `t2 := T`,
+`t6 := 64 - T`, `t1 :=` the address of word `Q` of `aDR`, `t0 :=` `y`'s
+(array 3), `a4 := 0` and `t3 := v + 1`. -/
+def tailSetup : List Instr :=
+  ptr .t0 InvBatch.aY ++ ptr .t1 aDR ++
+  [.add .t5 .s9 .s9, .add .t5 .t5 .s9, .add .t5 .t5 .t5, .addi .t5 .t5 6, .logicImm .and .t2 .t5 63,
+    .shift .srl .d .t5 .t5 6, .shift .sll .d .t5 .t5 3, .add .t1 .t1 .t5, .li .t6 64, .sub .t6 .t6 .t2,
+    .li .a4 0, .shift .srl .d .t3 .s9 1, .addi .t3 .t3 1]
+
+/-- One word of the shift by `T` (`t2`, and `64 - T` in `t6`): the word at
+`t0` shifted left, with the carry `a4` in, to `t1`; its top bits the carry out. -/
+def shlTBody : List Instr :=
+  [.load .d .t5 .t0 0, .shiftReg .sll .d .t4 .t5 .t2, .logic .or .t4 .t4 .a4, .store .d .t4 .t1 0,
+    .shiftReg .srl .d .a4 .t5 .t6, .addi .t0 .t0 8, .addi .t1 .t1 8]
+
+/-- `y := y 2^K mod m`, for `y < m` of `v` words in array 3: `y 2^K`, `y`'s
+`v + 1` words shifted by `T` into the zeroed `aDR` at word `Q`, divided by
+`m` (array 8, copied to `aTD` with its top word made not zero) into the
+zeroed array 3. -/
+def tail : Prog isa := seqs [InvBatch.zeroW aDR, .block tailSetup, countLoop .t3 shlTBody,
+  InvBatch.zeroW InvBatch.aY, copy aTD InvBatch.aMin, .block (WordDiv.fixTop aTD),
+  WordDiv.divW aDR InvBatch.aY aTD aTT]
+
+/-- The inverse: for a balanced key (`shape`) without its doublings, then
+`tail`, around which the registers are kept; else as it is. -/
+def invG : Prog isa := .seq (.block shape)
+  (.ite (.zero .t0) (seqs [InvBatch.inverseS, .block saveK, tail, .block restoreK]) InvBatch.inverse)
+
+/-- The inverse's start: `x = q`, `m = p | 1`, the primes' digits in `s8`, and
+`[aOne] = 1`. -/
+def invSetup : List (Prog isa) :=
+  [copy InvBatch.aX aQ, copy InvBatch.aMin aP, .block (orOne InvBatch.aMin ++ nCalc), InvBatch.zeroW aOne,
+    .block (setOne aOne)]
+
+/-- The mask `0 - [sMask]` into `t4`. -/
+def mask : List Instr := [.load .d .t4 .s11 sMask, .li .t5 0, .sub .t4 .t5 .t4]
+
+/-- `qInv`, the gcd's check and the checks' mask. -/
+def invPart : Prog isa := seqs (invSetup ++ [
+  invG, eqS sE3 1 aOne,
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3 ++ mask)])
+
+/-- `qInv` written under the mask. -/
+def storeQ : Prog isa := storeBytes 3 .a6 .s4
+
+/-- `d` divided by `p - 1` and by `q - 1`. -/
+def dParts : Prog isa := seqs [
+  copy aDQ aD, copy aDD aP, .block (clrLow aDD), divL aDQ aDR2 aDD .s4,
+  copy aDQ aD, copy aDD aQ, .block (clrLow aDD), divL aDQ aDR3 aDD .s6]
+
+/-! ### The divisions of `d` by words, for a balanced key (`shape`) -/
 
 /-- `d` divided by `[a]` with its low bit cleared, by words, into `[r]`: `[r]`
 zeroed, `[a]` copied to `aDD`, its low bit cleared and its top word made not
@@ -192,7 +238,7 @@ def dPartsAll : Prog isa := .seq (.block shape) (.ite (.zero .t0) dPartsW dParts
 
 /-- The set-up, the loads, the checks and the inverse: what comes before the
 divisions of `d`. -/
-def front : Prog isa := seqs [setup, loads, checks, invPart]
+def front : Prog isa := .seq (seqs [setup, loads, checks, invPart]) storeQ
 
 /-- `dP` and `dQ` written out under the mask, and the mask's bit returned. -/
 def stores : Prog isa := seqs [

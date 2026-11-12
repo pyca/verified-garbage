@@ -1140,6 +1140,73 @@ theorem inverse_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) 
   rw [g5, y5, pm, ce, gf]
   exact ⟨Nat.gcd_comm _ _, gd, gl⟩
 
+theorem inverseS_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
+    (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n))
+    (hodd : m % 2 = 1) :
+    WP isa inverseS s fun t => Ws t B Z w N ∧ Keys.Frame B w invArrs [] s.mem t.mem ∧ Keep invRegs s t ∧
+      (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
+        (m : Int) ∣ (Divstep.doubled m (num t.mem B w 3) (6 * (n + 1)) : Int) * x - num t.mem B w 1 ∧
+        num t.mem B w 3 < m) := by
+  have := h.ws.wle
+  have := h.nw
+  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
+  have room := h.room
+  obtain ⟨hx', hm'⟩ := inputs h hx hxn hm hmn
+  have p1 : 1 < vmod m := by unfold vmod; split <;> omega
+  have po : vmod m % 2 = 1 := by unfold vmod; split <;> omega
+  have pA : vmod m < 2 ^ (32 * n) := by
+    unfold vmod; split
+    · have : 2 ^ 32 ≤ 2 ^ (32 * n) := Nat.pow_le_pow_right (by decide) (by have := h.npos; omega)
+      omega
+    · exact hmn
+  have hk1 : 4 * (n + 1) ≤ S w := by simp only [S]; omega
+  have nF : aF < N := by unfold aF; omega
+  have nA : aA < N := by unfold aA; omega
+  have nM : aMz < N := by unfold aMz; omega
+  simp only [inverseS, seqs]
+  rw [WP.seq_iff]
+  refine WP.mono (init_ok h hN hx' hxn hm' hmn hodd) fun t0 ⟨h0, r0, ⟨iv, hiv, st0⟩, K0, k0⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (loop_ok hN h0 r0 st0 po p1 hiv pA hxn) fun t1 ⟨h1, _, st1, K1, k1⟩ => ?_
+  generalize hst : Divstep.W32.invRun 30 (vmod m) iv (oddInput (vmod m) x) (3 * (n + 1)) = st at st1
+  have ox : oddInput (vmod m) x ≤ vmod m + x := by
+    unfold oddInput; generalize vmod m = P; split <;> omega
+  obtain ⟨-, -, -, -, a0, a1, -, -⟩ := VG.Proof.Rsa.Divstep.invRun_bounds (cap := vmod m + x) po p1 hiv
+    (by omega) ox (3 * (n + 1))
+  rw [hst] at a0 a1
+  have ea : val32 t1.mem B (arr w aA) (n + 1) = st.a.toNat := by have := st1.a; omega
+  rw [WP.seq_iff]
+  refine WP.mono (normalize_ok h1 hN st1.p ea (by omega)) fun t2 ⟨h2, K2, v2, k2⟩ => ?_
+  rw [st1.f] at v2
+  have res := VG.Proof.Rsa.Divstep.invRun_result' (iv := iv) po p1 hiv pA hxn
+  simp only at res
+  rw [hst] at res
+  obtain ⟨gf, gd, gl⟩ := res
+  have hf3 : sv t2.mem B (arr w aF) n = st.f := by
+    rw [keep_sv K2 hk1 (by decide) (by simp) (fit _ nF), st1.f]
+  have gle : Nat.gcd (vmod m) x ≤ vmod m := Nat.le_of_dvd (by omega) (Nat.gcd_dvd_left _ _)
+  have ce := VG.Proof.Rsa.Divstep.correction_eq' (p := vmod m) (st := st) (n := n) (a := st.a.toNat) (by omega) (by omega)
+  have hfr : st.f.natAbs < 2 ^ (32 * n) := by rw [gf]; omega
+  have nr := Divstep.normal_range (p := vmod m) (a := st.a.toNat) st.f (by omega) (by omega)
+  have hyr : Divstep.normal (vmod m) st.a.toNat st.f < 2 ^ (32 * n) := by omega
+  rw [finish, WP.seq_iff]
+  refine WP.mono (finishG_ok h2 hN hf3 hfr) fun t4 ⟨h4, K4, g4, k4⟩ => ?_
+  refine WP.mono (finishY_ok h4 hN (by rw [keep_val K4 hk1 (by decide) (by simp) (fit _ nA)]; exact v2) hyr)
+    fun t5 ⟨h5, K5, y5, k5⟩ => ?_
+  refine ⟨h5.ws, ((K0.mono (by decide)).trans ((K1.mono (by decide)).trans ((K2.mono (by decide)).trans
+    ((K4.mono (by decide)).trans (K5.mono (by decide)))))),
+    Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' k0 k1) (k2.mono (by decide)))
+      (k4.mono (by decide))) (k5.mono (by decide)), fun hm1 => ?_⟩
+  have pm : vmod m = m := by unfold vmod; split <;> omega
+  rw [pm] at gf gd gl ce
+  have g5 : num t5.mem B w 1 = st.f.natAbs := by
+    rw [show (1 : Nat) = aGcd from rfl, ← g4]; exact Keys.Frame.num K5 (by decide) (by simp) (fit _ (by unfold aGcd; omega))
+  rw [show aY = 3 from rfl] at y5
+  rw [g5, y5]
+  rw [pm] at nr ⊢
+  rw [ce, gf]
+  exact ⟨Nat.gcd_comm _ _, gd, nr⟩
+
 theorem gcd_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
     (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m) (hmn : m < 2 ^ (32 * n))
     (hodd : m % 2 = 1) :

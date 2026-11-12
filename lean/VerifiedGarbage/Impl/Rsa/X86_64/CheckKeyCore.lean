@@ -139,6 +139,15 @@ def mulXR : List (Prog isa) :=
     .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aAcc)))],
   Crt.mulRows]
 
+/-- `acc := [aX] [aR]` for `[aX] < 256^p_len` and `[aR] < 256^q_len` (`2 w + 2` words):
+`⌈p_len / 8⌉` rows of `⌈q_len / 8⌉` words. -/
+def mulPQ : List (Prog isa) :=
+  Crt.zeroAccs ++ [
+  .block [.mov .r11 (.mem (hdr (sArr aX))), .mov .r10 (.mem (hdr sPlen)), .alu .add .r10 (.imm 7),
+    .shift .shr .r10 3, .mov .r9 (.mem (hdr (sArr aR))), .mov .r12 (.mem (hdr sQlen)), .alu .add .r12 (.imm 7),
+    .shift .shr .r12 3, .mov .r8 (.mem (hdr (sArr aAcc)))],
+  Crt.mulRows]
+
 /-- Select the reduced or unreduced remainder with a conditional move.
 Both sources have fixed addresses; the borrow mask is never branched on. -/
 def selectRem : Prog isa :=
