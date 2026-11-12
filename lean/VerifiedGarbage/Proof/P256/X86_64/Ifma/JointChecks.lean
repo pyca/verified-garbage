@@ -64,18 +64,8 @@ theorem joint_ifma_fixed_checks : JointFixedChecks publicJointIfma :=
   ⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ _ _ h => h) (by taint_decide),
     joint_adx_fixed_checks.entry, joint_adx_fixed_checks.add, joint_adx_fixed_checks.copy⟩
 
-theorem fastGeneratorIfma_checks : FastPrepChecks16 4 (p256x.sl U) 5344 := by
-  constructor
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs (nafPrepPublicN 4)) (fun _ _ _ _ h => h) (by taint_decide)
-
-/-- The checks of the scalars' recoders without branches on their bits. -/
-theorem fastGeneratorIfmaB_checks : FastPrepChecksB16 4 (p256x.sl U) 5344 := by
-  constructor
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs (nafPrepPublicN 4)) (fun _ _ _ _ h => h) (by taint_decide)
-
-theorem fastPeerIfmaB_checks : FastPrepChecksB 4 (p256x.sl V) p256x.winBits := by
+/-- The checks of the generator's recoder, without branches on the scalar's bits. -/
+theorem fastGeneratorIfma_checks : FastPrepChecksB16 4 (p256x.sl U) 5344 := by
   constructor
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs (nafPrepPublicN 4)) (fun _ _ _ _ h => h) (by taint_decide)

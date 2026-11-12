@@ -119,11 +119,11 @@ theorem ifmaPoints_ok {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre p256vx
   have sv4 (i : Nat) : wordsVal s.mem (s₀.gpr .rcx) (p256vx.sl i) publicJointIfma.K.M.n =
       sv p256vx (s₀.gpr .rcx) s i := rfl
   have hTs := ifma_gtab hp h
-  show WP isa (.seq (Joint.prepB publicJointIfma (p256vx.sl U) (p256vx.sl V)).inline
+  show WP isa (.seq (Joint.prep publicJointIfma (p256vx.sl U) (p256vx.sl V)).inline
     (vwindow publicJointIfma (jointDouble publicJointIfma.K)).inline) s _
-  rw [jointPrepB_inline]
+  rw [jointPrep_inline]
   apply WP.seq
-  refine WP.mono (jointMulPrepB_ok rfl joint_ifma_prep_layout joint_ifma_init_layout.naf.lay field point
+  refine WP.mono (jointMulPrep_ok joint_ifma_prep_layout joint_ifma_init_layout.naf.lay field point
     (jointMid_affine hc hK h) zero generator (sv4 U) (sv4 V)) fun a ⟨ia, pa, ka, ua⟩ => ?_
   have hTa : GTab (s₀.gpr .rcx) (s₀.syms p256GTab.tsym) size a := ⟨by rw [ka.rd, ka.wr]; exact hTs.1, hTs.2⟩
   refine WP.mono (vwindow_ok hL hO hcc.am3 joint_ifma_vlay joint_ifma_add_layout joint_ifma_init_layout rfl hm
@@ -188,10 +188,10 @@ theorem ifmaPoints_relCT {s₀ t₀ : State} (ps : VPre p256vx s₀) (pt : VPre 
     (mid_publicV ht').trans (pub.v.symm.trans (mid_publicV hs).symm)
   have checks := joint_ifma_mul_checks
   -- The scalars' digits, with the generator's table.
-  have prep := (jointMulPrepB_relCT (base := s₀.gpr .rcx) (T := s₀.syms p256GTab.tsym)
+  have prep := (jointMulPrep_relCT (base := s₀.gpr .rcx) (T := s₀.syms p256GTab.tsym)
     (row := jointCombRow hc hL hG) (u := sv p256vx (s₀.gpr .rcx) s U) (v := sv p256vx (s₀.gpr .rcx) s V)
-    rfl joint_ifma_prep_layout joint_ifma_init_layout.naf.lay point (jointMid_affine hc hK hs) zero
-    fastGeneratorIfmaB_checks fastPeerIfmaB_checks).mono
+    joint_ifma_prep_layout joint_ifma_init_layout.naf.lay point (jointMid_affine hc hK hs) zero checks.prepG
+    checks.prepQ).mono
     (P' := fun (a b : State) => (FieldPair publicJointIfma.K.M (s₀.gpr .rcx) size p256vx.C.p
         (· ∈ nafSlots publicJointIfma.K) (winRo publicJointIfma.K)
         (tmv p256vx.C publicJointIfma.K.M.n (s₀.gpr .rcx) s) a b ∧
@@ -206,10 +206,10 @@ theorem ifmaPoints_relCT {s₀ t₀ : State} (ps : VPre p256vx s₀) (pt : VPre 
   have prep' := prep.wp (F₁ := GTab (s₀.gpr .rcx) (s₀.syms p256GTab.tsym) size)
     (F₂ := GTab (s₀.gpr .rcx) (s₀.syms p256GTab.tsym) size)
     (fun a b ⟨⟨p, ga, gb, au, av, bu, bv⟩, ta, tb⟩ =>
-      ⟨WP.mono (jointMulPrepB_ok rfl joint_ifma_prep_layout joint_ifma_init_layout.naf.lay p.1 point
+      ⟨WP.mono (jointMulPrep_ok joint_ifma_prep_layout joint_ifma_init_layout.naf.lay p.1 point
           (jointMid_affine hc hK hs) zero ga au av)
         (fun x ⟨_, _, kx, _⟩ => ⟨by rw [kx.rd, kx.wr]; exact ta.1, ta.2⟩),
-       WP.mono (jointMulPrepB_ok rfl joint_ifma_prep_layout joint_ifma_init_layout.naf.lay p.2 point
+       WP.mono (jointMulPrep_ok joint_ifma_prep_layout joint_ifma_init_layout.naf.lay p.2 point
           (jointMid_affine hc hK hs) zero gb bu bv)
         (fun x ⟨_, _, kx, _⟩ => ⟨by rw [kx.rd, kx.wr]; exact tb.1, tb.2⟩)⟩)
   have win := vwindow_relCT (base := s₀.gpr .rcx) (T := s₀.syms p256GTab.tsym) (row := jointCombRow hc hL hG)
@@ -218,15 +218,15 @@ theorem ifmaPoints_relCT {s₀ t₀ : State} (ps : VPre p256vx s₀) (pt : VPre 
     (joint_ifma_doubler hcc hL) hone honeval hc.onG hQ (fun _ => ⟨hO, by decide, hcc.am3⟩) checks.cached
     checks.fixed checks.table checks.cache checks.seed checks.counter joint_ifma_zero_ct
     (Nat.lt_trans hs.u_lt nlt) (Nat.lt_trans hs.v_lt nlt)
-  have ct : RelCT isa _ (.seq (Joint.prepB publicJointIfma (p256vx.sl U) (p256vx.sl V))
+  have ct : RelCT isa _ (.seq (Joint.prep publicJointIfma (p256vx.sl U) (p256vx.sl V))
       (vwindow publicJointIfma (jointDouble publicJointIfma.K)).inline) _ :=
     RelCT.seq (prep'.mono (fun _ _ h => h) (fun _ _ ⟨⟨p, wa, wb⟩, ta, tb⟩ => ⟨p, ⟨wa, ta⟩, wb, tb⟩)) win
-  have es' : Exec isa (.seq (Joint.prepB publicJointIfma (p256vx.sl U) (p256vx.sl V))
+  have es' : Exec isa (.seq (Joint.prep publicJointIfma (p256vx.sl U) (p256vx.sl V))
       (vwindow publicJointIfma (jointDouble publicJointIfma.K)).inline) s ls s' := by
-    rw [← jointPrepB_inline]; exact es
-  have et' : Exec isa (.seq (Joint.prepB publicJointIfma (p256vx.sl U) (p256vx.sl V))
+    rw [← jointPrep_inline]; exact es
+  have et' : Exec isa (.seq (Joint.prep publicJointIfma (p256vx.sl U) (p256vx.sl V))
       (vwindow publicJointIfma (jointDouble publicJointIfma.K)).inline) t lt t' := by
-    rw [← jointPrepB_inline]; exact et
+    rw [← jointPrep_inline]; exact et
   obtain ⟨trace, post⟩ := ct _ _ _ _ _ _
     ⟨⟨fields, genS, genT, sv4 s U, sv4 s V, (sv4 t U).trans u, (sv4 t V).trans v⟩, hTs, hTt⟩ es' et'
   refine ⟨trace, Taint.agree_ofRegs fun r hr => ?_⟩
