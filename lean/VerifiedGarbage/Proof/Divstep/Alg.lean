@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Divstep.State
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Divstep.BatchS
 import VerifiedGarbage.Proof.Divstep.Batch
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
@@ -24,10 +25,6 @@ With `f ≡ x a 2^(c i)` and `g ≡ x b 2^(c i)` modulo `p`, `c = 64 - N`
 @[expose] public section
 
 namespace VG.Proof.Divstep
-
-/-- `t / 2^64 mod p`: `t` plus the multiple `k p` (`k = t m mod 2^64`, for
-`m = -p⁻¹ mod 2^64`) that clears its low word, over `2^64`. -/
-def mredRaw (p m t : Int) : Int := (t + (t * m) % 2 ^ 64 * p) / 2 ^ 64
 
 /-- Into `[0, p)` from `(-p, 2p)`. -/
 def norm (p t : Int) : Int := if t < 0 then t + p else if p ≤ t then t - p else t
