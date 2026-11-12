@@ -162,7 +162,7 @@ open VG.Proof.Rsa.CrtValues (maskOf)
 /-- `divWP a r`: `[r] := d mod (2 ⌊[a] / 2⌋)` by words, exact for a divisor of
 exactly `w / 2` words. -/
 theorem divWP_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) {a r : Nat} (ha : a = aP ∨ a = aQ)
-    (hr : r = aDR2 ∨ r = aDR3) (hw : 8 ≤ w) (hw2 : w % 2 = 0) :
+    (hr : r = aDR2 ∨ r = aDR3) (hw : 8 ≤ w) (hwl : w ≤ 128) (hw2 : w % 2 = 0) :
     WP isa (seqs (divWP a r)) s fun t => Ws t B Z w nArr ∧ Keys.Frame B w [r, aDD, aDT] [] s.mem t.mem ∧
       Keep dwRegs s t ∧
       (InW w (2 * (num s.mem B w a / 2)) → num t.mem B w r = num s.mem B w aD % (2 * (num s.mem B w a / 2))) := by
@@ -195,10 +195,10 @@ theorem divWP_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) {a r :
   have na : num t1.mem B w a = num s.mem B w a :=
     f1.num (by simp; exact Ne.symm ha'.2.2.2.2) (by simp) (fit _ ha'.1)
   rw [v2, na] at v3
-  have r0 : wordsVal t4.mem B (arr w r) (w / 2) = 0 := wordsVal_zero_part (a := 0) (c := w / 2) n1r (by omega) |>.symm ▸
-    by simp
+  have r0 : wordsVal t4.mem B (arr w r) (w / 2 + 1) = 0 :=
+    wordsVal_zero_part (a := 0) (c := w / 2 + 1) n1r (by omega) |>.symm ▸ by simp
   refine WP.mono (divW_ok w4 (a := aD) (r := r) (m := aDD) (t := aDT) (by decide) (by decide) hr'.1 (by decide)
-    (by decide) hr'.2.2.2 hr'.2.1 hr'.2.2.1 (by decide) (by decide) hw hw2 r0 p4)
+    (by decide) hr'.2.2.2 hr'.2.1 hr'.2.2.1 (by decide) (by decide) hw (by omega) hw2 r0 p4)
     fun t ⟨w5, f5, k5, x5, top5, hi5⟩ => ?_
   refine ⟨w5, ?_, ?_, fun hin => ?_⟩
   · exact (f1.mono (by simp) (by simp)).trans ((f2.mono (by simp) (by simp)).trans ((f3.mono (by simp) (by simp)).trans
@@ -369,9 +369,9 @@ theorem dPartsW_ok {s0 s : State} (h : PreC s0) (hv : Spec.Rsa.modulusValid (Nv 
     show seqs [.block saveK] = .block saveK from rfl]
   refine WP.mono (saveK_ok iv.ws (by decide) (by omega)) fun t1 ⟨ws1, f1, k1, e1, e2, e3, e4, e5, e6, e7, e8, e9⟩ => ?_
   rw [wp_seqs_append (by simp [divWP]) (by simp [divWP])]
-  refine WP.mono (divWP_ok ws1 (a := aP) (r := aDR2) (.inl rfl) (.inl rfl) hw8 hw2) fun t2 ⟨ws2, f2, k2, v2⟩ => ?_
+  refine WP.mono (divWP_ok ws1 (a := aP) (r := aDR2) (.inl rfl) (.inl rfl) hw8 w2' hw2) fun t2 ⟨ws2, f2, k2, v2⟩ => ?_
   rw [wp_seqs_append (by simp [divWP]) (by simp)]
-  refine WP.mono (divWP_ok ws2 (a := aQ) (r := aDR3) (.inr rfl) (.inr rfl) hw8 hw2) fun t3 ⟨ws3, f3, k3, v3⟩ => ?_
+  refine WP.mono (divWP_ok ws2 (a := aQ) (r := aDR3) (.inr rfl) (.inr rfl) hw8 w2' hw2) fun t3 ⟨ws3, f3, k3, v3⟩ => ?_
   rw [show seqs [.block restoreK] = .block restoreK from rfl]
   -- `aDQ`'s words, as `saveK` left them.
   have kq : ∀ i < wOf s0 + 2, word t3.mem (bOf s0) (arr (wOf s0) aDQ + 8 * i) =

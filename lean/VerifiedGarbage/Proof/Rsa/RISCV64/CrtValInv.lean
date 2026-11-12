@@ -229,7 +229,7 @@ theorem invG_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
     rw [wp_seqs_cons (List.cons_ne_nil _ _)]
     refine WP.mono (saveK_ok w1' (by decide) (by omega)) fun t2 ⟨w2', f2, k2, e1, e2, e3, e4, e5, e6, e7, e8, e9⟩ => ?_
     rw [wp_seqs_cons (List.cons_ne_nil _ _), show seqs [.block restoreK] = .block restoreK from rfl]
-    refine WP.mono (tail_ok w2' hw8 hw2) fun t3 ⟨w3', f3, k3, v3⟩ => ?_
+    refine WP.mono (tail_ok w2' hw8 w2 hw2) fun t3 ⟨w3', f3, k3, v3⟩ => ?_
     have kq : ∀ i < wOf s0 + 2, word t3.mem (bOf s0) (arr (wOf s0) aDQ + 8 * i) =
         word t2.mem (bOf s0) (arr (wOf s0) aDQ + 8 * i) := fun i hi =>
       f3.word hi (by decide) (by simp) (fit _ (by decide))
