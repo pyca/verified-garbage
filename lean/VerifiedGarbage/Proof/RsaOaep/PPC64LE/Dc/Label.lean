@@ -31,7 +31,7 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 open VG.Impl.RsaOaep.PPC64LE (Fns hashLabelT)
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 theorem fitsM : Fits (SD s) (withMem s m) := fits P rfl rfl

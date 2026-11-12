@@ -56,6 +56,15 @@ structure DLay where
   P : Nat
   tab : Addr
   tabL : Addr
+  /-- The buffers read beyond those (`pre`, given the key's precomputed
+  values), and the bytes `al` of our stack arguments. -/
+  X : List Region
+  al : Nat
+  /-- The key's precomputed values and their length in words, given them. -/
+  pre : Addr
+  prl : BitVec 64
+  /-- What the contract lets the function leak beyond `n` and `e`. -/
+  lk : Mem → List Nat
 
 namespace DLay
 
@@ -75,7 +84,7 @@ abbrev CT : Region := ⟨L.ct, L.k.toNat⟩
 abbrev SCR : Region := ⟨L.scr, L.sl.toNat * 8⟩
 abbrev FR : Region := ⟨L.Q, frameBytes⟩
 abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 272, 16⟩
-abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 288, 136⟩
+abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 288, L.al⟩
 /-- MGF1's table: its five words. -/
 abbrev TAB : Region := Sig.tableRegion 64 L.tab 11
 /-- The table of the label's hash function: its five words. -/
@@ -136,6 +145,15 @@ structure Ok : Prop where
   qil : L.qil.toNat = L.pl.toNat
   dql : L.dql.toNat = L.ql.toNat
   slk : Spec.RsaPss.scratchWords L.k.toNat ≤ L.sl.toNat
+  /-- Our stack arguments, and the buffers read beyond the others. -/
+  al136 : 136 ≤ L.al
+  al152 : L.al ≤ 152
+  nQa : L.Q.toNat + 288 + L.al ≤ 2 ^ 64
+  xO : ∀ R ∈ L.X, R.Disjoint L.OUT
+  xM : ∀ R ∈ L.X, R.Disjoint L.ML
+  xS : ∀ R ∈ L.X, R.Disjoint L.SCR
+  xK : ∀ R ∈ L.X, L.STK.Disjoint R
+  xw : ∀ R ∈ L.X, R.base.toNat + R.len ≤ 2 ^ 64
 
 end DLay
 
@@ -196,7 +214,7 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 288) {R : Region} (hR : InW L R) :
 /-- A range in our stack arguments misses the writable buffers. -/
 theorem args_buf {d n : Nat} (h₁ : 288 ≤ d) (h₂ : d + n ≤ 424) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
-  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
+  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by have := h.al136; omega)
   rcases hR with hR | hR | hR
   · exact (h.oA.symm.sub_left hs).sub_right hR
   · exact (h.mA.symm.sub_left hs).sub_right hR
@@ -239,7 +257,7 @@ def ourArg (L : DLay) : Nat → BitVec 64
 are the registers on entry, `m₀` the memory. -/
 structure Ctx (L : DLay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where
-  rd : t.rd = [L.N, L.E, L.PP, L.QQ, L.DP, L.DQ, L.QI, L.LAB, L.CT, L.TABL, L.TAB, L.ARGS]
+  rd : t.rd = [L.N, L.E, L.PP, L.QQ, L.DP, L.DQ, L.QI, L.LAB, L.CT] ++ L.X ++ [L.TABL, L.TAB, L.ARGS]
   wr : t.wr = [L.FR, L.LR, L.OUT, L.ML, L.SCR]
   sp : t.sp = L.Q
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
@@ -384,7 +402,8 @@ theorem tab (hP : 16 ≤ L.P) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaO
     show (⟨L.tab, 88⟩ : Region).Contains _ _
     exact Offset.contains_base _ hd (by omega)
   have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg 16)) 8 :=
-    Offset.contains _ (by decide) (by decide) (by decide)
+    Offset.contains _ (by decide) (by have := hL.al136; unfold arg frameBytes; omega)
+      (by have := hL.al152; omega)
   have mT : L.TAB ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
   have mA : L.ARGS ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
   have dT : ∀ r ∈ Table.mgfRs L.Q L.scr, L.TAB.Disjoint r := by
@@ -426,7 +445,8 @@ theorem tabL (hP : 16 ≤ L.P) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.Rsa
     show (⟨L.tabL, 88⟩ : Region).Contains _ _
     exact Offset.contains_base _ hd (by omega)
   have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg 15)) 8 :=
-    Offset.contains _ (by decide) (by decide) (by decide)
+    Offset.contains _ (by decide) (by have := hL.al136; unfold arg frameBytes; omega)
+      (by have := hL.al152; omega)
   have mT : L.TABL ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
   have mA : L.ARGS ∈ t.rd ++ t.wr := List.mem_append_left _ (by rw [hc.rd]; simp)
   have dT : ∀ r ∈ Table.mgfRs L.Q L.scr, L.TABL.Disjoint r := by

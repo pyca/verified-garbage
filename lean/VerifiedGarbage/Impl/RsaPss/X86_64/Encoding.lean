@@ -206,18 +206,36 @@ def byIdx (b : Nat → Prog isa) : List Nat → Prog isa
 variable (privN : String) (privC : Prog isa)
 
 /-- The checks on the modulus, the encoding, then the private-key
-operation. -/
-def signCBody : Prog isa :=
+operation, with the arguments `args`. -/
+def signCBodyWith (args : List Instr) : Prog isa :=
   seqs [.block (signPrologue ++ n0 ++ [.mov .r11 (.mem (arg 16))]), .block idxSlot,
     .ite .e signFail (seqs [.block (emBitsB ++ encArgs ++ idxLoad),
       byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs,
       .block [.alu32 .test .rax (.reg .rax)],
-      .ite .e signFail (.seq (.block privArgs) (.call privN privC))]),
+      .ite .e signFail (.seq (.block args) (.call privN privC))]),
     .block restoreRegs]
+
+/-- The checks on the modulus, the encoding, then the private-key
+operation. -/
+def signCBody : Prog isa := signCBodyWith f g privN privC privArgs
 
 /-- `vg_rsa_pss_sign`, calling `encode` for the hash function of the table
 `hash`. -/
 def signC : Prog isa := .frame (.alloc frameBytes) (signCBody f g privN privC) (.free frameBytes)
+
+/-- The arguments of `vg_rsa_private_checked_precomputed`: `privArgs`, and
+the key's precomputed values `pre` and `pre_len` (our stack arguments 18
+and 19) as its stack arguments 14 and 15, in the frame's words 14 and 15
+(`sDG`, MGF1's digest length, and a free word), which nothing reads after
+`encode`. -/
+def privArgsP : List Instr :=
+  privArgs ++ ([.mov .rax (.mem (arg 18)), .store (sp 112) .rax, .mov .rax (.mem (arg 19)),
+    .store (sp 120) .rax] : List Instr)
+
+/-- `vg_rsa_pss_sign_precomputed`: `signC`, calling
+`vg_rsa_private_checked_precomputed` (`privC`) with the key's precomputed
+values. -/
+def signCP : Prog isa := .frame (.alloc frameBytes) (signCBodyWith f g privN privC privArgsP) (.free frameBytes)
 
 /-- The arguments of the public-key operation, with the caller's cached
 modulus: its output (`k` bytes) at `scratch`, the signature, and the rest

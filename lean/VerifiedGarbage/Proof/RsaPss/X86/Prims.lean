@@ -55,21 +55,21 @@ theorem WBuf.inW {p : BitVec 32} {n : Nat} (hb : WBuf L p n) {σ s : State} (hs 
     (hi : i < n) : InRegions s.wr (byteAt p i) 1 := by
   obtain ⟨R, hR, hc⟩ := hb.w
   refine ⟨R, ?_, contains_byte hc hb.fit hi⟩
-  rw [hs.wr, hs.ok.wr]
+  rw [hs.wr]
   rcases List.mem_cons.mp hR with rfl | hR
-  · exact List.mem_cons_self
-  · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hR))
+  · exact hs.ok.wr _ List.mem_cons_self
+  · exact hs.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR))
 
 theorem RBuf.inR {p : BitVec 32} {n : Nat} (hb : RBuf L p n) {σ s : State} (hs : L.St σ s) {i : Nat}
     (hi : i < n) : InRegions (s.rd ++ s.wr) (byteAt p i) 1 := by
   obtain ⟨R, hR, hc⟩ := hb.r
   refine ⟨R, ?_, contains_byte hc hb.fit hi⟩
-  rw [hs.rd, hs.wr, hs.ok.rd, hs.ok.wr]
+  rw [hs.rd, hs.wr]
   rcases List.mem_append.mp hR with hR | hR
-  · exact List.mem_append_left _ hR
+  · exact List.mem_append_left _ (hs.ok.rd _ hR)
   · rcases List.mem_cons.mp hR with rfl | hR
-    · exact List.mem_append_right _ List.mem_cons_self
-    · exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hR)))
+    · exact List.mem_append_right _ (hs.ok.wr _ List.mem_cons_self)
+    · exact List.mem_append_right _ (hs.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR)))
 
 theorem WBuf.rbuf {p : BitVec 32} {n : Nat} (hb : WBuf L p n) : RBuf L p n :=
   ⟨hb.fit, hb.n32, let ⟨R, hR, hc⟩ := hb.w; ⟨R, List.mem_append_right _ hR, hc⟩⟩
@@ -112,10 +112,10 @@ theorem zero_vp {p : BitVec 32} {n : Nat} (hb : WBuf L p n) (hn : 0 < n)
   have hw : InRegions s.wr (p.setWidth 64) n := by
     obtain ⟨R, hR, hc'⟩ := hb.w
     refine ⟨R, ?_, hc'⟩
-    rw [hc.st.wr, hc.st.ok.wr]
+    rw [hc.st.wr]
     rcases List.mem_cons.mp hR with rfl | hR
-    · exact List.mem_cons_self
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hR))
+    · exact hc.st.ok.wr _ List.mem_cons_self
+    · exact hc.st.ok.wr _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR))
   refine WP.mono (zero_ok hn hb.n32 fit si cx ax hw) fun t ht => ?_
   have fr : Frame [⟨p.setWidth 64, n⟩] s.mem t.mem := by
     rw [ht.mem]

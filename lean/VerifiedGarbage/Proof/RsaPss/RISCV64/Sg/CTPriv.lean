@@ -43,25 +43,29 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 
 /-! ## The public data -/
 
-/-- The shared contract's public data, by name. -/
-structure PubS (a s : State) : Prop where
+/-- The contract's public data, by name: with `pc`, `pre` and `pre_len` and
+what may leak of `pre` too. -/
+structure PubS (pc : Bool) (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], s.gpr r = a.gpr r
   args : ∀ i < 16, stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a2) (a.gpr .a3).toNat
   e : Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a4) (a.gpr .a5).toNat
+  args2 : pc = true → stackArg s 16 = stackArg a 16 ∧ stackArg s 17 = stackArg a 17
+  leak : pc = true → Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 16) (s.gpr .a3).toNat =
+    Spec.Rsa.privatePrecomputedLeak a.mem (stackArg a 16) (a.gpr .a3).toNat
 
 /-- The contract's public data: `PubS`, the tables' functions at the same
 addresses, and the same tables held. -/
 theorem pubS_of {tsH tsG : List FnTable} {s₁ s₂ : State} (h : (signSpec tsH tsG).pub s₁ s₂) :
-    PubS s₁ s₂ ∧
+    PubS false s₁ s₂ ∧
       (∀ f ∈ (tsH.map (fun T : FnTable => T.fns)).flatten ++ (tsG.map (fun T : FnTable => T.fns)).flatten,
         s₁.syms f = s₂.syms f) ∧
       (∀ T ∈ tsH, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 14) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 14) (FnTable.words isa s₂ T))) ∧
       ∀ T ∈ tsG, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 15) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T)) := by
-  have e : stackBytes = 3471 + 1 := rfl
+  have e : stackBytes false = 3471 + 1 := rfl
   unfold signSpec at h
   rw [e] at h
   sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
@@ -76,7 +80,7 @@ theorem pubS_of {tsH tsG : List FnTable} {s₁ s₂ : State} (h : (signSpec tsH 
   obtain ⟨hn, he⟩ := List.append_inj hl (by simp [bytesAt_length, g3])
   have inj := fun {x y : List Byte} (h : x.map (·.toNat) = y.map (·.toNat)) =>
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
-  refine ⟨⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm⟩, hsy,
+  refine ⟨⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm, nofun, nofun⟩, hsy,
     fun T hT => htabH _ _ rfl rfl T hT, fun T hT => htabG _ _ rfl rfl T hT⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -87,10 +91,11 @@ theorem pubS_of {tsH tsG : List FnTable} {s₁ s₂ : State} (h : (signSpec tsH 
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
       a11.symm, a12.symm, a13.symm, a14.symm, a15.symm]
 
-theorem pubS_refl (s : State) : PubS s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
+theorem pubS_refl (pc : Bool) (s : State) : PubS pc s s :=
+  ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl, fun _ => ⟨rfl, rfl⟩, fun _ => rfl⟩
 
 section
-variable {a s : State} (p : PubS a s)
+variable {pc : Bool} {a s : State} (p : PubS pc a s)
 include p
 
 theorem PubS.pKk : kk s = kk a := by rw [kk, kk, p.g .a3 (by decide)]
@@ -116,46 +121,46 @@ theorem PubS.agree (hk : 1 ≤ kk s) : Agree Ss vS a s := ⟨p.sp, p.args 12 (by
 end
 
 /-- `PubS`, for a nonempty modulus. -/
-def PubK (a s : State) : Prop := PubS a s ∧ 1 ≤ kk s
+def PubK (pc : Bool) (a s : State) : Prop := PubS pc a s ∧ 1 ≤ kk s
 
 /-- The precondition, with the tables on entry: `hash`, our stack argument
 14, and `mgf1`, 15. -/
-def PreST (D : Nat) (W : VT) (s : State) : Prop :=
-  PreS D s ∧ TabM W.M W.dg W.f 14 Ss s (stackArg s 14) ∧ TabS W.G W.g 15 Ss s (stackArg s 15)
+def PreST (pc : Bool) (D : Nat) (W : VT) (s : State) : Prop :=
+  PreS pc D s ∧ TabM W.M W.dg W.f 14 Ss s (stackArg s 14) ∧ TabS W.G W.g 15 Ss s (stackArg s 15)
 
 /-- The public data, with the tables' functions at the anchor's addresses. -/
-def PubST (W : VT) (a s : State) : Prop := PubK a s ∧ ∀ n ∈ W.names, s.syms n = a.syms n
+def PubST (pc : Bool) (W : VT) (a s : State) : Prop := PubK pc a s ∧ ∀ n ∈ W.names, s.syms n = a.syms n
 
-theorem signOkT (D : Nat) (W : VT) : Ok Ss vS (PreST D W) (PubST W) where
+theorem signOkT (pc : Bool) (D : Nat) (W : VT) : Ok Ss vS (PreST pc D W) (PubST pc W) where
   fits P := fits P.1
   agree p := p.1.1.agree p.1.2
 
-theorem sTab (D : Nat) (W : VT) : TabAM W.M W.dg W.f 14 Ss (PreST D W) (PubST W) :=
+theorem sTab (pc : Bool) (D : Nat) (W : VT) : TabAM W.M W.dg W.f 14 Ss (PreST pc D W) (PubST pc W) :=
   ⟨fun P => P.2.1, fun p => p.1.1.args 14 (by decide), fun p => p.2 _ (by simp [VT.names]),
     fun p => p.2 _ (by simp [VT.names]), fun p => p.2 _ (by simp [VT.names]),
     fun p => p.2 _ (by simp [VT.names]), fun p => p.2 _ (by simp [VT.names])⟩
 
-theorem sTabG (D : Nat) (W : VT) : TabA W.G W.g 15 Ss (PreST D W) (PubST W) :=
+theorem sTabG (pc : Bool) (D : Nat) (W : VT) : TabA W.G W.g 15 Ss (PreST pc D W) (PubST pc W) :=
   ⟨fun P => P.2.2, fun p => p.1.1.args 15 (by decide), fun p => p.2 _ (by simp [VT.names]),
     fun p => p.2 _ (by simp [VT.names]), fun p => p.2 _ (by simp [VT.names])⟩
 
 /-- `Base` from an entry state with the anchor's public data. -/
-abbrev BS (D : Nat) (W : VT) : State → State → Prop := B Ss vS (PreST D W) (PubST W)
+abbrev BS (pc : Bool) (D : Nat) (W : VT) : State → State → Prop := B Ss vS (PreST pc D W) (PubST pc W)
 
 /-- `Base` and the saved arguments, from an entry state with the anchor's
 public data, and its addresses of statics. -/
-def BP (D : Nat) (W : VT) (a t : State) : Prop :=
-  ∃ s, PreST D W s ∧ PubST W a s ∧ Base Ss vS s t ∧ Spilled s t.mem ∧ t.syms = s.syms
+def BP (pc : Bool) (D : Nat) (W : VT) (a t : State) : Prop :=
+  ∃ s, PreST pc D W s ∧ PubST pc W a s ∧ Base Ss vS s t ∧ Spilled s t.mem ∧ t.syms = s.syms
 
-theorem BP.bs {D : Nat} {W : VT} {a t : State} (h : BP D W a t) : BS D W a t :=
+theorem BP.bs {pc : Bool} {D : Nat} {W : VT} {a t : State} (h : BP pc D W a t) : BS pc D W a t :=
   let ⟨s, P, p, b, _⟩ := h; ⟨s, P, p, b⟩
 
-theorem BP.bt {D : Nat} {W : VT} {a t : State} (h : BP D W a t) : BT Ss vS (PreST D W) (PubST W) a t :=
+theorem BP.bt {pc : Bool} {D : Nat} {W : VT} {a t : State} (h : BP pc D W a t) : BT Ss vS (PreST pc D W) (PubST pc W) a t :=
   let ⟨s, P, p, b, _, y⟩ := h; ⟨s, P, p, b, y⟩
 
 /-! ## The private operation -/
 
-theorem psa_pub {a s : State} (p : PubS a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
+theorem psa_pub {pc : Bool} {a s : State} (p : PubS pc a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [psa, Ss, p.g .a6 (by decide), p.g .a7 (by decide), p.args _ (by decide : (0 : Nat) < 16),
@@ -166,23 +171,46 @@ theorem psa_pub {a s : State} (p : PubS a s) {i : Nat} (hi : i < 12) : psa s i =
       p.args _ (by decide : (13 : Nat) < 16)]
 
 /-- At the call, from an entry state with `a`'s public data. -/
-def APriv (D : Nat) (a u : State) : Prop := ∃ s em, PreS D s ∧ PubK a s ∧ AtPriv s em u
+def APriv (pc : Bool) (D : Nat) (a u : State) : Prop := ∃ s em, PreS pc D s ∧ PubK pc a s ∧ AtPriv pc s em u
 
-theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv D a u₁) (h₂ : APriv D a u₂) :
-    ∃ s₁ s₂ em₁ em₂, PreS D s₁ ∧ AtPriv s₁ em₁ u₁ ∧ PreS D s₂ ∧ AtPriv s₂ em₂ u₂ ∧
-      Rsa.RISCV64.Priv.fnContract.pub (callE s₁ u₁) (callE s₂ u₂) := by
-  obtain ⟨s₁, em₁, P₁, ⟨p₁, _⟩, A₁⟩ := h₁
-  obtain ⟨s₂, em₂, P₂, ⟨p₂, _⟩, A₂⟩ := h₂
-  refine ⟨s₁, s₂, em₁, em₂, P₁, A₁, P₂, A₂, ?_⟩
-  have m : ∀ {s u : State}, (callE s u).mem = u.mem := fun {_ _} => rfl
-  have hb := fun {s u : State} {em : List Byte} (P : PreS D s) (A : AtPriv s em u) {p : Addr} {len : Nat}
-    (hd : (kS s).Disjoint ⟨p, len⟩) (hs : (VG.Proof.RsaOaep.RISCV64.SC Ss s).Disjoint ⟨p, len⟩)
+/-- With `pc`, what the call may leak of `pre`, as on entry. -/
+theorem pre_leak {D : Nat} {s t : State} {em : List Byte} (P : PreS true D s) (A : AtPriv true s em t) :
+    Spec.Rsa.privatePrecomputedLeak (callE true s t).mem (stackArg (callE true s t) 12)
+        ((callE true s t).gpr .a3).toNat =
+      Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 16) (s.gpr .a3).toNat := by
+  have X := P.px rfl
+  have pwl : Spec.Rsa.precomputedWords (s.gpr .a3).toNat ≤ (stackArg s 17).toNat := by
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+  simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
+    callE_gpr true s t (r := .a3), A.a3]
+  congr 1
+  have subPre : Region.Sub ⟨stackArg s 16, 8 * Spec.Rsa.precomputedWords (s.gpr .a3).toNat⟩ (preR s) :=
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+  exact VG.Proof.Rsa.RISCV64.Priv.words_of_frame A.mem (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact X.kP.symm.sub_left subPre
+    · exact (X.sP.sub_left (sc_sub P)).symm.sub_left subPre) (by have := X.wP; omega)
+
+/-- What the two calls' public data share, from entry states with `a`'s. -/
+theorem priv_facts {pc : Bool} {D : Nat} {a s₁ s₂ u₁ u₂ : State} {em₁ em₂ : List Byte}
+    (P₁ : PreS pc D s₁) (p₁ : PubS pc a s₁) (A₁ : AtPriv pc s₁ em₁ u₁)
+    (P₂ : PreS pc D s₂) (p₂ : PubS pc a s₂) (A₂ : AtPriv pc s₂ em₂ u₂) :
+    (callE pc s₁ u₁).sp = (callE pc s₂ u₂).sp ∧
+      (∀ r ∈ argRegs, (callE pc s₁ u₁).gpr r = (callE pc s₂ u₂).gpr r) ∧
+      (∀ i < (if pc then 14 else 12), stackArg (callE pc s₁ u₁) i = stackArg (callE pc s₂ u₂) i) ∧
+      Spec.Rsa.bytesAt (callE pc s₁ u₁).mem ((callE pc s₁ u₁).gpr .a2) ((callE pc s₁ u₁).gpr .a3).toNat =
+        Spec.Rsa.bytesAt (callE pc s₂ u₂).mem ((callE pc s₂ u₂).gpr .a2) ((callE pc s₂ u₂).gpr .a3).toNat ∧
+      Spec.Rsa.bytesAt (callE pc s₁ u₁).mem ((callE pc s₁ u₁).gpr .a4) ((callE pc s₁ u₁).gpr .a5).toNat =
+        Spec.Rsa.bytesAt (callE pc s₂ u₂).mem ((callE pc s₂ u₂).gpr .a4) ((callE pc s₂ u₂).gpr .a5).toNat := by
+  have m : ∀ {s u : State}, (callE pc s u).mem = u.mem := fun {_ _} => rfl
+  have hb := fun {s u : State} {em : List Byte} (P : PreS pc D s) (A : AtPriv pc s em u) {p : Addr} {len : Nat}
+    (hd : (kS pc s).Disjoint ⟨p, len⟩) (hs : (VG.Proof.RsaOaep.RISCV64.SC Ss s).Disjoint ⟨p, len⟩)
     (hl : len ≤ 2 ^ 64) => bytes_at A (R := ⟨p, len⟩) hd hs hl
-  refine Rsa.RISCV64.Priv.pub_of (by rw [show (callE s₁ u₁).sp = pb s₁ from A₁.sp,
-      show (callE s₂ u₂).sp = pb s₂ from A₂.sp, pb, pb, fb, fb, p₁.sp, p₂.sp])
-    (fun r hr => ?_) (fun i hi => by rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, psa_pub p₁ hi, psa_pub p₂ hi])
-    ?_ ?_
-  · rw [callE_gpr _ _ (fun h => by revert r; decide), callE_gpr _ _ (fun h => by revert r; decide)]
+  refine ⟨by rw [show (callE pc s₁ u₁).sp = pb pc s₁ from A₁.sp,
+      show (callE pc s₂ u₂).sp = pb pc s₂ from A₂.sp, pb, pb, fb, fb, p₁.sp, p₂.sp],
+    fun r hr => ?_, fun i hi => ?_, ?_, ?_⟩
+  · rw [callE_gpr _ _ _ (fun h => by revert r; decide), callE_gpr _ _ _ (fun h => by revert r; decide)]
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [A₁.a0, A₂.a0, p₁.g _ (by decide), p₂.g _ (by decide)]
@@ -193,35 +221,57 @@ theorem priv_pub {D : Nat} {a u₁ u₂ : State} (h₁ : APriv D a u₁) (h₂ :
     · rw [A₁.a5, A₂.a5, p₁.g _ (by decide), p₂.g _ (by decide)]
     · rw [A₁.a6, A₂.a6, Ss, Ss, p₁.args 12 (by decide), p₂.args 12 (by decide)]
     · rw [A₁.a7, A₂.a7, p₁.g _ (by decide), p₂.g _ (by decide)]
-  · rw [m, m, callE_gpr _ _ (r := .a2), callE_gpr _ _ (r := .a3), callE_gpr _ _ (r := .a2),
-      callE_gpr _ _ (r := .a3), A₁.a2, A₁.a3, A₂.a2, A₂.a3,
+  · rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi]
+    by_cases h : i < 12
+    · rw [psa_pub p₁ h, psa_pub p₂ h]
+    · cases pc with
+      | false => exact absurd hi (by simp only [Bool.false_eq_true, ↓reduceIte]; omega)
+      | true =>
+        obtain ⟨x₁, y₁⟩ := p₁.args2 rfl
+        obtain ⟨x₂, y₂⟩ := p₂.args2 rfl
+        rcases (by simp only [↓reduceIte] at hi; omega : i = 12 ∨ i = 13) with rfl | rfl
+        · simp only [psa]; rw [x₁, x₂]
+        · simp only [psa]; rw [y₁, y₂]
+  · rw [m, m, callE_gpr _ _ _ (r := .a2), callE_gpr _ _ _ (r := .a3), callE_gpr _ _ _ (r := .a2),
+      callE_gpr _ _ _ (r := .a3), A₁.a2, A₁.a3, A₂.a2, A₂.a3,
       hb P₁ A₁ P₁.kn ((P₁.ns.symm).sub_left (sc_sub P₁)) (by have := P₁.wn; omega),
       hb P₂ A₂ P₂.kn ((P₂.ns.symm).sub_left (sc_sub P₂)) (by have := P₂.wn; omega), p₁.n, p₂.n]
-  · rw [m, m, callE_gpr _ _ (r := .a4), callE_gpr _ _ (r := .a5), callE_gpr _ _ (r := .a4),
-      callE_gpr _ _ (r := .a5), A₁.a4, A₁.a5, A₂.a4, A₂.a5,
+  · rw [m, m, callE_gpr _ _ _ (r := .a4), callE_gpr _ _ _ (r := .a5), callE_gpr _ _ _ (r := .a4),
+      callE_gpr _ _ _ (r := .a5), A₁.a4, A₁.a5, A₂.a4, A₂.a5,
       hb P₁ A₁ P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega),
       hb P₂ A₂ P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega), p₁.e, p₂.e]
 
-theorem call_ct {D : Nat} : RelCT isa (Two (APriv D)) privCall fun _ _ => True := by
-  unfold privCall
-  refine RelCT.callEx (k := Rsa.RISCV64.Priv.fnContract) Rsa.RISCV64.Priv.code_correct
-    Rsa.RISCV64.Priv.code_ct fun u₁ u₂ ⟨a, h₁, h₂⟩ => ?_
-  obtain ⟨s₁, s₂, em₁, em₂, P₁, A₁, P₂, A₂, hp⟩ := priv_pub h₁ h₂
-  exact ⟨callRd s₁, callWr s₁, callRd s₂, callWr s₂, Rsa.RISCV64.Priv.pre_of_preP (preP_at P₁ A₁),
-    Rsa.RISCV64.Priv.pre_of_preP (preP_at P₂ A₂), hp, (call_covers P₁ A₁).1, (call_covers P₁ A₁).2,
-    (call_covers P₂ A₂).1, (call_covers P₂ A₂).2⟩
+theorem call_ct {pc : Bool} {D : Nat} : RelCT isa (Two (APriv pc D)) (privCall pc) fun _ _ => True := by
+  cases pc with
+  | false =>
+    refine RelCT.callEx (k := Rsa.RISCV64.Priv.fnContract) Rsa.RISCV64.Priv.code_correct
+      Rsa.RISCV64.Priv.code_ct fun u₁ u₂ ⟨a, ⟨s₁, em₁, P₁, ⟨p₁, _⟩, A₁⟩, ⟨s₂, em₂, P₂, ⟨p₂, _⟩, A₂⟩⟩ => ?_
+    obtain ⟨hsp, hr, ha, hn, he⟩ := priv_facts P₁ p₁ A₁ P₂ p₂ A₂
+    exact ⟨callRd false s₁, callWr s₁, callRd false s₂, callWr s₂, Rsa.RISCV64.Priv.pre_of_preP (preP_at P₁ A₁),
+      Rsa.RISCV64.Priv.pre_of_preP (preP_at P₂ A₂), Rsa.RISCV64.Priv.pub_of hsp hr ha hn he,
+      (call_covers P₁ A₁).1, (call_covers P₁ A₁).2, (call_covers P₂ A₂).1, (call_covers P₂ A₂).2⟩
+  | true =>
+    refine RelCT.callEx (k := Rsa.RISCV64.Priv.fnContractP) Rsa.RISCV64.Priv.codeP_correct
+      Rsa.RISCV64.Priv.codeP_ct fun u₁ u₂ ⟨a, ⟨s₁, em₁, P₁, ⟨p₁, _⟩, A₁⟩, ⟨s₂, em₂, P₂, ⟨p₂, _⟩, A₂⟩⟩ => ?_
+    obtain ⟨hsp, hr, ha, hn, he⟩ := priv_facts P₁ p₁ A₁ P₂ p₂ A₂
+    exact ⟨callRd true s₁, callWr s₁, callRd true s₂, callWr s₂,
+      Rsa.RISCV64.Priv.pre_of_prePX (preP_at P₁ A₁) (preX_at P₁ (P₁.px rfl) A₁),
+      Rsa.RISCV64.Priv.pre_of_prePX (preP_at P₂ A₂) (preX_at P₂ (P₂.px rfl) A₂),
+      Rsa.RISCV64.Priv.pub_ofP hsp hr ha hn he
+        (by rw [pre_leak P₁ A₁, pre_leak P₂ A₂, p₁.leak rfl, p₂.leak rfl]),
+      (call_covers P₁ A₁).1, (call_covers P₁ A₁).2, (call_covers P₂ A₂).1, (call_covers P₂ A₂).2⟩
 
-theorem BP.sp {D : Nat} {W : VT} {a t : State} (h : BP D W a t) : t.sp = fb a :=
+theorem BP.sp {pc : Bool} {D : Nat} {W : VT} {a t : State} (h : BP pc D W a t) : t.sp = fb a :=
   let ⟨_, _, p, b, _⟩ := h; by rw [b.sp, fb, fb, p.1.1.sp]
 
-theorem BP.s0 {D : Nat} {W : VT} {a t : State} (h : BP D W a t) : t.gpr .s0 = Ss a :=
+theorem BP.s0 {pc : Bool} {D : Nat} {W : VT} {a t : State} (h : BP pc D W a t) : t.gpr .s0 = Ss a :=
   let ⟨_, _, p, b, _⟩ := h; b.s0.trans (p.1.1.args 12 (by decide))
 
 /-- The private operation, in both runs. -/
-theorem priv_ct {D : Nat} {W : VT} : RelCT isa (Two (BP D W)) priv fun _ _ => True := by
+theorem priv_ct {pc : Bool} {D : Nat} {W : VT} : RelCT isa (Two (BP pc D W)) (priv pc) fun _ _ => True := by
   unfold priv
   refine two_alloc (R := fun _ _ => True) ?_
-  refine two_seq (Ψ := APriv D) (privArgs_taint fun a u₁ u₂ ⟨t₁, h₁, e₁⟩ ⟨t₂, h₂, e₂⟩ =>
+  refine two_seq (Ψ := APriv pc D) (privArgs_taint pc fun a u₁ u₂ ⟨t₁, h₁, e₁⟩ ⟨t₂, h₂, e₂⟩ =>
       ⟨by rw [e₁, e₂]; show t₁.sp - _ = t₂.sp - _; rw [h₁.sp, h₂.sp], fun r hr => by
         rw [List.mem_singleton.mp hr, e₁, e₂]; exact h₁.s0.trans h₂.s0.symm⟩)
     (fun a u ⟨t, ⟨s, P, p, b, sp, _⟩, e⟩ => by

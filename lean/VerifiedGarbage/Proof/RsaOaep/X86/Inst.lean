@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Verified
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Sat
+public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.PVerified
+public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.PSat
 public import VerifiedGarbage.Proof.RsaOaep.X86.Enc.Verified
 public import VerifiedGarbage.Proof.RsaOaep.X86.Enc.Sat
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
@@ -11,8 +13,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 
 What the registrations check of the variants whose tables a function takes
 (`OK`), and the instances' proofs against the contracts the registrations
-state, with both hash functions any of the tables: decryption (`dec_ok`)
-and encryption (`enc_ok`).
+state, with both hash functions any of the tables: decryption (`dec_ok`,
+and `decP_ok` given `pre`) and encryption (`enc_ok`).
 -/
 
 @[expose] public section
@@ -36,6 +38,13 @@ operation of `c`. -/
 theorem dec_ok (vs : List TVar) (hok : OK vs) (c : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     Verified target (Dec.decCode vs c) (Dec.dspec vs) :=
   Dec.dec_verified hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.dec_sat hw hok.2.1) c
+
+/-- `vg_rsa_oaep_decrypt_precomputed`, with the tables of `vs` and the
+private-key operation of `c` and `w`, given `pre`. -/
+theorem decP_ok (vs : List TVar) (hok : OK vs) (c : Proof.Rsa.X86.PrivChecked.CrtImpl)
+    (w : Proof.Rsa.X86.PrivChecked.CrtPImpl) :
+    Verified target (Dec.decCodeP vs c w) (Dec.dspecP vs) :=
+  Dec.decP_verified hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.dec_satP hw hok.2.1) c w
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs`. -/
 theorem enc_ok (vs : List TVar) (hok : OK vs) :

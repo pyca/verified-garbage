@@ -26,7 +26,7 @@ open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Two two_post wp_li wp_addi wp_mov wp_nil)
 
 section
-variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) {rc : Nat} (hrc : rc ≤ 2)
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) {rc : Nat} (hrc : rc ≤ 2)
 include P hm hrc
 
 omit hrc in

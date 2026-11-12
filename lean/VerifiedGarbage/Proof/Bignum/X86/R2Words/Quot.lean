@@ -76,15 +76,15 @@ theorem mg_quot' {d u a P Q r Q1 r1 : Nat} (hd : d < 2 ^ 32) (hn : 2 ^ 31 ≤ d)
   rw [Nat.zero_mod, Nat.add_zero]
   exact VG.Proof.Bignum.WordStep32.mg_quot hd hn hu ha rfl hP hQ hr hQ1 hr1
 
-/-- `quot`: `q̂` at 180, `min(⌊(u₂ 2^32 + u₁) / d⌋, 2^32 - 1)` for `u₂ ≤ d`. -/
-theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
-    (ws : Ws s base bytes) (di : PtrAt s base .edi 0) (hb : 184 ≤ bytes)
+/-- `quot`: `q̂` at `h + 20` (`R2Words`' own: 180), `min(⌊(u₂ 2^32 + u₁) / d⌋, 2^32 - 1)` for `u₂ ≤ d`. -/
+theorem quot_ok {h : Nat} {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
+    (ws : Ws s base bytes) (di : PtrAt s base .edi 0) (hb : h + 24 ≤ bytes)
     (hax : s.gpr .eax = BitVec.ofNat 32 u2) (hbp : s.gpr .ebp = BitVec.ofNat 32 u1)
-    (hD : w32 s.mem base oD = d) (hV : w32 s.mem base oV = (2 ^ 64 - 1) / d - 2 ^ 32)
+    (hD : w32 s.mem base (oD h) = d) (hV : w32 s.mem base (oV h) = (2 ^ 64 - 1) / d - 2 ^ 32)
     (hd1 : 2 ^ 31 ≤ d) (hd2 : d < 2 ^ 32) (hu2 : u2 ≤ d) (hu1 : u1 < 2 ^ 32) :
-    WP isa (.block quot) s fun t =>
-      w32 t.mem base oQ = (if u2 = d then 2 ^ 32 - 1 else (u2 * 2 ^ 32 + u1) / d) ∧
-      Outside base oMask 12 s.mem t.mem ∧ w32 t.mem base oSteps = w32 s.mem base oSteps ∧ Keeps k6 s t := by
+    WP isa (.block (quot h)) s fun t =>
+      w32 t.mem base (oQ h) = (if u2 = d then 2 ^ 32 - 1 else (u2 * 2 ^ 32 + u1) / d) ∧
+      Outside base (oMask h) 12 s.mem t.mem ∧ w32 t.mem base (oSteps h) = w32 s.mem base (oSteps h) ∧ Keeps k6 s t := by
   have nw := ws.nowrap
   have hu2' : u2 < 2 ^ 32 := by omega
   have pt : ∀ {t : State}, Keeps k6 s t → PtrAt t base .edi 0 := fun K => by rw [PtrAt, K.1 _ (by decide)]; exact di
@@ -95,14 +95,14 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
     rw [Nat.zero_add] at r; exact r
   have hd0 : 0 < d := by omega
   -- The mask of `u₂ = d`.
-  refine wp_movS (rd oD (Keeps.refl _ _) (by simp only [oD]; omega)) fun t₁ U₁ _ => ?_
+  refine wp_movS (rd (oD h) (Keeps.refl _ _) (by simp only [oD]; omega)) fun t₁ U₁ _ => ?_
   refine wp_subS rfl fun t₂ U₂ _ => wp_cmpi fun t₃ F₃ c₃ _ => wp_sbbS rfl c₃ fun t₄ U₄ _ => ?_
   have K₄ : Keeps k6 s t₄ := (U₁.keeps.mono (by decide)).trans (((U₂.keeps.mono (by decide)).trans F₃.keeps6).trans
     (U₄.keeps.mono (by decide)))
   have m₄ : t₄.mem = s.mem := by rw [U₄.mem, F₃.mem, U₂.mem, U₁.mem]
   have e₂ : (t₂.gpr .ecx).toNat = d - u2 := by
     rw [U₂.gpr, U₁.gpr, U₁.other _ (by decide), hax, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hu2']
-    change (2 ^ 32 - u2 + w32 s.mem base oD) % 2 ^ 32 = _
+    change (2 ^ 32 - u2 + w32 s.mem base (oD h)) % 2 ^ 32 = _
     rw [hD]; omega
   have e₄ : t₄.gpr .ecx = BitVec.ofNat 32 (if u2 = d then 2 ^ 32 - 1 else 0) := by
     apply BitVec.eq_of_toNat_eq
@@ -110,11 +110,11 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
     by_cases e : u2 = d
     · rw [ite_eq_left (by rw [e₂]; simp only [decide_eq_true_eq]; show d - u2 < 1; omega), ite_eq_left e]; rfl
     · rw [ite_eq_right (by rw [e₂]; simp only [decide_eq_true_eq]; show ¬ d - u2 < 1; omega), ite_eq_right e]; rfl
-  refine wp_storeS (ea_ptr (wt K₄) (pt K₄) (d := oMask) (by simp only [oMask]; omega))
+  refine wp_storeS (ea_ptr (wt K₄) (pt K₄) (d := (oMask h)) (by simp only [oMask]; omega))
     (ws_write (wt K₄) (by simp only [oMask]; omega)) fun t₅ M₅ => ?_
   refine wp_logicS (Or.inr rfl) rfl fun t₆ U₆ => wp_logicS (Or.inl rfl) rfl fun t₇ U₇ => ?_
   have K₇ : Keeps k6 s t₇ := K₄.trans (((M₅.keeps _).trans (U₆.keeps.mono (by decide))).trans (U₇.keeps.mono (by decide)))
-  have m₇ : t₇.mem = s.mem.writeW (off base (0 + oMask)) (BitVec.ofNat 32 (if u2 = d then 2 ^ 32 - 1 else 0)) := by
+  have m₇ : t₇.mem = s.mem.writeW (off base (0 + (oMask h))) (BitVec.ofNat 32 (if u2 = d then 2 ^ 32 - 1 else 0)) := by
     rw [U₇.mem, U₆.mem, M₅.mem, m₄, e₄]
   -- `u = u₂` but `0` where `u₂ = d`.
   have e₇ : (t₇.gpr .eax).toNat = if u2 = d then 0 else u2 := by
@@ -138,18 +138,18 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
     by_cases e : u2 = d
     · rw [hu, ite_eq_left e]; exact hd0
     · rw [hu, ite_eq_right e]; omega
-  have hmask : ∀ k, (k + 4 ≤ oMask ∨ oMask + 4 ≤ k) → k + 4 ≤ 2 ^ 64 → w32 t₇.mem base k = w32 s.mem base k :=
+  have hmask : ∀ k, (k + 4 ≤ (oMask h) ∨ (oMask h) + 4 ≤ k) → k + 4 ≤ 2 ^ 64 → w32 t₇.mem base k = w32 s.mem base k :=
     fun k h1 h2 => by rw [m₇, Nat.zero_add]; exact (writeW32_outside _ base _ (by simp only [oMask]; omega)).w32 h1 h2
   refine wp_movS rfl fun t₈ U₈ _ => ?_
   have K₈ : Keeps k6 s t₈ := K₇.trans (U₈.keeps.mono (by decide))
-  refine wp_movS (rd oV K₈ (by simp only [oV]; omega)) fun t₉ U₉ _ => wp_mul fun t₁₀ U₁₀ => ?_
+  refine wp_movS (rd (oV h) K₈ (by simp only [oV]; omega)) fun t₉ U₉ _ => wp_mul fun t₁₀ U₁₀ => ?_
   refine wp_addS rfl fun t₁₁ U₁₁ c₁₁ => wp_adcS rfl c₁₁ fun t₁₂ U₁₂ _ => ?_
   have K₁₂ : Keeps k6 s t₁₂ := K₈.trans ((U₉.keeps.mono (by decide)).trans ((U₁₀.keeps.mono (by decide)).trans
     ((U₁₁.keeps.mono (by decide)).trans (U₁₂.keeps.mono (by decide)))))
   have m₁₂ : t₁₂.mem = t₇.mem := by rw [U₁₂.mem, U₁₁.mem, U₁₀.mem, U₉.mem, U₈.mem]
   have v₉ : (t₉.gpr .eax).toNat = (2 ^ 64 - 1) / d - 2 ^ 32 := by
-    rw [U₉.gpr, U₈.mem]; change w32 t₇.mem base oV = _
-    rw [hmask oV (.inl (by simp only [oV, oMask]; omega)) (by simp only [oV]; omega), hV]
+    rw [U₉.gpr, U₈.mem]; change w32 t₇.mem base (oV h) = _
+    rw [hmask (oV h) (.inl (by simp only [oV, oMask]; omega)) (by simp only [oV]; omega), hV]
   have x₉ : (t₉.gpr .ecx).toNat = u := by rw [U₉.other _ (by decide), U₈.gpr, e₇]
   have b₁₀ : t₁₀.gpr .ebp = BitVec.ofNat 32 u1 := by
     rw [U₁₀.other _ (by decide) (by decide), U₉.other _ (by decide), U₈.other _ (by decide), bp₇]
@@ -186,11 +186,11 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
   have bp₁₆ : t₁₆.gpr .ebp = BitVec.ofNat 32 u1 := by
     rw [U₁₆.other .ebp (by decide), U₁₅.other .ebp (by decide), U₁₄.other .ebp (by decide),
       U₁₃.other .ebp (by decide), U₁₂.other .ebp (by decide), U₁₁.other .ebp (by decide), b₁₀]
-  refine wp_movS (rd oD K₁₆ (by simp only [oD]; omega)) fun t₁₇ U₁₇ _ => wp_mul fun t₁₈ U₁₈ => ?_
+  refine wp_movS (rd (oD h) K₁₆ (by simp only [oD]; omega)) fun t₁₇ U₁₇ _ => wp_mul fun t₁₈ U₁₈ => ?_
   refine wp_movS rfl fun t₁₉ U₁₉ _ => wp_subS rfl fun t₂₀ U₂₀ _ => ?_
   have si₁₇ : (t₁₇.gpr .esi).toNat = d := by
-    rw [U₁₇.gpr, m₁₆]; change w32 t₇.mem base oD = _
-    rw [hmask oD (.inl (by simp only [oD, oMask]; omega)) (by simp only [oD]; omega), hD]
+    rw [U₁₇.gpr, m₁₆]; change w32 t₇.mem base (oD h) = _
+    rw [hmask (oD h) (.inl (by simp only [oD, oMask]; omega)) (by simp only [oD]; omega), hD]
   obtain ⟨r, hr⟩ : ∃ r, r = (u1 + (2 ^ 32 - Q * d % 2 ^ 32)) % 2 ^ 32 := ⟨_, rfl⟩
   have dx₂₀ : (t₂₀.gpr .edx).toNat = r := by
     rw [U₂₀.gpr, BitVec.toNat_sub, U₁₉.gpr, U₁₉.other .eax (by decide), U₁₈.eax, U₁₈.other .ebp (by decide) (by decide),
@@ -249,12 +249,12 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
     rw [U₂₉.gpr, add3_toNat, F₂₈.gpr, U₂₇.other .ebx (by decide), U₂₆.other .ebx (by decide),
       U₂₅.other .ebx (by decide), U₂₄.other .ebx (by decide), bx₂₃, ax₂₇, dx₂₇, ofBool_toNat]
     exact mg_quot' hd2 hd1 hud hu1 hP hQ hr hQ1 hr1
-  refine wp_orS (rd oMask K₂₉ (by simp only [oMask]; omega)) fun t₃₀ U₃₀ => ?_
+  refine wp_orS (rd (oMask h) K₂₉ (by simp only [oMask]; omega)) fun t₃₀ U₃₀ => ?_
   have K₃₀ : Keeps k6 s t₃₀ := K₂₉.trans (U₃₀.keeps.mono (by decide))
-  refine wp_storeS (ea_ptr (wt K₃₀) (pt K₃₀) (d := oQ) (by simp only [oQ]; omega))
+  refine wp_storeS (ea_ptr (wt K₃₀) (pt K₃₀) (d := (oQ h)) (by simp only [oQ]; omega))
     (ws_write (wt K₃₀) (by simp only [oQ]; omega)) fun t₃₁ M₃₁ => WP.block_nil ?_
-  have m₃₁ : t₃₁.mem = (s.mem.writeW (off base oMask) (BitVec.ofNat 32 (if u2 = d then 2 ^ 32 - 1 else 0))).writeW
-      (off base oQ) (t₃₀.gpr .ebx) := by rw [M₃₁.mem, U₃₀.mem, m₂₉, m₇, Nat.zero_add, Nat.zero_add]
+  have m₃₁ : t₃₁.mem = (s.mem.writeW (off base (oMask h)) (BitVec.ofNat 32 (if u2 = d then 2 ^ 32 - 1 else 0))).writeW
+      (off base (oQ h)) (t₃₀.gpr .ebx) := by rw [M₃₁.mem, U₃₀.mem, m₂₉, m₇, Nat.zero_add, Nat.zero_add]
   refine ⟨?_, ?_, ?_, K₃₀.trans (M₃₁.keeps _)⟩
   · rw [m₃₁, w32_write_self, U₃₀.gpr, m₂₉, m₇, Nat.zero_add, Mem.readW_writeW_self32]
     by_cases e : u2 = d
@@ -263,9 +263,9 @@ theorem quot_ok {s : State} {base : Addr} {bytes : Nat} {u2 u1 d : Nat}
     · rw [ite_eq_right e, ite_eq_right e, show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.or_zero, bx₂₉, hu,
         ite_eq_right e]
   · rw [m₃₁]
-    exact ((writeW32_outside _ base _ (d := oMask) (by simp only [oMask]; omega)).mono (by omega)
+    exact ((writeW32_outside _ base _ (d := (oMask h)) (by simp only [oMask]; omega)).mono (by omega)
       (by simp only [oMask]; omega)).trans
-      ((writeW32_outside _ base _ (d := oQ) (by simp only [oQ]; omega)).mono (by simp only [oMask, oQ]; omega)
+      ((writeW32_outside _ base _ (d := (oQ h)) (by simp only [oQ]; omega)).mono (by simp only [oMask, oQ]; omega)
         (by simp only [oMask, oQ]; omega))
   · rw [m₃₁, w32_write_ne (size := bytes) nw (by simp only [oQ]; omega) (by simp only [oSteps]; omega)
       (by simp only [oQ, oSteps]; omega), w32_write_ne (size := bytes) nw (by simp only [oMask]; omega)
@@ -313,35 +313,35 @@ theorem hdr_read {s : State} {base : Addr} {bytes o : Nat} (ws : Ws s base bytes
 /-- `t` in `eax`, `ebp`, `esi`. -/
 abbrev rem3 (s : State) : Nat := (s.gpr .eax).toNat * 2 ^ 64 + (s.gpr .ebp).toNat * 2 ^ 32 + (s.gpr .esi).toNat
 
-/-- `quot3`: `q̂` (180) into `ecx`, and `t = U - q̂ D` over three words, with
-its borrow `b`, for `U = (u₂, u₁, u₀)` (188, `ebp`, 184) and `D = (d, d₁)`
-(164, 192). -/
-theorem quot3_ok {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes) (di : PtrAt s base .edi 0)
-    (hb : 196 ≤ bytes) :
-    WP isa (.block quot3) s fun t => (t.gpr .ecx).toNat = w32 s.mem base oQ ∧
-      (∃ b < 2, rem3 t + w32 s.mem base oQ * (w32 s.mem base oD * 2 ^ 32 + w32 s.mem base oD1) =
-        w32 s.mem base oU2 * 2 ^ 64 + (s.gpr .ebp).toNat * 2 ^ 32 + w32 s.mem base oU0 + 2 ^ 96 * b) ∧
+/-- `quot3`: `q̂` (`h + 20`) into `ecx`, and `t = U - q̂ D` over three words, with
+its borrow `b`, for `U = (u₂, u₁, u₀)` (`h + 28`, `ebp`, `h + 24`) and `D = (d, d₁)`
+(`h + 4`, `h + 32`). -/
+theorem quot3_ok {h : Nat} {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes) (di : PtrAt s base .edi 0)
+    (hb : h + 36 ≤ bytes) :
+    WP isa (.block (quot3 h)) s fun t => (t.gpr .ecx).toNat = w32 s.mem base (oQ h) ∧
+      (∃ b < 2, rem3 t + w32 s.mem base (oQ h) * (w32 s.mem base (oD h) * 2 ^ 32 + w32 s.mem base (oD1 h)) =
+        w32 s.mem base (oU2 h) * 2 ^ 64 + (s.gpr .ebp).toNat * 2 ^ 32 + w32 s.mem base (oU0 h) + 2 ^ 96 * b) ∧
       t.mem = s.mem ∧ Keeps k6 s t := by
-  refine WP.mono (WP.keeps k6 (Q := fun t => (t.gpr .ecx).toNat = w32 s.mem base oQ ∧
-      (∃ b < 2, rem3 t + w32 s.mem base oQ * (w32 s.mem base oD * 2 ^ 32 + w32 s.mem base oD1) =
-        w32 s.mem base oU2 * 2 ^ 64 + (s.gpr .ebp).toNat * 2 ^ 32 + w32 s.mem base oU0 + 2 ^ 96 * b) ∧
+  refine WP.mono (WP.keeps k6 (Q := fun t => (t.gpr .ecx).toNat = w32 s.mem base (oQ h) ∧
+      (∃ b < 2, rem3 t + w32 s.mem base (oQ h) * (w32 s.mem base (oD h) * 2 ^ 32 + w32 s.mem base (oD1 h)) =
+        w32 s.mem base (oU2 h) * 2 ^ 64 + (s.gpr .ebp).toNat * 2 ^ 32 + w32 s.mem base (oU0 h) + 2 ^ 96 * b) ∧
       t.mem = s.mem) ?_ rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
-  obtain ⟨hdi, aQ, rQ⟩ := hdr_read (o := oQ) ws di (by simp only [oQ]; omega)
-  obtain ⟨-, aD, rD⟩ := hdr_read (o := oD) ws di (by simp only [oD]; omega)
-  obtain ⟨-, aD1, rD1⟩ := hdr_read (o := oD1) ws di (by simp only [oD1]; omega)
-  obtain ⟨-, aU0, rU0⟩ := hdr_read (o := oU0) ws di (by simp only [oU0]; omega)
-  obtain ⟨-, aU2, rU2⟩ := hdr_read (o := oU2) ws di (by simp only [oU2]; omega)
+  obtain ⟨hdi, aQ, rQ⟩ := hdr_read (o := (oQ h)) ws di (by simp only [oQ]; omega)
+  obtain ⟨-, aD, rD⟩ := hdr_read (o := (oD h)) ws di (by simp only [oD]; omega)
+  obtain ⟨-, aD1, rD1⟩ := hdr_read (o := (oD1 h)) ws di (by simp only [oD1]; omega)
+  obtain ⟨-, aU0, rU0⟩ := hdr_read (o := (oU0 h)) ws di (by simp only [oU0]; omega)
+  obtain ⟨-, aU2, rU2⟩ := hdr_read (o := (oU2 h)) ws di (by simp only [oU2]; omega)
   dsimp only [rem3]
   xrun [quot3, hd, execMul, hdi, aQ, rQ, aD, rD, aD1, rD1, aU0, rU0, aU2, rU2]
   simp only [Nat.zero_add]
   refine ⟨trivial, ?_⟩
   dsimp only [w32]
-  generalize s.mem.readW (off base oU2) 32 = u2
-  generalize s.mem.readW (off base oU0) 32 = u0
+  generalize s.mem.readW (off base (oU2 h)) 32 = u2
+  generalize s.mem.readW (off base (oU0 h)) 32 = u0
   generalize s.gpr .ebp = u1
-  generalize s.mem.readW (off base oD) 32 = d1
-  generalize s.mem.readW (off base oD1) 32 = d0
-  generalize s.mem.readW (off base oQ) 32 = q
+  generalize s.mem.readW (off base (oD h)) 32 = d1
+  generalize s.mem.readW (off base (oD1 h)) 32 = d0
+  generalize s.mem.readW (off base (oQ h)) 32 = q
   have m1 := (mul_words d1 q).1; have l1 := (mul_words d1 q).2
   have m0 := (mul_words d0 q).1
   have eq : q.toNat * (d1.toNat * 2 ^ 32 + d0.toNat) = d1.toNat * q.toNat * 2 ^ 32 + d0.toNat * q.toNat := by
@@ -376,25 +376,25 @@ theorem quot3_ok {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes) 
   exact ⟨c3.toNat, Bool.toNat_lt _, by omega⟩
 
 /-- `fix3`: if `t` (`rem3`) is negative, `q̂ := q̂ - 1` (`ecx`) and `t := t + D`,
-with its carry `c`, for `D = (d, d₁)` (164, 192). -/
-theorem fix3_ok {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes) (di : PtrAt s base .edi 0)
-    (hb : 196 ≤ bytes) :
-    WP isa (.block fix3) s fun t =>
+with its carry `c`, for `D = (d, d₁)` (`h + 4`, `h + 32`). -/
+theorem fix3_ok {h : Nat} {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes) (di : PtrAt s base .edi 0)
+    (hb : h + 36 ≤ bytes) :
+    WP isa (.block (fix3 h)) s fun t =>
       (∀ n, (s.gpr .ecx).toNat = n + (if 2 ^ 96 / 2 ≤ rem3 s then 1 else 0) → (t.gpr .ecx).toNat = n) ∧
-      (∃ c < 2, rem3 t + 2 ^ 96 * c = rem3 s + if 2 ^ 96 / 2 ≤ rem3 s then (w32 s.mem base oD * 2 ^ 32 + w32 s.mem base oD1) else 0) ∧
+      (∃ c < 2, rem3 t + 2 ^ 96 * c = rem3 s + if 2 ^ 96 / 2 ≤ rem3 s then (w32 s.mem base (oD h) * 2 ^ 32 + w32 s.mem base (oD1 h)) else 0) ∧
       t.mem = s.mem ∧ Keeps k6 s t := by
   refine WP.mono (WP.keeps k6 (Q := fun t =>
       (∀ n, (s.gpr .ecx).toNat = n + (if 2 ^ 96 / 2 ≤ rem3 s then 1 else 0) → (t.gpr .ecx).toNat = n) ∧
-      (∃ c < 2, rem3 t + 2 ^ 96 * c = rem3 s + if 2 ^ 96 / 2 ≤ rem3 s then (w32 s.mem base oD * 2 ^ 32 + w32 s.mem base oD1) else 0) ∧
+      (∃ c < 2, rem3 t + 2 ^ 96 * c = rem3 s + if 2 ^ 96 / 2 ≤ rem3 s then (w32 s.mem base (oD h) * 2 ^ 32 + w32 s.mem base (oD1 h)) else 0) ∧
       t.mem = s.mem) ?_ rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
-  obtain ⟨hdi, aD, rD⟩ := hdr_read (o := oD) ws di (by simp only [oD]; omega)
-  obtain ⟨-, aD1, rD1⟩ := hdr_read (o := oD1) ws di (by simp only [oD1]; omega)
+  obtain ⟨hdi, aD, rD⟩ := hdr_read (o := (oD h)) ws di (by simp only [oD]; omega)
+  obtain ⟨-, aD1, rD1⟩ := hdr_read (o := (oD1 h)) ws di (by simp only [oD1]; omega)
   dsimp only [rem3]
   xrun [fix3, hd, hdi, aD, rD, aD1, rD1]
   simp only [Nat.zero_add]
   dsimp only [w32]
-  generalize s.mem.readW (off base oD) 32 = d1
-  generalize s.mem.readW (off base oD1) 32 = d0
+  generalize s.mem.readW (off base (oD h)) 32 = d1
+  generalize s.mem.readW (off base (oD1 h)) 32 = d0
   generalize s.gpr .ecx = q
   have l0 := (s.gpr .esi).isLt; have l1 := (s.gpr .ebp).isLt; have l2 := (s.gpr .eax).isLt; have lq := q.isLt
   by_cases hn : 2 ^ 32 ≤ (s.gpr .eax).toNat + (s.gpr .eax).toNat
@@ -432,19 +432,19 @@ theorem rem3_lt (t : State) : rem3 t < 2 ^ 96 := by
 theorem two_words_lt {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) : 4 * (a * 2 ^ 32 + b) < 2 ^ 96 / 2 := by
   omega
 
-/-- `refine3`: `q̂` at 180, `Q ≤ q̂ ≤ Q + 2`, refined to `Q = min(⌊U / D⌋, 2^32 - 1)`,
-for `U = (u₂, u₁, u₀)` (188, `ebp`, 184) and `D = (d, d₁)` (164, 192), `U < (2^32 + 1) D`. -/
-theorem refine3_ok {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes) (di : PtrAt s base .edi 0)
-    (hb : 196 ≤ bytes) {U D : Nat}
-    (hU : U = w32 s.mem base oU2 * 2 ^ 64 + (s.gpr .ebp).toNat * 2 ^ 32 + w32 s.mem base oU0)
-    (hD : D = w32 s.mem base oD * 2 ^ 32 + w32 s.mem base oD1) (hD0 : 0 < D) (hUD : U < (2 ^ 32 + 1) * D)
-    (hge : min (U / D) (2 ^ 32 - 1) ≤ w32 s.mem base oQ) (hle : w32 s.mem base oQ ≤ min (U / D) (2 ^ 32 - 1) + 2) :
-    WP isa (.block refine3) s fun t =>
-      t.mem = s.mem.writeW (off base oQ) (BitVec.ofNat 32 (min (U / D) (2 ^ 32 - 1))) ∧ Keeps k6 s t := by
+/-- `refine3`: `q̂` at `h + 20`, `Q ≤ q̂ ≤ Q + 2`, refined to `Q = min(⌊U / D⌋, 2^32 - 1)`,
+for `U = (u₂, u₁, u₀)` (`h + 28`, `ebp`, `h + 24`) and `D = (d, d₁)` (`h + 4`, `h + 32`), `U < (2^32 + 1) D`. -/
+theorem refine3_ok {h : Nat} {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes) (di : PtrAt s base .edi 0)
+    (hb : h + 36 ≤ bytes) {U D : Nat}
+    (hU : U = w32 s.mem base (oU2 h) * 2 ^ 64 + (s.gpr .ebp).toNat * 2 ^ 32 + w32 s.mem base (oU0 h))
+    (hD : D = w32 s.mem base (oD h) * 2 ^ 32 + w32 s.mem base (oD1 h)) (hD0 : 0 < D) (hUD : U < (2 ^ 32 + 1) * D)
+    (hge : min (U / D) (2 ^ 32 - 1) ≤ w32 s.mem base (oQ h)) (hle : w32 s.mem base (oQ h) ≤ min (U / D) (2 ^ 32 - 1) + 2) :
+    WP isa (.block (refine3 h)) s fun t =>
+      t.mem = s.mem.writeW (off base (oQ h)) (BitVec.ofNat 32 (min (U / D) (2 ^ 32 - 1))) ∧ Keeps k6 s t := by
   have pt : ∀ {t : State} {rs : List Reg}, .edi ∉ rs → Keeps rs s t → PtrAt t base .edi 0 := fun hr K => by
     rw [PtrAt, K.1 _ hr]; exact di
-  have bQ : 0 + oQ < bytes := by simp only [oQ]; omega
-  have bQ' : 0 + oQ + 4 ≤ bytes := by simp only [oQ]; omega
+  have bQ : 0 + (oQ h) < bytes := by simp only [oQ]; omega
+  have bQ' : 0 + (oQ h) + 4 ≤ bytes := by simp only [oQ]; omega
   simp only [refine3, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (quot3_ok ws di hb) fun t₁ ⟨hq₁, ⟨b, hb', h1⟩, hm₁, K₁⟩ => ?_
@@ -454,7 +454,7 @@ theorem refine3_ok {s : State} {base : Addr} {bytes : Nat} (ws : Ws s base bytes
   have K₁₂ := K₁.trans K₂
   refine WP.mono (fix3_ok (ws.of_keeps K₁₂) (pt (by decide) K₁₂) hb) fun t₃ ⟨hq₃, _, hm₃, K₃⟩ => ?_
   have K₁₃ := K₁₂.trans K₃
-  refine wp_storeS (ea_ptr (ws.of_keeps K₁₃) (pt (by decide) K₁₃) (d := oQ) bQ)
+  refine wp_storeS (ea_ptr (ws.of_keeps K₁₃) (pt (by decide) K₁₃) (d := (oQ h)) bQ)
     (ws_write (ws.of_keeps K₁₃) bQ') fun t₄ M₄ => WP.block_nil ⟨?_, (K₁₃.trans (M₄.keeps _)).mono (by decide)⟩
   rw [← hU, ← hD] at h1
   rw [hm₁, ← hD] at h2

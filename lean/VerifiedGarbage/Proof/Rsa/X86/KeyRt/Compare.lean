@@ -49,7 +49,7 @@ theorem eqLoop_ok {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws s W Z)
     (hc : s.gpr .ecx = 0) (hn : (s.gpr .edx).toNat = 4 * N) :
     WP isa eqLoop s fun u => u.mem = s.mem ∧
       (u.gpr .ecx = 0 ↔ val32 s.mem W x N = val32 s.mem W y N) ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u ∧ PtrAt u W .ebp (x + 4 * N) := by
   unfold eqLoop
   refine WP.mono (countLoop hN (fun j t => Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t ∧
       t.mem = s.mem ∧ PtrAt t W .ebp (x + 4 * j) ∧ PtrAt t W .ebx (y + 4 * j) ∧
@@ -57,7 +57,7 @@ theorem eqLoop_ok {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws s W Z)
       (t.gpr .ecx = 0 ↔ ∀ i < j, s.mem.readW (off W (x + 4 * i)) 32 =
         s.mem.readW (off W (y + 4 * i)) 32)) ?_
     ⟨Keeps.refl _ _, rfl, by simpa using hp, by simpa using hb, by simpa using hn,
-      by simp [hc]⟩) fun u ⟨K, m, _, _, _, e⟩ => ⟨m, e.trans (val32_eq_iff _ _ _ _ _).symm, K⟩
+      by simp [hc]⟩) fun u ⟨K, m, p, _, _, e⟩ => ⟨m, e.trans (val32_eq_iff _ _ _ _ _).symm, K, p⟩
   rintro j t hj ⟨K, m, p, b, n, e⟩
   have ht := hw.of_keeps K
   refine wp_movS (readSrc_ptr ht p (d := 0) (by omega)) fun s1 U1 _ => ?_
@@ -122,7 +122,7 @@ theorem eqArrays_ok {L : Lay} {s : State} {W : Addr} {Z len N a b : Nat}
     h.kw_pos (by omega) (by omega)
     (by rw [PtrAt, U4.other _ (by decide), K3.1 _ (by decide), K2.1 _ (by decide)]; exact p1)
     (by rw [PtrAt, U4.other _ (by decide), K3.1 _ (by decide)]; exact p2)
-    U4.gpr (by rw [U4.other _ (by decide)]; exact n3)) fun u ⟨m, e, K⟩ => ?_
+    U4.gpr (by rw [U4.other _ (by decide)]; exact n3)) fun u ⟨m, e, K, _⟩ => ?_
   have mem := m.trans m4
   have KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := (K4.mono (by decide)).trans K
   refine ⟨h.keep KK (by decide) (by decide) (by rw [mem]; exact Outside.refl _ _ _ _), mem, ?_, KK⟩

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgVerified
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgSat
+public import VerifiedGarbage.Proof.RsaPss.Arm.SgP
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfVerified
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfSat
 
@@ -38,6 +39,13 @@ theorem sign_ok {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (v : Proof.
     Verified target (Sg.signCode mvs vs v) (Sg.sspec mvs vs) :=
   Sg.sign_verified hok.1 hok.2.1 (let ⟨_, hw⟩ := List.exists_mem_of_ne_nil _ hok.2.2.2.1
     let ⟨_, hwg⟩ := List.exists_mem_of_ne_nil _ hok.2.2.2.2; Sg.sign_sat hw hwg hok.2.2.1) v
+
+/-- `vg_rsa_pss_sign_precomputed`, with the tables of `mvs` and `vs` and
+`vg_rsa_private_checked_precomputed` over `v`. -/
+theorem signP_ok {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (v : Proof.Rsa.Arm.CrtImpl) :
+    Verified target (Sg.signCodeP mvs vs v) (Sg.sspecP mvs vs) :=
+  Sg.sign_verifiedP hok.1 hok.2.1 (let ⟨_, hw⟩ := List.exists_mem_of_ne_nil _ hok.2.2.2.1
+    let ⟨_, hwg⟩ := List.exists_mem_of_ne_nil _ hok.2.2.2.2; Sg.sign_satP hw hwg hok.2.2.1) v
 
 /-- `vg_rsa_pss_verify_precomputed`, with the tables of `mvs` and `vs`,
 calling `c`. -/
