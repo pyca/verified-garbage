@@ -315,6 +315,12 @@ theorem sha384_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.
   inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses (`initWords`). -/
+theorem sha384_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha384I.S 178 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha384I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 178
+
 theorem sha384_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha384I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha384I, Proof.Hmac.finalizeScratchContract,
     Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using finSat 192 48 234
@@ -360,6 +366,7 @@ def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
       (by
         unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
         exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+      178 (by simp only [initWords_eq, hash]; decide) sha384_satW
       (by
         unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
         exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
@@ -376,6 +383,12 @@ def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
 theorem sha512_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 234
+
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses (`initWords`). -/
+theorem sha512_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512I.S 178 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha512I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 178
 
 theorem sha512_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512I, Proof.Hmac.finalizeScratchContract,
@@ -424,6 +437,7 @@ def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    178 (by simp only [initWords_eq, hash]; decide) sha512_satW
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
@@ -439,6 +453,12 @@ def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
 theorem sha512_224_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512_224I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 234
+
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses (`initWords`). -/
+theorem sha512_224_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_224I.S 178 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha512_224I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 178
 
 theorem sha512_224_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512_224I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.finalizeScratchContract,
@@ -478,6 +498,7 @@ def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    178 (by simp only [initWords_eq, hash]; decide) sha512_224_satW
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
@@ -493,6 +514,12 @@ def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
 theorem sha512_256_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha512_256I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 234
+
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses (`initWords`). -/
+theorem sha512_256_satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha512_256I.S 178 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha512_256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 178
 
 theorem sha512_256_satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha512_256I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.finalizeScratchContract,
@@ -532,6 +559,7 @@ def sha512_256 (v : Compress) (stream : List StreamFn := []) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    178 (by simp only [initWords_eq, hash]; decide) sha512_256_satW
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))

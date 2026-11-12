@@ -165,6 +165,12 @@ theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I X8
   inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.md5I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 48
 
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses (`initWords`). -/
+theorem satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.md5I.S 20 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.md5I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 20
+
 theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.md5I, Proof.Hmac.finalizeScratchContract,
     Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using finSat 80 16 48
@@ -195,6 +201,7 @@ def unscrubbed : MdHash :=
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    20 (by simp only [initWords_eq, hash]; decide) satW
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))

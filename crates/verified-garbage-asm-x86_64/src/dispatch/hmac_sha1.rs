@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha1_init_shani` if the CPU supports its features (`VG_HMAC_SHA1_INIT_SHANI_FEATURES`); `vg_hmac_sha1_init_avx_bmi` if the CPU supports its features (`VG_HMAC_SHA1_INIT_AVX_BMI_FEATURES`); or else `vg_hmac_sha1_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.

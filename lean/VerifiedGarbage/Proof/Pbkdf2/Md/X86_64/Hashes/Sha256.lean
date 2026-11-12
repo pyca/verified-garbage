@@ -174,6 +174,12 @@ theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha256I
   inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi, X86_64.argRegs] using initSat 96 104
 
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses (`initWords`). -/
+theorem satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha256I.S 82 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi, X86_64.argRegs] using initSat 96 82
+
 theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha256I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha256I, Proof.Hmac.finalizeScratchContract,
     Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi, X86_64.argRegs] using finSat 96 32 104
@@ -240,6 +246,7 @@ def variant : MdHash :=
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    82 (by simp only [initWords_eq, hash]; decide) satW
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
