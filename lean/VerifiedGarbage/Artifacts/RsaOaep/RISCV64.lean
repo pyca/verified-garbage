@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.RsaOaep.RISCV64
 
-open VG.Proof.RsaOaep.RISCV64 (OK enc_ok dec_ok)
+open VG.Proof.RsaOaep.RISCV64 (OK enc_ok dec_ok decP_ok)
 open VG.Proof.MdHashTable.RISCV64 (vars tables fns3)
 
 def artifacts : List Artifact :=
@@ -21,6 +21,11 @@ def artifacts : List Artifact :=
       code := Impl.RsaOaep.RISCV64.Dec.decrypt (fns3 vars)
       stack := 3472
       verified := dec_ok vars h },
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact RISCV64.target {
+      tables := [("hash", tables vars), ("mgf1", tables vars)]
+      code := Impl.RsaOaep.RISCV64.Dec.decryptP (fns3 vars)
+      stack := 3488
+      verified := decP_ok vars h },
     Spec.RsaOaep.encryptMdTablesApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaOaep.RISCV64.encrypt (fns3 vars)

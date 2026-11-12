@@ -48,7 +48,7 @@ theorem pubD_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec ts).pub s�
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T))) ∧
       ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 16) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 16) (FnTable.words isa s₂ T)) := by
-  have e : stackBytes = 3775 + 1 := rfl
+  have e : stackBytes = 3791 + 1 := rfl
   unfold decSpec at h
   rw [e] at h
   sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
@@ -76,6 +76,16 @@ theorem pubD_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec ts).pub s�
 
 theorem pubD_refl (s : State) : PubD s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
 
+/-- With `pc`, `pre`'s public data: its address, its length and what the
+call may leak of it. -/
+def PubP (a s : State) : Prop :=
+  stackArg s 17 = stackArg a 17 ∧ stackArg s 18 = stackArg a 18 ∧
+    Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 17) (s.gpr .r7).toNat =
+      Spec.Rsa.privatePrecomputedLeak a.mem (stackArg a 17) (a.gpr .r7).toNat
+
+/-- With `pc`, `pre`'s facts and public data. -/
+abbrev XP (pc : Bool) (a s : State) : Prop := pc = true → PreXD s ∧ PubP a s
+
 /-! ## The base state for the shared code -/
 
 /-- The entry state `s` with memory `m` and `rc` in `r0`. -/
@@ -95,7 +105,7 @@ def PreX (x : State) : Prop := Fits SX x
 def PubX (a x : State) : Prop := x.sp = a.sp ∧ stackArg x 13 = stackArg a 13
 
 section
-variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (rc : Nat)
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (rc : Nat)
 include P hm
 
 /-- The stack arguments, in the base state. -/
@@ -135,14 +145,14 @@ end
 
 /-- `t` has the decoding's `Base` from an entry state with `a`'s public data. -/
 def DX (a t : State) : Prop :=
-  ∃ s m, PreD s ∧ PubD a s ∧ Frame [kD s, scR s] s.mem m ∧
+  ∃ pc s m, PreD pc s ∧ PubD a s ∧ Frame [kD s, scR s] s.mem m ∧
     Base (SD s) (VD s (rcOf (privO s))) (withMem s m) t
 
 /-- What `DX` fixes, from the anchor. -/
 theorem DX.pins {a t : State} (h : DX a t) :
     t.sp = fb a ∧ t.gpr .r14 = stackArg a 13 ∧ t.gpr .r15 = a.gpr .r7 ∧ t.gpr .r16 = a.gpr .r3 ∧
       t.gpr .r17 = a.gpr .r5 ∧ t.gpr .r18 = stackArg a 9 ∧ t.gpr .r19 = stackArg a 10 := by
-  obtain ⟨s, m, P, p, hm, b⟩ := h
+  obtain ⟨_, s, m, P, p, hm, b⟩ := h
   exact ⟨by rw [b.sp]; show fb s = fb a; rw [fb, fb, p.sp], b.r14.trans (p.args 13 (by decide)),
     by rw [Base.r15 b, p.g _ (by decide)], by rw [Base.r16 b, p.g _ (by decide)], by rw [Base.r17 b, p.g _ (by decide)],
     by rw [Base.r18 b, p.args 9 (by decide)], by rw [Base.r19 b, p.args 10 (by decide)]⟩

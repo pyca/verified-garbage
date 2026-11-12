@@ -241,10 +241,9 @@ include hok in
 /-- Signing's: the tables of the first run's entry state `a`, which every
 state whose public data agree with it holds. -/
 theorem sgood_of {a : State}
-    (ha : (signK (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)).pre a) :
+    (hp : SPre (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs) a) :
     ∃ T Hs Gs, SGood (tsH := MdHashTable.X86_64.tables vs) (tsG := HashTable.X86_64.tables vs)
       (MdHashTable.X86_64.fnsOf vs) (HashTable.X86_64.fnsOf vs) a T Hs Gs := by
-  have hp := SPre.of _ _ ha
   obtain ⟨_, hT, hwa⟩ := hp.tabH
   obtain ⟨w, wm, rfl⟩ := List.mem_map.mp hT
   obtain ⟨_, hT', hwa'⟩ := hp.tabG
@@ -252,9 +251,8 @@ theorem sgood_of {a : State}
   have hs := hok.2.2.1 w wm
   have hidx : sidx a = idx w := tidx_read hwa
   refine ⟨tabsOf vs w w', w.mgf.G, w'.mgf.G, ⟨fun s hpub hps => ?_, fun s hpub hps => ?_, ?_⟩⟩
-  · have p := SPre.of _ _ hps
-    rw [hidx]
-    exact esel_of hok wm wm' p.hsy p.hdl ((hpub.2.2.2.2.2.1 _ hT).mp hwa) ((hpub.2.2.2.2.2.2 _ hT').mp hwa')
+  · rw [hidx]
+    exact esel_of hok wm wm' hps.hsy hps.hdl ((hpub.2.2.2.2.2.1 _ hT).mp hwa) ((hpub.2.2.2.2.2.2 _ hT').mp hwa')
   · exact tabWords_eq wm wm' hpub.2.2.2.2.1 ((hpub.2.2.2.2.2.1 _ hT).mp hwa) ((hpub.2.2.2.2.2.2 _ hT').mp hwa')
       hwa hwa'
   · rw [hidx, encode_shape _ _ hs.2.1 hs.2.2]

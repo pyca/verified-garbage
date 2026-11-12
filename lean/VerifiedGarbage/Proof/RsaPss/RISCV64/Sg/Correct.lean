@@ -53,7 +53,7 @@ theorem n0_ne {s t : State} (E : Entered s t) (hz : (t.gpr .t1 == 0) = false) : 
   fun h => by rw [E.t1, n0S, h] at hz; simp at hz
 
 section
-variable {Hs Gs : Spec.Mgf1.Hash} {s : State} (P : PreS Hs.len s)
+variable {pc : Bool} {Hs Gs : Spec.Mgf1.Hash} {s : State} (P : PreS pc Hs.len s)
 include P
 
 theorem fail_done {t : State} (h : Base Ss vS s t) (hv : signOut Hs Gs s = .invalid) :
@@ -68,7 +68,7 @@ variable {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {M : MdL H hH} {dg : Stri
 include hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv
 
 theorem checks_done {t : State} (E : Entered s t) (sy : t.syms = s.syms) :
-    WP isa (checks H M.be f g) t (Done Hs Gs s) := by
+    WP isa (checks H M.be f g pc) t (Done Hs Gs s) := by
   have hk1 : 64 ≤ kk s := P.k1
   have hD64 : H.D ≤ 64 := hH.hD64
   refine WP.ite _ (eval_zero _ _) (fun hz => fail_done P E.base (signOut_zero Hs Gs (by omega) (n0_eq E hz)))
@@ -91,8 +91,8 @@ theorem checks_done {t : State} (E : Entered s t) (sy : t.syms = s.syms) :
   exact hw
 
 /-- The code for the hash function `H`, in its frame. -/
-theorem code_ok : WP isa (signFor H M.be f g) s (Post Hs Gs s) := by
-  refine WP.alloc (by decide) (by have := P.sp1; rw [stackBytes_eq] at this; unfold frameBytes; omega) ?_
+theorem code_ok : WP isa (signFor H M.be f g pc) s (Post Hs Gs s) := by
+  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega) ?_
   refine WP.seq (WP.mono_syms (pro_ok P) fun t₀ E₀ y₀ => WP.seq (WP.mono_syms (spill_ok P E₀) fun t E y =>
     WP.seq (WP.mono (checks_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E (y.trans (y₀.trans rfl)))
       fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, ?_⟩)))

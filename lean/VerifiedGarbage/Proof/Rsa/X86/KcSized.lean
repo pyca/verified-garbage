@@ -50,8 +50,8 @@ theorem bodies_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
       fun t => ∃ A live c, Stg g s A live c t := by
   obtain ⟨B, Z, len, full⟩ := g
   cases full
-  · exact WP.mono (crtBody_ok h) fun _ ⟨_, _, _, _, _, _, _, ht⟩ => ⟨_, _, _, ht⟩
-  · exact WP.mono (keyBody_ok h) fun _ ⟨_, _, _, _, _, _, _, _, _, _, _, A, live, ht⟩ => ⟨A, live, _, ht⟩
+  · exact WP.mono (crtBody_ok h) fun _ ⟨_, _, _, _, A, live, ht⟩ => ⟨A, live, _, ht⟩
+  · exact WP.mono (keyBody_ok h) fun _ ⟨_, _, _, _, _, _, _, A, live, ht⟩ => ⟨A, live, _, ht⟩
 
 /-- `sized` runs from `Inputs`, whatever the numbers. -/
 theorem sized_wp {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :

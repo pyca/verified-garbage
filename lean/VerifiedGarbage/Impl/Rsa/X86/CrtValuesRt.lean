@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
+public import VerifiedGarbage.Impl.Rsa.X86.WordModRt
 
 /-! # CRT parameter calculation at a width read at run time (i686)
 
@@ -18,7 +19,7 @@ arrays.
 @[expose] public section
 namespace VG.Impl.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.KeyRt
-open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD nArr
+open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD nArr
   entry inputArgs failure)
 
 /-- `n_len` and `scratch`. -/
@@ -65,23 +66,35 @@ def fallback : Prog isa := .seq callSetup inverseCall
 
 def inverseChoice : Prog isa := InvBatchRt.dispatch lay fallback
 
-def checksPrefix : List (Prog isa) := [
-  eqS lay sE1 aDQ aQ aT1,eqS lay sE2 aDR aZero aT1] ++ invSetup
+def checksPrefix : List (Prog isa) := [WordModRt.eqWide lay sE1 aDR2 aDQ] ++ invSetup
 
 def checksSuffix : List (Prog isa) := [eqS lay sE3 1 aOne aT1,
-  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE3),
   copy lay aDQ aD,copy lay aDD aP,.block (clrLow lay aDD)]
 
 def checks : Prog isa := seqs (checksPrefix ++ inverseChoice::checksSuffix)
 
+/-- The header word holding the guard (`WordModRt.balanced`), which the word steps need. -/
+def sG : Nat := 144
+
+/-- The product `p q` (`2 w` words in `aDR2` and `aDR3`), compared with `n` (`aDQ`) by the checks. -/
 def firstDiv : Prog isa := seqs [
-  copy lay aDD aP, .block (bitOf lay sPodd aP), div aDR]
+  .block (bitOf lay sPodd aP ++ WordModRt.balanced lay 7 9 11 aDQ sG), WordModRt.mulWide lay aDR2 aP aQ]
 
-def divQ : Prog isa := seqs [
-  copy lay aDQ aD, copy lay aDD aQ, .block (clrLow lay aDD), div aDR3]
+/-- `d mod (p - 1)` into `aDR2` and `d mod (q - 1)` into `aDR3`, `rem` the remainder of
+`[aDQ]` (`d`) by `[aDD]` into an array. -/
+def rems (rem : Nat → Prog isa) : Prog isa := seqs [
+  rem aDR2, copy lay aDQ aD, copy lay aDD aQ, .block (clrLow lay aDD), rem aDR3]
 
+/-- The remainders by word steps (`aDD` of `p`'s length, argument 9; under the guard, `q`'s too). -/
+def wordRems : Prog isa := rems fun r => WordModRt.wordMod lay 9 aDQ r aDD aDT
+
+/-- The remainders by `KeyRt.div`. -/
+def divRems : Prog isa := rems div
+
+/-- The checks, then the remainders: by word steps under the guard (read once), else bit by bit. -/
 def core : Prog isa :=
-  .seq firstDiv (.seq checks (.seq (div aDR2) divQ))
+  .seq firstDiv (.seq checks (WordModRt.ifBalanced sG wordRems divRems))
 
 /-- Array `j` from the big-endian bytes at argument `arg`, as many as argument `arg + 1`. -/
 def load (arg j : Nat) : Prog isa :=

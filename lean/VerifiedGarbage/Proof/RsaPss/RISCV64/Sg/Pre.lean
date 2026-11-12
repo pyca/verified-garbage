@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPss/PPC64LE/Sg/Pre.lean`, `Sg/Entry.lean`), with the frame of
-RSAES-OAEP decryption (`Proof/RsaOaep/RISCV64/Dc/Priv.lean`): `PreS D s`, the
+RSAES-OAEP decryption (`Proof/RsaOaep/RISCV64/Dc/Priv.lean`): `PreS pc D s`, the
 shared contract's precondition (`Spec.RsaPss.signMdTableContract`, with the stack of
 the frames and of `vg_rsa_private_checked`, `stackBytes`), by name
 (`preS_of`), for a digest of `D` bytes; the working space `Ss s` and the
@@ -48,9 +48,12 @@ theorem stackArgs_sixteen (s : State) :
 
 /-- The stack the function uses: its frame (`frameBytes`), the private
 operation's (`privBytes`) and that function's own. -/
-def stackBytes : Nat := frameBytes + privBytes + Impl.Rsa.RISCV64.Priv.frameBytes
+def stackBytes (pc : Bool) : Nat := frameBytes + privBytes pc + Impl.Rsa.RISCV64.Priv.frameBytes
 
-theorem stackBytes_eq : stackBytes = 3472 := rfl
+theorem stackBytes_eq : stackBytes false = 3472 := rfl
+theorem stackBytes_true : stackBytes true = 3488 := rfl
+
+theorem stackBytes_ge (pc : Bool) : 3472 ≤ stackBytes pc ∧ stackBytes pc ≤ 3488 := by cases pc <;> decide
 
 /-! ## The buffers -/
 
@@ -67,18 +70,46 @@ abbrev sR (s : State) : Region := ⟨stackArg s 10, (stackArg s 11).toNat⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
 abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 14) 11
 abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 11
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 128⟩
+/-- The stack arguments: 16, or with `pc` (`vg_rsa_pss_sign_precomputed`) 18. -/
+abbrev aR (pc : Bool) (s : State) : Region := ⟨stackArgAddr s 0, if pc then 144 else 128⟩
+/-- With `pc`, the key's precomputed values, `pre_len` words. -/
+abbrev preR (s : State) : Region := ⟨stackArg s 16, (stackArg s 17).toNat * 8⟩
+
+/-- The buffers the function reads. -/
+abbrev rdS (pc : Bool) (D : Nat) (s : State) : List Region :=
+  [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, dgR D s, sR s] ++ (if pc then [preR s] else []) ++
+    [tHR s, tGR s, aR pc s]
 
 /-- The stack the function uses. -/
-abbrev kS (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩
+abbrev kS (pc : Bool) (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 (stackBytes pc), stackBytes pc⟩
 
-/-- What the code needs of `signMdTableContract.pre`, by name, for a hash
-function of `D`-byte digests (the table `hash`'s). -/
-structure PreS (D : Nat) (s : State) : Prop where
+/-- With `pc`, `pre` holds the key's precomputed values. -/
+abbrev HypS (pc : Bool) (s : State) : Prop :=
+  pc = true → Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
+      (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) =
+    some (Spec.Rsa.wordsAt s.mem (stackArg s 16) (stackArg s 17).toNat)
+
+/-- What `vg_rsa_pss_sign_precomputed`'s precondition adds: `pre`'s facts. -/
+structure PreXS (s : State) : Prop where
+  oP : (oR s).Disjoint (preR s)
+  sP : (scR s).Disjoint (preR s)
+  kP : (kS true s).Disjoint (preR s)
+  wP : (stackArg s 16).toNat + (stackArg s 17).toNat * 8 ≤ 2 ^ 64
+  pl : (stackArg s 17).toNat =
+    Spec.Rsa.privatePrecomputedWords (s.gpr .a3).toNat (s.gpr .a7).toNat (stackArg s 1).toNat
+  sp3 : s.sp.toNat + 144 ≤ 2 ^ 64
+  alP : (stackArg s 16).toNat % 8 = 0
+  hyp : HypS true s
+
+/-- What the code needs of `signMdTableContract.pre` (or with `pc`
+`signPrecomputedMdTableContract.pre`), by name, for a hash function of
+`D`-byte digests (the table `hash`'s). -/
+structure PreS (pc : Bool) (D : Nat) (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
-  sp1 : stackBytes ≤ s.sp.toNat
-  sp2 : s.sp.toNat + 128 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, dgR D s, sR s, tHR s, tGR s, aR s]
+  sp1 : stackBytes pc ≤ s.sp.toNat
+  sp2 : s.sp.toNat + (if pc then 144 else 128) ≤ 2 ^ 64
+  hrd : s.rd = rdS pc D s
   hwr : s.wr = [oR s, scR s]
   on : (oR s).Disjoint (nR s)
   oe : (oR s).Disjoint (eR s)
@@ -92,7 +123,7 @@ structure PreS (D : Nat) (s : State) : Prop where
   os : (oR s).Disjoint (scR s)
   oth : (oR s).Disjoint (tHR s)
   otg : (oR s).Disjoint (tGR s)
-  oa : (oR s).Disjoint (aR s)
+  oa : (oR s).Disjoint (aR pc s)
   ns : (nR s).Disjoint (scR s)
   es : (eR s).Disjoint (scR s)
   ps : (pR s).Disjoint (scR s)
@@ -104,21 +135,21 @@ structure PreS (D : Nat) (s : State) : Prop where
   sls : (sR s).Disjoint (scR s)
   sth : (scR s).Disjoint (tHR s)
   stg : (scR s).Disjoint (tGR s)
-  sa : (scR s).Disjoint (aR s)
-  ko : (kS s).Disjoint (oR s)
-  kn : (kS s).Disjoint (nR s)
-  ke : (kS s).Disjoint (eR s)
-  kp : (kS s).Disjoint (pR s)
-  kq : (kS s).Disjoint (qR s)
-  kdp : (kS s).Disjoint (dpR s)
-  kdq : (kS s).Disjoint (dqR s)
-  kqi : (kS s).Disjoint (qiR s)
-  kdg : (kS s).Disjoint (dgR D s)
-  ksl : (kS s).Disjoint (sR s)
-  ks : (kS s).Disjoint (scR s)
-  kth : (kS s).Disjoint (tHR s)
-  ktg : (kS s).Disjoint (tGR s)
-  ka : (kS s).Disjoint (aR s)
+  sa : (scR s).Disjoint (aR pc s)
+  ko : (kS pc s).Disjoint (oR s)
+  kn : (kS pc s).Disjoint (nR s)
+  ke : (kS pc s).Disjoint (eR s)
+  kp : (kS pc s).Disjoint (pR s)
+  kq : (kS pc s).Disjoint (qR s)
+  kdp : (kS pc s).Disjoint (dpR s)
+  kdq : (kS pc s).Disjoint (dqR s)
+  kqi : (kS pc s).Disjoint (qiR s)
+  kdg : (kS pc s).Disjoint (dgR D s)
+  ksl : (kS pc s).Disjoint (sR s)
+  ks : (kS pc s).Disjoint (scR s)
+  kth : (kS pc s).Disjoint (tHR s)
+  ktg : (kS pc s).Disjoint (tGR s)
+  ka : (kS pc s).Disjoint (aR pc s)
   wo : (s.gpr .a0).toNat + (s.gpr .a1).toNat ≤ 2 ^ 64
   wn : (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64
   we : (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64
@@ -148,17 +179,19 @@ structure PreS (D : Nat) (s : State) : Prop where
   als : (stackArg s 12).toNat % 8 = 0
   al14 : (stackArg s 14).toNat % 8 = 0
   al15 : (stackArg s 15).toNat % 8 = 0
+  /-- With `pc`, `pre`'s facts. -/
+  px : pc = true → PreXS s
 
 /-- The contract, with the hash function one of the tables `tsH` of `MdHash`
 and MGF1's one of the tables `tsG` of `MdHash`, and the stack of the frames and
 of `vg_rsa_private_checked`. -/
 abbrev signSpec (tsH tsG : List FnTable) : Contract isa :=
   Spec.RsaPss.signMdTableContract (abi.withTables Spec.RsaPss.signMdTableSig [("hash", tsH), ("mgf1", tsG)])
-    stackBytes
+    (stackBytes false)
 
 /-- Unfolds the precondition at `h`. -/
 macro "sign_pre" " at " h:ident : tactic => `(tactic| (
-  have e : stackBytes = 3471 + 1 := rfl
+  have e : stackBytes false = 3471 + 1 := rfl
   unfold signSpec at $h:ident
   rw [e] at $h:ident
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.RsaPss.digestLenOk, Spec.MdHashTable.param,
@@ -171,7 +204,7 @@ macro "sign_pre" " at " h:ident : tactic => `(tactic| (
     exists_eq_left'] at $h:ident))
 
 theorem preS_of {H : Spec.Mgf1.Hash} {tsH tsG : List FnTable} {s : State} (h : (signSpec tsH tsG).pre s)
-    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H) : PreS H.len s := by
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H) : PreS false H.len s := by
   sign_pre at h
   obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps,
     qs, dps, dqs, qis, dgs, sls, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kth, ktg, ka, wo, wn,
@@ -181,7 +214,8 @@ theorem preS_of {H : Spec.Mgf1.Hash} {tsH tsG : List FnTable} {s : State} (h : (
   rw [hl] at hrd odg dgs kdg wdg
   exact ⟨spal, sp1, sp2, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps, qs, dps,
     dqs, qis, dgs, sls, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kth, ktg, ka, wo, wn, we, wp,
-    wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, als, al14, al15⟩
+    wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, als, al14, al15,
+    nofun⟩
 
 /-- The tables, as the contract gives them: the hash function's one of `tsH`
 at the stack argument 14 and MGF1's one of `tsG` at 15, with the functions of
@@ -217,7 +251,7 @@ def vS (s : State) : Reg → BitVec 64
   | _ => 0
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 13).toNat * 8 := by
@@ -226,11 +260,13 @@ theorem scLen : oRsa ≤ (stackArg s 13).toNat * 8 := by
 theorem sc_sub : Region.Sub (SC Ss s) (scR s) := Region.sub_prefix (scLen P)
 
 omit P in
-theorem kR_sub : Region.Sub (kR s) (kS s) := below_sub (by rw [stackBytes_eq]; decide) (by rw [stackBytes_eq]; decide)
+theorem kR_sub : Region.Sub (kR s) (kS pc s) :=
+  below_sub (by have := stackBytes_ge pc; unfold Proof.RsaOaep.RISCV64.stackBytes; omega)
+    (by have := stackBytes_ge pc; omega)
 
 /-- `Fits` for the entry state. -/
 theorem fits : Fits Ss s where
-  sp1 := by have := P.sp1; rw [stackBytes_eq] at this; unfold Proof.RsaOaep.RISCV64.stackBytes; omega
+  sp1 := by have := P.sp1; have := stackBytes_ge pc; unfold Proof.RsaOaep.RISCV64.stackBytes; omega
   sp16 := P.spal
   sc := ⟨scR s, by rw [P.hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _), rfl, scLen P⟩
   ksc := (P.ks.sub_left kR_sub).sub_right (sc_sub P)
@@ -252,8 +288,12 @@ end
 /-! ## The entry -/
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 16) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+theorem in_aR {pc : Bool} {s : State} {j : Nat} (hj : j < 16) : (aR pc s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by split <;> omega) (by omega)
+
+/-- With `pc`, the stack arguments 16 and 17 too. -/
+theorem in_aR18 {s : State} {j : Nat} (hj : j < 18) : (aR true s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega) (by omega)
 
 /-- `n`, `e`, `e_len`, `p`, `p_len` and the mask `c` in the six words at `scratch + oP`. -/
 structure Spilled (s : State) (m : Mem) : Prop where
@@ -271,11 +311,19 @@ structure Entered (s t : State) : Prop where
   sp : Spilled s t.mem
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem arg_al {j : Nat} (hj : j < 16) : (stackArgAddr s j).toNat % 8 = 0 := by
-  have := P.spal; have := P.sp2
+  have := P.spal; have : s.sp.toNat + 128 ≤ 2 ^ 64 := by have := P.sp2; split at this <;> omega
+  have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
+    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [e]; omega
+
+omit P in
+/-- With `pc`, the stack arguments 16 and 17 too. -/
+theorem arg_al18 (P : PreS true D s) {j : Nat} (hj : j < 18) : (stackArgAddr s j).toNat % 8 = 0 := by
+  have := P.spal; have : s.sp.toNat + 144 ≤ 2 ^ 64 := P.sp2
   have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
     simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   rw [e]; omega
@@ -299,7 +347,7 @@ theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → 
     (ho : 8 * j < 2048 := by decide) :
     WP isa (.block (.load .d r .t6 (8 * j) :: is)) t Q := by
   refine wp_ld (a := stackArgAddr s j) (by rw [h6]; rfl) (arg_al P hj) ?_ (fun t' o e => k t' o ?_) ho
-  · rw [hrd, P.hrd]; exact ⟨aR s, by simp, in_aR hj⟩
+  · rw [hrd, P.hrd]; exact ⟨aR pc s, by cases pc <;> simp, in_aR hj⟩
   · rw [e, stackArg, hm.readW (in_aR hj) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -309,7 +357,7 @@ theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → 
 end
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 omit P in
