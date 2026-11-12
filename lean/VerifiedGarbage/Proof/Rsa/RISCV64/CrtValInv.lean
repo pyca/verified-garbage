@@ -133,8 +133,10 @@ theorem invSetup_ok {s0 s : State} {X₁ X₂ : Nat} (h : PreC s0) (ck : Ck s0 X
   refine WP.mono (InvBatch.zeroW_ok ctx (j := aOne) (by decide) (by decide)) fun t5 ⟨h5, f5, _, z5, k5⟩ => ?_
   have c5 := step c4 f5 (by decide) (by simp) (k5.mono (rs' := InvBatch.kRegs) (by decide)) (by decide)
   have n5 : num t5.mem (bOf s0) (wOf s0) aOne = 0 := by
-    rw [InvBatch.num_eq]
-    exact InvBatch.val32_zero fun i hi => z5 i (by omega_arith)
+    have z := z5
+    rw [VG.Proof.Mont.wordsVal_succ_top] at z
+    show VG.Proof.Mont.wordsVal _ _ _ (wOf s0) = 0
+    omega
   refine WP.mono (setOne_ok h5.ws (j := aOne) (by decide) (by decide)) fun t ⟨w6, f6, v6, k6⟩ => ?_
   have c6 := step c5 f6 (by decide) (by simp) k6 (by decide)
   rw [n5] at v6
@@ -283,7 +285,8 @@ theorem invG_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
     have yv : num t1.mem (bOf s0) (wOf s0) 3 < 2 ^ (64 * (wOf s0 / 2)) := by
       have : 2 ^ (8 * pL s0) = 2 ^ (64 * (wOf s0 / 2)) := by congr 1; omega
       omega
-    rw [um, v3 (by rw [y2]; exact yv) (by rw [m2, m1]; exact hin ⟨hb8, hb4, hbq, hb32⟩), y2, m2, m1]
+    rw [um, v3 (by rw [y2]; exact yv) (by rw [m2, m1]; exact hin ⟨hb8, hb4, hbq, hb32⟩), y2, m2, m1,
+      show InvBatch.nu (wOf s0) = wOf s0 / 2 by unfold InvBatch.nu; omega]
   · -- Else as it is.
     refine WP.mono (InvLaw.inverse_ok ctxt (by decide) nxt hq nmt hm hodd) fun u ⟨w1', f1, k1, v1⟩ => ?_
     have F : Keys.Frame (bOf s0) (wOf s0) (aDQ :: aDR :: InvBatch.invArrs) [] s.mem u.mem := by

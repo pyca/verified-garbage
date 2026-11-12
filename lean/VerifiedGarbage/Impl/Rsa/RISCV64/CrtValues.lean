@@ -28,8 +28,8 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
   numbers of the primes' digits of 32 bits `⌈max(p_len, q_len) / 4⌉` (`s8`,
   computed without a branch), in arrays 0–14, which hold nothing the rest
   needs by then. For a balanced key (`shape`), the inverse leaves out its
-  `6 (n + 1)` doublings modulo `p | 1` (`InvBatch.inverseS`), and `tail`
-  multiplies it by `2^(6 (w + 1))` modulo `p | 1` by one shift and one
+  `5 (3 ν + 2)` doublings modulo `p | 1` (`InvBatch.inverseS`), and `tail`
+  multiplies it by `2^(5 (3 ν + 2))` modulo `p | 1` by one shift and one
   division by words (`WordDiv.divW`) instead; `qInv` is written last, after
   the registers `divW` writes are restored.
 * `dP` and `dQ` are the remainders of `d` divided by `p` and by `q` with
@@ -172,20 +172,21 @@ inverse that it no longer needs. -/
 def aTD : Nat := InvBatch.aF
 def aTT : Nat := InvBatch.aG
 
-/-- For `K = 6 (w + 1) = 64 Q + T` (`0 < T < 64` for `w` even): `t2 := T`,
-`t6 := 64 - T`, `t1 :=` the address of word `Q` of `aDR`, `t0 :=` `y`'s
+/-- For `K = 5 (3 v + 2) = 64 Q + T` (`v = w / 2`, the inverse's `ν`): `t2 := T`,
+`t6 := 63 - T`, `t1 :=` the address of word `Q` of `aDR`, `t0 :=` `y`'s
 (array 3), `a4 := 0` and `t3 := v + 1`. -/
 def tailSetup : List Instr :=
   ptr .t0 InvBatch.aY ++ ptr .t1 aDR ++
-  [.add .t5 .s9 .s9, .add .t5 .t5 .s9, .add .t5 .t5 .t5, .addi .t5 .t5 6, .logicImm .and .t2 .t5 63,
-    .shift .srl .d .t5 .t5 6, .shift .sll .d .t5 .t5 3, .add .t1 .t1 .t5, .li .t6 64, .sub .t6 .t6 .t2,
-    .li .a4 0, .shift .srl .d .t3 .s9 1, .addi .t3 .t3 1]
+  [.shift .srl .d .t5 .s9 1, .shift .sll .d .t2 .t5 4, .sub .t5 .t2 .t5, .addi .t5 .t5 10,
+    .logicImm .and .t2 .t5 63, .shift .srl .d .t5 .t5 6, .shift .sll .d .t5 .t5 3, .add .t1 .t1 .t5,
+    .li .t6 63, .sub .t6 .t6 .t2, .li .a4 0, .shift .srl .d .t3 .s9 1, .addi .t3 .t3 1]
 
-/-- One word of the shift by `T` (`t2`, and `64 - T` in `t6`): the word at
-`t0` shifted left, with the carry `a4` in, to `t1`; its top bits the carry out. -/
+/-- One word of the shift by `T` (`t2`, and `63 - T` in `t6`): the word at
+`t0` shifted left, with the carry `a4` in, to `t1`; its top `T` bits, by a
+shift right of one then of `63 - T` (`T` may be 0), the carry out. -/
 def shlTBody : List Instr :=
   [.load .d .t5 .t0 0, .shiftReg .sll .d .t4 .t5 .t2, .logic .or .t4 .t4 .a4, .store .d .t4 .t1 0,
-    .shiftReg .srl .d .a4 .t5 .t6, .addi .t0 .t0 8, .addi .t1 .t1 8]
+    .shift .srl .d .a4 .t5 1, .shiftReg .srl .d .a4 .a4 .t6, .addi .t0 .t0 8, .addi .t1 .t1 8]
 
 /-- `y := y 2^K mod m`, for `y < m` of `v` words in array 3: `y 2^K`, `y`'s
 `v + 1` words shifted by `T` into the zeroed `aDR` at word `Q`, divided by

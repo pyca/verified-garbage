@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreVerified
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPreVerified
 public import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValVerified
-public import VerifiedGarbage.Proof.Rsa.RISCV64.Instances
+public import VerifiedGarbage.Proof.Rsa.RISCV64.IbInverse
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkCkV
 public import VerifiedGarbage.Proof.Rsa.RISCV64.RdVerified
 public import VerifiedGarbage.Proof.Framework.Registration
