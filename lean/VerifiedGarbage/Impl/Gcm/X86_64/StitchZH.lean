@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZC
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchToDec
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
@@ -33,7 +34,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
-open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP bigMinPE)
+open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
@@ -180,13 +181,14 @@ def rem : Prog isa := remG [] .rdx
 def tailR (r : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .e (.block (storeCtr ++ lastG ++ storeY)) r)
 
-/-- Encryption, for any number of blocks from 16 on: the blocks after the
-last group, if any, by `rem`. -/
+/-- Encryption, for any number of blocks from 16 on: from 48 on, the
+groups after the first hashed from registers (`StitchZC.bigC`); the blocks
+after the last group, if any, by `rem`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
-        (.seq (.ite .b (.block []) bigP)
+      (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
+        (.seq (.ite .b (.block []) StitchZC.bigC)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem))))))
 

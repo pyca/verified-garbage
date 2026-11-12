@@ -128,7 +128,9 @@ theorem xor1ZM_ok (ix ld : Bool) (t : XReg) (b : XReg) (d : Nat) (s : State) (hb
         blockAt s.mem (Stitch.oA s ld + BitVec.ofInt 64 (d : Int) + BitVec.ofNat 64 (16 * l)) ^^^
           XBinOp.eval .pshufb (s.zlane b l) revMask) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r, r ≠ b → r ≠ t → ∀ l < 4, s'.zlane r l = s.zlane r l) := by
+      (∀ r, r ≠ b → r ≠ t → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
+      (∀ l < 4, XBinOp.eval .pshufb (s'.zlane b l) revMask =
+        blockAt s'.mem (Stitch.oA s ix + BitVec.ofInt 64 (d : Int) + BitVec.ofNat 64 (16 * l))) := by
   let a := Stitch.oA s ix + BitVec.ofInt 64 (d : Int)
   let as := Stitch.oA s ld + BitVec.ofInt 64 (d : Int)
   let v := s.mem.readW as 512
@@ -156,11 +158,15 @@ theorem xor1ZM_ok (ix ld : Bool) (t : XReg) (b : XReg) (d : Nat) (s : State) (hb
       simp only [s₂, zlane_zbin _ _ _ _ _ _ hl, ite_true, ZBinOp.sse, l₁ l hl]
       rw [State.zlane_setZ _ _ _ _ _ _ _ hl]
       simp only [hb8, ite_false, VG.Proof.Aes.X86_64.AesNi.eval_pxor]
-  refine ⟨⟨_, rfl⟩, fun l hl => ?_, by simp [s₂, s₁], by simp [s₂, s₁], by simp [s₂, s₁], fun r h1 h2 l hl => ?_⟩
+  refine ⟨⟨_, rfl⟩, fun l hl => ?_, by simp [s₂, s₁], by simp [s₂, s₁], by simp [s₂, s₁], fun r h1 h2 l hl => ?_,
+    fun l hl => ?_⟩
   · simp only [State.setMem_mem]
     rw [VG.Proof.Aes.X86_64.VaesZ.blockAt_writeW_lane _ _ _ hl, VG.Proof.Aes.X86_64.VaesZ.zmm_lane _ _ hl,
       z₂ l hl, VG.Proof.Gcm.X86_64.pshufb_rev_xor, BitVec.xor_comm, ← VG.Proof.Gcm.X86_64.blockAt_eq]
   · simp [s₂, s₁, zlane_zbin _ _ _ _ _ _ hl, State.zlane_setZ _ _ _ _ _ _ _ hl, h1, h2]
+  · simp only [State.setMem_mem]
+    rw [VG.Proof.Aes.X86_64.VaesZ.blockAt_writeW_lane _ _ _ hl, VG.Proof.Aes.X86_64.VaesZ.zmm_lane _ _ hl]
+    rfl
 
 /-- `xorDataZM ix t ld regs j`, as `Stitch.xorDataKM_ok` with four lanes. -/
 theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
@@ -179,10 +185,12 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
             XBinOp.eval .pshufb (s.zlane regs[k] l) revMask) ∧
       Frame [⟨Stitch.oA s ix + BitVec.ofNat 64 (64 * j), 64 * regs.length⟩] s.mem s'.mem ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r, r ≠ t → r ∉ regs → ∀ l < 4, s'.zlane r l = s.zlane r l) := by
+      (∀ r, r ≠ t → r ∉ regs → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
+      (∀ k (h : k < regs.length), ∀ l < 4, XBinOp.eval .pshufb (s'.zlane regs[k] l) revMask =
+        blockAt s'.mem (Stitch.oA s ix + BitVec.ofNat 64 (16 * (4 * (j + k) + l)))) := by
   induction regs generalizing j s with
   | nil => exact WP.block_nil ⟨fun _ h => absurd h (by simp), Frame.refl _ _, rfl, rfl, rfl,
-      fun _ _ _ _ _ => rfl⟩
+      fun _ _ _ _ _ => rfl, fun _ h => absurd h (by simp)⟩
   | cons b bs ih =>
     have hb8 : b ≠ t := fun h => h8 (h ▸ List.mem_cons_self)
     have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
@@ -192,7 +200,7 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
     have hin0 := hin 0 (by omega)
     have hinS0 := hinS 0 (by omega)
     rw [Nat.add_zero] at hin0 hinS0
-    refine WP.mono (xor1ZM_ok ix ld t b (64 * j) s hb8 hinS0 hin0) fun s₁ ⟨⟨v, m₁⟩, b₁, g₁, rd₁, wr₁, x₁⟩ => ?_
+    refine WP.mono (xor1ZM_ok ix ld t b (64 * j) s hb8 hinS0 hin0) fun s₁ ⟨⟨v, m₁⟩, b₁, g₁, rd₁, wr₁, x₁, c₁⟩ => ?_
     have o₁ : Stitch.oA s₁ ix = Stitch.oA s ix := Stitch.oA_congr ix g₁
     have i₁ : Stitch.oA s₁ ld = Stitch.oA s ld := Stitch.oA_congr ld g₁
     refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2 h8'
@@ -203,10 +211,10 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
       (fun a c hac hc l hl => by
         rw [i₁, o₁, show j + 1 + a = j + (a + 1) by omega, show j + 1 + c = j + (c + 1) by omega]
         exact hsep (a + 1) (c + 1) (by omega) (by omega) l hl)
-      (by omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+      (by omega)) fun s' ⟨hb, hf, g, rd, wr, hx, hc⟩ => ?_
     rw [i₁, o₁] at hb
-    rw [o₁] at hf
-    rw [VG.Proof.Aes.X86_64.AesNi.ofInt_natCast] at m₁ b₁
+    rw [o₁] at hf hc
+    rw [VG.Proof.Aes.X86_64.AesNi.ofInt_natCast] at m₁ b₁ c₁
     have adr : ∀ (p : Addr), ∀ l < 4, p + BitVec.ofNat 64 (16 * (4 * j + l)) =
         p + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 (16 * l) := fun p l _ => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * j + 16 * l = 16 * (4 * j + l) by omega]
@@ -215,7 +223,8 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
       intro l hl
       simp only [List.mem_singleton, forall_eq]
       exact Offset.disjoint _ (by omega) (by omega) (by omega)
-    refine ⟨fun k hk l hl => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr hr' l hl => ?_⟩
+    refine ⟨fun k hk l hl => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr hr' l hl => ?_,
+      fun k hk l hl => ?_⟩
     · cases k with
       | zero =>
         simp only [List.getElem_cons_zero, Nat.add_zero]
@@ -238,6 +247,15 @@ theorem xorDataZM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s :
       exact Offset.sub _ (by omega) (by omega) a ha
     · simp only [List.mem_cons, not_or] at hr'
       rw [hx r hr hr'.2 l hl, x₁ r hr'.1 hr l hl]
+    · cases k with
+      | zero =>
+        simp only [List.getElem_cons_zero, Nat.add_zero]
+        rw [hx b hb8 hbs l hl, blockAt_frame hf (hdj l hl), adr _ l hl, c₁ l hl]
+      | succ k =>
+        simp only [List.getElem_cons_succ]
+        have hk' : k < bs.length := by simpa using hk
+        rw [show j + (k + 1) = j + 1 + k by omega]
+        exact hc k hk' l hl
 
 theorem aregs_ok : aregs.Nodup ∧ .xmm13 ∉ aregs ∧ ∀ r ∈ aregs, r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
 
@@ -320,7 +338,7 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
         · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right
             (Offset.sub_base _ (by omega)))
       (by simp only [aregs, List.length_cons, List.length_nil]; omega))
-    fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃⟩ => ?_
+    fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃, _⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   rw [hm₂, i₂, o₂] at b₃
   rw [hm₂, o₂] at fr₃
