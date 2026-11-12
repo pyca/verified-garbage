@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 import VerifiedGarbage.Proof.Bignum.WordStep32
 public import VerifiedGarbage.Proof.Rsa.Arm.KdStep
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.WordDiv
 import VerifiedGarbage.Proof.Bignum.WordTop32
 
 /-! # The key checks' division on ARMv7 (`KeyDiv.divW`): Algorithm D in place -/
@@ -174,15 +175,9 @@ theorem winY_lt {X M j : Nat} (hM : 0 < M) : winY X M j < M * 2 ^ 32 := by
   rw [Nat.add_mul, Nat.one_mul] at this
   simp only [winY]; omega
 
-/-- A step: the window's remainder is that of the words from `j`. -/
-theorem winY_mod (X M j : Nat) : winY X M j % M = X / 2 ^ (32 * j) % M := by
-  have e : X / 2 ^ (32 * j) = X / 2 ^ (32 * (j + 1)) * 2 ^ 32 + X / 2 ^ (32 * j) % 2 ^ 32 := by
-    rw [show (2 : Nat) ^ (32 * (j + 1)) = 2 ^ (32 * j) * 2 ^ 32 by rw [Nat.mul_succ, Nat.pow_add],
-      ← Nat.div_div_eq_div_mul]
-    exact (Nat.div_add_mod' _ _).symm
-  conv => rhs; rw [e]
-  simp only [winY]
-  rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod]
+/-- A step: the window's remainder is that of the words from `j` (`WordStep.wordDiv_step`). -/
+theorem winY_mod (X M j : Nat) : winY X M j % M = X / 2 ^ (32 * j) % M :=
+  VG.Proof.Bignum.WordStep.wordDiv_step X M 32 j
 
 /-- The value of `[r]` a word down: the words below `j` and the remainder of those from `j`. -/
 theorem fold_next (X M j : Nat) :
@@ -199,12 +194,8 @@ theorem fold_next (X M j : Nat) :
 /-- The start: below `M`, the words above `j` are their own remainder. -/
 theorem fold_top {X M j : Nat} (h : X / 2 ^ (32 * (j + 1)) < M) :
     X % 2 ^ (32 * j) + 2 ^ (32 * j) * winY X M j = X := by
-  have e : X / 2 ^ (32 * j) = X / 2 ^ (32 * (j + 1)) * 2 ^ 32 + X / 2 ^ (32 * j) % 2 ^ 32 := by
-    rw [show (2 : Nat) ^ (32 * (j + 1)) = 2 ^ (32 * j) * 2 ^ 32 by rw [Nat.mul_succ, Nat.pow_add],
-      ← Nat.div_div_eq_div_mul]
-    exact (Nat.div_add_mod' _ _).symm
   simp only [winY]
-  rw [Nat.mod_eq_of_lt h, ← e, Nat.mod_add_div]
+  rw [Nat.mod_eq_of_lt h, ← VG.Proof.Bignum.WordStep.wordDiv_digits X 32 j, Nat.mod_add_div]
 
 /-- Three parts of a number, from its value: the low `L < 2^K`, the middle `Y` of `J` bits and
 the high `H = 0` when the whole is `L' + 2^K Y'` for `L' < 2^K` and `Y' < 2^J`. -/

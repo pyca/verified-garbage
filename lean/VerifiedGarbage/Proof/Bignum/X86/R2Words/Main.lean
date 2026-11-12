@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Bignum.WordStep32
+import VerifiedGarbage.Proof.Bignum.WordTop32
 
 /-!
 # `R2Words` on x86: `2^(10 B) mod M`
@@ -24,6 +25,7 @@ namespace VG.Proof.Bignum.X86.R2Words
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86.PublicRt VG.Impl.Bignum.X86.R2Words VG.Proof.Bignum.X86.PrecomputeRt
+open VG.Proof.Bignum.NormMask32 VG.Proof.Bignum.WordTop32
 
 /-- A word of a number that is zero. -/
 theorem w32_of_val32_zero {m : Mem} {base : Addr} {d n i : Nat} (h : val32 m base d n = 0) (hi : i < n) :
