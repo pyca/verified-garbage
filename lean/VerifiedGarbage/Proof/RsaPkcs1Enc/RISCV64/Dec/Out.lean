@@ -26,6 +26,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Proof.RsaPkcs1Enc (firstZero outByte)
 
+variable {pc : Bool}
+
 theorem write1_ne' (m : Mem) {b x : Addr} (v : BitVec (8 * 1)) (h : x ≠ b) : m.write b 1 v x = m x :=
   Mem.write_apply fun h' => h (by bv_omega)
 
@@ -40,7 +42,7 @@ theorem Post.fr3 {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (hp : 
     rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩) hp.sv, hp.r⟩
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64}
+variable {s : State} (h : DPre pc s) {R : BitVec 64}
 include h
 
 /-- Writes of `out` or `*msg_len`, and of registers `Fr3` does not keep. -/
@@ -129,7 +131,7 @@ structure OInv (s : State) (R MLV : BitVec 64) (EM AM : List Byte) (v ok : Bool)
   am : ∀ j < (s.gpr .a4).toNat, t.mem (scA s sAM + BitVec.ofNat 64 j) = AM.getD j 0
 
 section
-variable {s : State} (h : DPre s)
+variable {s : State} (h : DPre pc s)
 include h
 
 theorem outW {t : State} (hwr : t.wr = frR s :: s.wr) {i : Nat} (hi : i < (s.gpr .a4).toNat) :

@@ -28,8 +28,9 @@ theorem Base.of_mem {σ s t : State} (h : Base P σ s) (st : P.lay.St σ t) (hm 
 
 /-! ## The private-key operation and `D` -/
 
-theorem privArgs_vp : VP (S P) (.block privArgs) (R1 P) :=
-  VP.stk (code := privArgs.tail) (by decide) (by decide) (fun _ _ _ _ h₁ h₂ => S_sp h₁ h₂) fun _ _ h => privArgs_wp h
+theorem privArgs_vp : VP (S P) (.block (privArgs P.pc)) (R1 P) :=
+  VP.stk (code := (privArgs P.pc).tail) (by generalize P.pc = b; cases b <;> decide)
+    (by generalize P.pc = b; cases b <;> decide) (fun _ _ _ _ h₁ h₂ => S_sp h₁ h₂) fun _ _ h => privArgs_wp h
 
 theorem dZero_vp : VP (R2 P) (.block dZero) (D1 P) :=
   VP.stk (code := [_, _, _, _, _]) (by decide) (by decide) (fun _ _ _ _ h₁ h₂ => S_sp h₁.1 h₂.1)
@@ -90,8 +91,8 @@ theorem selPart_vp : VP (AL P) selPart (Fin P) :=
 /-! ## The body -/
 
 theorem body_vp (v : Proof.Rsa.Arm.CrtImpl) :
-    VP (S P) (body decFns (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)) (Fin P) :=
-  privArgs_vp.seq ((call_vp v).seq (dZero_vp.seq (zero_vp.seq (dCopy_vp.seq (copy_vp.seq (hashD_vp.seq
+    VP (S P) (body decFns P.pc (privN P.pc v) (privC P.pc v)) (Fin P) :=
+  privArgs_vp.seq ((call_vpG v).seq (dZero_vp.seq (zero_vp.seq (dCopy_vp.seq (copy_vp.seq (hashD_vp.seq
     (kdkMac_vp.seq (clLoop_vp.seq (amLoop_vp.seq (alPart_vp.seq selPart_vp))))))))))
 
 end VG.Proof.RsaPkcs1Enc.Arm.Dec

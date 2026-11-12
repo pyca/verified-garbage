@@ -25,6 +25,8 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 
+variable {pc : Bool}
+
 /-- The counter `i` and the number of blocks `nb s` in their slots. -/
 def SL (i : Nat) (nb : State → BitVec 64) (s u : State) : Prop :=
   sl s u oI = BitVec.ofNat 64 i ∧ sl s u oNB = nb s
@@ -34,13 +36,13 @@ theorem SL.mem {i : Nat} {nb : State → BitVec 64} {s u v : State} (h : SL i nb
   unfold SL sl at *; rw [hm]; exact h
 
 /-- The counters stay through a call working in `scratch`. -/
-theorem SL.call {i : Nat} {nb : State → BitVec 64} {s u v : State} (hd : DPre s) (h : SL i nb s u)
+theorem SL.call {i : Nat} {nb : State → BitVec 64} {s u v : State} (hd : DPre pc s) (h : SL i nb s u)
     {ws : List Region} {n : Nat} (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes)
     (hf : Frame (ws ++ [below (fb s) n]) u.mem v.mem) (hs : ∀ r ∈ ws, Region.Sub r (SC s)) : SL i nb s v :=
   ⟨(slot_call hd hn hf hs (by decide)).trans h.1, (slot_call hd hn hf hs (by decide)).trans h.2⟩
 
 /-- The counters stay through a write in `scratch`. -/
-theorem SL.sc {i : Nat} {nb : State → BitVec 64} {s u v : State} (hd : DPre s) (h : SL i nb s u)
+theorem SL.sc {i : Nat} {nb : State → BitVec 64} {s u v : State} (hd : DPre pc s) (h : SL i nb s u)
     {ws : List Region} (hf : Frame ws u.mem v.mem) (hs : ∀ r ∈ ws, Region.Sub r (SC s)) : SL i nb s v := by
   have hf' : Frame (ws ++ [below (fb s) 0]) u.mem v.mem :=
     hf.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
@@ -49,7 +51,7 @@ theorem SL.sc {i : Nat} {nb : State → BitVec 64} {s u v : State} (hd : DPre s)
 /-! ## A block -/
 
 section
-variable {e : Env}
+variable {e : Env pc}
 
 /-- The facts at a block's start. -/
 def B0 (i : Nat) (nb : State → BitVec 64) (s u : State) : Prop := PP s u ∧ SL i nb s u
@@ -63,14 +65,14 @@ theorem prfBody_ct {label : List Nat} {len count : List Instr} {dst i : Nat} {nb
     (hi : i < 256) (hd1 : 1136 ≤ dst) (hd2 : dst + 32 * i + 32 ≤ scrBytes) (hdst : dst < 2 ^ 15)
     (hn : label.length + 4 ≤ 16)
     {hc₁ : VG.Taint.Hint T} (ht₁ : (taint.check (ofRegs [.r9, .r11, .r8]) (.block (msgBytes label len)) hc₁).isSome = true)
-    (hmsg : ∀ s u, DPre s → PP s u → u.gpr .r9 = scA s sMsg → u.gpr .r11 = BitVec.ofNat 64 i →
+    (hmsg : ∀ s u, DPre pc s → PP s u → u.gpr .r9 = scA s sMsg → u.gpr .r11 = BitVec.ofNat 64 i →
       u.gpr .r8 = s.gpr .r7 → WP isa (.block (msgBytes label len)) u fun w =>
         Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧ Keep [.r10] u w)
     {hc₂ : VG.Taint.Hint T} (ht₂ : (taint.check (ofRegs []) (.block (incr count)) hc₂).isSome = true)
     {hc₃ : VG.Taint.Hint T} (ht₃ : (taint.check (ofRegs []) (.block (prfUpdArgs (label.length + 4))) hc₃).isSome = true)
     {hc₄ : VG.Taint.Hint T}
     (ht₄ : (taint.check (ofRegs []) (.block (prfFinArgs (label.length + 4) dst)) hc₄).isSome = true)
-    (hcount : ∀ s u, DPre s → PP s u → sl s u oNB = nb s → WP isa (.block (incr count)) u fun w =>
+    (hcount : ∀ s u, DPre pc s → PP s u → sl s u oNB = nb s → WP isa (.block (incr count)) u fun w =>
       (w.mem = u.mem.writeW (fb s + BitVec.ofNat 64 oI) (sl s u oI + 1) ∧
         w.gpr .r9 = C s - (sl s u oI + 1)) ∧ Keep [.r12, .r11, .r9] u w) :
     RelCT isa (Rel e (B0 i nb)) (prfBody label len dst count)
@@ -186,11 +188,11 @@ theorem prfLoop_ct {label : List Nat} {len count : List Instr} {dst : Nat} {N : 
     (hd1 : 1136 ≤ dst) (hd2 : dst + 32 * N e.s₁ ≤ scrBytes) (hdst : dst < 2 ^ 15) (hn : label.length + 4 ≤ 16)
     (hCe : C e.s₁ = C e.s₂) (hCv : ∀ i < N e.s₁, C e.s₁ - BitVec.ofNat 64 (i + 1) = BitVec.ofNat 64 (N e.s₁ - (i + 1)))
     {hc₁ : VG.Taint.Hint T} (ht₁ : (taint.check (ofRegs [.r9, .r11, .r8]) (.block (msgBytes label len)) hc₁).isSome = true)
-    (hmsg : ∀ i < 256, ∀ s u, DPre s → PP s u → u.gpr .r9 = scA s sMsg → u.gpr .r11 = BitVec.ofNat 64 i →
+    (hmsg : ∀ i < 256, ∀ s u, DPre pc s → PP s u → u.gpr .r9 = scA s sMsg → u.gpr .r11 = BitVec.ofNat 64 i →
       u.gpr .r8 = s.gpr .r7 → WP isa (.block (msgBytes label len)) u fun w =>
         Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧ Keep [.r10] u w)
     {hc₂ : VG.Taint.Hint T} (ht₂ : (taint.check (ofRegs []) (.block (incr count)) hc₂).isSome = true)
-    (hcount : ∀ s u, DPre s → PP s u → sl s u oNB = nb s → WP isa (.block (incr count)) u fun w =>
+    (hcount : ∀ s u, DPre pc s → PP s u → sl s u oNB = nb s → WP isa (.block (incr count)) u fun w =>
       (w.mem = u.mem.writeW (fb s + BitVec.ofNat 64 oI) (sl s u oI + 1) ∧
         w.gpr .r9 = C s - (sl s u oI + 1)) ∧ Keep [.r12, .r11, .r9] u w)
     {hc₃ : VG.Taint.Hint T} (ht₃ : (taint.check (ofRegs []) (.block (prfUpdArgs (label.length + 4))) hc₃).isSome = true)

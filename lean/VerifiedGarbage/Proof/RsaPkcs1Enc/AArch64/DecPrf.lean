@@ -29,26 +29,26 @@ theorem imm16 {n : Nat} (hn : n < 65536) : BitVec.setWidth 64 (BitVec.ofNat 16 n
 theorem prfHead_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block (scr .x9 sMsg ++ ([.ldrSp .x11 oI, .ldrSp .x12 oK] : List Instr))) t fun u => Same t u ∧
       u.gpr .x9 = slot t Q oScr + BitVec.ofNat 64 sMsg ∧ u.gpr .x11 = slot t Q oI ∧ u.gpr .x12 = slot t Q oK := by
-  have h168 := h 168 (by decide)
   have h184 := h 184 (by decide)
-  have h120 := h 120 (by decide)
+  have h200 := h 200 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oI, oK, sMsg, Option.map_some, Option.some.injEq, exists_eq_left',
-    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h184, h120]
+    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h200, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl⟩
 
 theorem prfUpdArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) {n : Nat} (hn : n < 65536) :
     WP isa (.block (prfUpdArgs n)) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = BitVec.ofNat 64 64 ∧ u.gpr .x2 = slot t Q oScr + BitVec.ofNat 64 sMsg ∧
       u.gpr .x3 = BitVec.ofNat 64 n ∧ u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
+  have h184 := h 184 (by decide)
   apply WP.of_runBlock
   simp only [prfUpdArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, sSt, sMsg, sWork, Option.map_some, Option.some.injEq, exists_eq_left',
-    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168]
+    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl,
     imm16 hn, rfl⟩
 
@@ -58,13 +58,13 @@ theorem prfFinArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) {n
       u.gpr .x1 = slot t Q oScr + BitVec.ofNat 64 sOuter ∧ u.gpr .x2 = BitVec.ofNat 64 (64 + n) ∧
       u.gpr .x3 = (slot t Q oI <<< 5) + (slot t Q oScr + BitVec.ofNat 64 dst) ∧
       u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
   have h184 := h 184 (by decide)
+  have h200 := h 200 (by decide)
   apply WP.of_runBlock
   simp only [prfFinArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oI, sSt, sOuter, sWork, hd, Option.map_some, Option.some.injEq, exists_eq_left',
-    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h184]
+    RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h200]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl,
     imm16 hn, rfl, rfl⟩
 
@@ -77,27 +77,27 @@ structure SameR (t u : State) : Prop where
   cs : ∀ r ∈ preserved, u.gpr r = t.gpr r
 
 theorem incrCL_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
-    (hw : InRegions t.wr (Q + BitVec.ofNat 64 184) 8) :
+    (hw : InRegions t.wr (Q + BitVec.ofNat 64 200) 8) :
     WP isa (.block (incr [.movz .x .x12 8 0])) t fun u => SameR t u ∧
       u.mem = t.mem.writeW (Q + BitVec.ofNat 64 oI) (slot t Q oI + 1) ∧
       u.gpr .x12 = BitVec.ofNat 64 8 - (slot t Q oI + 1) := by
-  have h184 := h 184 (by decide)
+  have h200 := h 200 (by decide)
   apply WP.of_runBlock
   simp only [incr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     addr, State.read, State.load, State.store, Size.bits, Size.bytes, BitVec.setWidth_eq, Nat.reduceMul,
     Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp, oI, BitVec.add_zero, Option.bind_some,
     Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write,
-    RegUpd.sp_write, RegUpd.mem_write, reduceCtorEq, ite_false, h184, hw]
+    RegUpd.sp_write, RegUpd.mem_write, reduceCtorEq, ite_false, h200, hw]
   exact ⟨⟨rfl, rfl, hsp.symm, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl⟩
 
 theorem incrAM_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
-    (hw : InRegions t.wr (Q + BitVec.ofNat 64 184) 8) :
+    (hw : InRegions t.wr (Q + BitVec.ofNat 64 200) 8) :
     WP isa (.block (incr [.ldrSp .x12 oNB])) t fun u => SameR t u ∧
       u.mem = t.mem.writeW (Q + BitVec.ofNat 64 oI) (slot t Q oI + 1) ∧
       u.gpr .x12 = slot t Q oNB - (slot t Q oI + 1) := by
-  have h184 := h 184 (by decide)
-  have h192 := h 192 (by decide)
-  have e : (t.mem.writeW (Q + BitVec.ofNat 64 184) (slot t Q oI + 1)).readW (Q + BitVec.ofNat 64 192) 64 =
+  have h200 := h 200 (by decide)
+  have h208 := h 208 (by decide)
+  have e : (t.mem.writeW (Q + BitVec.ofNat 64 200) (slot t Q oI + 1)).readW (Q + BitVec.ofNat 64 208) 64 =
       slot t Q oNB :=
     Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)
   apply WP.of_runBlock
@@ -105,9 +105,9 @@ theorem incrAM_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
     addr, State.read, State.load, State.store, Size.bits, Size.bytes, BitVec.setWidth_eq, Nat.reduceMul,
     Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp, oI, oNB, BitVec.add_zero, Option.bind_some,
     Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write,
-    RegUpd.sp_write, RegUpd.mem_write, reduceCtorEq, ite_false, h184, h192, hw]
+    RegUpd.sp_write, RegUpd.mem_write, reduceCtorEq, ite_false, h200, h208, hw]
   exact ⟨⟨rfl, rfl, hsp.symm, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl,
-    congrArg (fun x => x - (slot t Q 184 + 1)) e⟩
+    congrArg (fun x => x - (slot t Q 200 + 1)) e⟩
 
 /-! ## A block -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.EncVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecP
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
@@ -17,6 +18,10 @@ def artifacts : List Artifact := [
     code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.code
     stack := Proof.RsaPkcs1Enc.PPC64LE.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.PPC64LE.Dec.dec_verified },
+  Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact PPC64LE.target {
+    code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP
+    stack := Proof.RsaPkcs1Enc.PPC64LE.Dec.stackBytes
+    verified := Proof.RsaPkcs1Enc.PPC64LE.Dec.codeP_verified },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Enc.PPC64LE.Random.code
     stack := 3440

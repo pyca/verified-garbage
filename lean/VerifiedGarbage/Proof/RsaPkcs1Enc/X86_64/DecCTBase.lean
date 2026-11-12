@@ -27,41 +27,45 @@ open VG.Proof.Sha256.X86_64 (Compress)
 
 /-! ## Entry states and the anchor -/
 
-/-- An entry state meeting the precondition with the anchor's public data. -/
-def Sib (a s : State) : Prop := decK.pre s ∧ decK.pub a s
+/-- An entry state meeting the precondition with the anchor's public data,
+and related to it by `X` (`vg_rsa_pkcs1_decrypt_precomputed`'s further
+public data, `DecPCT.lean`). -/
+def Sib (X : State → State → Prop) (a s : State) : Prop := (DPre s ∧ decK.pub a s) ∧ X a s
 
 theorem pub_refl (s : State) : decK.pub s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 
-theorem Sib.gpr {a s : State} (h : Sib a s) {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) :
-    s.gpr r = a.gpr r := (h.2.1 r hr).symm
+variable {X : State → State → Prop}
 
-theorem Sib.arg {a s : State} (h : Sib a s) {i : Nat} (hi : i < 17) : stackArg s i = stackArg a i :=
-  ((List.map_inj_left.mp h.2.2.1) i (List.mem_range.mpr hi)).symm
+theorem Sib.gpr {a s : State} (h : Sib X a s) {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) :
+    s.gpr r = a.gpr r := (h.1.2.1 r hr).symm
 
-theorem Sib.n {a s : State} (h : Sib a s) : nB s = nB a := h.2.2.2.1.symm
+theorem Sib.arg {a s : State} (h : Sib X a s) {i : Nat} (hi : i < 17) : stackArg s i = stackArg a i :=
+  ((List.map_inj_left.mp h.1.2.2.1) i (List.mem_range.mpr hi)).symm
 
-theorem Sib.e {a s : State} (h : Sib a s) : eB s = eB a := h.2.2.2.2.symm
+theorem Sib.n {a s : State} (h : Sib X a s) : nB s = nB a := h.1.2.2.2.1.symm
 
-theorem Sib.fb {a s : State} (h : Sib a s) : fb s = fb a := by
+theorem Sib.e {a s : State} (h : Sib X a s) : eB s = eB a := h.1.2.2.2.2.symm
+
+theorem Sib.fb {a s : State} (h : Sib X a s) : fb s = fb a := by
   show s.gpr .rsp - _ = a.gpr .rsp - _
   rw [h.gpr (r := .rsp) (by decide)]
 
-theorem Sib.scr {a s : State} (h : Sib a s) : Dec.sc s = Dec.sc a := h.arg (by decide)
+theorem Sib.scr {a s : State} (h : Sib X a s) : Dec.sc s = Dec.sc a := h.arg (by decide)
 
-theorem Sib.scr' {a s : State} (h : Sib a s) (d : Nat) : Dec.scA s d = Dec.scA a d := by
+theorem Sib.scr' {a s : State} (h : Sib X a s) (d : Nat) : Dec.scA s d = Dec.scA a d := by
   show off (Dec.sc s) d = off (Dec.sc a) d; rw [h.scr]
 
-theorem Sib.k {a s : State} (h : Sib a s) : kOf s = kOf a := by
+theorem Sib.k {a s : State} (h : Sib X a s) : kOf s = kOf a := by
   show (s.gpr .r8).toNat = _; rw [h.gpr (r := .r8) (by decide)]
 
-theorem Sib.p {a s : State} (h : Sib a s) : DPre s := dPre_of h.1
+theorem Sib.p {a s : State} (h : Sib X a s) : DPre s := h.1.1
 
 /-- A point of a run, described by `J` from the run's entry state. -/
-def At (J : State → State → Prop) (a t : State) : Prop := ∃ s, Sib a s ∧ J s t
+def At (X J : State → State → Prop) (a t : State) : Prop := ∃ s, Sib X a s ∧ J s t
 
 /-- A register `J` gives as a function of the public data. -/
 theorem pin {J : State → State → Prop} {r : Reg} (f : State → BitVec 64) (hf : ∀ s t, J s t → t.gpr r = f s)
-    (hs : ∀ a s, Sib a s → f s = f a) {a t₁ t₂ : State} (h₁ : At J a t₁) (h₂ : At J a t₂) :
+    (hs : ∀ a s, Sib X a s → f s = f a) {a t₁ t₂ : State} (h₁ : At X J a t₁) (h₂ : At X J a t₂) :
     t₁.gpr r = t₂.gpr r := by
   obtain ⟨s₁, S₁, j₁⟩ := h₁
   obtain ⟨s₂, S₂, j₂⟩ := h₂
@@ -69,19 +73,19 @@ theorem pin {J : State → State → Prop} {r : Reg} (f : State → BitVec 64) (
 
 /-- Registers `J` gives as functions of the public data, at once. -/
 theorem pins {J : State → State → Prop} (rs : List (Reg × (State → BitVec 64)))
-    (hf : ∀ p ∈ rs, ∀ s t, J s t → t.gpr p.1 = p.2 s) (hs : ∀ p ∈ rs, ∀ a s, Sib a s → p.2 s = p.2 a) :
-    Pins (At J) (rs.map (·.1)) := fun a t₁ t₂ h₁ h₂ r hr => by
+    (hf : ∀ p ∈ rs, ∀ s t, J s t → t.gpr p.1 = p.2 s) (hs : ∀ p ∈ rs, ∀ a s, Sib X a s → p.2 s = p.2 a) :
+    Pins (At X J) (rs.map (·.1)) := fun a t₁ t₂ h₁ h₂ r hr => by
   obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
   exact pin p.2 (hf p hp) (hs p hp) h₁ h₂
 
-theorem fb_pin : ∀ a s, Sib a s → fb s = fb a := fun _ _ h => h.fb
-theorem sc_pin : ∀ a s, Sib a s → sc s = sc a := fun _ _ h => h.scr
-theorem scA_pin (d : Nat) : ∀ a s, Sib a s → scA s d = scA a d := fun _ _ h => h.scr' d
-theorem const_pin (v : BitVec 64) : ∀ a s, Sib a s → (fun _ : State => v) s = (fun _ : State => v) a :=
+theorem fb_pin : ∀ a s, Sib X a s → fb s = fb a := fun _ _ h => h.fb
+theorem sc_pin : ∀ a s, Sib X a s → sc s = sc a := fun _ _ h => h.scr
+theorem scA_pin (d : Nat) : ∀ a s, Sib X a s → scA s d = scA a d := fun _ _ h => h.scr' d
+theorem const_pin (v : BitVec 64) : ∀ a s, Sib X a s → (fun _ : State => v) s = (fun _ : State => v) a :=
   fun _ _ _ => rfl
 theorem gpr_pin {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) :
-    ∀ a s, Sib a s → s.gpr r = a.gpr r := fun _ _ h => h.gpr hr
-theorem arg_pin {i : Nat} (hi : i < 17) : ∀ a s, Sib a s → stackArg s i = stackArg a i := fun _ _ h => h.arg hi
+    ∀ a s, Sib X a s → s.gpr r = a.gpr r := fun _ _ h => h.gpr hr
+theorem arg_pin {i : Nat} (hi : i < 17) : ∀ a s, Sib X a s → stackArg s i = stackArg a i := fun _ _ h => h.arg hi
 
 /-- `Ctx` for some result and `EM`. -/
 def Cx (s t : State) : Prop := ∃ R EM, Ctx s R EM t
@@ -89,7 +93,7 @@ def Cx (s t : State) : Prop := ∃ R EM, Ctx s R EM t
 theorem Cx.rsp {s t : State} (h : Cx s t) : t.gpr .rsp = fb s := let ⟨_, _, hc⟩ := h; hc.rsp
 
 /-- `rsp` in a state with `Cx`. -/
-theorem rsp_pin {J : State → State → Prop} (hJ : ∀ s t, J s t → Cx s t) : Pins (At J) [.rsp] :=
+theorem rsp_pin {J : State → State → Prop} (hJ : ∀ s t, J s t → Cx s t) : Pins (At X J) [.rsp] :=
   pins (J := J) [(.rsp, fb)] (by simp only [List.mem_singleton]; rintro p rfl s t h; exact (hJ s t h).rsp)
     (by simp only [List.mem_singleton]; rintro p rfl; exact fb_pin)
 
@@ -108,12 +112,12 @@ theorem ce_rsp {t₁ t₂ : State} (h : t₁.gpr .rsp = t₂.gpr .rsp) (rd₁ wr
   rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, h]
 
 /-- Two runs at a call, each with `Ctx`, the same `rsp` and its arguments. -/
-theorem two_ctx {J : State → State → Prop} (hJ : ∀ s t, J s t → Cx s t) {a t₁ t₂ : State} (h₁ : At J a t₁)
-    (h₂ : At J a t₂) : t₁.gpr .rsp = t₂.gpr .rsp :=
+theorem two_ctx {J : State → State → Prop} (hJ : ∀ s t, J s t → Cx s t) {a t₁ t₂ : State} (h₁ : At X J a t₁)
+    (h₂ : At X J a t₂) : t₁.gpr .rsp = t₂.gpr .rsp :=
   rsp_pin hJ a t₁ t₂ h₁ h₂ .rsp (List.mem_singleton_self _)
 
 theorem init_two {J : State → State → Prop} (hJ : ∀ s t, J s t → Cx s t ∧ t.gpr .rdi = scA s 0) :
-    RelCT isa (Two (At J)) (.call (HH v).initN (HH v).initC) fun _ _ => True := by
+    RelCT isa (Two (At X J)) (.call (HH v).initN (HH v).initC) fun _ _ => True := by
   obtain ⟨-, -, -, -, hS, -, -, -⟩ := sizes v
   refine RelCT.callEx (OK v).stream.init.1 (OK v).stream.init.2.1 fun t₁ t₂ ⟨a, h₁, h₂⟩ => ?_
   have sp := two_ctx (fun s t h => (hJ s t h).1) h₁ h₂
@@ -138,9 +142,9 @@ theorem init_two {J : State → State → Prop} (hJ : ∀ s t, J s t → Cx s t 
 theorem upd_two {J : State → State → Prop} {da : State → Addr} {L : State → Nat} {si : State → BitVec 64}
     (hJ : ∀ s t, J s t → Cx s t ∧ t.gpr .rdi = scA s 0 ∧ t.gpr .rsi = si s ∧ t.gpr .rdx = da s ∧
       (t.gpr .rcx).toNat = L s ∧ t.gpr .r8 = scA s sWork)
-    (hd : ∀ s, DPre s → DataOk s (da s) (L s)) (hda : ∀ a s, Sib a s → da s = da a)
-    (hL : ∀ a s, Sib a s → L s = L a) (hsi : ∀ a s, Sib a s → si s = si a) :
-    RelCT isa (Two (At J)) (.call (HH v).updN (HH v).updC) fun _ _ => True := by
+    (hd : ∀ s, DPre s → DataOk s (da s) (L s)) (hda : ∀ a s, Sib X a s → da s = da a)
+    (hL : ∀ a s, Sib X a s → L s = L a) (hsi : ∀ a s, Sib X a s → si s = si a) :
+    RelCT isa (Two (At X J)) (.call (HH v).updN (HH v).updC) fun _ _ => True := by
   refine RelCT.callEx (OK v).stream.upd.1 (OK v).stream.upd.2.1 fun t₁ t₂ ⟨a, h₁, h₂⟩ => ?_
   have sp := two_ctx (fun s t h => (hJ s t h).1) h₁ h₂
   obtain ⟨s₁, S₁, j₁⟩ := h₁
@@ -160,7 +164,7 @@ theorem upd_two {J : State → State → Prop} {da : State → Addr} {L : State 
 theorem fin_two {J : State → State → Prop}
     (hJ : ∀ s t, J s t → Cx s t ∧ t.gpr .rdi = scA s 0 ∧ t.gpr .rsi = s.gpr .r8 ∧ t.gpr .rdx = scA s sDH ∧
       t.gpr .rcx = scA s sWork) :
-    RelCT isa (Two (At J)) (.call (HH v).finN (HH v).finC) fun _ _ => True := by
+    RelCT isa (Two (At X J)) (.call (HH v).finN (HH v).finC) fun _ _ => True := by
   refine RelCT.callEx (OK v).stream.fin.1 (OK v).stream.fin.2.1 fun t₁ t₂ ⟨a, h₁, h₂⟩ => ?_
   have sp := two_ctx (fun s t h => (hJ s t h).1) h₁ h₂
   obtain ⟨s₁, S₁, j₁⟩ := h₁
@@ -180,7 +184,7 @@ theorem fin_two {J : State → State → Prop}
 theorem hinit_two {J : State → State → Prop} {kOff : Nat} (hk1 : sMsg ≤ kOff) (hk2 : kOff + 32 ≤ scrBytes)
     (hJ : ∀ s t, J s t → Cx s t ∧ t.gpr .rdi = scA s 0 ∧ t.gpr .rsi = scA s sOuter ∧ t.gpr .rdx = scA s kOff ∧
       t.gpr .rcx = BitVec.ofNat 64 32 ∧ t.gpr .r8 = scA s sWork) :
-    RelCT isa (Two (At J)) (.call (HH v).hmacInitN (HH v).hmacInit) fun _ _ => True := by
+    RelCT isa (Two (At X J)) (.call (HH v).hmacInitN (HH v).hmacInit) fun _ _ => True := by
   refine RelCT.callEx (hI v).1 (hI v).2.1 fun t₁ t₂ ⟨a, h₁, h₂⟩ => ?_
   have sp := two_ctx (fun s t h => (hJ s t h).1) h₁ h₂
   obtain ⟨s₁, S₁, j₁⟩ := h₁
@@ -202,8 +206,8 @@ theorem hfin_two {J : State → State → Prop} {dOff : State → Nat} {cnt : St
     (hd1 : ∀ s, sMsg ≤ dOff s) (hd2 : ∀ s, dOff s + 32 ≤ scrBytes)
     (hJ : ∀ s t, J s t → Cx s t ∧ t.gpr .rdi = scA s 0 ∧ t.gpr .rsi = scA s sOuter ∧ t.gpr .rdx = cnt s ∧
       t.gpr .rcx = scA s (dOff s) ∧ t.gpr .r8 = scA s sWork)
-    (hdO : ∀ a s, Sib a s → dOff s = dOff a) (hcnt : ∀ a s, Sib a s → cnt s = cnt a) :
-    RelCT isa (Two (At J)) (.call (HH v).hmacFinN (HH v).hmacFin) fun _ _ => True := by
+    (hdO : ∀ a s, Sib X a s → dOff s = dOff a) (hcnt : ∀ a s, Sib X a s → cnt s = cnt a) :
+    RelCT isa (Two (At X J)) (.call (HH v).hmacFinN (HH v).hmacFin) fun _ _ => True := by
   refine RelCT.callEx (hF v).1 (hF v).2.1 fun t₁ t₂ ⟨a, h₁, h₂⟩ => ?_
   have sp := two_ctx (fun s t h => (hJ s t h).1) h₁ h₂
   obtain ⟨s₁, S₁, j₁⟩ := h₁
@@ -226,19 +230,19 @@ theorem hfin_two {J : State → State → Prop} {dOff : State → Nat} {cnt : St
 
 /-- A piece the taint analysis checks from registers `J` fixes, with what
 correctness gives after it. -/
-theorem two_blk {J J' : State → State → Prop} {c : Prog isa} (rs : List Reg) (hpin : Pins (At J) rs)
+theorem two_blk {J J' : State → State → Prop} {c : Prog isa} (rs : List Reg) (hpin : Pins (At X J) rs)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T} (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
-    (hw : ∀ s t, DPre s → J s t → WP isa c t (J' s)) : RelCT isa (Two (At J)) c (Two (At J')) :=
+    (hw : ∀ s t, DPre s → J s t → WP isa c t (J' s)) : RelCT isa (Two (At X J)) c (Two (At X J')) :=
   two_piece rs hpin h fun _ _ ⟨s, S, j⟩ => WP.mono (hw _ _ S.p j) fun _ j' => ⟨s, S, j'⟩
 
 /-- A piece related in two runs, with what correctness gives after it. -/
-theorem two_then {J J' : State → State → Prop} {c : Prog isa} (hct : RelCT isa (Two (At J)) c fun _ _ => True)
-    (hw : ∀ s t, DPre s → J s t → WP isa c t (J' s)) : RelCT isa (Two (At J)) c (Two (At J')) :=
+theorem two_then {J J' : State → State → Prop} {c : Prog isa} (hct : RelCT isa (Two (At X J)) c fun _ _ => True)
+    (hw : ∀ s t, DPre s → J s t → WP isa c t (J' s)) : RelCT isa (Two (At X J)) c (Two (At X J')) :=
   two_post hct fun _ _ ⟨s, S, j⟩ => WP.mono (hw _ _ S.p j) fun _ j' => ⟨s, S, j'⟩
 
 /-- Weakening what is known. -/
 theorem two_weak {J J' : State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
-    (h : ∀ s t, J s t → J' s t) (hct : RelCT isa (Two (At J')) c Q) : RelCT isa (Two (At J)) c Q :=
+    (h : ∀ s t, J s t → J' s t) (hct : RelCT isa (Two (At X J')) c Q) : RelCT isa (Two (At X J)) c Q :=
   hct.mono (fun _ _ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ⟨a, ⟨s₁, S₁, h _ _ j₁⟩, ⟨s₂, S₂, h _ _ j₂⟩⟩) fun _ _ q => q
 
 /-- Relations that are unions. -/

@@ -42,11 +42,12 @@ structure VChecks (c : Joint.Cfg) : Prop where
   out : RegCT [.rdi, .r10, .r11] (.seq (.block [.alu .test .r11 (.reg .r11)])
     (.ite .e (.block []) (.block (outPieces.flatten ++ storeOut))))
   mov : RegCT [] (.block [.mov .rbx (.reg .r11), .vop .vzeroupper])
-  mx1 : RegCT [.rdi] (.block [.stmxcsr (sc MX), .mov32 .r12 (.mem (sc MX)), .alu32 .and .r12 (.imm 0xFFFF)])
-  mx2 : RegCT [.rdi] (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (MX + 4)) .rax, .ldmxcsr (sc (MX + 4)),
+  tab : RegCT [.rdi, .r10] (.block ((List.range 7).map fun i => tabEnt c (i + 1)).flatten)
+  mx1 : RegCT [.rdi] (.block [.stmxcsr (sc MXV), .mov32 .r12 (.mem (sc MXV)), .alu32 .and .r12 (.imm 0xFFFF)])
+  mx2 : RegCT [.rdi] (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (MXV + 4)) .rax, .ldmxcsr (sc (MXV + 4)),
     .lfence])
   lf : RegCT [] (.block [.lfence])
-  mx4 : RegCT [.rdi] (.block [.store32 (sc MX) .r12, .ldmxcsr (sc MX)])
+  mx4 : RegCT [.rdi] (.block [.store32 (sc MXV) .r12, .ldmxcsr (sc MXV)])
   pack : RegCT [.rdi, .rbx] (packR c)
   ctr0 : RegCT [] (.block [.mov32 .rbx (.imm 0)])
 
@@ -212,6 +213,12 @@ theorem vloop_relCT (hk : VChecks c) (hV : VLay c size) (hL : JointLayout c size
       rw [List.mem_singleton] at hr; subst hr
       exact hs.core.field.scr.rdi.trans ht.core.field.scr.rdi.symm)
     (fun s h => WP.mono (vinit_ok hV h) fun _ x => x.1)) ?_
+  refine RelCT.seq (rel_stage hk.tab (fun s t hs ht r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hs.1.core.field.scr.rdi.trans ht.1.core.field.scr.rdi.symm
+      · exact hs.2.2.2.2.2.trans ht.2.2.2.2.2.symm)
+    (fun s h => WP.mono (vtabs_ok hV h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2) fun _ x => x.1)) ?_
   refine RelCT.seq (vdigits_relCT hk hV hL h9) ?_
   exact rel_stage hk.out (fun s t hs ht r hr => VInv.regs hs ht r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -245,7 +252,7 @@ theorem vmain_relCT (hk : VChecks c) (hV : VLay c size) (hL : JointLayout c size
   let I3 : State → Prop := fun s => VOut c base T size u v Q row E (accN c row E u v 257) s ∧ MxOk s
   let I4 : State → Prop := fun s => VPack c base T size u v Q row E (accN c row E u v 257) s ∧ MxOk s
   let I5 : State → Prop := VPack c base T size u v Q row E (accN c row E u v 257)
-  rw [vmain, region]
+  rw [vmain, regionAt]
   refine RelCT.seq (R := fun s t => I5 s ∧ I5 t) ?_ (rel_stage hk.pack (I := I5)
     (fun s t hs ht r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

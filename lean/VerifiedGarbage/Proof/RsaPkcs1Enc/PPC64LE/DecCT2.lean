@@ -22,11 +22,13 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 
+variable {pc : Bool}
+
 /-- `Post`, for some result and `EM`. -/
 def PP (s u : State) : Prop := ∃ R EM, Post s R EM u
 
 section
-variable {s : State} (h : DPre s)
+variable {s : State} (h : DPre pc s)
 include h
 
 theorem initCall_pp {u : State} (hu : PP s u) (u3 : u.gpr .r3 = scA s sSt) : WP isa initCall u (PP s) := by
@@ -94,7 +96,7 @@ theorem pp_block {s : State} {c : List Instr} {u : State} (hu : PP s u) {X : Sta
     kv.gpr r fun h' => hrs r h' hr⟩, vm, vx⟩
 
 section
-variable {e : Env}
+variable {e : Env pc}
 
 theorem pp_sp {a b : State} (ha : PP e.s₁ a) (hb : PP e.s₂ b) : a.sp = b.sp := by
   obtain ⟨_, _, ha⟩ := ha; obtain ⟨_, _, hb⟩ := hb

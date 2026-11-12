@@ -82,16 +82,16 @@ theorem preserved_cases {P : Reg → Prop} (h19 : P .x19) (h20 : P .x20) (h21 : 
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-- The frame's slots are readable. -/
-abbrev Slots (t : State) (Q : Addr) : Prop := ∀ d, d + 8 ≤ 208 → InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 d) 8
+abbrev Slots (t : State) (Q : Addr) : Prop := ∀ d, d + 8 ≤ 224 → InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 d) 8
 
 theorem shaInitArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block shaInitArgs) t fun u => Same t u ∧
       u.gpr .x0 = t.mem.readW (Q + BitVec.ofNat 64 oScr) 64 + BitVec.ofNat 64 sSt := by
-  have h168 := h 168 (by decide)
+  have h184 := h 184 (by decide)
   apply WP.of_runBlock
   simp only [shaInitArgs, scr, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, Size.bits,
     BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp, oScr, sSt, Option.map_some,
-    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, h168]
+    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, h184]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl⟩
 
 /-- A word of the frame. -/
@@ -101,13 +101,13 @@ theorem shaUpdArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block shaUpdArgs) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = 0 ∧ u.gpr .x2 = slot t Q oScr + BitVec.ofNat 64 sD ∧ u.gpr .x3 = slot t Q oK ∧
       u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
-  have h120 := h 120 (by decide)
+  have h184 := h 184 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [shaUpdArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oK, sSt, sD, sWork, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write,
-    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h120]
+    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl,
     rfl, rfl⟩
 
@@ -115,13 +115,13 @@ theorem shaFinArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block shaFinArgs) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = slot t Q oK ∧ u.gpr .x2 = slot t Q oScr + BitVec.ofNat 64 sDH ∧
       u.gpr .x3 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
-  have h120 := h 120 (by decide)
+  have h184 := h 184 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [shaFinArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oK, sSt, sDH, sWork, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write,
-    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h120]
+    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl, rfl⟩
 
 /-! ## The hash of `D` -/

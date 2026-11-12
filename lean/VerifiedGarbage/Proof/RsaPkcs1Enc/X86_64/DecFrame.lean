@@ -29,11 +29,13 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPk
 structure DPre (s : State) : Prop where
   sp1 : decStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 144 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩,
+  hrd : ∀ r ∈ ([⟨s.gpr .rcx, (s.gpr .r8).toNat⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩,
     ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩,
     ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩,
     ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩,
-    ⟨stackArg s 13, (stackArg s 14).toNat⟩, ⟨stackArgAddr s 0, 136⟩]
+    ⟨stackArg s 13, (stackArg s 14).toNat⟩] : List Region), r ∈ s.rd
+  /-- The stack arguments, in a readable region of at least 136 bytes. -/
+  hra : ∃ A, 136 ≤ A ∧ A < 2 ^ 32 ∧ (⟨stackArgAddr s 0, A⟩ : Region) ∈ s.rd
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, 8⟩, ⟨stackArg s 15, (stackArg s 16).toNat * 8⟩]
   dOm : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, 8⟩
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
@@ -127,7 +129,8 @@ theorem dPre_of {s : State} (h : decK.pre s) : DPre s := by
   obtain ⟨k1, k2⟩ := hsplit1
   have hsl := h
   clear h
-  exact ⟨sp1, sp2, hrd, hwr, dOm, dOn, dOe, dOd, dOi, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dMn, dMe, dMd, dMi,
+  exact ⟨sp1, sp2, fun r hr => by rw [hrd]; exact List.mem_append_left [⟨stackArgAddr s 0, 136⟩] hr,
+    ⟨136, Nat.le_refl _, by decide, by rw [hrd]; simp⟩, hwr, dOm, dOn, dOe, dOd, dOi, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dMn, dMe, dMd, dMi,
     dMp, dMq, dMdp, dMdq, dMqi, dMs, dMa, dns, des, dds, dis, dps, dqs, ddps, ddqs, dqis, dsa, dRo, dRm, dRs,
     dKo, dKm, dKn, dKe, dKd, dKi, dKp, dKq, dKdp, dKdq, dKqi, dKs, dKa, wO, wM, wN, wE, wD, wI, wP, wQ, wDp, wDq,
     wQi, wS, k1, k2, hsi, hil, L1, L2, dl1, dl2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsl⟩
@@ -210,8 +213,9 @@ theorem ea_arg {t : State} {s : State} (h : t.gpr .rsp = fb s) (j : Nat) :
   rw [arg, ea_sp, h, stackArgAddr_fb]
 
 theorem arg_in {s : State} (hp : DPre s) {rd : List Region} (hrd : rd = s.rd) (wr : List Region) {j : Nat}
-    (hj : j < 17) : InRegions (rd ++ wr) (stackArgAddr s j) 8 :=
-  ⟨⟨stackArgAddr s 0, 136⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp),
+    (hj : j < 17) : InRegions (rd ++ wr) (stackArgAddr s j) 8 := by
+  obtain ⟨A, hA, hA', hm⟩ := hp.hra
+  exact ⟨⟨stackArgAddr s 0, A⟩, List.mem_append_left _ (by rw [hrd]; exact hm),
     by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem allocState_gpr (bytes : Nat) (s : State) (r : Reg) :
@@ -297,6 +301,24 @@ structure Setup (s t : State) : Prop where
   rcx : t.gpr .rcx = s.gpr .r8
   r8 : t.gpr .r8 = s.gpr .r9
   r9 : t.gpr .r9 = stackArg s 0
+
+/-- What a call of the private-key operation from the frame needs of the
+state before it: the frame, the call's stack arguments and its registers. -/
+structure CallAt (s t : State) : Prop where
+  rsp : t.gpr .rsp = fb s
+  rd : t.rd = s.rd
+  wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
+  out : Outside (fb s) 0 frameBytes s.mem t.mem
+  args : ∀ i < 14, word t.mem (fb s) (8 * i) = stackArg s (i + 3)
+  rdi : t.gpr .rdi = s.gpr .rdi
+  rsi : t.gpr .rsi = s.gpr .r8
+  rdx : t.gpr .rdx = s.gpr .rcx
+  rcx : t.gpr .rcx = s.gpr .r8
+  r8 : t.gpr .r8 = s.gpr .r9
+  r9 : t.gpr .r9 = stackArg s 0
+
+theorem Setup.call {s t : State} (h : Setup s t) : CallAt s t :=
+  ⟨h.rsp, h.rd, h.wr, h.out, h.args, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9⟩
 
 theorem argMoves_ok : ∀ p ∈ argMoves, p.1 < 17 ∧ p.2 % 8 = 0 ∧ p.2 + 8 ≤ frameBytes := by decide
 

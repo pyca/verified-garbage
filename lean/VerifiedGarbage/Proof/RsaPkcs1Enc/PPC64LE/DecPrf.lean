@@ -21,6 +21,8 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 
+variable {pc : Bool}
+
 /-- Slot `d` of our frame. -/
 abbrev sl (s t : State) (d : Nat) : BitVec 64 := t.mem.readW (fb s + BitVec.ofNat 64 d) 64
 
@@ -109,7 +111,7 @@ end
 
 /-- A slot of our frame stays through a call working in `scratch`, on the
 stack below the frame. -/
-theorem slot_call {s : State} (h : DPre s) {m m' : Mem} {ws : List Region} {n : Nat}
+theorem slot_call {s : State} (h : DPre pc s) {m m' : Mem} {ws : List Region} {n : Nat}
     (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes) (hf : Frame (ws ++ [below (fb s) n]) m m')
     (hs : ∀ r ∈ ws, Region.Sub r (SC s)) {d : Nat} (hd : d + 8 ≤ frameBytes) :
     m'.readW (fb s + BitVec.ofNat 64 d) 64 = m.readW (fb s + BitVec.ofNat 64 d) 64 :=
@@ -138,7 +140,7 @@ theorem shl5 (i dst : Nat) (scr : Addr) :
   omega
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
 include h
 
 theorem prfBody_ok {label : List Nat} {len count : List Instr} {dst : Nat} {t : State} {i : Nat}

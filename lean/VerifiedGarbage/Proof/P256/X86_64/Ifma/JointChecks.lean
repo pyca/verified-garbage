@@ -7,9 +7,10 @@ import VerifiedGarbage.Proof.P256.X86_64.JointTiming
 import VerifiedGarbage.Proof.P256.X86_64.JointWindowTiming
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublicTiming
 import VerifiedGarbage.Proof.P256.X86_64.NafTableTiming
-import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
+public import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
 import VerifiedGarbage.Proof.P256.X86_64.FastNafTiming
 import VerifiedGarbage.Proof.P256.X86_64.JointLoop
+public import VerifiedGarbage.Proof.P256.X86_64.JacTimingAdx
 meta import VerifiedGarbage.Proof.P256.X86_64.Ifma.Timing
 meta import VerifiedGarbage.Proof.P256.X86_64.Ifma.Config
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
@@ -20,12 +21,14 @@ meta import VerifiedGarbage.Proof.P256.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.FastNafTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.JointLoop
+meta import VerifiedGarbage.Proof.P256.X86_64.JacTimingAdx
 
 /-!
 # P-256 on x86-64 with AVX512_IFMA: the joint multiplication's taint checks
 
-Those of `publicJointAdx` where the code is its, and those of the generator's
-digits, at `5480` (`publicJointIfma`), and of the loop in vectors (`VChecks`).
+Those of `publicJointAdx` where the code is its, those of what `publicJointIfma`
+has elsewhere (the generator's digits, the selected entry's `Z²` and `Z³` and
+the table's), and those of the loop in vectors (`VChecks`).
 -/
 
 @[expose] public section
@@ -38,21 +41,36 @@ open VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.P256.X86_64 VG.Proof.Ecd
 open VG.Proof.Ecdsa.X86_64
 open VG.Impl.Mont.X86_64 (sc)
 
+theorem nafSignedCachedEntry_ifma_ct :
+    ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi, .r8]))
+      (Naf.signedCachedEntry cacheWinAdx 5920 5056) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .r8]) (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem nafCacheTable_ifma_ct :
+    ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi]))
+      (Naf.cacheTable cacheWinAdx.M cacheWinAdx.tbl 5920 cacheWinAdx.E.x).inline :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem nafCachedJac_ifma_checks :
+    CachedJacChecks nafJacWinAdx nafJacWinAdx.R nafJacWinAdx.E nafJacWinAdx.D 5056 := by
+  constructor <;> exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h)
+    (by taint_decide)
+
 theorem joint_ifma_cached_checks : JointCachedChecks publicJointIfma :=
-  ⟨joint_adx_cached_checks.read, joint_adx_cached_checks.entry, joint_adx_cached_checks.add,
+  ⟨joint_adx_cached_checks.read, nafSignedCachedEntry_ifma_ct, nafCachedJac_ifma_checks,
     joint_adx_cached_checks.copy⟩
 
 theorem joint_ifma_fixed_checks : JointFixedChecks publicJointIfma :=
   ⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ _ _ h => h) (by taint_decide),
     joint_adx_fixed_checks.entry, joint_adx_fixed_checks.add, joint_adx_fixed_checks.copy⟩
 
-theorem fastGeneratorIfma_checks : FastPrepChecks16 4 (p256x.sl U) 5480 := by
+theorem fastGeneratorIfma_checks : FastPrepChecks16 4 (p256x.sl U) 5344 := by
   constructor
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs (nafPrepPublicN 4)) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_ifma_mul_checks : JointMulChecks p256vx publicJointIfma :=
-  ⟨joint_ifma_cached_checks, joint_ifma_fixed_checks, nafTableCoZ_adx_checks, nafCacheTable_adx_ct,
+  ⟨joint_ifma_cached_checks, joint_ifma_fixed_checks, nafTableCoZ_adx_checks, nafCacheTable_ifma_ct,
     joint_adx_infinity_ct, joint_adx_counter_ct, fastGeneratorIfma_checks, fastPeer_adx_checks⟩
 
 theorem joint_ifma_doubler (hc : CfgOk p256vx) (hC : Weierstrass.Law p256vx.C) :
@@ -74,6 +92,7 @@ theorem joint_ifma_vchecks : VChecks publicJointIfma where
   gBody := VG.Taint.constantTime (A := taintSym ["VG_P256_GTAB"]) (Taint.ofRegs [.rdi, .r10, .r8, .r11])
     (fun _ _ _ _ h => h) (by taint_decide)
   init := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
+  tab := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .r10]) (fun _ _ _ _ h => h) (by taint_decide)
   out := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .r10, .r11]) (fun _ _ _ _ h => h) (by taint_decide)
   mov := VG.Taint.constantTime (A := taint) (Taint.ofRegs []) (fun _ _ _ _ h => h) (by taint_decide)
   mx1 := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
