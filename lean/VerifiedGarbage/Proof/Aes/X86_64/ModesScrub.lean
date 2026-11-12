@@ -6,19 +6,26 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCfb8.X86_64.Verified
+public import VerifiedGarbage.Proof.AesCfb.X86_64.Verified
+public import VerifiedGarbage.Proof.AesOfb.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesCbc.Wipe
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# AES-CFB8 on x86-64, without secret residue
+# AES-CFB8, AES-CFB128 and AES-OFB on x86-64, without secret residue
 
-`vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt` over an implementation of the
-AES block functions (`Aes.X86_64.BlocksImpl`), each followed by
+`vg_aes_cfb8_encrypt`, `vg_aes_cfb8_decrypt`, `vg_aes_cfb128_encrypt`,
+`vg_aes_cfb128_decrypt` and `vg_aes_ofb` over an implementation of the AES
+block functions (`Aes.X86_64.BlocksImpl`), each followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where the
 implementation gives the residue analysis of the instance (`cfb8EncRes`,
-`cfb8DecRes`). Their postconditions read the memory on return only within the
-buffers (`X86_64.Scrub.PostOut`): the data and the input block.
+`cfb8DecRes`, `cfbEncRes`, `cfbDecRes`, `ofbRes`). Their postconditions read
+the memory on return only within the buffers (`X86_64.Scrub.PostOut`): the
+data and the input block. The `_final` functions call the code of the
+CFB128 and OFB ones as internal functions of their own,
+`vg_aes_cfb128_encrypt<suffix>_core`, … (`Impl.AesCfb.X86_64.final`).
 -/
 
 @[expose] public section
@@ -58,7 +65,14 @@ theorem bytesAt_of0 (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂
   have := bytesAt_of h (d := 0) (n := n) (by omega)
   simpa using this
 
+theorem blocksAt_of0 (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n * 16 ≤ L) :
+    Spec.Cbc.blocksAt m₂ p n = Spec.Cbc.blocksAt m₁ p n :=
+  Proof.AesCbc.Wipe.blocksAt_congr fun i hi => agree_le h hn i (by omega)
+
 end
+
+theorem len_le (x : BitVec 64) (k : Nat) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat * k ≤ x.toNat * k :=
+  Nat.le_refl _
 
 theorem len_le1 (x : BitVec 64) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size :=
   Nat.le_of_eq (Nat.mul_one _).symm
@@ -89,6 +103,42 @@ theorem cfb8DecryptOut (stack : Nat) :
       rw [bytesAt_of0 hb.2.2.1 (len_le1 ln), bytesAt_of0 (n := 16) hb.2.1 (Nat.le_refl _)]
       exact h key hk
 
+theorem cfbEncryptOut (stack : Nat) :
+    PostOut (Spec.Cfb.aesEncryptContract X86_64.abi stack) (Spec.Cfb.aesSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, iv, dt, ln, sc], _ =>
+      simp only [Spec.Cfb.aesSig, Spec.Cbc.aesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq] at hb
+      show ∀ key, Spec.Aes.KeySchedule m sch _ key → Spec.Cbc.blocksAt m₂ dt _ = _ ∧ Spec.Aes.bytesAt m₂ iv 16 = _
+      intro key hk
+      rw [blocksAt_of0 hb.2.2.1 (len_le ln 16), bytesAt_of0 (n := 16) hb.2.1 (Nat.le_refl _)]
+      exact h key hk
+
+theorem cfbDecryptOut (stack : Nat) :
+    PostOut (Spec.Cfb.aesDecryptContract X86_64.abi stack) (Spec.Cfb.aesSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, iv, dt, ln, sc], _ =>
+      simp only [Spec.Cfb.aesSig, Spec.Cbc.aesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq] at hb
+      show ∀ key, Spec.Aes.KeySchedule m sch _ key → Spec.Cbc.blocksAt m₂ dt _ = _ ∧ Spec.Aes.bytesAt m₂ iv 16 = _
+      intro key hk
+      rw [blocksAt_of0 hb.2.2.1 (len_le ln 16), bytesAt_of0 (n := 16) hb.2.1 (Nat.le_refl _)]
+      exact h key hk
+
+theorem ofbOut (stack : Nat) :
+    PostOut (Spec.Ofb.aesContract X86_64.abi stack) (Spec.Ofb.aesSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, iv, dt, ln, sc], _ =>
+      simp only [Spec.Ofb.aesSig, Spec.Cbc.aesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq] at hb
+      show ∀ key, Spec.Aes.KeySchedule m sch _ key → Spec.Cbc.blocksAt m₂ dt _ = _ ∧ Spec.Aes.bytesAt m₂ iv 16 = _
+      intro key hk
+      rw [blocksAt_of0 hb.2.2.1 (len_le ln 16), bytesAt_of0 (n := 16) hb.2.1 (Nat.le_refl _)]
+      exact h key hk
+
 /-! ## The registrations -/
 
 open VG.X86_64.RScrub VG.Proof.Aes.X86_64
@@ -110,5 +160,32 @@ def cfb8DecryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesDecryptApi X86_6
     stack := 8
     verified := Proof.AesCfb8.decrypt_keyed (Proof.AesCfb8.X86_64.decrypt_verified v)
     spSafe := Proof.AesCfb8.X86_64.decrypt_spSafe v } (cfb8DecryptOut _) [] (pubOk_nil _) v.cfb8DecRes
+
+/-- `vg_aes_cfb128_encrypt` over `v`. -/
+def cfbEncryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesEncryptApi X86_64.target :=
+  withScrub {
+    suffix := v.suffix
+    code := Impl.AesCfb.X86_64.encrypt v.enc
+    stack := 8
+    verified := Proof.AesCfb.encrypt_keyed (Proof.AesCfb.X86_64.encrypt_verified v)
+    spSafe := Proof.AesCfb.X86_64.encrypt_spSafe v } (cfbEncryptOut _) [] (pubOk_nil _) v.cfbEncRes
+
+/-- `vg_aes_cfb128_decrypt` over `v`. -/
+def cfbDecryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesDecryptApi X86_64.target :=
+  withScrub {
+    suffix := v.suffix
+    code := Impl.AesCfb.X86_64.decrypt v.enc
+    stack := 8
+    verified := Proof.AesCfb.decrypt_keyed (Proof.AesCfb.X86_64.decrypt_verified v)
+    spSafe := Proof.AesCfb.X86_64.decrypt_spSafe v } (cfbDecryptOut _) [] (pubOk_nil _) v.cfbDecRes
+
+/-- `vg_aes_ofb` over `v`. -/
+def ofbReg (v : BlocksImpl) : Registration Spec.Ofb.aesApi X86_64.target :=
+  withScrub {
+    suffix := v.suffix
+    code := Impl.AesOfb.X86_64.crypt v.enc
+    stack := 8
+    verified := Proof.AesOfb.keyed (Proof.AesOfb.X86_64.crypt_verified v)
+    spSafe := Proof.AesOfb.X86_64.crypt_spSafe v } (ofbOut _) [] (pubOk_nil _) v.ofbRes
 
 end VG.Proof.Aes.X86_64.ModesScrub

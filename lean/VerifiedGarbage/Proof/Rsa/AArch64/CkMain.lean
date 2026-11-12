@@ -108,7 +108,7 @@ theorem ckHeadS_ok {I : CkIn} {s : State} (h : CkPre I s) (hc : I.cap = I.k) :
 theorem ckMain_eq : VG.Impl.Rsa.AArch64.CheckKey.main = seqs (([.block VG.Impl.Rsa.AArch64.CheckKey.head] : List (Prog isa)) ++ (loadA 0 Public.sN Public.sK ++
     (loadA aE sE sElen ++ (([zeroA aOne, .block (setOneA aOne)] : List (Prog isa)) ++
     ((loadA aX sD sDlen ++ ltA aX 0) ++
-    ((loadA aX sP sPlen ++ (loadA aR sQ sQlen ++ (mulXR ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa)))))) ++
+    ((loadA aX sP sPlen ++ (loadA aR sQ sQlen ++ (mulPQ ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa)))))) ++
     (modChecks sP sPlen sDP sQlen ++ (modChecks sQ sQlen sDQ sPlen ++
     ((loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++ (loadA aR sQ sQlen ++ (mulXR ++ wmodOne CheckCrtKey.topQ lenQ))))) ++
     ([.block retMask] : List (Prog isa))))))))))) := by

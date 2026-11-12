@@ -15,9 +15,10 @@ of both scalars in vectors (`Ifma.vwindow`).
 namespace VG.Impl.Ecdsa.Verify.X86_64
 open VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Weierstrass.X86_64
 
-/-- `R = [u]G + [v]Q`, the loop over the digits in vectors. -/
+/-- `R = [u]G + [v]Q`: the scalars' digits without branches on their bits (`Joint.prepB`, which
+BMI2 allows), then the loop over the digits in vectors. -/
 def ifmaPoints : Prog isa :=
-  .seq (Joint.prep Ifma.publicJointIfma (p256vx.sl U) (p256vx.sl V))
+  .seq (Joint.prepB Ifma.publicJointIfma (p256vx.sl U) (p256vx.sl V))
     (Ifma.vwindow Ifma.publicJointIfma (jointDouble Ifma.publicJointIfma.K))
 
 def jointVerifyP256Ifma : Prog isa := Cfg.jointVerifyWith p256vx ifmaPoints

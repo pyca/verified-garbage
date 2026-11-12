@@ -165,23 +165,35 @@ def ifBalanced (sl : Nat) (word other : Prog isa) : Prog isa :=
 /-- The header word counting the product's rows. -/
 def oJ : Nat := 96
 
-/-- Row `j` (header word 96): `[o] += [a] b_j 2^(32 j)` over `w + 1` words, `b_j` word `j` of `[b]`. -/
-def mulRow (o a b : Nat) (rows : Option Nat := none) : Prog isa := seqs [
+/-- Row `j` (header word 96): `[o] += [a] b_j 2^(32 j)` over `w + 1` words, `b_j` word `j` of `[b]`;
+over the low `w / 2` words of `[a]` where `half`, `w / 2` rows unless `rows` says. -/
+def mulRow (o a b : Nat) (rows : Option Nat := none) (half : Bool := false) : Prog isa := seqs [
   .block (arrPtr L .ebx b .edx ++ [.mov .eax (.mem (sc oJ)), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
     .alu .add .ebx (.reg .eax), .mov .ecx (.mem (at_ .ebx 0))] ++ arrPtr L .ebp o .edx ++
-    [.alu .add .ebp (.reg .eax)] ++ arrPtr L .esi a .edx ++ bytesB L .edi ++ [.mov .ebx (.imm 0)]),
+    [.alu .add .ebp (.reg .eax)] ++ arrPtr L .esi a .edx ++ bytesB L .edi ++
+    (if half then [.shift .shr .edi 1] else []) ++ [.mov .ebx (.imm 0)]),
   .loop (.block [.mov .eax (.mem (at_ .esi 0)), .mul .ecx, .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
     .alu .add .eax (.mem (at_ .ebp 0)), .alu .adc .edx (.imm 0), .store (at_ .ebp 0) .eax, .mov .ebx (.reg .edx),
     .alu .add .esi (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .edi (.imm 4)]) .ne,
   .block ([.store (at_ .ebp 0) .ebx] ++ restoreEdi L ++
     [.mov .eax (.mem (sc oJ)), .alu .add .eax (.imm 1), .store (sc oJ) .eax] ++
     (match rows with
-     | none => bytesB L .ecx ++ [.shift .shr .ecx 2, .alu .cmp .eax (.reg .ecx)]
+     | none => bytesB L .ecx ++ [.shift .shr .ecx 2] ++ (if half then [.shift .shr .ecx 1] else []) ++
+         [.alu .cmp .eax (.reg .ecx)]
      | some k => [.alu .cmp .eax (.imm (BitVec.ofNat 32 k))]))]
 
 /-- `[o] = [a] [b]`, `2 w` words across arrays `o` and `o + 1`. -/
 def mulWide (o a b : Nat) : Prog isa := seqs [zeroWide L o, zeroWide L (o + 1),
   .block [.mov .eax (.imm 0), .store (sc oJ) .eax], .loop (mulRow L o a b) .ne]
+
+/-- Array `o`'s last word, past `zeroWide`'s, zero. -/
+def topZero (o : Nat) : List Instr :=
+  arrPtr L .eax o .edx ++ bytesB L .ecx ++ [.alu .add .eax (.reg .ecx), .mov .ecx (.imm 0), .store (at_ .eax 4) .ecx]
+
+/-- `[o] = [a] [b]` for `[a]`, `[b]` of `w / 2` words, `2 w` words across arrays `o` and `o + 1`: the
+rows of `mulWide` over the low halves, from `2 w` words zero. -/
+def mulHalf (o a b : Nat) : Prog isa := seqs [zeroWide L o, zeroWide L (o + 1), .block (topZero L o),
+  .block [.mov .eax (.imm 0), .store (sc oJ) .eax], .loop (mulRow L o a b none true) .ne]
 
 /-- `[o] = [a] (b mod 2^64)`, the low two words of `[b]` (`e`, of at most five bytes), across
 arrays `o` and `o + 1`. -/

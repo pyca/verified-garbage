@@ -58,17 +58,17 @@ theorem phDN_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c 
 
 /-- `p q = n`. -/
 theorem phPQ_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c s) (L : CkLens I) :
-    WP isa (seqs (loadA aX sP sPlen ++ (loadA aR sQ sQlen ++ (mulXR ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa))))))) s
+    WP isa (seqs (loadA aX sP sPlen ++ (loadA aR sQ sQlen ++ (mulPQ ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa))))))) s
       (KS I m₀ (decide (I.P * I.Q = I.N) && c)) := by
   obtain ⟨hs, hm, hN, hE, hO⟩ := h
   refine wp_seqs_append (by simp [loadA]) (by simp [loadA]) (WP.mono (ckLoad_ok hs (j := aX) (by decide) (by decide)
     (by decide) hs.args.p hs.args.pl hs.p L.pbl L.pl1 (Nat.le_of_lt L.pl2)) fun s₁ ⟨h₁, m₁, v₁, o₁⟩ => ?_)
-  refine wp_seqs_append (by simp [loadA]) (by simp [mulXR]) (WP.mono (ckLoad_ok h₁ (j := aR) (by decide)
+  refine wp_seqs_append (by simp [loadA]) (by simp [mulPQ]) (WP.mono (ckLoad_ok h₁ (j := aR) (by decide)
     (by decide) (by decide) h₁.args.q h₁.args.ql h₁.q L.qbl L.ql1 (Nat.le_of_lt L.ql2)) fun s₂ ⟨h₂, m₂, v₂, o₂⟩ => ?_)
   have x₂ : I.av s₂.mem aX = I.P := by rw [o₂ aX (by decide) (by decide), v₁]
-  refine wp_seqs_append (by simp [mulXR]) (by simp [eqA]) (WP.mono (ckMulXR_ok h₂ L
-    (by rw [x₂]; exact lt_w (by rw [L.pbl]; exact L.pcap))
-    (by rw [v₂]; exact lt_w (by rw [L.qbl]; exact L.qcap))) fun s₃ ⟨h₃, m₃, v₃, o₃⟩ => ?_)
+  refine wp_seqs_append (by simp [mulPQ]) (by simp [eqA]) (WP.mono (ckMulPQ_ok h₂ L
+    (by rw [x₂]; have := os2ip_lt I.pb; rw [L.pbl] at this; exact this)
+    (by rw [v₂]; have := os2ip_lt I.qb; rw [L.qbl] at this; exact this)) fun s₃ ⟨h₃, m₃, v₃, o₃⟩ => ?_)
   refine WP.mono (ckEq_ok h₃ (a := aA) (b := 0) (by decide) (by decide) (m₃.trans (m₂.trans (m₁.trans hm))))
     fun t ⟨ht, mt, ot⟩ => ?_
   have k0 : ∀ i < 16, i ≠ aX → i ≠ aR → i ≠ aA → I.av t.mem i = I.av s.mem i := fun i hi h1 h2 h3 => by

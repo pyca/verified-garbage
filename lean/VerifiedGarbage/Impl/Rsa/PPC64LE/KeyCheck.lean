@@ -164,18 +164,18 @@ def shape : List Instr :=
     .logic .xor .r3 .r19 .r21, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r19 5, .li .r12 0, .sub .r3 .r12 .r3,
     .lsr .d .r3 .r3 63, .li .r12 1, .logic .xor .r3 .r3 .r12, .logic .or .r0 .r0 .r3]
 
-/-- For a balanced key (`shape`), `0` in `aVR`: there `p q` is exact in `w`
-digits, so `p q mod 2^(32 w) = n` already gives `n mod p = 0`; else
-Montgomery's `n 2^(-32 w) mod (p | 1)`; `p | 1` in `aVD` either way. -/
+/-- `p q mod 2^(32 w)` in `aVQ` and `p | 1` in `aVD`; for a balanced key (`shape`), the product over
+the primes' `w / 2` digits and `0` in `aVR`: there `p q` is exact in `w` digits, so
+`p q mod 2^(32 w) = n` already gives `n mod p = 0`; else the product truncated to `w` digits and
+Montgomery's `n 2^(-32 w) mod (p | 1)`. -/
 def nModP : Prog isa :=
   .ite (.zero .d .r0)
-    (seqs [copy aVR aZ, copy aVD aP, .block (orOne aVD)])
-    (seqs [copy aVD aP, .block (orOne aVD), montP aVR aN aOne])
+    (seqs [MontKey.mulHalf aVQ aP aQ .r19, copy aVR aZ, copy aVD aP, .block (orOne aVD)])
+    (seqs [MontKey.mulLo aVQ aP aQ .r19, copy aVD aP, .block (orOne aVD), montP aVR aN aOne])
 
 /-- `1`, the mask `p` odd, `p q mod 2^(32 w)` in `aVQ`, `p | 1` in `aVD` and
 `0` (or Montgomery's `n 2^(-32 w) mod (p | 1)`) in `aVR`. -/
-def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), MontKey.mulLo aVQ aP aQ .r19,
-  .block shape, nModP]
+def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP), .block shape, nModP]
 
 /-- `[aA]` and `[aY]` equal exactly when `q qInv ≡ 1 (mod p)`: for a balanced key
 (`shape`), `q qInv` (`MontKey.mulLo`, exact in `w` digits) by words modulo `p`

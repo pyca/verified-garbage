@@ -10,6 +10,10 @@ public import VerifiedGarbage.Proof.AesXts.X86_64.CT
 public import VerifiedGarbage.Proof.AesXts.X86_64.To.Copy
 public import VerifiedGarbage.Proof.AesXts.X86_64.VaesTo.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.VaesZ.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Impl.AesXts.X86_64UnitTo
+public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Spec.Xts.OutOfPlace
 
 /-!
 # Implementations of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86-64
@@ -27,7 +31,9 @@ There are two kinds: the functions calling an implementation of the block
 functions (`XtsImpl.blocks`, e.g. `vg_aes_xts_encrypt_aesni`), and the one-pass
 functions, which call nothing (`XtsImpl.vaesVpclmul`, `XtsImpl.aesniPclmul`).
 All are internal functions, emitted from the code of the data-unit
-functions that call them.
+functions that call them. An implementation gives the residue analyses of
+the data-unit functions over it that the analysis handles (`encUnitRes`,
+`decUnitRes`, `encUnitToRes`, `decUnitToRes`).
 -/
 
 @[expose] public section
@@ -66,6 +72,19 @@ structure XtsImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The residue analysis of `vg_aes_xts_encrypt_unit` over it, if the
+  analysis handles it. -/
+  encUnitRes : Option (RScrub.Analysed Spec.Xts.aesEncryptUnitApi.sig 16 []
+    (Impl.AesXts.X86_64Unit.encrypt ⟨enc, dec⟩)) := none
+  /-- `vg_aes_xts_decrypt_unit`'s. -/
+  decUnitRes : Option (RScrub.Analysed Spec.Xts.aesDecryptUnitApi.sig 16 []
+    (Impl.AesXts.X86_64Unit.decrypt ⟨enc, dec⟩)) := none
+  /-- `vg_aes_xts_encrypt_unit_to`'s. -/
+  encUnitToRes : Option (RScrub.Analysed Spec.Xts.aesEncryptUnitToApi.sig 24 []
+    (Impl.AesXts.X86_64UnitTo.encrypt ⟨enc, dec⟩ ⟨to.enc, to.dec⟩)) := none
+  /-- `vg_aes_xts_decrypt_unit_to`'s. -/
+  decUnitToRes : Option (RScrub.Analysed Spec.Xts.aesDecryptUnitToApi.sig 24 []
+    (Impl.AesXts.X86_64UnitTo.decrypt ⟨enc, dec⟩ ⟨to.enc, to.dec⟩)) := none
 
 namespace XtsImpl
 

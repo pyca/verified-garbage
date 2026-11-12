@@ -51,8 +51,8 @@ theorem joint_ifma_prep_layout : JointPrepLayout publicJointIfma 8192
 theorem joint_ifma_double_nodup : (doubleSlots publicJointIfma.K.S publicJointIfma.K.R).Nodup :=
   joint_adx_double_nodup
 
-/-- The vectors' slots, MXCSR saved and the blocks' constants are apart from what the joint
-multiplication keeps in the working space. -/
+/-- The vectors' slots, MXCSR saved, the blocks' constants and `Q`'s multiples as limbs are apart from
+what the loop in vectors reads of the joint multiplication's working space. -/
 theorem joint_ifma_vlay : VLay publicJointIfma 8192 where
   big := by decide
   mx := by decide
@@ -60,12 +60,11 @@ theorem joint_ifma_vlay : VLay publicJointIfma 8192 where
   live := by decide +kernel
   liveB := by decide +kernel
   mo := by decide +kernel
-  stable := by decide +kernel
-  stableB := by decide +kernel
+  bits := by decide +kernel
+  bitsB := by decide +kernel
   n := rfl
-  tbl := by decide
-  cache := by decide
-  cacheH := by decide
+  px := by decide
+  py := by decide
   rxy := by decide
   rxz := by decide
   ryz := by decide
