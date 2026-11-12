@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdCT4
 import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
-import VerifiedGarbage.Proof.Rsa.AArch64.RdRoot
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdCTSqrt
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdFin
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdCT4
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RdRoot
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RdCTSqrt
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdFin
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
@@ -22,10 +22,9 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
-# `vg_rsa_recover_primes_det` on AArch64: constant time, the square root and the outputs
+# `vg_rsa_recover_primes_det` on AArch64: constant time, the outputs
 
-`sqrt_ct`: the square root's loop, its count `64 (v + 1)` in `x6`; then the
-factors and the stores, between `GS` (the working space, the arguments,
+The factors and the stores, between `GS` (the working space, the arguments,
 the outputs and the mask, which the stores keep).
 -/
 
@@ -37,75 +36,6 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Key
 open VG.Impl.Rsa.AArch64.RecoverDet
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
 open VG.Proof.MlKem.AArch64 (Keep)
-
-/-! ## The square root -/
-
-/-- The square root's count. -/
-abbrev NS (P : DP) : Nat := 64 * (vk P.k + 1)
-
-theorem NS_ok (I : RpIn) (L : RpLens I) : 0 < NS (dpub I) ∧ NS (dpub I) < 2 ^ 64 := by
-  have := L.k2; simp only [NS, vk, dpub]; omega
-
-/-- Register `r` a bit. -/
-def BR (r : Reg) (s : State) : Prop := ∃ b : Bool, s.gpr r = BitVec.ofNat 64 b.toNat
-
-theorem BR.keep {r : Reg} {rs : List Reg} {s t : State} (h : BR r s) (k : Keep rs s t) (hr : r ∉ rs) : BR r t := by
-  obtain ⟨b, hb⟩ := h
-  exact ⟨b, (k.gpr r hr).trans hb⟩
-
-def XS1 (a : Pub) (s : State) : Prop := XL NS XN a s ∧ BR .x1 s
-def XS2 (a : Pub) (s : State) : Prop := XL NS XN a s ∧ BR .x1 s ∧ BR .x2 s
-def XS3 (a : Pub) (s : State) : Prop := XL NS XN a s ∧ BR .x2 s
-def XSm (a : Pub) (s : State) : Prop := XL NS XN a s ∧ MR .x15 s
-
-theorem sqrtBody_ct : CTW (GC vk (XL NS XN)) (GC vk (XL' NS XN)) sqrtBody := by
-  unfold sqrtBody
-  refine CTW.cons (by simp) (setWid_w (Y := XL NS XN) fun _ _ _ h _ k => h.x.keep k (by decide) id) ?_
-  refine CTW.cons (by simp) (dblc_w (Y := XS1) (by decide) (fun _ s _ => cin_c0 s) (.inl rfl)
-    (fun _ _ _ h _ k _ hb => ⟨h.x.keep k (by decide) id, hb⟩) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (dblc_w (Y := XS2) (by decide) (fun _ s _ => cin_c0 s) (.inr rfl)
-    (fun _ _ _ h _ k _ hb => ⟨h.x.1.keep k (by decide) id, h.x.2.keep k (by decide), hb⟩) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (setNar_w (Y := XS2) fun _ _ _ h _ k =>
-    ⟨h.x.1.keep k (by decide) id, h.x.2.1.keep k (by decide), h.x.2.2.keep k (by decide)⟩) ?_
-  refine CTW.cons (by simp) (dblA_w (Y := XS3) (by decide)
-    (fun _ s h => by obtain ⟨b, hb⟩ := h.x.2.1; exact cin_cOf (.inl rfl) hb)
-    (fun _ _ _ h _ k _ => ⟨h.x.1.keep k (by decide) id, h.x.2.2.keep k (by decide)⟩) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (dblA_w (Y := XL NS XN) (by decide)
-    (fun _ s h => by obtain ⟨b, hb⟩ := h.x.2; exact cin_cOf (.inr rfl) hb)
-    (fun _ _ _ h _ k _ => h.x.1.keep k (by decide) id) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (copyA_w (Y := XL NS XN) (by decide) (by decide) (by decide)
-    (fun _ _ _ h _ k => h.x.keep k (by decide) id) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (dblA_w (Y := XL NS XN) (by decide) (fun _ s _ => cin_c0 s)
-    (fun _ _ _ h _ k _ => h.x.keep k (by decide) id) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (dblA_w (Y := XL NS XN) (by decide) (fun _ s _ => cin_c1 s)
-    (fun _ _ _ h _ k _ => h.x.keep k (by decide) id) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (subA_w (Y := XSm) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ h _ k hm _ => ⟨h.x.keep k (by decide) id, hm⟩) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (selA_w (Y := XSm) (by decide) (by decide) (by decide) (fun _ _ h => h.x.2)
-    (fun _ _ _ h _ k => ⟨h.x.1.keep k (by decide) id, h.x.2.keep k (by decide)⟩) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (dblA_w (Y := XL NS XN) (by decide)
-    (fun _ s h => by obtain ⟨c, hc⟩ := h.x.2; exact cin_mask hc)
-    (fun _ _ _ h _ k _ => h.x.1.keep k (by decide) id) (by taint_decide)) ?_
-  exact CTW.one (regs_w (by taint_decide) (rs := [.x6]) (by decide) fun a s h =>
-    WP.mono (dec_ok s .x6) fun t ⟨⟨h6, hm, _⟩, k⟩ => ⟨⟨hm, by rw [h6, h.x.1], trivial⟩, k⟩)
-
-theorem sqrt_ct : CTW (GC Wk XT) (GC vk XT) sqrt := by
-  unfold sqrt
-  simp only [List.cons_append, List.nil_append]
-  refine CTW.cons (by simp) (setNar_w (Y := XT) (by intros; trivial)) ?_
-  refine CTW.cons (by simp) (zeroA_w (Y := XT) (by decide) (by intros; trivial) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (zeroA_w (Y := XT) (by decide) (by intros; trivial) (by taint_decide)) ?_
-  refine CTW.cons (by simp) (wsblk (Y := fun a s => s.gpr .x6 = BitVec.ofNat 64 (NS a.1) ∧ XN a.1 s)
-    (rws_drop (by simp [countS, ws])) (by taint_decide) fun ⟨P, i⟩ s h => h.elim fun I m₀ c e g L _ => by
-      subst e
-      exact WP.mono (countS_ok g.ws) fun t ⟨⟨h6, hm⟩, k⟩ =>
-        ⟨I, m₀, c, rfl, g.same hm k (by decide), L, h6, trivial⟩) ?_
-  refine CTW.cons (by simp) ((loop_w NS NS_ok sqrtBody_ct).mono (fun _ _ h => h) fun _ _ h =>
-    h.imp (Y := XT) rfl fun _ => trivial) ?_
-  refine CTW.cons (by simp) (zeroA_w (Y := XT) (by decide) (by intros; trivial) (by taint_decide)) ?_
-  refine CTW.app (a := eqA nRm nZ) (by simp [eqA]) (by simp) (eqA_w (Y := XT) (by decide) (by decide)
-    (by intros; trivial) (by taint_decide)) ?_
-  exact CTW.one (andZero_w (Y := XT) (by intros; trivial))
 
 /-! ## The factors and the stores -/
 

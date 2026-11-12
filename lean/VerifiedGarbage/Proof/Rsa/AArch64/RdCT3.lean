@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdCT2
-public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
+public import VerifiedGarbage.Proof.Rsa.AArch64.RdGcd
 import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdCT2
-meta import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RdGcd
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
 meta import VerifiedGarbage.Proof.Framework.Block
@@ -93,12 +93,16 @@ theorem gcdHead_ct : CTW (GC vk fun a s => zX a.1 s) (GC vk XInv) (seqs gcdHead)
   refine CTW.cons (by simp) (setOneA_w (Y := XT) (by decide) (by intros; trivial) (by taint_decide)) ?_
   exact CTW.one (zeroA_w (Y := XT) (by decide) (by intros; trivial) (by taint_decide))
 
-theorem inverse_w [InvLaw] : CTW (GC vk XInv) (GC vk XT) (inverse nXn nU gX₁ gX₂ gM gT) :=
+/-- The gcd's middle: the batches by words, or the inverse by bits where `v ≥ 2^21`. -/
+abbrev gcdMid : Prog isa := .seq (.block (ws ++ [.lsr .x .x3 .x12 21]))
+  (.ite (.zero .x .x3) (gcdB nU nXn gM) (inverseBits nXn nU gX₁ gX₂ gM gT))
+
+theorem gcdMid_w [GcdLaw gcdB] : CTW (GC vk XInv) (GC vk XT) gcdMid :=
   wsop rfl (by taint_decide) fun ⟨P, i⟩ s h => h.elim fun I m₀ c e g L x => by
     subst e
     have hw := g.ws
     obtain ⟨zx, vm, x1, x2⟩ := x
-    exact WP.mono (InvLaw.inverse_ok hw (iU := nXn) (iV := nU) (iX₁ := gX₁) (iX₂ := gX₂) (iM := gM) (iT := gT)
+    exact WP.mono (GcdLaw.gcdW_ok hw (iU := nXn) (iV := nU) (iX₁ := gX₁) (iX₂ := gX₂) (iM := gM) (iT := gT)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) zx vm x1 x2) fun t ⟨_, f, k, _⟩ =>
@@ -109,12 +113,12 @@ theorem inverse_w [InvLaw] : CTW (GC vk XInv) (GC vk XT) (inverse nXn nU gX₁ g
         simp only [ar, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hw.sl (by decide)) k (by decide), L, trivial⟩
 
-theorem gcd_ct [InvLaw] : CTW (GC vk fun a s => zX a.1 s) (GC vk XT) gcd := by
-  have e : gcd = seqs (gcdHead ++ ([inverse nXn nU gX₁ gX₂ gM gT] ++
+theorem gcd_ct [GcdLaw gcdB] : CTW (GC vk fun a s => zX a.1 s) (GC vk XT) gcd := by
+  have e : gcd = seqs (gcdHead ++ ([gcdMid] ++
       (eqA gM nOne ++ [.block zeroMask, selA nU nOne, zeroA gT, copyA gT nU]))) := by
-    simp only [gcd, gcdHead, List.append_assoc, List.cons_append, List.nil_append]
+    simp only [gcd, gcdHead, gcdMid, List.append_assoc, List.cons_append, List.nil_append]
   rw [e]
-  refine CTW.app (by simp) (by simp) gcdHead_ct (CTW.cons (by simp) inverse_w ?_)
+  refine CTW.app (by simp) (by simp) gcdHead_ct (CTW.cons (by simp) gcdMid_w ?_)
   refine CTW.app (a := eqA gM nOne) (by simp [eqA]) (by simp) (eqA_w (b₁ := gM) (b₂ := nOne) (Y := XT) (by decide) (by decide) (by intros; trivial)
     (by taint_decide)) ?_
   refine CTW.cons (by simp) (regs_w (Y := fun _ s => MR .x15 s) (by taint_decide) (rs := [.x3, .x4, .x7, .x15])

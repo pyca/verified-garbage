@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.AArch64.RdCT6
-public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
@@ -69,7 +68,7 @@ theorem rd_implies : rdA.Implies (Spec.Rsa.recoverPrimesDetContract abi) where
     stackArgs_four, List.append_eq] [rpSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rpSatState
 
 /-- `vg_rsa_recover_primes_det`. -/
-theorem rd_verified [InvLaw] :
+theorem rd_verified [GcdLaw VG.Impl.Rsa.AArch64.RecoverDet.gcdB] :
     Verified target VG.Impl.Rsa.AArch64.RecoverDet.code (Spec.Rsa.recoverPrimesDetContract abi) :=
   Verified.of_correct rdCode_correct rdCode_constantTime rd_implies
 

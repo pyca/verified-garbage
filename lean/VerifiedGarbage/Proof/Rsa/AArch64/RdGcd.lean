@@ -1,18 +1,24 @@
 module
--- separate module: the GCD's proof, which alone needs `InvLaw`'s inverse, builds beside the products'
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
+public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 
 /-!
 # `vg_rsa_recover_primes_det` on AArch64: the GCD
 
-`gcd_ok`: `gcd(u, x)` for the odd `u`, by the inverse modulo `u` (`InvLaw`),
-or 1 for `u = 1`, into `u`'s array and its copy (narrow array 7).
+`gcd_ok`, from `GcdLaw` (`InvLaw.lean`; `InvBatch.lean` proves it with gcd-only batches of
+divsteps): `gcd(u, x)` for the odd `u`, or 1 for `u = 1`, into `u`'s array and its copy
+(narrow array 7).
 -/
 
 @[expose] public section
@@ -49,7 +55,7 @@ theorem gcd_one_or {U X g : Nat} (h : U = 1 ∨ g = Nat.gcd X U) :
   · simp only [e, decide_false, Bool.false_eq_true, ↓reduceIte]; rw [h.resolve_left e, Nat.gcd_comm]
 
 /-- `gcd`: `gcd(u, x)` into narrow arrays 2 and 7, for an odd `u`. -/
-theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I)
+theorem gcd_ok [GcdLaw gcdB] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I)
     {U X : Nat} (hU : wv s.mem I.B (slot (vk I.k) nU) (vk I.k) = U) (hodd : U % 2 = 1)
     (hX : wv s.mem I.B (slot (vk I.k) nXn) (vk I.k) = X)
     (hz : word s.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0)
@@ -70,7 +76,8 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
   have s7 := slot_lt (w := vk I.k) (show gT < 32 by decide)
   have one' : wv s.mem I.B (slot (vk I.k) nOne) (vk I.k) = 1 := by
     rw [wv_low_of_lt (w := vk I.k + 2) (by omega) (by rw [one]; exact Nat.one_lt_two_pow (by omega)), one]
-  have e : gcd = seqs ([zeroA gM, copyA gM nU] ++ (oneA gX₁ ++ ([zeroA gX₂, inverse nXn nU gX₁ gX₂ gM gT] ++
+  have e : gcd = seqs ([zeroA gM, copyA gM nU] ++ (oneA gX₁ ++ ([zeroA gX₂, .seq (.block (ws ++ [.lsr .x .x3 .x12 21]))
+      (.ite (.zero .x .x3) (gcdB nU nXn gM) (inverseBits nXn nU gX₁ gX₂ gM gT))] ++
       (eqA gM nOne ++ [.block zeroMask, selA nU nOne, zeroA gT, copyA gT nU])))) := by
     simp only [gcd, List.append_assoc]
   rw [e]
@@ -119,7 +126,7 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
       o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
       o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
       o₁.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), one']
-  refine (WP.mono (InvLaw.inverse_ok g₄.ws (iU := nXn) (iV := nU) (iX₁ := gX₁) (iX₂ := gX₂) (iM := gM) (iT := gT)
+  refine (WP.mono (GcdLaw.gcdW_ok g₄.ws (iU := nXn) (iV := nU) (iX₁ := gX₁) (iX₂ := gX₂) (iM := gM) (iT := gT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) zX (by rw [uU, uM]) x1 x2) fun s₅ ⟨_, f₅, k₅, hinv⟩ => ?_)
@@ -146,7 +153,7 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
   have hg : U = 1 ∨ wv s₅.mem I.B (slot (vk I.k) nU) (vk I.k) = Nat.gcd X U := by
     by_cases e1 : U = 1
     · exact .inl e1
-    · right; rw [uM, xX] at hinv; exact (hinv hodd (by omega)).1
+    · right; rw [uM, xX] at hinv; exact hinv hodd (by omega)
   -- `u = 1`.
   refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok g₅.ws (a := gM) (b := nOne) (by decide) (by decide))
     fun s₆ ⟨h9, m₆, _, _, k₆⟩ => ?_)
@@ -185,7 +192,5 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
         · exact .tail _ (.tail _ (.tail _ (.tail _ (.head _))))
         · exact .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _))))))),
       o₄ x a6, o₃ x a5, o₂ x (a4.imp id fun h => by omega), o₁ x a4]
-
-
 
 end VG.Proof.Rsa.AArch64.Rd
