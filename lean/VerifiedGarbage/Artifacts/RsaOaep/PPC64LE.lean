@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.RsaOaep.PPC64LE
 
-open VG.Proof.RsaOaep.PPC64LE (OK enc_ok dec_ok)
+open VG.Proof.RsaOaep.PPC64LE (OK enc_ok dec_ok decP_ok)
 open VG.Proof.MdHashTable.PPC64LE (mvars tables fns3)
 
 def artifacts : List Artifact :=
@@ -20,8 +20,13 @@ def artifacts : List Artifact :=
     Spec.RsaOaep.decryptMdTablesApi.artifact PPC64LE.target {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.Dec.decrypt (fns3 mvars)
-      stack := 3776
+      stack := 3792
       verified := dec_ok mvars h },
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact PPC64LE.target {
+      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
+      code := Impl.RsaOaep.PPC64LE.Dec.decryptP (fns3 mvars)
+      stack := 3792
+      verified := decP_ok mvars h },
     Spec.RsaOaep.encryptMdTablesApi.artifact PPC64LE.target {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.encrypt (fns3 mvars)

@@ -361,6 +361,11 @@ def privArgs : List Instr :=
     copyArg 11 12 ++ copyArg 8 13 ++ copyArg 13 14 ++ copyArg 10 15 ++ copyArg 15 16 ++ copyArg 8 17 ++
     atS .eax oRsa ++ [st .eax 72, ld .eax (arg 22), .alu .sub .eax (.imm 1024), st .eax 76]
 
+/-- The arguments of `vg_rsa_private_checked_precomputed`: `privArgs`, then
+`pre` and `pre_len` (`vg_rsa_oaep_decrypt_precomputed`'s arguments 25 and
+26). -/
+def privArgsP : List Instr := privArgs ++ copyArg 25 20 ++ copyArg 26 21
+
 /-- The result to its slot; the flags of `k < 2 hLen + 2`. -/
 def decChk : List Instr :=
   [st .eax sRes, ld .eax (arg 4), .alu .cmp .eax (.imm (BitVec.ofNat 32 (2 * H.D + 2)))]
@@ -454,16 +459,19 @@ variable (privN : String) (privC : Prog isa)
 length `H.D`: the result to its slot, the check of `k`, and the decoding. -/
 def decTail : Prog isa := seqs [.block (decChk H), .ite .b decFail (decMain H f)]
 
-/-- The inner frame's body: the private operation, the digest length `d` of
-the table `hash` (our argument 23) to `edx`, then the tail for `d`. -/
-def decBody : Prog isa :=
-  seqs [.block (decStart ++ privArgs), .call privN privC, .block (lenLoad 23),
+/-- The inner frame's body: the private operation, with the call's
+arguments `pa` (`privArgs`, or `privArgsP` for
+`vg_rsa_private_checked_precomputed`), the digest length `d` of the table
+`hash` (our argument 23) to `edx`, then the tail for `d`. -/
+def decBody (pa : List Instr := privArgs) : Prog isa :=
+  seqs [.block (decStart ++ pa), .call privN privC, .block (lenLoad 23),
     byLen (fun d => decTail (ofLen d) f) lens]
 
-/-- `vg_rsa_oaep_decrypt`, calling a checked private operation by its name,
-with the label's hash function the table that is its argument 23 (`hash`)
-and MGF1's the table that is its argument 24 (`mgf1`). -/
-def decrypt : Prog isa := wrap frameBytes (decBody f privN privC)
+/-- `vg_rsa_oaep_decrypt`, calling a checked private operation by its name
+with the arguments `pa`, with the label's hash function the table that is its
+argument 23 (`hash`) and MGF1's the table that is its argument 24
+(`mgf1`). -/
+def decrypt (pa : List Instr := privArgs) : Prog isa := wrap frameBytes (decBody f privN privC pa)
 
 end Dec
 

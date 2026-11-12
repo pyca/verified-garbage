@@ -123,6 +123,14 @@ theorem arg_readD {s : State} (hp : DPre s) {m : Mem} (hf : Frame [frR s] s.mem 
   · simp only [List.mem_singleton] at hr'; subst hr'
     exact (hp.dKa.sub_left (frame_subD s)).symm
 
+/-- A stack argument is in a region the caller reads. -/
+theorem DPre.argIn {s u : State} (hp : DPre s) (hrd : u.rd = s.rd) {j : Nat} (hj : j < 19) :
+    InRegions (u.rd ++ u.wr) (stackArgAddr s j) 8 := by
+  obtain ⟨A, hA, hm⟩ := hp.hra
+  refine ⟨_, List.mem_append_left _ (by rw [hrd]; exact hm), ?_⟩
+  show (stackArgAddr s j - stackArgAddr s 0).toNat + 8 ≤ A
+  rw [stackArgAddr_j s j, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]; omega
+
 /-- One stack argument copied to a slot. -/
 theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
     (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {j d : Nat} (hj : j < 19) (hd : d + 8 ≤ frameBytes) :
@@ -132,9 +140,7 @@ theorem copy1D_ok {s : State} (hp : DPre s) {u : State} (hsp : u.gpr .rsp = fb s
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by unfold frameBytes at *; omega)
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 152⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
-    rw [argAddr, stackArgAddr_j s j]
-    exact Offset.contains_base _ (by omega) (by omega)
+    rw [argAddr]; exact hp.argIn hrd hj
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ hf.writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega) (by unfold frameBytes at *; omega))⟩
@@ -264,6 +270,22 @@ structure DSet (s t : State) : Prop where
   rcx : t.gpr .rcx = s.gpr .r8
   r8 : t.gpr .r8 = s.gpr .r9
   r9 : t.gpr .r9 = stackArg s 0
+
+/-- At the private-key operation's call, with the frame's words `W`, whose
+first 14 are its stack arguments. -/
+structure DCall (s : State) (W : Nat → BitVec 64) (t : State) : Prop where
+  he : EnvD s t
+  R : Rep t.mem (fb s) (stackArg s 15) (fun o => s.mem (off (stackArg s 15) o)) W
+  hW : ∀ i < 14, W i = privW s i
+  rdi : t.gpr .rdi = off (stackArg s 15) oEm
+  rsi : t.gpr .rsi = s.gpr .r8
+  rdx : t.gpr .rdx = s.gpr .rcx
+  rcx : t.gpr .rcx = s.gpr .r8
+  r8 : t.gpr .r8 = s.gpr .r9
+  r9 : t.gpr .r9 = stackArg s 0
+
+theorem DSet.call {s t : State} (h : DSet s t) : DCall s (privW s) t :=
+  ⟨h.he, h.R, fun _ _ => rfl, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9⟩
 
 theorem privArgs_ok {s u : State} (hp : DPre s) (L : Lay u (fb s) (stackArg s 15)) {V : Nat → Byte}
     (R : Rep u.mem (fb s) (stackArg s 15) V (decW s)) (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem)

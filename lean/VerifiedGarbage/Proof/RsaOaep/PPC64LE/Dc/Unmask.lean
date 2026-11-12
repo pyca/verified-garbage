@@ -34,7 +34,7 @@ theorem sub_r15 {x : BitVec 64} {a : Nat} (h : a ≤ x.toNat) : x - BitVec.ofNat
   sub_ofNat h
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- A table that is our stack argument `j` (`j < 17`), in the region `R` of
@@ -46,8 +46,8 @@ theorem tabS_toJ {G : Hash} {f : Fns} {j : Nat} {R : Region} (T : TabS G f j (SD
     (hkR : (kD s).Disjoint R) (hsR : (scR s).Disjoint R) {S' : State → Addr} {s' : State}
     (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
     (hS : SC S' s' = SC (SD s) s) : TabS G f j S' s' (stackArg s j) := by
-  have hA : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR s) := by
-    rw [stackArgAddr_eq]; exact Offset.sub_base _ (by omega)
+  have hA : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR pc s) := by
+    rw [stackArgAddr_eq]; exact Offset.sub_base _ (by split <;> omega)
   refine T.transfer hsp hrd hsy hS hm (fun r hr => ?_) (fun k hk r hr => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

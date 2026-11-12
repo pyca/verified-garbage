@@ -10,9 +10,9 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaOaep/PPC64LE/Dc/CTBase.lean`). Two runs are compared through an
-anchor `a`, the first run's entry state: `PubD a s` says the entry state `s`
+anchor `a`, the first run's entry state: `PubD pc a s` says the entry state `s`
 has `a`'s public data (`pubD_of`, from the contract's). After the
-private operation, `DX a t` says `t` has `Base` for the decoding from such an
+private operation, `DX pc a t` says `t` has `Base` for the decoding from such an
 entry state, whose working space and `k`, `out` and `msg_len` in `s0`–`s3`
 are then `a`'s (`DX.pins`), while `s4` holds that run's own result. The
 shared code compares runs whose `Base` has the same functions of the base
@@ -32,22 +32,25 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 open VG.Proof.RsaOaep.RISCV64 (Base Fits SC B OkS fx fixed)
 
 /-- The shared contract's public data, by name. -/
-structure PubD (a s : State) : Prop where
+structure PubD (pc : Bool) (a s : State) : Prop where
   sp : s.sp = a.sp
   g : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], s.gpr r = a.gpr r
   args : ∀ i < 17, stackArg s i = stackArg a i
   n : Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a3) (a.gpr .a4).toNat
   e : Spec.Rsa.bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat = Spec.Rsa.bytesAt a.mem (a.gpr .a5) (a.gpr .a6).toNat
+  args2 : pc = true → stackArg s 17 = stackArg a 17 ∧ stackArg s 18 = stackArg a 18
+  leak : pc = true → Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 17) (s.gpr .a4).toNat =
+    Spec.Rsa.privatePrecomputedLeak a.mem (stackArg a 17) (a.gpr .a4).toNat
 
 /-- The contract's public data: `PubD`, the tables' functions at the same
 addresses, and the same tables held at both tables' addresses. -/
 theorem pubD_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec ts).pub s₁ s₂) :
-    PubD s₁ s₂ ∧ (∀ f ∈ (ts.map (fun T : FnTable => T.fns)).flatten, s₁.syms f = s₂.syms f) ∧
+    PubD false s₁ s₂ ∧ (∀ f ∈ (ts.map (fun T : FnTable => T.fns)).flatten, s₁.syms f = s₂.syms f) ∧
       (∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 15) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T))) ∧
       ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 16) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 16) (FnTable.words isa s₂ T)) := by
-  have e : stackBytes = 3471 + 1 := rfl
+  have e : stackBytes false = 3471 + 1 := rfl
   unfold decSpec at h
   rw [e] at h
   sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
@@ -61,7 +64,7 @@ theorem pubD_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec ts).pub s�
   obtain ⟨hn, he⟩ := List.append_inj hl (by simp [bytesAt_length, g4])
   have inj := fun {x y : List Byte} (h : x.map (·.toNat) = y.map (·.toNat)) =>
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
-  refine ⟨⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm⟩,
+  refine ⟨⟨hsp.symm, fun r hr => ?_, fun i hi => ?_, (inj hn).symm, (inj he).symm, nofun, nofun⟩,
     fun f hf => hsy f (List.mem_append_left _ hf), fun T hT => htabL _ _ rfl rfl T hT,
     fun T hT => htab _ _ rfl rfl T hT⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -73,7 +76,8 @@ theorem pubD_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec ts).pub s�
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
       a11.symm, a12.symm, a13.symm, a14.symm, a15.symm, a16.symm]
 
-theorem pubD_refl (s : State) : PubD s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
+theorem pubD_refl (pc : Bool) (s : State) : PubD pc s s :=
+  ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl, fun _ => ⟨rfl, rfl⟩, fun _ => rfl⟩
 
 /-! ## The base state for the shared code -/
 
@@ -94,7 +98,7 @@ def PreX (x : State) : Prop := Fits SX x
 def PubX (a x : State) : Prop := x.sp = a.sp ∧ stackArg x 13 = stackArg a 13
 
 section
-variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (rc : Nat)
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} (hm : Frame [kD pc s, scR s] s.mem m) (rc : Nat)
 include P hm
 
 /-- The stack arguments, in the base state. -/
@@ -130,12 +134,12 @@ end
 /-! ## After the private operation -/
 
 /-- `t` has the decoding's `Base` from an entry state with `a`'s public data. -/
-def DX (a t : State) : Prop :=
-  ∃ s m, PreD s ∧ PubD a s ∧ Frame [kD s, scR s] s.mem m ∧
+def DX (pc : Bool) (a t : State) : Prop :=
+  ∃ s m, PreD pc s ∧ PubD pc a s ∧ Frame [kD pc s, scR s] s.mem m ∧
     Base (SD s) (VD s (rcOf (privO s))) (withMem s m) t
 
 /-- What `DX` fixes, from the anchor. -/
-theorem DX.pins {a t : State} (h : DX a t) :
+theorem DX.pins {pc : Bool} {a t : State} (h : DX pc a t) :
     t.sp = fb a ∧ t.gpr .s0 = stackArg a 13 ∧ t.gpr .s1 = a.gpr .a4 ∧ t.gpr .s2 = a.gpr .a0 ∧
       t.gpr .s3 = a.gpr .a2 := by
   obtain ⟨s, m, P, p, hm, b⟩ := h
@@ -144,7 +148,7 @@ theorem DX.pins {a t : State} (h : DX a t) :
     by rw [Base.dml b, p.g _ (by decide)]⟩
 
 /-- The registers `DX` fixes are the same in both runs. -/
-theorem dx_pins {α : Type} {Φ : α → State → Prop} {an : α → State} (h : ∀ x t, Φ x t → DX (an x) t)
+theorem dx_pins {pc : Bool} {α : Type} {Φ : α → State → Prop} {an : α → State} (h : ∀ x t, Φ x t → DX pc (an x) t)
     (rs : List Reg) (hrs : ∀ r ∈ rs, r ∈ [Reg.s0, .s1, .s2, .s3] := by decide) : Pins Φ rs :=
   fun x t₁ t₂ h₁ h₂ => by
     obtain ⟨s₁, a₁, b₁, c₁, d₁⟩ := (h x t₁ h₁).pins

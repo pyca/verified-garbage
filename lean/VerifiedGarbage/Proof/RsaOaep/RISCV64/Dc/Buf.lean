@@ -34,7 +34,7 @@ theorem bufBase_eq (p : Addr) : p + BitVec.ofNat 64 2047 + BitVec.ofNat 64 513 =
   rw [Offset.add_add]; rfl
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- The buffer cleared. -/

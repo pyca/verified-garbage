@@ -56,6 +56,12 @@ and `acc = 0`, `out` receives the buffer's first `k` bytes ANDed with `ok`,
 `*msg_len` receives `(t - idx - 1) ∧ ok`, and the result is
 `(ok ∧ 1) ∨ (r = 2 ? 2 : 0)`.
 
+`decryptP`, given the key's precomputed values `pre` and `pre_len` (two more
+stack arguments, after `mgf1`), calls `vg_rsa_private_checked_precomputed`
+instead: they are its stack arguments 12 and 13, the frame's words 12 and 13
+(MGF1's slots of `scratch` and of its source) until the call returns, when
+`scratch` goes back to its slot. The rest is `decrypt`'s.
+
 The masks are computed from the borrow of a subtraction (`subs`, then `sbc`
 of a register from itself): `x - 1` borrows exactly when `x = 0`.
 -/
@@ -439,5 +445,26 @@ its stack argument 15 (`hash`, after the 23 words of `decryptSig`) and
 MGF1's the table that is its stack argument 16 (`mgf1`). -/
 def decrypt : Prog isa :=
   .frame (.push .x30) (.frame (.alloc frameBytes) (decBody f privN privC) (.free frameBytes)) (.pop .x30)
+
+/-! ## Decryption, given the key's precomputed values -/
+
+/-- `vg_rsa_private_checked_precomputed`'s last stack arguments, `pre` and
+`pre_len` (our stack arguments 17 and 18), to the frame's words 12 and 13
+(through `x9 = sp`): MGF1's slots, which nothing reads before the call. -/
+def preArgs : List Instr := [.addSp .x9 0] ++ mvArg 17 96 ++ mvArg 18 104
+
+/-- `scratch` back to its slot over `pre`, after the call. -/
+def fixScr : List Instr := .addSp .x9 0 :: mvArg 13 sScr
+
+/-- `decBody`, calling `vg_rsa_private_checked_precomputed` with `pre`. -/
+def decBodyP : Prog isa :=
+  seqs [.block (decPrologue ++ privArgs ++ preArgs), .call privN privC, .block fixScr, .block (tabSlot 15),
+    .block lenLoad, byLen (fun d => decTail (ofLen d) f) lens]
+
+/-- `vg_rsa_oaep_decrypt_precomputed`: `decrypt`, with the key's precomputed
+values `pre` and `pre_len` (stack arguments 17 and 18, after `mgf1`), which
+it passes to `vg_rsa_private_checked_precomputed`. -/
+def decryptP : Prog isa :=
+  .frame (.push .x30) (.frame (.alloc frameBytes) (decBodyP f privN privC) (.free frameBytes)) (.pop .x30)
 
 end VG.Impl.RsaOaep.AArch64
