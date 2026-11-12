@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Rsa.Arm.Inv.Geo
+public import VerifiedGarbage.Proof.Divstep.Libsecp
 import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
 import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Rsa.Arm.Inv.Ops
@@ -1157,3 +1158,490 @@ theorem term_signed {c X : Int} {L Xn xvv : Nat} (hXn : (Xn : Int) = X + if X < 
   · rw [hxv, ha, hXn]; grind
   · rw [hxv, ha, hXn]; grind
   · rw [hxv, ha, hXn]; grind
+
+namespace Pass
+
+/-- A row's coefficients' magnitudes where negative (its starting carry), where their sign differs
+from their source's (its correction), and its signed value, for the coefficients `c` by slot and the
+sources' values `X` by array. -/
+def ninit (row : Bool) (c : Nat → Int) : List TSpec → Nat
+  | [] => 0
+  | sp :: L => (if sp.row = row ∧ c sp.t < 0 then (c sp.t).natAbs else 0) + ninit row c L
+
+def ncorr (p : Pass) (row : Bool) (c : Nat → Int) (X : Nat → Int) : List TSpec → Nat
+  | [] => 0
+  | sp :: L => (if sp.row = row ∧ (c sp.t < 0) ≠ (X (p.arrOf sp.xs) < 0) then (c sp.t).natAbs else 0) +
+      ncorr p row c X L
+
+def sval (p : Pass) (row : Bool) (c : Nat → Int) (X : Nat → Int) : List TSpec → Int
+  | [] => 0
+  | sp :: L => (if sp.row = row then c sp.t * X (p.arrOf sp.xs) else 0) + sval p row c X L
+
+theorem rowv_signed (p : Pass) (row : Bool) (n : Nat) (c : Nat → Int) (X : Nat → Int) :
+    ∀ L : List TSpec,
+    (∀ sp ∈ L, p.scw (coefOff sp.t) = (if c sp.t < 0 then BitVec.allOnes 32 else 0) ∧
+      p.cm sp.t = (c sp.t).natAbs ∧
+      (val32 p.mI (State.addr p.B) (arr p.W (p.arrOf sp.xs)) n : Int) =
+        X (p.arrOf sp.xs) + if X (p.arrOf sp.xs) < 0 then 2 ^ (32 * n) else 0) →
+    (p.rowv row n L : Int) + ninit row c L - (p.ncorr row c X L : Int) * 2 ^ (32 * n) = p.sval row c X L
+  | [] => fun _ => by simp [rowv, ninit, ncorr, sval]
+  | sp :: L => fun h => by
+    have ih := rowv_signed p row n c X L fun x hx => h x (List.mem_cons_of_mem _ hx)
+    obtain ⟨hm, hc, hX⟩ := h sp (by simp)
+    simp only [rowv, ninit, ncorr, sval]
+    by_cases hr : sp.row = row
+    · simp only [hr, true_and, ↓reduceIte]
+      have ts := term_signed (c := c sp.t) (X := X (p.arrOf sp.xs)) (L := 32 * n) hX
+        (xvv := p.xv (p.arrOf sp.xs) (p.scw (coefOff sp.t)) n) (by
+          rw [hm]
+          split
+          · have h' := congrArg (fun x : Nat => (x : Int)) (p.xv_ones (p.arrOf sp.xs) n)
+            simp only [Int.natCast_add, Int.natCast_pow, Int.natCast_one] at h'
+            have : ((2 : Nat) : Int) = 2 := rfl
+            rw [this] at h'
+            omega
+          · rw [xv_zero])
+      rw [hc]
+      simp only [Int.natCast_add, Int.natCast_mul]
+      have e1 : ((if c sp.t < 0 then (c sp.t).natAbs else 0 : Nat) : Int) = if c sp.t < 0 then ((c sp.t).natAbs : Int) else 0 := by
+        split <;> rfl
+      have e2 : ((if (c sp.t < 0) ≠ (X (p.arrOf sp.xs) < 0) then (c sp.t).natAbs else 0 : Nat) : Int) =
+          if (c sp.t < 0) ≠ (X (p.arrOf sp.xs) < 0) then ((c sp.t).natAbs : Int) else 0 := by split <;> rfl
+      rw [e1, e2, ← ts, ← ih, Int.add_mul]; omega
+    · simp only [hr, false_and, ↓reduceIte, Nat.zero_add, Int.zero_add]
+      exact ih
+
+/-- A row's output: its signed value divided by `2^30`, modulo `2^(32 (k + 1))`. -/
+theorem row_result (p : Pass) (row : Bool) (c X : Nat → Int)
+    (hd : ∀ sp ∈ p.L, p.scw (coefOff sp.t) = (if c sp.t < 0 then BitVec.allOnes 32 else 0) ∧
+      p.cm sp.t = (c sp.t).natAbs ∧
+      (val32 p.mI (State.addr p.B) (arr p.W (p.arrOf sp.xs)) (p.k + 1) : Int) =
+        X (p.arrOf sp.xs) + if X (p.arrOf sp.xs) < 0 then 2 ^ (32 * (p.k + 1)) else 0)
+    (hinit : p.init row = ninit row c p.L)
+    (hcorr : p.scw (corrOff (if row then 1 else 0)) = BitVec.ofNat 32 (p.ncorr row c X p.L))
+    (hlt : p.ncorr row c X p.L < 2 ^ 32) (hdiv : (2 : Int) ^ 30 ∣ p.sval row c X p.L) {m : Mem}
+    (hv : val32 m (State.addr p.B) (arr p.W (p.out row)) (p.k + 1) =
+        p.rs row (p.k + 1) % 2 ^ (32 * (p.k + 1)) / 2 ^ 30 + 2 ^ (32 * p.k + 2) *
+          ((BitVec.ofNat 32 (p.rs row (p.k + 1) / 2 ^ (32 * (p.k + 1))) - p.scw (corrOff (if row then 1 else 0))).toNat
+            % 2 ^ 30)) :
+    (val32 m (State.addr p.B) (arr p.W (p.out row)) (p.k + 1) : Int) % 2 ^ (32 * (p.k + 1)) =
+      p.sval row c X p.L / 2 ^ 30 % 2 ^ (32 * (p.k + 1)) := by
+  have hQ : 2 ^ (32 * (p.k + 1)) = 2 ^ 30 * 2 ^ (32 * p.k + 2) := by
+    rw [← Nat.pow_add]; congr 1; omega
+  have hR : (p.rs row (p.k + 1) : Int) = p.sval row c X p.L + (p.ncorr row c X p.L : Int) * ((2 ^ (32 * (p.k + 1)) : Nat) : Int) := by
+    have := p.rowv_signed row (p.k + 1) c X p.L hd
+    rw [p.rs_eq, Int.natCast_add, hinit, Int.natCast_pow]
+    have e2 : ((2 : Nat) : Int) = 2 := rfl
+    rw [e2]; omega
+  have := out_val (P := 2 ^ (32 * p.k + 2)) hQ hR hdiv hlt
+  rw [hv, hcorr]
+  have e : ((2 ^ (32 * (p.k + 1)) : Nat) : Int) = 2 ^ (32 * (p.k + 1)) := by
+    rw [Int.natCast_pow]; rfl
+  rw [← e, hQ]
+  rw [hQ] at this
+  exact this
+
+end Pass
+
+/-! ## The coefficients' preparation -/
+
+/-- The sign mask of a word. -/
+abbrev smask (x : BitVec 32) : BitVec 32 := if x.toInt < 0 then BitVec.allOnes 32 else 0
+
+/-- A word's magnitude, as `absMask` leaves it. -/
+abbrev wabs (x : BitVec 32) : BitVec 32 := (x ^^^ ((x >>> 31) - ((x >>> 31) <<< 1))) - ((x >>> 31) - ((x >>> 31) <<< 1))
+
+theorem mask_val (x : BitVec 32) : (x >>> 31) - ((x >>> 31) <<< 1) = smask x := by
+  have hs := sign_bit x
+  have hm : x.toInt < 0 ↔ 2 ^ 31 ≤ x.toNat := by
+    rw [BitVec.toInt_eq_toNat_cond]; have := x.isLt; split <;> omega
+  simp only [smask]
+  by_cases h : 2 ^ 31 ≤ x.toNat
+  · have e1 : x >>> 31 = 1 := by apply BitVec.eq_of_toNat_eq; rw [hs]; simp only [h, ↓reduceIte]; rfl
+    rw [e1]; simp only [hm.mpr h, ↓reduceIte]; decide
+  · have e1 : x >>> 31 = 0 := by apply BitVec.eq_of_toNat_eq; rw [hs]; simp only [h, ↓reduceIte]; rfl
+    rw [e1]; simp only [show ¬ x.toInt < 0 from fun h' => h (hm.mp h'), ↓reduceIte]; decide
+
+/-- The preparation's workspace: `Gk` with `r12` at the scratch, `W ≥ 8` and `N ≥ 15`. -/
+structure SG (s : State) (B : BitVec 32) (Z W k N : Nat) : Prop where
+  g : Gk s B Z W k N
+  hN : 15 ≤ N
+  hW : 8 ≤ W
+  r12 : s.gpr .r12 = B + BitVec.ofNat 32 (arr W bT1)
+
+/-- The scratch word at byte `d`. -/
+abbrev scr (m : Mem) (B : BitVec 32) (W d : Nat) : BitVec 32 := m.readW (off (State.addr B) (arr W bT1 + d)) 32
+
+namespace SG
+variable {s : State} {B : BitVec 32} {Z W k N : Nat}
+
+theorem of {t : State} (h : SG s B Z W k N) {ws : List Reg} (r : Rest ws s t) (h7 : .r7 ∉ ws := by decide)
+    (h8 : .r8 ∉ ws := by decide) (h9 : .r9 ∉ ws := by decide) (h12 : .r12 ∉ ws := by decide) : SG t B Z W k N :=
+  ⟨h.g.rest r h7 h8 h9, h.hN, h.hW, (r.gpr _ h12).trans h.r12⟩
+
+theorem fit (h : SG s B Z W k N) {d : Nat} (hd : d + 4 ≤ 120) : arr W bT1 + d + 4 ≤ Z := by
+  have := h.g.fits
+  have := h.hW
+  have : arr W 14 ≤ arr W N := arr_mono (by have := h.hN; omega)
+  simp only [bT1, arr, S] at *; omega
+
+theorem addr (h : SG s B Z W k N) {d : Nat} (hd : d + 4 ≤ 120) :
+    State.addr (s.gpr .r12 + BitVec.ofNat 32 d) = off (State.addr B) (arr W bT1 + d) := by
+  rw [h.r12, VG.Offset.add_add]; exact h.g.addr (by have := h.fit hd; omega)
+
+theorem str {is : List Instr} {Q : State → Prop} (h : SG s B Z W k N) {d : Nat} (hd : d + 4 ≤ 120) {t : Reg}
+    (kk : ∀ s', VG.Proof.X25519.Arm.Mupd s s' (s.mem.writeW (off (State.addr B) (arr W bT1 + d)) (s.gpr t)) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (.str t .r12 d :: is)) s Q :=
+  wp_str (by omega) (h.addr hd) (h.g.write (h.fit hd)) kk
+
+theorem ldr {is : List Instr} {Q : State → Prop} (h : SG s B Z W k N) {d : Nat} (hd : d + 4 ≤ 120) {t : Reg}
+    (kk : ∀ s', Upd s s' t (scr s.mem B W d) → WP isa (.block is) s' Q) :
+    WP isa (.block (.ldr t .r12 d :: is)) s Q :=
+  wp_ldr (by omega) (h.addr hd) (h.g.read (h.fit hd)) kk
+
+/-- A store to the scratch keeps the other scratch words. -/
+theorem scr_store (h : SG s B Z W k N) (m : Mem) {d d' : Nat} (hd : d + 4 ≤ 120) (hd' : d' + 4 ≤ 120)
+    (hsep : d + 4 ≤ d' ∨ d' + 4 ≤ d) (v : BitVec 32) :
+    scr (m.writeW (off (State.addr B) (arr W bT1 + d')) v) B W d = scr m B W d := by
+  have := h.fit hd; have := h.fit hd'; have := h.g.nowrap
+  exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+
+theorem scr_self (m : Mem) (d : Nat) (v : BitVec 32) :
+    scr (m.writeW (off (State.addr B) (arr W bT1 + d)) v) B W d = v := Mem.readW_writeW_self32 _ _ _
+
+/-- A store to the scratch is in the arrays `bT1`, `bT2` and `bA1`. -/
+theorem keep (h : SG s B Z W k N) (m : Mem) {d : Nat} (hd : d + 4 ≤ 120) (v : BitVec 32) :
+    Keep B W [bT1, bT2, bA1] [] m (m.writeW (off (State.addr B) (arr W bT1 + d)) v) := by
+  have hf := h.fit hd
+  have := h.g.nowrap
+  have wo := writeW32_outside m (State.addr B) (d := arr W bT1 + d) v (by omega)
+  intro x hx
+  refine wo x ?_
+  simp only [ranges, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
+  have := h.hW
+  simp only [bT1, bT2, bA1, arr, S] at hx hd ⊢
+  omega
+
+/-- Array words below the scratch are kept. -/
+theorem keep_word {m m' : Mem} (h : SG s B Z W k N) (hk : Keep B W [bT1, bT2, bA1] [] m m') {j d : Nat}
+    (hj : j < bT1) (hd : d + 4 ≤ S W) : w32 m' (State.addr B) (arr W j + d) = w32 m (State.addr B) (arr W j + d) := by
+  have := Outs.val32 (k := 1) (d := arr W j + d) hk (fun r hr => ?_)
+    (by have := h.g.fit64 (j := j) (by simp only [bT1] at hj; have := h.hN; omega); omega)
+  · simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
+  simp only [ranges, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hr
+  have e1 := arr_end (w := W) hj
+  rcases hr with rfl | rfl | rfl
+  · dsimp only; omega
+  · have : arr W bT1 ≤ arr W bT2 := arr_mono (by decide)
+    dsimp only; omega
+  · have : arr W bT1 ≤ arr W bA1 := arr_mono (by decide)
+    dsimp only; omega
+
+end SG
+
+namespace SG
+variable {s : State} {B : BitVec 32} {Z W k N : Nat}
+
+/-- The word at byte `d` of array `a`. -/
+abbrev aword (m : Mem) (B : BitVec 32) (W a d : Nat) : BitVec 32 := m.readW (off (State.addr B) (arr W a + d)) 32
+
+/-- `topMask a`: `r5 :=` the sign mask of word `k` of array `a`. -/
+theorem topMask_ok (h : SG s B Z W k N) {a : Nat} (ha : a < bT1) {is : List Instr} {Q : State → Prop}
+    (kk : ∀ t, t.gpr .r5 = smask (aword s.mem B W a (4 * k)) → Rest [.r3, .r5] s t → t.mem = s.mem →
+      WP isa (.block is) t Q) :
+    WP isa (.block (topMask a ++ is)) s Q := by
+  have hk := h.g.kle
+  have hW := h.g.wle
+  simp only [topMask, List.append_assoc]
+  refine h.g.ptr_ok (by decide) (by simp only [bT1] at ha; omega) fun t1 p1 r1 m1 g1 => ?_
+  simp only [List.cons_append, List.nil_append]
+  refine wp_dp (op2_lsl (by decide)) fun t2 u2 => ?_
+  have fa : arr W a + 4 * k + 4 ≤ Z := by
+    have := h.g.arr_fit (j := a) (by have := h.hN; simp only [bT1] at ha; omega); simp only [S] at this; omega
+  have v2 : t2.gpr .r3 = B + BitVec.ofNat 32 (arr W a + 4 * k) := by
+    rw [u2.gpr, dpVal, p1, r1.gpr _ (by decide), h.g.r9, BitVec.add_assoc]
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    have := h.g.nowrap
+    rw [BitVec.toNat_add, toNat_shl, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega
+  refine wp_ldr (a := off (State.addr B) (arr W a + 4 * k)) (by decide)
+    (by rw [v2, BitVec.add_zero]; exact h.g.addr (by omega))
+    (by rw [u2.rd, u2.wr, r1.rd, r1.wr]; exact h.g.read fa) fun t3 u3 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun t4 u4 => ?_
+  refine wp_dp (op2_lsl (by decide)) fun t5 u5 => ?_
+  refine kk t5 ?_ ((r1.mono (by simp)).trans <| (u2.rest (by simp)).trans <| (u3.rest (by simp)).trans <|
+    (u4.rest (by simp)).trans (u5.rest (by simp))) (by rw [u5.mem, u4.mem, u3.mem, u2.mem, m1])
+  rw [u5.gpr, dpVal, u4.gpr, u3.gpr, u2.mem, m1, ← mask_val]
+
+/-- `ldCoef c`: `r1 :=` the coefficient `c`. -/
+theorem ldCoef_ok (h : SG s B Z W k N) (c : Coef) (ha : c.arr < bT1) (ho : c.off + 4 ≤ S W) (ho' : c.off < 4096)
+    {is : List Instr} {Q : State → Prop}
+    (kk : ∀ t, t.gpr .r1 = aword s.mem B W c.arr c.off → Rest [.r1, .r3] s t → t.mem = s.mem →
+      WP isa (.block is) t Q) :
+    WP isa (.block (ldCoef c ++ is)) s Q := by
+  simp only [ldCoef, List.append_assoc]
+  refine h.g.ptr_ok (by decide) (by simp only [bT1] at ha; omega) fun t1 p1 r1 m1 g1 => ?_
+  have fa := h.g.arr_fit (j := c.arr) (by have := h.hN; simp only [bT1] at ha; omega)
+  simp only [List.cons_append, List.nil_append]
+  refine wp_ldr (a := off (State.addr B) (arr W c.arr + c.off)) ho'
+    (by rw [p1, VG.Offset.add_add]; exact h.g.addr (by omega))
+    (by rw [r1.rd, r1.wr]; exact h.g.read (by omega)) fun t2 u2 => ?_
+  exact kk t2 (by rw [u2.gpr, m1]) ((r1.mono (by simp)).trans (u2.rest (by simp))) (by rw [u2.mem, m1])
+
+end SG
+
+namespace SG
+variable {s : State} {B : BitVec 32} {Z W k N : Nat}
+
+/-- The low half of a word. -/
+abbrev lowh (x : BitVec 32) : BitVec 32 := x &&& ~~~((x >>> 16) <<< 16)
+
+/-- `coefStore t`: the coefficient in `r1` to slot `t`: its sign mask (left in `r2`), and its magnitude's
+halves; its magnitude left in `r1`. -/
+theorem coefStore_ok (h : SG s B Z W k N) {t : Nat} (ht : t ≤ 5) {is : List Instr} {Q : State → Prop}
+    (kk : ∀ u, u.gpr .r1 = wabs (s.gpr .r1) → u.gpr .r2 = smask (s.gpr .r1) → Rest [.r1, .r2, .r3] s u →
+      u.mem = ((s.mem.writeW (off (State.addr B) (arr W bT1 + coefOff t)) (smask (s.gpr .r1))).writeW
+        (off (State.addr B) (arr W bT1 + (coefOff t + 8))) (wabs (s.gpr .r1) >>> 16)).writeW
+        (off (State.addr B) (arr W bT1 + (coefOff t + 4))) (lowh (wabs (s.gpr .r1))) →
+      WP isa (.block is) u Q) :
+    WP isa (.block (coefStore t ++ is)) s Q := by
+  have c0 : coefOff t + 4 ≤ 120 := by simp only [coefOff]; omega
+  have c8 : coefOff t + 8 + 4 ≤ 120 := by simp only [coefOff]; omega
+  have c4 : coefOff t + 4 + 4 ≤ 120 := by simp only [coefOff]; omega
+  simp only [coefStore, absMask, List.cons_append, List.nil_append]
+  refine wp_mov (op2_lsr (by decide)) fun s1 u1 => ?_
+  refine wp_dp (op2_lsl (by decide)) fun s2 u2 => ?_
+  refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
+  refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
+  have h4 : SG s4 B Z W k N := h.of ((u1.rest (by simp)).trans <| (u2.rest (by simp)).trans <|
+    (u3.rest (by simp)).trans (u4.rest (ws := [.r1, .r2]) (by simp)))
+  have m2 : s4.gpr .r2 = smask (s.gpr .r1) := by
+    rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, dpVal, u1.gpr, ← mask_val]
+  have m1 : s4.gpr .r1 = wabs (s.gpr .r1) := by
+    rw [u4.gpr, dpVal, u3.gpr, dpVal, u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide),
+      u2.gpr, dpVal, u1.gpr]
+  refine h4.str c0 fun s5 u5 => ?_
+  refine wp_mov (op2_lsr (by decide)) fun s6 u6 => ?_
+  have h6 : SG s6 B Z W k N := h4.of ((u5.rest [.r3]).trans (u6.rest (by simp)))
+  refine h6.str c8 fun s7 u7 => ?_
+  refine wp_dp (op2_lsl (by decide)) fun s8 u8 => ?_
+  have h8 : SG s8 B Z W k N := h6.of ((u7.rest [.r3]).trans (u8.rest (by simp)))
+  refine h8.str c4 fun s9 u9 => ?_
+  have e1 : s6.gpr .r1 = wabs (s.gpr .r1) := by rw [u6.other _ (by decide), u5.gpr, m1]
+  refine kk s9 ?_ ?_ ?_ ?_
+  · rw [u9.gpr, u8.other _ (by decide), u7.gpr, e1]
+  · rw [u9.gpr, u8.other _ (by decide), u7.gpr, u6.other _ (by decide), u5.gpr, m2]
+  · exact (u1.rest (by simp)).trans <| (u2.rest (by simp)).trans <| (u3.rest (by simp)).trans <|
+      (u4.rest (by simp)).trans <| (u5.rest _).trans <| (u6.rest (by simp)).trans <| (u7.rest _).trans <|
+      (u8.rest (by simp)).trans (u9.rest _)
+  · have v3a : s6.gpr .r3 = wabs (s.gpr .r1) >>> 16 := by rw [u6.gpr, u5.gpr, m1]
+    have v3b : s8.gpr .r3 = lowh (wabs (s.gpr .r1)) := by
+      rw [u8.gpr, dpVal, u7.gpr, u6.other _ (by decide), v3a, u5.gpr, m1]
+    rw [u9.mem, v3b, u8.mem, u7.mem, v3a, u6.mem, u5.mem, m2, u4.mem, u3.mem, u2.mem, u1.mem]
+
+/-- `corrAdd`: the coefficient's correction (sign mask `r2`, source's `r5`, magnitude `r1`) to `r4`,
+and its starting carry to `r10`. -/
+theorem corrAdd_ok {is : List Instr} {Q : State → Prop}
+    (kk : ∀ u, u.gpr .r4 = s.gpr .r4 + ((s.gpr .r2 ^^^ s.gpr .r5) &&& s.gpr .r1) →
+      u.gpr .r10 = s.gpr .r10 + (s.gpr .r1 &&& s.gpr .r2) → Rest [.r3, .r4, .r10] s u → u.mem = s.mem →
+      WP isa (.block is) u Q) :
+    WP isa (.block (corrAdd ++ is)) s Q := by
+  simp only [corrAdd, List.cons_append, List.nil_append]
+  refine wp_dp (op2_reg _ _) fun s1 u1 => ?_
+  refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
+  refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
+  refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
+  refine wp_dp (op2_reg _ _) fun s5 u5 => ?_
+  refine kk s5 ?_ ?_ ?_ (by rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem])
+  · rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, dpVal, u2.other .r4 (by decide),
+      u1.other .r4 (by decide), u2.gpr, dpVal, u1.gpr, dpVal, u1.other .r1 (by decide)]
+  · rw [u5.gpr, dpVal, u4.gpr, dpVal, u4.other .r10 (by decide), u3.other .r10 (by decide),
+      u2.other .r10 (by decide), u1.other .r10 (by decide), u3.other .r1 (by decide), u2.other .r1 (by decide),
+      u1.other .r1 (by decide), u3.other .r2 (by decide), u2.other .r2 (by decide), u1.other .r2 (by decide)]
+  · exact (u1.rest (by simp)).trans <| (u2.rest (by simp)).trans <| (u3.rest (by simp)).trans <|
+      (u4.rest (by simp)).trans (u5.rest (by simp))
+
+end SG
+
+namespace SG
+variable {s : State} {B : BitVec 32} {Z W k N : Nat}
+
+/-- A scratch store. -/
+abbrev wr (m : Mem) (B : BitVec 32) (W d : Nat) (v : BitVec 32) : Mem := m.writeW (off (State.addr B) (arr W bT1 + d)) v
+
+/-- A coefficient's three scratch stores. -/
+abbrev wrC (m : Mem) (B : BitVec 32) (W t : Nat) (x : BitVec 32) : Mem :=
+  wr (wr (wr m B W (coefOff t) (smask x)) B W (coefOff t + 8) (wabs x >>> 16)) B W (coefOff t + 4) (lowh (wabs x))
+
+/-- An array word below the scratch, after stores to the scratch. -/
+theorem aword_keep (h : SG s B Z W k N) {m m' : Mem} (hk : Keep B W [bT1, bT2, bA1] [] m m') {j d : Nat}
+    (hj : j < bT1) (hd : d + 4 ≤ S W) : aword m' B W j d = aword m B W j d :=
+  BitVec.eq_of_toNat_eq (h.keep_word hk hj hd)
+
+theorem keepC (h : SG s B Z W k N) (m : Mem) {t : Nat} (ht : t ≤ 5) (x : BitVec 32) :
+    Keep B W [bT1, bT2, bA1] [] m (wrC m B W t x) := by
+  have c0 : coefOff t + 4 ≤ 120 := by simp only [coefOff]; omega
+  have c8 : coefOff t + 8 + 4 ≤ 120 := by simp only [coefOff]; omega
+  have c4 : coefOff t + 4 + 4 ≤ 120 := by simp only [coefOff]; omega
+  exact ((h.keep _ c0 _).trans (h.keep _ c8 _)).trans (h.keep _ c4 _)
+
+/-- `rowPrep`: a row's two coefficients (`c₁` on array `x`, `c₂` on `y`) to slots `t₁` and `t₂`, its
+correction and its starting carry. -/
+theorem rowPrep_ok (h : SG s B Z W k N) {x y t₁ t₂ row : Nat} {c₁ c₂ : Coef} (hx : x < bT1) (hy : y < bT1)
+    (hc₁ : c₁.arr < bT1) (hc₂ : c₂.arr < bT1) (ho₁ : c₁.off ≤ 8) (ho₂ : c₂.off ≤ 8) (ht₁ : t₁ ≤ 5) (ht₂ : t₂ ≤ 5)
+    (hr : row ≤ 1) {is : List Instr} {Q : State → Prop}
+    (kk : ∀ u, SG u B Z W k N → Rest [.r1, .r2, .r3, .r4, .r5, .r10] s u →
+      u.mem = wr (wr (wrC (wrC s.mem B W t₁ (aword s.mem B W c₁.arr c₁.off)) B W t₂ (aword s.mem B W c₂.arr c₂.off))
+        B W (corrOff row)
+          (0 + ((smask (aword s.mem B W c₁.arr c₁.off) ^^^ smask (aword s.mem B W x (4 * k))) &&&
+              wabs (aword s.mem B W c₁.arr c₁.off)) +
+            ((smask (aword s.mem B W c₂.arr c₂.off) ^^^ smask (aword s.mem B W y (4 * k))) &&&
+              wabs (aword s.mem B W c₂.arr c₂.off))))
+        B W (carryOff row)
+          (0 + (wabs (aword s.mem B W c₁.arr c₁.off) &&& smask (aword s.mem B W c₁.arr c₁.off)) +
+            (wabs (aword s.mem B W c₂.arr c₂.off) &&& smask (aword s.mem B W c₂.arr c₂.off))) →
+      WP isa (.block is) u Q) :
+    WP isa (.block (rowPrep x y c₁ c₂ t₁ t₂ row ++ is)) s Q := by
+  have hW := h.hW
+  have hS : 8 + 4 ≤ S W := by simp only [S]; omega
+  have hk4 : 4 * k + 4 ≤ S W := by have := h.g.kle; simp only [S]; omega
+  simp only [rowPrep, List.append_assoc, List.cons_append, List.nil_append]
+  refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
+  refine wp_mov (op2_imm (by decide)) fun s2 u2 => ?_
+  have h2 : SG s2 B Z W k N := h.of ((u1.rest (ws := [.r4, .r10]) (by simp)).trans (u2.rest (by simp)))
+  have m2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
+  refine h2.topMask_ok hx fun s3 v3 r3 m3 => ?_
+  have h3 := h2.of r3
+  refine h3.ldCoef_ok c₁ hc₁ (by omega) (by omega) fun s4 v4 r4 m4 => ?_
+  have h4 := h3.of r4
+  refine h4.coefStore_ok ht₁ fun s5 a5 m5 r5 mm5 => ?_
+  have h5 := h4.of r5
+  refine corrAdd_ok fun s6 c6 d6 r6 mm6 => ?_
+  have h6 := h5.of r6
+  have k6 : Keep B W [bT1, bT2, bA1] [] s.mem s6.mem := by
+    rw [mm6, mm5, m4, m3, m2]; exact h.keepC _ ht₁ _
+  refine h6.topMask_ok hy fun s7 v7 r7 m7 => ?_
+  have h7 := h6.of r7
+  refine h7.ldCoef_ok c₂ hc₂ (by omega) (by omega) fun s8 v8 r8 m8 => ?_
+  have h8 := h7.of r8
+  refine h8.coefStore_ok ht₂ fun s9 a9 m9 r9 mm9 => ?_
+  have h9 := h8.of r9
+  refine corrAdd_ok fun s10 c10 d10 r10 mm10 => ?_
+  have h10 := h9.of r10
+  refine h10.str (by simp only [corrOff]; omega) fun s11 u11 => ?_
+  have h11 := h10.of (u11.rest [])
+  refine h11.str (by simp only [carryOff]; omega) fun s12 u12 => ?_
+  refine kk s12 (h11.of (u12.rest [])) ?_ ?_
+  · exact (u1.rest (by simp)).trans <| (u2.rest (by simp)).trans <| (r3.mono (by simp)).trans <|
+      (r4.mono (by simp)).trans <| (r5.mono (by simp)).trans <| (r6.mono (by simp)).trans <|
+      (r7.mono (by simp)).trans <| (r8.mono (by simp)).trans <| (r9.mono (by simp)).trans <|
+      (r10.mono (by simp)).trans <| (u11.rest _).trans (u12.rest _)
+  · -- The values.
+    have e4 : s4.gpr .r1 = aword s.mem B W c₁.arr c₁.off := by rw [v4, m3, m2]
+    have e3 : s3.gpr .r5 = smask (aword s.mem B W x (4 * k)) := by rw [v3, m2]
+    have e7 : s7.gpr .r5 = smask (aword s.mem B W y (4 * k)) := by
+      rw [v7, h.aword_keep k6 hy hk4]
+    have e8 : s8.gpr .r1 = aword s.mem B W c₂.arr c₂.off := by
+      rw [v8, m7, h.aword_keep k6 hc₂ (by omega)]
+    have g5 : s5.gpr .r4 = 0 ∧ s5.gpr .r5 = smask (aword s.mem B W x (4 * k)) ∧ s5.gpr .r10 = 0 :=
+      ⟨by rw [r5.gpr _ (by decide), r4.gpr _ (by decide), r3.gpr _ (by decide), u2.other _ (by decide), u1.gpr],
+       by rw [r5.gpr _ (by decide), r4.gpr _ (by decide), e3],
+       by rw [r5.gpr _ (by decide), r4.gpr _ (by decide), r3.gpr _ (by decide), u2.gpr]⟩
+    have g6 : s6.gpr .r4 = 0 + ((smask (aword s.mem B W c₁.arr c₁.off) ^^^ smask (aword s.mem B W x (4 * k))) &&&
+          wabs (aword s.mem B W c₁.arr c₁.off)) ∧
+        s6.gpr .r10 = 0 + (wabs (aword s.mem B W c₁.arr c₁.off) &&& smask (aword s.mem B W c₁.arr c₁.off)) :=
+      ⟨by rw [c6, g5.1, g5.2.1, m5, a5, e4], by rw [d6, g5.2.2, m5, a5, e4]⟩
+    have g9 : s9.gpr .r4 = s6.gpr .r4 ∧ s9.gpr .r5 = smask (aword s.mem B W y (4 * k)) ∧ s9.gpr .r10 = s6.gpr .r10 :=
+      ⟨by rw [r9.gpr _ (by decide), r8.gpr _ (by decide), r7.gpr _ (by decide)],
+       by rw [r9.gpr _ (by decide), r8.gpr _ (by decide), e7],
+       by rw [r9.gpr _ (by decide), r8.gpr _ (by decide), r7.gpr _ (by decide)]⟩
+    have g10r4 := c10
+    have g10r10 := d10
+    rw [g9.1, g9.2.1, m9, a9, e8, g6.1] at g10r4
+    rw [g9.2.2, m9, a9, e8, g6.2] at g10r10
+    have mm8 : s8.mem = wrC s.mem B W t₁ (aword s.mem B W c₁.arr c₁.off) := by
+      rw [m8, m7, mm6, mm5, m4, m3, m2, e4]
+    rw [u12.mem, u11.gpr, u11.mem, mm10, mm9, e8, mm8, g10r4, g10r10]
+
+end SG
+
+/-! ## `md`: the multiple of `m` -/
+
+/-- A word's value modulo `2^32` from its signed value. -/
+theorem toNat_cong (x : BitVec 32) : (x.toNat : Int) = x.toInt % 2 ^ 32 := by
+  rw [BitVec.toInt_eq_toNat_cond]; have := x.isLt; split <;> omega
+
+/-- A word's signed value from its value modulo `2^32`, in range. -/
+theorem toInt_of_cong {x : BitVec 32} {i : Int} (h : (x.toNat : Int) = i % 2 ^ 32) (hr : -2 ^ 31 ≤ i ∧ i < 2 ^ 31) :
+    x.toInt = i := by
+  rw [BitVec.toInt_eq_toNat_cond]; have := x.isLt; split <;> omega
+
+theorem cong_add {a b : BitVec 32} {A B : Int} (ha : (a.toNat : Int) = A % 2 ^ 32) (hb : (b.toNat : Int) = B % 2 ^ 32) :
+    ((a + b).toNat : Int) = (A + B) % 2 ^ 32 := by
+  rw [BitVec.toNat_add]; omega
+
+theorem cong_sub {a b : BitVec 32} {A B : Int} (ha : (a.toNat : Int) = A % 2 ^ 32) (hb : (b.toNat : Int) = B % 2 ^ 32) :
+    ((a - b).toNat : Int) = (A - B) % 2 ^ 32 := by
+  rw [BitVec.toNat_sub]; omega
+
+theorem cong_mul {a b : BitVec 32} {A B : Int} (ha : (a.toNat : Int) = A % 2 ^ 32) (hb : (b.toNat : Int) = B % 2 ^ 32) :
+    ((a * b).toNat : Int) = (A * B) % 2 ^ 32 := by
+  have e2 : ((2 ^ 32 : Nat) : Int) = 2 ^ 32 := rfl
+  rw [BitVec.toNat_mul, Int.natCast_emod, Int.natCast_mul, ha, hb, e2, ← Int.mul_emod]
+
+theorem low30 (x : BitVec 32) : (x &&& ~~~(BitVec.ofNat 32 0xC0000000)).toNat = x.toNat % 2 ^ 30 := by
+  rw [show ~~~(BitVec.ofNat 32 0xC0000000) = BitVec.ofNat 32 (2 ^ 30 - 1) by decide, BitVec.toNat_and,
+    BitVec.toNat_ofNat, show (2 ^ 30 - 1) % 2 ^ 32 = 2 ^ 30 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
+
+theorem and_smask (c t : BitVec 32) : (c &&& smask t) = if t.toInt < 0 then c else 0 := by
+  simp only [smask]; split
+  · exact BitVec.and_allOnes
+  · simp
+
+/-- `mdPrep`'s multiple: `md₀ - ((md₀ - np (u d₀ + v e₀)) mod 2^30)`, for `md₀` the coefficients of the
+negative inputs, is `mdOf`. -/
+theorem md_word {c1 c2 dt et d0 e0 np : BitVec 32} {d e : Int}
+    (hd0 : (d0.toNat : Int) = d % 2 ^ 32) (he0 : (e0.toNat : Int) = e % 2 ^ 32)
+    (hds : dt.toInt < 0 ↔ d < 0) (hes : et.toInt < 0 ↔ e < 0)
+    (huv : c1.toInt.natAbs + c2.toInt.natAbs ≤ 2 ^ 30) :
+    ((c1 &&& smask dt) + (c2 &&& smask et) -
+        (((c1 &&& smask dt) + (c2 &&& smask et) - (c2 * e0 + c1 * d0) * np) &&& ~~~(BitVec.ofNat 32 0xC0000000))).toInt =
+      VG.Proof.Divstep.mdOf 30 np.toNat c1.toInt c2.toInt d e := by
+  have hu := toNat_cong c1
+  have hv := toNat_cong c2
+  have hn : (np.toNat : Int) = (np.toNat : Int) % 2 ^ 32 := by have := np.isLt; omega
+  have h0 : ((0 : BitVec 32).toNat : Int) = (0 : Int) % 2 ^ 32 := rfl
+  have m1 : ((c1 &&& smask dt).toNat : Int) = (if d < 0 then c1.toInt else 0) % 2 ^ 32 := by
+    rw [and_smask]; by_cases h : d < 0
+    · simp only [hds.mpr h, h, ↓reduceIte]; exact hu
+    · simp only [show ¬ dt.toInt < 0 from fun h' => h (hds.mp h'), h, ↓reduceIte]; exact h0
+  have m2 : ((c2 &&& smask et).toNat : Int) = (if e < 0 then c2.toInt else 0) % 2 ^ 32 := by
+    rw [and_smask]; by_cases h : e < 0
+    · simp only [hes.mpr h, h, ↓reduceIte]; exact hv
+    · simp only [show ¬ et.toInt < 0 from fun h' => h (hes.mp h'), h, ↓reduceIte]; exact h0
+  have mm := cong_add m1 m2
+  have sS := cong_add (cong_mul hv he0) (cong_mul hu hd0)
+  have X := cong_sub mm (cong_mul sS hn)
+  generalize hX : (c1 &&& smask dt) + (c2 &&& smask et) - (c2 * e0 + c1 * d0) * np = Xw at X
+  have hx : ((Xw &&& ~~~(BitVec.ofNat 32 0xC0000000)).toNat : Int) =
+      ((if d < 0 then c1.toInt else 0) + (if e < 0 then c2.toInt else 0) - np.toNat * (c1.toInt * d + c2.toInt * e)) %
+        2 ^ 30 := by
+    rw [low30, Int.natCast_emod, X]
+    have : (c2.toInt * e + c1.toInt * d) * (np.toNat : Int) = (np.toNat : Int) * (c1.toInt * d + c2.toInt * e) := by
+      rw [Int.mul_comm, Int.add_comm]
+    rw [this]; omega
+  have hr := cong_sub mm (b := Xw &&& ~~~(BitVec.ofNat 32 0xC0000000))
+    (B := ((if d < 0 then c1.toInt else 0) + (if e < 0 then c2.toInt else 0) -
+      np.toNat * (c1.toInt * d + c2.toInt * e)) % 2 ^ 30) (by rw [hx]; omega)
+  unfold VG.Proof.Divstep.mdOf
+  simp only
+  refine toInt_of_cong hr ?_
+  have := Int.emod_nonneg ((if d < 0 then c1.toInt else 0) + (if e < 0 then c2.toInt else 0) -
+    np.toNat * (c1.toInt * d + c2.toInt * e)) (show (2 : Int) ^ 30 ≠ 0 by decide)
+  have := Int.emod_lt_of_pos ((if d < 0 then c1.toInt else 0) + (if e < 0 then c2.toInt else 0) -
+    np.toNat * (c1.toInt * d + c2.toInt * e)) (show (0 : Int) < 2 ^ 30 by decide)
+  constructor <;> split <;> split <;> omega
