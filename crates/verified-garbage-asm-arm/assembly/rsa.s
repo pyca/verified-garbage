@@ -6670,6 +6670,12 @@ vg_rsa_check_key:
 	eor r0, r0, r2
 	eor r1, r1, r2
 	orr r0, r0, r1
+	ldr r1, [sp, #28]
+	eor r1, r1, r2
+	orr r0, r0, r1
+	ldr r1, [sp, #36]
+	eor r1, r1, r2
+	orr r0, r0, r1
 	and r2, r3, #1
 	orr r0, r0, r2
 	cmp r0, #0
@@ -8672,15 +8678,11 @@ vg_rsa_check_key:
 	ldr r2, [r8, #116]
 	and r1, r1, r2
 	str r1, [r8, #120]
-	mov r0, #16
+	mov r0, #18
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #3
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #3
-	mla r12, r12, r7, r8
-	add r12, r12, #160
+	add r10, r8, #160
+	add r12, r8, #160
 	mov lr, r9
 	mov r11, #0
 	mov r4, #0
@@ -8693,754 +8695,20 @@ vg_rsa_check_key:
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2120b
-	mov r0, #17
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #6
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #6
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2121:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2121b
-	mov r0, #18
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2122:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2122b
-	mov r6, #33
-2123:
-	mov r0, #16
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r0, #0]
-	and r1, r1, #1
-	str r1, [r8, #104]
-	mov r0, #19
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #17
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #104]
-	mov r4, #0
-	sub r4, r4, r11
-2124:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2124b
-	mov r0, #20
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #19
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2125:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2125b
-	mov r0, #21
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #18
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #20
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2126:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2126b
-	mov r0, #22
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #21
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #10
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2127:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2127b
-	str r11, [r8, #108]
-	mov r0, #18
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #22
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #21
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #108]
-	mov r4, #0
-	sub r4, r4, r11
-2128:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2128b
-	mov r0, #20
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #17
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2129:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2129b
-	mov r0, #21
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #17
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #20
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2130:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2130b
-	mov r0, #22
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #21
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #10
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2131:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2131b
-	str r11, [r8, #108]
-	mov r0, #17
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #22
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #21
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #108]
-	mov r4, #0
-	sub r4, r4, r11
-2132:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2132b
-	mov r11, #0
-	mov r0, #16
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r1, r0, r9, lsl #2
-	str r11, [r1, #0]
-	mov lr, r9
-2133:
-	ldr r3, [r0, #0]
-	ldr r4, [r0, #4]
-	lsr r3, r3, #1
-	add r3, r3, r4, lsl #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2133b
-	subs r6, r6, #1
-	bne 2123b
-	mov r0, #18
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r1, r8, r7
-	add r1, r1, #160
-	mov lr, r9
-	mov r2, #0
-2134:
-	ldr r3, [r0, #0]
-	ldr r12, [r1, #0]
-	eor r3, r3, r12
-	orr r2, r2, r3
-	add r0, r0, #4
-	add r1, r1, #4
-	subs lr, lr, #1
-	bne 2134b
-	mov r1, #0
-	sub r1, r1, r2
-	orr r1, r1, r2
-	lsr r1, r1, #31
-	eor r1, r1, #1
-	str r1, [r8, #116]
-	ldr r1, [r8, #120]
-	ldr r2, [r8, #116]
-	and r1, r1, r2
-	str r1, [r8, #120]
-	mov r0, #23
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #7
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #11
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2135:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2135b
-	str r11, [r8, #116]
-	ldr r1, [r8, #120]
-	ldr r2, [r8, #116]
-	and r1, r1, r2
-	str r1, [r8, #120]
-	mov r0, #16
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #3
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #3
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2136:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2136b
-	mov r0, #17
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #7
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #7
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2137:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2137b
-	mov r0, #18
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2138:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2138b
-	mov r6, #33
-2139:
-	mov r0, #16
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r0, #0]
-	and r1, r1, #1
-	str r1, [r8, #104]
-	mov r0, #19
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #17
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #104]
-	mov r4, #0
-	sub r4, r4, r11
-2140:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2140b
-	mov r0, #20
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #19
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2141:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2141b
-	mov r0, #21
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #18
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #20
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2142:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2142b
-	mov r0, #22
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #21
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #11
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2143:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2143b
-	str r11, [r8, #108]
-	mov r0, #18
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #22
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #21
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #108]
-	mov r4, #0
-	sub r4, r4, r11
-2144:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2144b
-	mov r0, #20
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #17
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2145:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2145b
-	mov r0, #21
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #17
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #20
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2146:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2146b
-	mov r0, #22
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #21
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #11
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2147:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2147b
-	str r11, [r8, #108]
-	mov r0, #17
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #22
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #21
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	ldr r11, [r8, #108]
-	mov r4, #0
-	sub r4, r4, r11
-2148:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2148b
-	mov r11, #0
-	mov r0, #16
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r1, r0, r9, lsl #2
-	str r11, [r1, #0]
-	mov lr, r9
-2149:
-	ldr r3, [r0, #0]
-	ldr r4, [r0, #4]
-	lsr r3, r3, #1
-	add r3, r3, r4, lsl #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2149b
-	subs r6, r6, #1
-	bne 2139b
-	mov r0, #18
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r1, r8, r7
-	add r1, r1, #160
-	mov lr, r9
-	mov r2, #0
-2150:
-	ldr r3, [r0, #0]
-	ldr r12, [r1, #0]
-	eor r3, r3, r12
-	orr r2, r2, r3
-	add r0, r0, #4
-	add r1, r1, #4
-	subs lr, lr, #1
-	bne 2150b
-	mov r1, #0
-	sub r1, r1, r2
-	orr r1, r1, r2
-	lsr r1, r1, #31
-	eor r1, r1, #1
-	str r1, [r8, #116]
-	ldr r1, [r8, #120]
-	ldr r2, [r8, #116]
-	and r1, r1, r2
-	str r1, [r8, #120]
-	mov r0, #23
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #8
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #4
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2151:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2151b
-	str r11, [r8, #116]
-	ldr r1, [r8, #120]
-	ldr r2, [r8, #116]
-	and r1, r1, r2
-	str r1, [r8, #120]
-	mov r0, #19
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2152:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2152b
 	mov r0, #0
 	str r0, [r8, #72]
-2153:
-	mov r0, #19
+2121:
+	mov r0, #18
 	mla r0, r0, r7, r8
 	add r0, r0, #160
 	ldr r2, [r8, #72]
 	add r0, r0, r2
-	mov r12, #8
+	mov r12, #3
 	mla r12, r12, r7, r8
 	add r12, r12, #160
 	lsr r3, r2, #2
 	sub lr, r9, r3
-	mov r1, #5
+	mov r1, #6
 	mla r1, r1, r7, r8
 	add r1, r1, #160
 	add r1, r1, r2
@@ -9451,9 +8719,9 @@ vg_rsa_check_key:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2154f
-	b 2155f
-2154:
+	bne 2122f
+	b 2123f
+2122:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -9474,12 +8742,12 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2155:
+2123:
 	cmp lr, #0
-	bne 2156f
-	b 2157f
-2156:
-2158:
+	bne 2124f
+	b 2125f
+2124:
+2126:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -9517,8 +8785,8 @@ vg_rsa_check_key:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2158b
-2157:
+	bne 2126b
+2125:
 	orr r1, r1, r10, lsl #16
 	ldr r9, [r8, #16]
 	add r7, r9, #2
@@ -9528,7 +8796,2405 @@ vg_rsa_check_key:
 	str r0, [r8, #72]
 	lsl r1, r9, #1
 	cmp r0, r1
+	bne 2121b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #10
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #10
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2127:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2127b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	lsr r1, r9, #1
+	sub r1, r1, #1
+	add r0, r0, r1, lsl #2
+	ldr r2, [r0, #0]
+	mov r3, #0
+	sub r3, r3, r2
+	orr r3, r3, r2
+	lsr r3, r3, #31
+	eor r3, r3, #1
+	add r2, r2, r3
+	str r2, [r0, #0]
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #18
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #18
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2128:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2128b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r0, r0, r9, lsl #2
+	mov r1, #0
+	str r1, [r0, #0]
+	mov r0, #16
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2129:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2129b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	lsr r1, r9, #1
+	sub r1, r1, #3
+	add r0, r0, r1, lsl #2
+	ldr r11, [r0, #0]
+	ldr r10, [r0, #4]
+	ldr r1, [r0, #8]
+	mov r2, #1
+	mov lr, #31
+2130:
+	lsr r3, r1, #31
+	sub r3, r3, #1
+	and r4, r1, r3
+	add r1, r1, r4
+	and r4, r2, r3
+	add r2, r2, r4
+	subs lr, lr, #1
+	bne 2130b
+	str r2, [r8, #136]
+	mov r12, r8
+	mov lr, r9
+	mov r0, r1
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #140]
+	mov r0, r3
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #148]
+	mov r8, r12
+	mov r9, lr
+	add r7, r9, #2
+	lsl r7, r7, #2
+	ldr r1, [r8, #140]
+	mvn r2, r1
+	mov r3, #0
+	mov lr, #32
+2131:
+	adds r2, r2, r2
+	mov r4, #0
+	adc r4, r4, #0
+	add r2, r2, #1
+	subs r5, r2, r1
+	mov r5, #0
+	adc r5, r5, #0
+	orr r4, r4, r5
+	mov r5, #0
+	sub r5, r5, r4
+	and r5, r5, r1
+	sub r2, r2, r5
+	add r3, r3, r3
+	add r3, r3, r4
+	subs lr, lr, #1
+	bne 2131b
+	str r3, [r8, #144]
+	lsr r0, r9, #1
+	sub r0, r9, r0
+	lsl r0, r0, #2
+	str r0, [r8, #72]
+2132:
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	lsr r0, r9, #1
+	sub r0, r0, #3
+	add r10, r10, r0, lsl #2
+	ldr r0, [r8, #72]
+	add r10, r10, r0
+	mov r12, r8
+	ldr r0, [r10, #0]
+	ldr r11, [r10, #4]
+	ldr lr, [r10, #8]
+	ldr r10, [r10, #12]
+	ldr r2, [r12, #136]
+	mov r1, r0
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r4
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #64]
+	mov r0, r4
+	mov r1, lr
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r11, r3, r0
+	mov r0, r4
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #68]
+	ldr r0, [r12, #140]
+	ldr r1, [r12, #68]
+	sub r0, r0, r1
+	subs r0, r0, #1
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	str r0, [r12, #152]
+	bic r1, r1, r0
+	mov r10, r1
+	ldr r2, [r12, #144]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r11
+	adc r4, r4, r10
+	add r10, r4, #1
+	ldr r1, [r12, #140]
+	mul r2, r10, r1
+	sub r2, r11, r2
+	subs r0, r3, r2
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	add r10, r10, r0
+	and r0, r0, r1
+	add r2, r2, r0
+	subs r0, r2, r1
+	adc r10, r10, #0
+	ldr r0, [r12, #152]
+	orr r10, r10, r0
+	str r10, [r12, #156]
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #148]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r3
+	mov r10, r4
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #140]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r1, r3, r10
+	adc r2, r4, #0
+	ldr r10, [r12, #64]
+	subs r10, r10, r0
+	mov r3, #0
+	adc r3, r3, #0
+	eor r3, r3, #1
+	subs r11, r11, r1
+	mov r4, #1
+	adc r4, r4, #0
+	subs r11, r11, r3
+	adc r4, r4, #0
+	eor r3, r4, #3
+	ldr lr, [r12, #68]
+	sub lr, lr, r2
+	sub lr, lr, r3
+	ldr r1, [r12, #156]
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	str r1, [r12, #156]
+	mov r8, r12
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2133:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2133b
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	ldr r1, [r8, #156]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2134f
+	b 2135f
+2134:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2135:
+	cmp lr, #0
+	bne 2136f
+	b 2137f
+2136:
+2138:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2138b
+2137:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #17
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	ldr r1, [r8, #72]
+	add r10, r10, r1
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2139:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2139b
+	str r11, [r8, #108]
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #16
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	ldr r11, [r8, #108]
+	mov r4, #0
+	sub r4, r4, r11
+2140:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2140b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r8, #72]
+	add r0, r0, r1
+	mov r10, #17
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2141:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2141b
+	ldr r0, [r8, #72]
+	subs r0, r0, #4
+	str r0, [r8, #72]
+	ldr r0, [r8, #72]
+	cmp r0, #0
+	bne 2132b
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	lsr r0, r9, #1
+	sub r0, r0, #3
+	add r10, r10, r0, lsl #2
+	ldr r0, [r8, #72]
+	add r10, r10, r0
+	mov r12, r8
+	ldr r0, [r10, #0]
+	ldr r11, [r10, #4]
+	ldr lr, [r10, #8]
+	ldr r10, [r10, #12]
+	ldr r2, [r12, #136]
+	mov r1, r0
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r4
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #64]
+	mov r0, r4
+	mov r1, lr
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r11, r3, r0
+	mov r0, r4
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #68]
+	ldr r0, [r12, #140]
+	ldr r1, [r12, #68]
+	sub r0, r0, r1
+	subs r0, r0, #1
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	str r0, [r12, #152]
+	bic r1, r1, r0
+	mov r10, r1
+	ldr r2, [r12, #144]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r11
+	adc r4, r4, r10
+	add r10, r4, #1
+	ldr r1, [r12, #140]
+	mul r2, r10, r1
+	sub r2, r11, r2
+	subs r0, r3, r2
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	add r10, r10, r0
+	and r0, r0, r1
+	add r2, r2, r0
+	subs r0, r2, r1
+	adc r10, r10, #0
+	ldr r0, [r12, #152]
+	orr r10, r10, r0
+	str r10, [r12, #156]
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #148]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r3
+	mov r10, r4
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #140]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r1, r3, r10
+	adc r2, r4, #0
+	ldr r10, [r12, #64]
+	subs r10, r10, r0
+	mov r3, #0
+	adc r3, r3, #0
+	eor r3, r3, #1
+	subs r11, r11, r1
+	mov r4, #1
+	adc r4, r4, #0
+	subs r11, r11, r3
+	adc r4, r4, #0
+	eor r3, r4, #3
+	ldr lr, [r12, #68]
+	sub lr, lr, r2
+	sub lr, lr, r3
+	ldr r1, [r12, #156]
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	str r1, [r12, #156]
+	mov r8, r12
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2142:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2142b
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	ldr r1, [r8, #156]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2143f
+	b 2144f
+2143:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2144:
+	cmp lr, #0
+	bne 2145f
+	b 2146f
+2145:
+2147:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2147b
+2146:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #17
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	ldr r1, [r8, #72]
+	add r10, r10, r1
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2148:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2148b
+	str r11, [r8, #108]
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #16
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	ldr r11, [r8, #108]
+	mov r4, #0
+	sub r4, r4, r11
+2149:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2149b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r8, #72]
+	add r0, r0, r1
+	mov r10, #17
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2150:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2150b
+	ldr r0, [r8, #72]
+	subs r0, r0, #4
+	str r0, [r8, #72]
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r1, r8, r7
+	add r1, r1, #160
+	mov lr, r9
+	mov r2, #0
+2151:
+	ldr r3, [r0, #0]
+	ldr r12, [r1, #0]
+	eor r3, r3, r12
+	orr r2, r2, r3
+	add r0, r0, #4
+	add r1, r1, #4
+	subs lr, lr, #1
+	bne 2151b
+	mov r1, #0
+	sub r1, r1, r2
+	orr r1, r1, r2
+	lsr r1, r1, #31
+	eor r1, r1, #1
+	str r1, [r8, #116]
+	ldr r1, [r8, #120]
+	ldr r2, [r8, #116]
+	and r1, r1, r2
+	str r1, [r8, #120]
+	mov r0, #23
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #7
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #11
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2152:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2152b
+	str r11, [r8, #116]
+	ldr r1, [r8, #120]
+	ldr r2, [r8, #116]
+	and r1, r1, r2
+	str r1, [r8, #120]
+	mov r0, #18
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2153:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
 	bne 2153b
+	mov r0, #0
+	str r0, [r8, #72]
+2154:
+	mov r0, #18
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r2, [r8, #72]
+	add r0, r0, r2
+	mov r12, #3
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr r3, r2, #2
+	sub lr, r9, r3
+	mov r1, #7
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	add r1, r1, r2
+	ldr r1, [r1, #0]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2155f
+	b 2156f
+2155:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2156:
+	cmp lr, #0
+	bne 2157f
+	b 2158f
+2157:
+2159:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2159b
+2158:
+	orr r1, r1, r10, lsl #16
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	ldr r0, [r8, #72]
+	add r0, r0, #4
+	str r0, [r8, #72]
+	lsl r1, r9, #1
+	cmp r0, r1
+	bne 2154b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #11
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #11
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2160:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2160b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	lsr r1, r9, #1
+	sub r1, r1, #1
+	add r0, r0, r1, lsl #2
+	ldr r2, [r0, #0]
+	mov r3, #0
+	sub r3, r3, r2
+	orr r3, r3, r2
+	lsr r3, r3, #31
+	eor r3, r3, #1
+	add r2, r2, r3
+	str r2, [r0, #0]
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #18
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #18
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2161:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2161b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r0, r0, r9, lsl #2
+	mov r1, #0
+	str r1, [r0, #0]
+	mov r0, #16
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2162:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2162b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	lsr r1, r9, #1
+	sub r1, r1, #3
+	add r0, r0, r1, lsl #2
+	ldr r11, [r0, #0]
+	ldr r10, [r0, #4]
+	ldr r1, [r0, #8]
+	mov r2, #1
+	mov lr, #31
+2163:
+	lsr r3, r1, #31
+	sub r3, r3, #1
+	and r4, r1, r3
+	add r1, r1, r4
+	and r4, r2, r3
+	add r2, r2, r4
+	subs lr, lr, #1
+	bne 2163b
+	str r2, [r8, #136]
+	mov r12, r8
+	mov lr, r9
+	mov r0, r1
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #140]
+	mov r0, r3
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #148]
+	mov r8, r12
+	mov r9, lr
+	add r7, r9, #2
+	lsl r7, r7, #2
+	ldr r1, [r8, #140]
+	mvn r2, r1
+	mov r3, #0
+	mov lr, #32
+2164:
+	adds r2, r2, r2
+	mov r4, #0
+	adc r4, r4, #0
+	add r2, r2, #1
+	subs r5, r2, r1
+	mov r5, #0
+	adc r5, r5, #0
+	orr r4, r4, r5
+	mov r5, #0
+	sub r5, r5, r4
+	and r5, r5, r1
+	sub r2, r2, r5
+	add r3, r3, r3
+	add r3, r3, r4
+	subs lr, lr, #1
+	bne 2164b
+	str r3, [r8, #144]
+	lsr r0, r9, #1
+	sub r0, r9, r0
+	lsl r0, r0, #2
+	str r0, [r8, #72]
+2165:
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	lsr r0, r9, #1
+	sub r0, r0, #3
+	add r10, r10, r0, lsl #2
+	ldr r0, [r8, #72]
+	add r10, r10, r0
+	mov r12, r8
+	ldr r0, [r10, #0]
+	ldr r11, [r10, #4]
+	ldr lr, [r10, #8]
+	ldr r10, [r10, #12]
+	ldr r2, [r12, #136]
+	mov r1, r0
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r4
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #64]
+	mov r0, r4
+	mov r1, lr
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r11, r3, r0
+	mov r0, r4
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #68]
+	ldr r0, [r12, #140]
+	ldr r1, [r12, #68]
+	sub r0, r0, r1
+	subs r0, r0, #1
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	str r0, [r12, #152]
+	bic r1, r1, r0
+	mov r10, r1
+	ldr r2, [r12, #144]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r11
+	adc r4, r4, r10
+	add r10, r4, #1
+	ldr r1, [r12, #140]
+	mul r2, r10, r1
+	sub r2, r11, r2
+	subs r0, r3, r2
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	add r10, r10, r0
+	and r0, r0, r1
+	add r2, r2, r0
+	subs r0, r2, r1
+	adc r10, r10, #0
+	ldr r0, [r12, #152]
+	orr r10, r10, r0
+	str r10, [r12, #156]
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #148]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r3
+	mov r10, r4
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #140]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r1, r3, r10
+	adc r2, r4, #0
+	ldr r10, [r12, #64]
+	subs r10, r10, r0
+	mov r3, #0
+	adc r3, r3, #0
+	eor r3, r3, #1
+	subs r11, r11, r1
+	mov r4, #1
+	adc r4, r4, #0
+	subs r11, r11, r3
+	adc r4, r4, #0
+	eor r3, r4, #3
+	ldr lr, [r12, #68]
+	sub lr, lr, r2
+	sub lr, lr, r3
+	ldr r1, [r12, #156]
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	str r1, [r12, #156]
+	mov r8, r12
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2166:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2166b
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	ldr r1, [r8, #156]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2167f
+	b 2168f
+2167:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2168:
+	cmp lr, #0
+	bne 2169f
+	b 2170f
+2169:
+2171:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2171b
+2170:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #17
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	ldr r1, [r8, #72]
+	add r10, r10, r1
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2172:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2172b
+	str r11, [r8, #108]
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #16
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	ldr r11, [r8, #108]
+	mov r4, #0
+	sub r4, r4, r11
+2173:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2173b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r8, #72]
+	add r0, r0, r1
+	mov r10, #17
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2174:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2174b
+	ldr r0, [r8, #72]
+	subs r0, r0, #4
+	str r0, [r8, #72]
+	ldr r0, [r8, #72]
+	cmp r0, #0
+	bne 2165b
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	lsr r0, r9, #1
+	sub r0, r0, #3
+	add r10, r10, r0, lsl #2
+	ldr r0, [r8, #72]
+	add r10, r10, r0
+	mov r12, r8
+	ldr r0, [r10, #0]
+	ldr r11, [r10, #4]
+	ldr lr, [r10, #8]
+	ldr r10, [r10, #12]
+	ldr r2, [r12, #136]
+	mov r1, r0
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r4
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #64]
+	mov r0, r4
+	mov r1, lr
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r11, r3, r0
+	mov r0, r4
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #68]
+	ldr r0, [r12, #140]
+	ldr r1, [r12, #68]
+	sub r0, r0, r1
+	subs r0, r0, #1
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	str r0, [r12, #152]
+	bic r1, r1, r0
+	mov r10, r1
+	ldr r2, [r12, #144]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r11
+	adc r4, r4, r10
+	add r10, r4, #1
+	ldr r1, [r12, #140]
+	mul r2, r10, r1
+	sub r2, r11, r2
+	subs r0, r3, r2
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	add r10, r10, r0
+	and r0, r0, r1
+	add r2, r2, r0
+	subs r0, r2, r1
+	adc r10, r10, #0
+	ldr r0, [r12, #152]
+	orr r10, r10, r0
+	str r10, [r12, #156]
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #148]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r3
+	mov r10, r4
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #140]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r1, r3, r10
+	adc r2, r4, #0
+	ldr r10, [r12, #64]
+	subs r10, r10, r0
+	mov r3, #0
+	adc r3, r3, #0
+	eor r3, r3, #1
+	subs r11, r11, r1
+	mov r4, #1
+	adc r4, r4, #0
+	subs r11, r11, r3
+	adc r4, r4, #0
+	eor r3, r4, #3
+	ldr lr, [r12, #68]
+	sub lr, lr, r2
+	sub lr, lr, r3
+	ldr r1, [r12, #156]
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	str r1, [r12, #156]
+	mov r8, r12
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2175:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2175b
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	ldr r1, [r8, #156]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2176f
+	b 2177f
+2176:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2177:
+	cmp lr, #0
+	bne 2178f
+	b 2179f
+2178:
+2180:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2180b
+2179:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #17
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	ldr r1, [r8, #72]
+	add r10, r10, r1
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2181:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2181b
+	str r11, [r8, #108]
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #16
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	ldr r11, [r8, #108]
+	mov r4, #0
+	sub r4, r4, r11
+2182:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2182b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r8, #72]
+	add r0, r0, r1
+	mov r10, #17
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2183:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2183b
+	ldr r0, [r8, #72]
+	subs r0, r0, #4
+	str r0, [r8, #72]
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r1, r8, r7
+	add r1, r1, #160
+	mov lr, r9
+	mov r2, #0
+2184:
+	ldr r3, [r0, #0]
+	ldr r12, [r1, #0]
+	eor r3, r3, r12
+	orr r2, r2, r3
+	add r0, r0, #4
+	add r1, r1, #4
+	subs lr, lr, #1
+	bne 2184b
+	mov r1, #0
+	sub r1, r1, r2
+	orr r1, r1, r2
+	lsr r1, r1, #31
+	eor r1, r1, #1
+	str r1, [r8, #116]
+	ldr r1, [r8, #120]
+	ldr r2, [r8, #116]
+	and r1, r1, r2
+	str r1, [r8, #120]
+	mov r0, #23
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #8
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #4
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2185:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2185b
+	str r11, [r8, #116]
+	ldr r1, [r8, #120]
+	ldr r2, [r8, #116]
+	and r1, r1, r2
+	str r1, [r8, #120]
+	mov r0, #19
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2186:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2186b
+	mov r0, #0
+	str r0, [r8, #72]
+2187:
+	mov r0, #19
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r2, [r8, #72]
+	add r0, r0, r2
+	mov r12, #8
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr r3, r2, #2
+	sub lr, r9, r3
+	mov r1, #5
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	add r1, r1, r2
+	ldr r1, [r1, #0]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2188f
+	b 2189f
+2188:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2189:
+	cmp lr, #0
+	bne 2190f
+	b 2191f
+2190:
+2192:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2192b
+2191:
+	orr r1, r1, r10, lsl #16
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	ldr r0, [r8, #72]
+	add r0, r0, #4
+	str r0, [r8, #72]
+	lsl r1, r9, #1
+	cmp r0, r1
+	bne 2187b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -9542,14 +11208,14 @@ vg_rsa_check_key:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2159:
+2193:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2159b
+	bne 2193b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -9577,14 +11243,14 @@ vg_rsa_check_key:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2160:
+2194:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2160b
+	bne 2194b
 	mov r0, #13
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -9600,7 +11266,7 @@ vg_rsa_check_key:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2161:
+2195:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -9614,7 +11280,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2161b
+	bne 2195b
 	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -9626,7 +11292,7 @@ vg_rsa_check_key:
 	ldr r1, [r0, #8]
 	mov r2, #1
 	mov lr, #31
-2162:
+2196:
 	lsr r3, r1, #31
 	sub r3, r3, #1
 	and r4, r1, r3
@@ -9634,7 +11300,7 @@ vg_rsa_check_key:
 	and r4, r2, r3
 	add r2, r2, r4
 	subs lr, lr, #1
-	bne 2162b
+	bne 2196b
 	str r2, [r8, #136]
 	mov r12, r8
 	mov lr, r9
@@ -9686,7 +11352,7 @@ vg_rsa_check_key:
 	mvn r2, r1
 	mov r3, #0
 	mov lr, #32
-2163:
+2197:
 	adds r2, r2, r2
 	mov r4, #0
 	adc r4, r4, #0
@@ -9702,13 +11368,13 @@ vg_rsa_check_key:
 	add r3, r3, r3
 	add r3, r3, r4
 	subs lr, lr, #1
-	bne 2163b
+	bne 2197b
 	str r3, [r8, #144]
 	lsr r0, r9, #1
 	sub r0, r9, r0
 	lsl r0, r0, #2
 	str r0, [r8, #72]
-2164:
+2198:
 	mov r10, #13
 	mla r10, r10, r7, r8
 	add r10, r10, #160
@@ -9948,14 +11614,14 @@ vg_rsa_check_key:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2165:
+2199:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2165b
+	bne 2199b
 	mov r0, #15
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -9970,9 +11636,9 @@ vg_rsa_check_key:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2166f
-	b 2167f
-2166:
+	bne 2200f
+	b 2201f
+2200:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -9993,12 +11659,12 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2167:
+2201:
 	cmp lr, #0
-	bne 2168f
-	b 2169f
-2168:
-2170:
+	bne 2202f
+	b 2203f
+2202:
+2204:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -10036,8 +11702,8 @@ vg_rsa_check_key:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2170b
-2169:
+	bne 2204b
+2203:
 	orr r1, r1, r10, lsl #16
 	str r11, [r0, #0]
 	ldr r9, [r8, #16]
@@ -10057,7 +11723,7 @@ vg_rsa_check_key:
 	lsr lr, r9, #1
 	add lr, lr, #1
 	mov r11, #0
-2171:
+2205:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -10071,7 +11737,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2171b
+	bne 2205b
 	str r11, [r8, #108]
 	mov r0, #15
 	mla r0, r0, r7, r8
@@ -10085,7 +11751,7 @@ vg_rsa_check_key:
 	ldr r11, [r8, #108]
 	mov r4, #0
 	sub r4, r4, r11
-2172:
+2206:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -10096,7 +11762,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2172b
+	bne 2206b
 	mov r0, #13
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -10111,7 +11777,7 @@ vg_rsa_check_key:
 	lsr lr, r9, #1
 	add lr, lr, #1
 	mov r11, #0
-2173:
+2207:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -10125,13 +11791,13 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2173b
+	bne 2207b
 	ldr r0, [r8, #72]
 	subs r0, r0, #4
 	str r0, [r8, #72]
 	ldr r0, [r8, #72]
 	cmp r0, #0
-	bne 2164b
+	bne 2198b
 	mov r10, #13
 	mla r10, r10, r7, r8
 	add r10, r10, #160
@@ -10371,14 +12037,14 @@ vg_rsa_check_key:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2174:
+2208:
 	ldr r1, [r10, #0]
 	str r1, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2174b
+	bne 2208b
 	mov r0, #15
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -10393,9 +12059,9 @@ vg_rsa_check_key:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2175f
-	b 2176f
-2175:
+	bne 2209f
+	b 2210f
+2209:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -10416,12 +12082,12 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2176:
+2210:
 	cmp lr, #0
-	bne 2177f
-	b 2178f
-2177:
-2179:
+	bne 2211f
+	b 2212f
+2211:
+2213:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -10459,8 +12125,8 @@ vg_rsa_check_key:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2179b
-2178:
+	bne 2213b
+2212:
 	orr r1, r1, r10, lsl #16
 	str r11, [r0, #0]
 	ldr r9, [r8, #16]
@@ -10480,7 +12146,7 @@ vg_rsa_check_key:
 	lsr lr, r9, #1
 	add lr, lr, #1
 	mov r11, #0
-2180:
+2214:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -10494,7 +12160,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2180b
+	bne 2214b
 	str r11, [r8, #108]
 	mov r0, #15
 	mla r0, r0, r7, r8
@@ -10508,7 +12174,7 @@ vg_rsa_check_key:
 	ldr r11, [r8, #108]
 	mov r4, #0
 	sub r4, r4, r11
-2181:
+2215:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -10519,7 +12185,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2181b
+	bne 2215b
 	mov r0, #13
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -10534,7 +12200,7 @@ vg_rsa_check_key:
 	lsr lr, r9, #1
 	add lr, lr, #1
 	mov r11, #0
-2182:
+2216:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -10548,7 +12214,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2182b
+	bne 2216b
 	ldr r0, [r8, #72]
 	subs r0, r0, #4
 	str r0, [r8, #72]
@@ -10559,7 +12225,7 @@ vg_rsa_check_key:
 	add r1, r1, #160
 	mov lr, r9
 	mov r2, #0
-2183:
+2217:
 	ldr r3, [r0, #0]
 	ldr r12, [r1, #0]
 	eor r3, r3, r12
@@ -10567,7 +12233,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r1, r1, #4
 	subs lr, lr, #1
-	bne 2183b
+	bne 2217b
 	mov r1, #0
 	sub r1, r1, r2
 	orr r1, r1, r2
@@ -10589,7 +12255,7 @@ vg_rsa_check_key:
 	add r12, r12, #160
 	mov lr, r9
 	mov r11, #0
-2184:
+2218:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -10603,7 +12269,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2184b
+	bne 2218b
 	str r11, [r8, #116]
 	ldr r1, [r8, #120]
 	ldr r2, [r8, #116]
@@ -10622,1572 +12288,65 @@ vg_rsa_check_key:
 	mov r11, #0
 	mov r4, #0
 	sub r4, r4, r11
-2185:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2185b
-	mov r0, #14
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	lsr r1, r9, #1
-	sub r1, r1, #1
-	add r0, r0, r1, lsl #2
-	ldr r2, [r0, #0]
-	mov r3, #0
-	sub r3, r3, r2
-	orr r3, r3, r2
-	lsr r3, r3, #31
-	eor r3, r3, #1
-	add r2, r2, r3
-	str r2, [r0, #0]
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #9
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #9
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2186:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2186b
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r0, r0, r9, lsl #2
-	mov r1, #0
-	str r1, [r0, #0]
-	mov r0, #16
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #14
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2187:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2187b
-	mov r0, #14
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	lsr r1, r9, #1
-	sub r1, r1, #3
-	add r0, r0, r1, lsl #2
-	ldr r11, [r0, #0]
-	ldr r10, [r0, #4]
-	ldr r1, [r0, #8]
-	mov r2, #1
-	mov lr, #31
-2188:
-	lsr r3, r1, #31
-	sub r3, r3, #1
-	and r4, r1, r3
-	add r1, r1, r4
-	and r4, r2, r3
-	add r2, r2, r4
-	subs lr, lr, #1
-	bne 2188b
-	str r2, [r8, #136]
-	mov r12, r8
-	mov lr, r9
-	mov r0, r1
-	mov r1, r10
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r0, r0, r4
-	str r0, [r12, #140]
-	mov r0, r3
-	mov r1, r11
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r0, r0, r4
-	str r0, [r12, #148]
-	mov r8, r12
-	mov r9, lr
-	add r7, r9, #2
-	lsl r7, r7, #2
-	ldr r1, [r8, #140]
-	mvn r2, r1
-	mov r3, #0
-	mov lr, #32
-2189:
-	adds r2, r2, r2
-	mov r4, #0
-	adc r4, r4, #0
-	add r2, r2, #1
-	subs r5, r2, r1
-	mov r5, #0
-	adc r5, r5, #0
-	orr r4, r4, r5
-	mov r5, #0
-	sub r5, r5, r4
-	and r5, r5, r1
-	sub r2, r2, r5
-	add r3, r3, r3
-	add r3, r3, r4
-	subs lr, lr, #1
-	bne 2189b
-	str r3, [r8, #144]
-	lsr r0, r9, #1
-	sub r0, r9, r0
-	lsl r0, r0, #2
-	str r0, [r8, #72]
-2190:
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	lsr r0, r9, #1
-	sub r0, r0, #3
-	add r10, r10, r0, lsl #2
-	ldr r0, [r8, #72]
-	add r10, r10, r0
-	mov r12, r8
-	ldr r0, [r10, #0]
-	ldr r11, [r10, #4]
-	ldr lr, [r10, #8]
-	ldr r10, [r10, #12]
-	ldr r2, [r12, #136]
-	mov r1, r0
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	mov r0, r4
-	mov r1, r11
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r3, r3, r0
-	str r3, [r12, #64]
-	mov r0, r4
-	mov r1, lr
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r11, r3, r0
-	mov r0, r4
-	mov r1, r10
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r3, r3, r0
-	str r3, [r12, #68]
-	ldr r0, [r12, #140]
-	ldr r1, [r12, #68]
-	sub r0, r0, r1
-	subs r0, r0, #1
-	mov r0, #0
-	adc r0, r0, #0
-	sub r0, r0, #1
-	str r0, [r12, #152]
-	bic r1, r1, r0
-	mov r10, r1
-	ldr r2, [r12, #144]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r11
-	adc r4, r4, r10
-	add r10, r4, #1
-	ldr r1, [r12, #140]
-	mul r2, r10, r1
-	sub r2, r11, r2
-	subs r0, r3, r2
-	mov r0, #0
-	adc r0, r0, #0
-	sub r0, r0, #1
-	add r10, r10, r0
-	and r0, r0, r1
-	add r2, r2, r0
-	subs r0, r2, r1
-	adc r10, r10, #0
-	ldr r0, [r12, #152]
-	orr r10, r10, r0
-	str r10, [r12, #156]
-	ldr r1, [r12, #156]
-	ldr r2, [r12, #148]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	mov r0, r3
-	mov r10, r4
-	ldr r1, [r12, #156]
-	ldr r2, [r12, #140]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r1, r3, r10
-	adc r2, r4, #0
-	ldr r10, [r12, #64]
-	subs r10, r10, r0
-	mov r3, #0
-	adc r3, r3, #0
-	eor r3, r3, #1
-	subs r11, r11, r1
-	mov r4, #1
-	adc r4, r4, #0
-	subs r11, r11, r3
-	adc r4, r4, #0
-	eor r3, r4, #3
-	ldr lr, [r12, #68]
-	sub lr, lr, r2
-	sub lr, lr, r3
-	ldr r1, [r12, #156]
-	lsr r0, lr, #31
-	mov r2, #0
-	sub r0, r2, r0
-	add r1, r1, r0
-	ldr r2, [r12, #148]
-	and r2, r2, r0
-	ldr r3, [r12, #140]
-	and r3, r3, r0
-	adds r10, r10, r2
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r4
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r3
-	adc r4, r4, #0
-	add lr, lr, r4
-	lsr r0, lr, #31
-	mov r2, #0
-	sub r0, r2, r0
-	add r1, r1, r0
-	ldr r2, [r12, #148]
-	and r2, r2, r0
-	ldr r3, [r12, #140]
-	and r3, r3, r0
-	adds r10, r10, r2
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r4
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r3
-	adc r4, r4, #0
-	add lr, lr, r4
-	str r1, [r12, #156]
-	mov r8, r12
-	ldr r9, [r8, #16]
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2191:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2191b
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r12, #14
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	ldr r1, [r8, #156]
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2192f
-	b 2193f
-2192:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2193:
-	cmp lr, #0
-	bne 2194f
-	b 2195f
-2194:
-2196:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #4]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2196b
-2195:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r9, [r8, #16]
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #17
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	ldr r1, [r8, #72]
-	add r10, r10, r1
-	mov r12, #15
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-2197:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2197b
-	str r11, [r8, #108]
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #16
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	ldr r11, [r8, #108]
-	mov r4, #0
-	sub r4, r4, r11
-2198:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2198b
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r8, #72]
-	add r0, r0, r1
-	mov r10, #17
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #15
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-2199:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2199b
-	ldr r0, [r8, #72]
-	subs r0, r0, #4
-	str r0, [r8, #72]
-	ldr r0, [r8, #72]
-	cmp r0, #0
-	bne 2190b
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	lsr r0, r9, #1
-	sub r0, r0, #3
-	add r10, r10, r0, lsl #2
-	ldr r0, [r8, #72]
-	add r10, r10, r0
-	mov r12, r8
-	ldr r0, [r10, #0]
-	ldr r11, [r10, #4]
-	ldr lr, [r10, #8]
-	ldr r10, [r10, #12]
-	ldr r2, [r12, #136]
-	mov r1, r0
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	mov r0, r4
-	mov r1, r11
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r3, r3, r0
-	str r3, [r12, #64]
-	mov r0, r4
-	mov r1, lr
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r11, r3, r0
-	mov r0, r4
-	mov r1, r10
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r3, r3, r0
-	str r3, [r12, #68]
-	ldr r0, [r12, #140]
-	ldr r1, [r12, #68]
-	sub r0, r0, r1
-	subs r0, r0, #1
-	mov r0, #0
-	adc r0, r0, #0
-	sub r0, r0, #1
-	str r0, [r12, #152]
-	bic r1, r1, r0
-	mov r10, r1
-	ldr r2, [r12, #144]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r11
-	adc r4, r4, r10
-	add r10, r4, #1
-	ldr r1, [r12, #140]
-	mul r2, r10, r1
-	sub r2, r11, r2
-	subs r0, r3, r2
-	mov r0, #0
-	adc r0, r0, #0
-	sub r0, r0, #1
-	add r10, r10, r0
-	and r0, r0, r1
-	add r2, r2, r0
-	subs r0, r2, r1
-	adc r10, r10, #0
-	ldr r0, [r12, #152]
-	orr r10, r10, r0
-	str r10, [r12, #156]
-	ldr r1, [r12, #156]
-	ldr r2, [r12, #148]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	mov r0, r3
-	mov r10, r4
-	ldr r1, [r12, #156]
-	ldr r2, [r12, #140]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r1, r3, r10
-	adc r2, r4, #0
-	ldr r10, [r12, #64]
-	subs r10, r10, r0
-	mov r3, #0
-	adc r3, r3, #0
-	eor r3, r3, #1
-	subs r11, r11, r1
-	mov r4, #1
-	adc r4, r4, #0
-	subs r11, r11, r3
-	adc r4, r4, #0
-	eor r3, r4, #3
-	ldr lr, [r12, #68]
-	sub lr, lr, r2
-	sub lr, lr, r3
-	ldr r1, [r12, #156]
-	lsr r0, lr, #31
-	mov r2, #0
-	sub r0, r2, r0
-	add r1, r1, r0
-	ldr r2, [r12, #148]
-	and r2, r2, r0
-	ldr r3, [r12, #140]
-	and r3, r3, r0
-	adds r10, r10, r2
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r4
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r3
-	adc r4, r4, #0
-	add lr, lr, r4
-	lsr r0, lr, #31
-	mov r2, #0
-	sub r0, r2, r0
-	add r1, r1, r0
-	ldr r2, [r12, #148]
-	and r2, r2, r0
-	ldr r3, [r12, #140]
-	and r3, r3, r0
-	adds r10, r10, r2
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r4
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r3
-	adc r4, r4, #0
-	add lr, lr, r4
-	str r1, [r12, #156]
-	mov r8, r12
-	ldr r9, [r8, #16]
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2200:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2200b
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r12, #14
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	ldr r1, [r8, #156]
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2201f
-	b 2202f
-2201:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2202:
-	cmp lr, #0
-	bne 2203f
-	b 2204f
-2203:
-2205:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #4]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2205b
-2204:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r9, [r8, #16]
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #17
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	ldr r1, [r8, #72]
-	add r10, r10, r1
-	mov r12, #15
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-2206:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2206b
-	str r11, [r8, #108]
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #16
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	ldr r11, [r8, #108]
-	mov r4, #0
-	sub r4, r4, r11
-2207:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2207b
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r8, #72]
-	add r0, r0, r1
-	mov r10, #17
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #15
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-2208:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2208b
-	ldr r0, [r8, #72]
-	subs r0, r0, #4
-	str r0, [r8, #72]
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r1, #6
-	mla r1, r1, r7, r8
-	add r1, r1, #160
-	mov lr, r9
-	mov r2, #0
-2209:
-	ldr r3, [r0, #0]
-	ldr r12, [r1, #0]
-	eor r3, r3, r12
-	orr r2, r2, r3
-	add r0, r0, #4
-	add r1, r1, #4
-	subs lr, lr, #1
-	bne 2209b
-	mov r1, #0
-	sub r1, r1, r2
-	orr r1, r1, r2
-	lsr r1, r1, #31
-	eor r1, r1, #1
-	str r1, [r8, #116]
-	ldr r1, [r8, #120]
-	ldr r2, [r8, #116]
-	and r1, r1, r2
-	str r1, [r8, #120]
-	mov r0, #14
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #11
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #11
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2210:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2210b
-	mov r0, #14
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	lsr r1, r9, #1
-	sub r1, r1, #1
-	add r0, r0, r1, lsl #2
-	ldr r2, [r0, #0]
-	mov r3, #0
-	sub r3, r3, r2
-	orr r3, r3, r2
-	lsr r3, r3, #31
-	eor r3, r3, #1
-	add r2, r2, r3
-	str r2, [r0, #0]
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r10, #9
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #9
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2211:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2211b
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r0, r0, r9, lsl #2
-	mov r1, #0
-	str r1, [r0, #0]
-	mov r0, #16
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #14
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	mov lr, r9
-	mov r11, #0
-2212:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2212b
-	mov r0, #14
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	lsr r1, r9, #1
-	sub r1, r1, #3
-	add r0, r0, r1, lsl #2
-	ldr r11, [r0, #0]
-	ldr r10, [r0, #4]
-	ldr r1, [r0, #8]
-	mov r2, #1
-	mov lr, #31
-2213:
-	lsr r3, r1, #31
-	sub r3, r3, #1
-	and r4, r1, r3
-	add r1, r1, r4
-	and r4, r2, r3
-	add r2, r2, r4
-	subs lr, lr, #1
-	bne 2213b
-	str r2, [r8, #136]
-	mov r12, r8
-	mov lr, r9
-	mov r0, r1
-	mov r1, r10
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r0, r0, r4
-	str r0, [r12, #140]
-	mov r0, r3
-	mov r1, r11
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r0, r0, r4
-	str r0, [r12, #148]
-	mov r8, r12
-	mov r9, lr
-	add r7, r9, #2
-	lsl r7, r7, #2
-	ldr r1, [r8, #140]
-	mvn r2, r1
-	mov r3, #0
-	mov lr, #32
-2214:
-	adds r2, r2, r2
-	mov r4, #0
-	adc r4, r4, #0
-	add r2, r2, #1
-	subs r5, r2, r1
-	mov r5, #0
-	adc r5, r5, #0
-	orr r4, r4, r5
-	mov r5, #0
-	sub r5, r5, r4
-	and r5, r5, r1
-	sub r2, r2, r5
-	add r3, r3, r3
-	add r3, r3, r4
-	subs lr, lr, #1
-	bne 2214b
-	str r3, [r8, #144]
-	lsr r0, r9, #1
-	sub r0, r9, r0
-	lsl r0, r0, #2
-	str r0, [r8, #72]
-2215:
-	mov r10, #13
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	lsr r0, r9, #1
-	sub r0, r0, #3
-	add r10, r10, r0, lsl #2
-	ldr r0, [r8, #72]
-	add r10, r10, r0
-	mov r12, r8
-	ldr r0, [r10, #0]
-	ldr r11, [r10, #4]
-	ldr lr, [r10, #8]
-	ldr r10, [r10, #12]
-	ldr r2, [r12, #136]
-	mov r1, r0
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	mov r0, r4
-	mov r1, r11
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r3, r3, r0
-	str r3, [r12, #64]
-	mov r0, r4
-	mov r1, lr
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r11, r3, r0
-	mov r0, r4
-	mov r1, r10
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	add r3, r3, r0
-	str r3, [r12, #68]
-	ldr r0, [r12, #140]
-	ldr r1, [r12, #68]
-	sub r0, r0, r1
-	subs r0, r0, #1
-	mov r0, #0
-	adc r0, r0, #0
-	sub r0, r0, #1
-	str r0, [r12, #152]
-	bic r1, r1, r0
-	mov r10, r1
-	ldr r2, [r12, #144]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r11
-	adc r4, r4, r10
-	add r10, r4, #1
-	ldr r1, [r12, #140]
-	mul r2, r10, r1
-	sub r2, r11, r2
-	subs r0, r3, r2
-	mov r0, #0
-	adc r0, r0, #0
-	sub r0, r0, #1
-	add r10, r10, r0
-	and r0, r0, r1
-	add r2, r2, r0
-	subs r0, r2, r1
-	adc r10, r10, #0
-	ldr r0, [r12, #152]
-	orr r10, r10, r0
-	str r10, [r12, #156]
-	ldr r1, [r12, #156]
-	ldr r2, [r12, #148]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	mov r0, r3
-	mov r10, r4
-	ldr r1, [r12, #156]
-	ldr r2, [r12, #140]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r1, r3, r10
-	adc r2, r4, #0
-	ldr r10, [r12, #64]
-	subs r10, r10, r0
-	mov r3, #0
-	adc r3, r3, #0
-	eor r3, r3, #1
-	subs r11, r11, r1
-	mov r4, #1
-	adc r4, r4, #0
-	subs r11, r11, r3
-	adc r4, r4, #0
-	eor r3, r4, #3
-	ldr lr, [r12, #68]
-	sub lr, lr, r2
-	sub lr, lr, r3
-	ldr r1, [r12, #156]
-	lsr r0, lr, #31
-	mov r2, #0
-	sub r0, r2, r0
-	add r1, r1, r0
-	ldr r2, [r12, #148]
-	and r2, r2, r0
-	ldr r3, [r12, #140]
-	and r3, r3, r0
-	adds r10, r10, r2
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r4
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r3
-	adc r4, r4, #0
-	add lr, lr, r4
-	lsr r0, lr, #31
-	mov r2, #0
-	sub r0, r2, r0
-	add r1, r1, r0
-	ldr r2, [r12, #148]
-	and r2, r2, r0
-	ldr r3, [r12, #140]
-	and r3, r3, r0
-	adds r10, r10, r2
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r4
-	mov r4, #0
-	adc r4, r4, #0
-	adds r11, r11, r3
-	adc r4, r4, #0
-	add lr, lr, r4
-	str r1, [r12, #156]
-	mov r8, r12
-	ldr r9, [r8, #16]
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	add r12, r8, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-	mov r4, #0
-	sub r4, r4, r11
-2216:
-	ldr r1, [r10, #0]
-	str r1, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2216b
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	mov r12, #14
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	ldr r1, [r8, #156]
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2217f
-	b 2218f
-2217:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2218:
-	cmp lr, #0
-	bne 2219f
-	b 2220f
 2219:
-2221:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #4]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2221b
-2220:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r9, [r8, #16]
-	add r7, r9, #2
-	lsl r7, r7, #2
-	mov r0, #17
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2219b
+	mov r0, #14
 	mla r0, r0, r7, r8
 	add r0, r0, #160
-	mov r10, #13
+	lsr r1, r9, #1
+	sub r1, r1, #1
+	add r0, r0, r1, lsl #2
+	ldr r2, [r0, #0]
+	mov r3, #0
+	sub r3, r3, r2
+	orr r3, r3, r2
+	lsr r3, r3, #31
+	eor r3, r3, #1
+	add r2, r2, r3
+	str r2, [r0, #0]
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #9
 	mla r10, r10, r7, r8
 	add r10, r10, #160
-	ldr r1, [r8, #72]
-	add r10, r10, r1
-	mov r12, #15
+	mov r12, #9
 	mla r12, r12, r7, r8
 	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
+	mov lr, r9
 	mov r11, #0
-2222:
+	mov r4, #0
+	sub r4, r4, r11
+2220:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2220b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r0, r0, r9, lsl #2
+	mov r1, #0
+	str r1, [r0, #0]
+	mov r0, #16
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2221:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -12200,68 +12359,102 @@ vg_rsa_check_key:
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2221b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	lsr r1, r9, #1
+	sub r1, r1, #3
+	add r0, r0, r1, lsl #2
+	ldr r11, [r0, #0]
+	ldr r10, [r0, #4]
+	ldr r1, [r0, #8]
+	mov r2, #1
+	mov lr, #31
+2222:
+	lsr r3, r1, #31
+	sub r3, r3, #1
+	and r4, r1, r3
+	add r1, r1, r4
+	and r4, r2, r3
+	add r2, r2, r4
 	subs lr, lr, #1
 	bne 2222b
-	str r11, [r8, #108]
-	mov r0, #15
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	add r10, r8, #160
-	mov r12, #16
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	ldr r11, [r8, #108]
-	mov r4, #0
-	sub r4, r4, r11
+	str r2, [r8, #136]
+	mov r12, r8
+	mov lr, r9
+	mov r0, r1
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #140]
+	mov r0, r3
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #148]
+	mov r8, r12
+	mov r9, lr
+	add r7, r9, #2
+	lsl r7, r7, #2
+	ldr r1, [r8, #140]
+	mvn r2, r1
+	mov r3, #0
+	mov lr, #32
 2223:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
+	adds r2, r2, r2
+	mov r4, #0
+	adc r4, r4, #0
+	add r2, r2, #1
+	subs r5, r2, r1
+	mov r5, #0
+	adc r5, r5, #0
+	orr r4, r4, r5
+	mov r5, #0
+	sub r5, r5, r4
+	and r5, r5, r1
+	sub r2, r2, r5
+	add r3, r3, r3
+	add r3, r3, r4
 	subs lr, lr, #1
 	bne 2223b
-	mov r0, #13
-	mla r0, r0, r7, r8
-	add r0, r0, #160
-	ldr r1, [r8, #72]
-	add r0, r0, r1
-	mov r10, #17
-	mla r10, r10, r7, r8
-	add r10, r10, #160
-	mov r12, #15
-	mla r12, r12, r7, r8
-	add r12, r12, #160
-	lsr lr, r9, #1
-	add lr, lr, #1
-	mov r11, #0
-2224:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2224b
-	ldr r0, [r8, #72]
-	subs r0, r0, #4
+	str r3, [r8, #144]
+	lsr r0, r9, #1
+	sub r0, r9, r0
+	lsl r0, r0, #2
 	str r0, [r8, #72]
-	ldr r0, [r8, #72]
-	cmp r0, #0
-	bne 2215b
+2224:
 	mov r10, #13
 	mla r10, r10, r7, r8
 	add r10, r10, #160
@@ -12682,6 +12875,1479 @@ vg_rsa_check_key:
 	ldr r0, [r8, #72]
 	subs r0, r0, #4
 	str r0, [r8, #72]
+	ldr r0, [r8, #72]
+	cmp r0, #0
+	bne 2224b
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	lsr r0, r9, #1
+	sub r0, r0, #3
+	add r10, r10, r0, lsl #2
+	ldr r0, [r8, #72]
+	add r10, r10, r0
+	mov r12, r8
+	ldr r0, [r10, #0]
+	ldr r11, [r10, #4]
+	ldr lr, [r10, #8]
+	ldr r10, [r10, #12]
+	ldr r2, [r12, #136]
+	mov r1, r0
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r4
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #64]
+	mov r0, r4
+	mov r1, lr
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r11, r3, r0
+	mov r0, r4
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #68]
+	ldr r0, [r12, #140]
+	ldr r1, [r12, #68]
+	sub r0, r0, r1
+	subs r0, r0, #1
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	str r0, [r12, #152]
+	bic r1, r1, r0
+	mov r10, r1
+	ldr r2, [r12, #144]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r11
+	adc r4, r4, r10
+	add r10, r4, #1
+	ldr r1, [r12, #140]
+	mul r2, r10, r1
+	sub r2, r11, r2
+	subs r0, r3, r2
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	add r10, r10, r0
+	and r0, r0, r1
+	add r2, r2, r0
+	subs r0, r2, r1
+	adc r10, r10, #0
+	ldr r0, [r12, #152]
+	orr r10, r10, r0
+	str r10, [r12, #156]
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #148]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r3
+	mov r10, r4
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #140]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r1, r3, r10
+	adc r2, r4, #0
+	ldr r10, [r12, #64]
+	subs r10, r10, r0
+	mov r3, #0
+	adc r3, r3, #0
+	eor r3, r3, #1
+	subs r11, r11, r1
+	mov r4, #1
+	adc r4, r4, #0
+	subs r11, r11, r3
+	adc r4, r4, #0
+	eor r3, r4, #3
+	ldr lr, [r12, #68]
+	sub lr, lr, r2
+	sub lr, lr, r3
+	ldr r1, [r12, #156]
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	str r1, [r12, #156]
+	mov r8, r12
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2234:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2234b
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	ldr r1, [r8, #156]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2235f
+	b 2236f
+2235:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2236:
+	cmp lr, #0
+	bne 2237f
+	b 2238f
+2237:
+2239:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2239b
+2238:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #17
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	ldr r1, [r8, #72]
+	add r10, r10, r1
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2240:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2240b
+	str r11, [r8, #108]
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #16
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	ldr r11, [r8, #108]
+	mov r4, #0
+	sub r4, r4, r11
+2241:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2241b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r8, #72]
+	add r0, r0, r1
+	mov r10, #17
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2242:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2242b
+	ldr r0, [r8, #72]
+	subs r0, r0, #4
+	str r0, [r8, #72]
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r1, #6
+	mla r1, r1, r7, r8
+	add r1, r1, #160
+	mov lr, r9
+	mov r2, #0
+2243:
+	ldr r3, [r0, #0]
+	ldr r12, [r1, #0]
+	eor r3, r3, r12
+	orr r2, r2, r3
+	add r0, r0, #4
+	add r1, r1, #4
+	subs lr, lr, #1
+	bne 2243b
+	mov r1, #0
+	sub r1, r1, r2
+	orr r1, r1, r2
+	lsr r1, r1, #31
+	eor r1, r1, #1
+	str r1, [r8, #116]
+	ldr r1, [r8, #120]
+	ldr r2, [r8, #116]
+	and r1, r1, r2
+	str r1, [r8, #120]
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #11
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #11
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2244:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2244b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	lsr r1, r9, #1
+	sub r1, r1, #1
+	add r0, r0, r1, lsl #2
+	ldr r2, [r0, #0]
+	mov r3, #0
+	sub r3, r3, r2
+	orr r3, r3, r2
+	lsr r3, r3, #31
+	eor r3, r3, #1
+	add r2, r2, r3
+	str r2, [r0, #0]
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #9
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #9
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2245:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2245b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r0, r0, r9, lsl #2
+	mov r1, #0
+	str r1, [r0, #0]
+	mov r0, #16
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	mov lr, r9
+	mov r11, #0
+2246:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2246b
+	mov r0, #14
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	lsr r1, r9, #1
+	sub r1, r1, #3
+	add r0, r0, r1, lsl #2
+	ldr r11, [r0, #0]
+	ldr r10, [r0, #4]
+	ldr r1, [r0, #8]
+	mov r2, #1
+	mov lr, #31
+2247:
+	lsr r3, r1, #31
+	sub r3, r3, #1
+	and r4, r1, r3
+	add r1, r1, r4
+	and r4, r2, r3
+	add r2, r2, r4
+	subs lr, lr, #1
+	bne 2247b
+	str r2, [r8, #136]
+	mov r12, r8
+	mov lr, r9
+	mov r0, r1
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #140]
+	mov r0, r3
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r0, r0, r4
+	str r0, [r12, #148]
+	mov r8, r12
+	mov r9, lr
+	add r7, r9, #2
+	lsl r7, r7, #2
+	ldr r1, [r8, #140]
+	mvn r2, r1
+	mov r3, #0
+	mov lr, #32
+2248:
+	adds r2, r2, r2
+	mov r4, #0
+	adc r4, r4, #0
+	add r2, r2, #1
+	subs r5, r2, r1
+	mov r5, #0
+	adc r5, r5, #0
+	orr r4, r4, r5
+	mov r5, #0
+	sub r5, r5, r4
+	and r5, r5, r1
+	sub r2, r2, r5
+	add r3, r3, r3
+	add r3, r3, r4
+	subs lr, lr, #1
+	bne 2248b
+	str r3, [r8, #144]
+	lsr r0, r9, #1
+	sub r0, r9, r0
+	lsl r0, r0, #2
+	str r0, [r8, #72]
+2249:
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	lsr r0, r9, #1
+	sub r0, r0, #3
+	add r10, r10, r0, lsl #2
+	ldr r0, [r8, #72]
+	add r10, r10, r0
+	mov r12, r8
+	ldr r0, [r10, #0]
+	ldr r11, [r10, #4]
+	ldr lr, [r10, #8]
+	ldr r10, [r10, #12]
+	ldr r2, [r12, #136]
+	mov r1, r0
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r4
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #64]
+	mov r0, r4
+	mov r1, lr
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r11, r3, r0
+	mov r0, r4
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #68]
+	ldr r0, [r12, #140]
+	ldr r1, [r12, #68]
+	sub r0, r0, r1
+	subs r0, r0, #1
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	str r0, [r12, #152]
+	bic r1, r1, r0
+	mov r10, r1
+	ldr r2, [r12, #144]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r11
+	adc r4, r4, r10
+	add r10, r4, #1
+	ldr r1, [r12, #140]
+	mul r2, r10, r1
+	sub r2, r11, r2
+	subs r0, r3, r2
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	add r10, r10, r0
+	and r0, r0, r1
+	add r2, r2, r0
+	subs r0, r2, r1
+	adc r10, r10, #0
+	ldr r0, [r12, #152]
+	orr r10, r10, r0
+	str r10, [r12, #156]
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #148]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r3
+	mov r10, r4
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #140]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r1, r3, r10
+	adc r2, r4, #0
+	ldr r10, [r12, #64]
+	subs r10, r10, r0
+	mov r3, #0
+	adc r3, r3, #0
+	eor r3, r3, #1
+	subs r11, r11, r1
+	mov r4, #1
+	adc r4, r4, #0
+	subs r11, r11, r3
+	adc r4, r4, #0
+	eor r3, r4, #3
+	ldr lr, [r12, #68]
+	sub lr, lr, r2
+	sub lr, lr, r3
+	ldr r1, [r12, #156]
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	str r1, [r12, #156]
+	mov r8, r12
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2250:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2250b
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	ldr r1, [r8, #156]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2251f
+	b 2252f
+2251:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2252:
+	cmp lr, #0
+	bne 2253f
+	b 2254f
+2253:
+2255:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2255b
+2254:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #17
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	ldr r1, [r8, #72]
+	add r10, r10, r1
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2256:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2256b
+	str r11, [r8, #108]
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #16
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	ldr r11, [r8, #108]
+	mov r4, #0
+	sub r4, r4, r11
+2257:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2257b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r8, #72]
+	add r0, r0, r1
+	mov r10, #17
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2258:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2258b
+	ldr r0, [r8, #72]
+	subs r0, r0, #4
+	str r0, [r8, #72]
+	ldr r0, [r8, #72]
+	cmp r0, #0
+	bne 2249b
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	lsr r0, r9, #1
+	sub r0, r0, #3
+	add r10, r10, r0, lsl #2
+	ldr r0, [r8, #72]
+	add r10, r10, r0
+	mov r12, r8
+	ldr r0, [r10, #0]
+	ldr r11, [r10, #4]
+	ldr lr, [r10, #8]
+	ldr r10, [r10, #12]
+	ldr r2, [r12, #136]
+	mov r1, r0
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r4
+	mov r1, r11
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #64]
+	mov r0, r4
+	mov r1, lr
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r11, r3, r0
+	mov r0, r4
+	mov r1, r10
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	add r3, r3, r0
+	str r3, [r12, #68]
+	ldr r0, [r12, #140]
+	ldr r1, [r12, #68]
+	sub r0, r0, r1
+	subs r0, r0, #1
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	str r0, [r12, #152]
+	bic r1, r1, r0
+	mov r10, r1
+	ldr r2, [r12, #144]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r11
+	adc r4, r4, r10
+	add r10, r4, #1
+	ldr r1, [r12, #140]
+	mul r2, r10, r1
+	sub r2, r11, r2
+	subs r0, r3, r2
+	mov r0, #0
+	adc r0, r0, #0
+	sub r0, r0, #1
+	add r10, r10, r0
+	and r0, r0, r1
+	add r2, r2, r0
+	subs r0, r2, r1
+	adc r10, r10, #0
+	ldr r0, [r12, #152]
+	orr r10, r10, r0
+	str r10, [r12, #156]
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #148]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	mov r0, r3
+	mov r10, r4
+	ldr r1, [r12, #156]
+	ldr r2, [r12, #140]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r1, r3, r10
+	adc r2, r4, #0
+	ldr r10, [r12, #64]
+	subs r10, r10, r0
+	mov r3, #0
+	adc r3, r3, #0
+	eor r3, r3, #1
+	subs r11, r11, r1
+	mov r4, #1
+	adc r4, r4, #0
+	subs r11, r11, r3
+	adc r4, r4, #0
+	eor r3, r4, #3
+	ldr lr, [r12, #68]
+	sub lr, lr, r2
+	sub lr, lr, r3
+	ldr r1, [r12, #156]
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	lsr r0, lr, #31
+	mov r2, #0
+	sub r0, r2, r0
+	add r1, r1, r0
+	ldr r2, [r12, #148]
+	and r2, r2, r0
+	ldr r3, [r12, #140]
+	and r3, r3, r0
+	adds r10, r10, r2
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r4
+	mov r4, #0
+	adc r4, r4, #0
+	adds r11, r11, r3
+	adc r4, r4, #0
+	add lr, lr, r4
+	str r1, [r12, #156]
+	mov r8, r12
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	add r12, r8, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+	mov r4, #0
+	sub r4, r4, r11
+2259:
+	ldr r1, [r10, #0]
+	str r1, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2259b
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r12, #14
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	ldr r1, [r8, #156]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2260f
+	b 2261f
+2260:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2261:
+	cmp lr, #0
+	bne 2262f
+	b 2263f
+2262:
+2264:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #4]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2264b
+2263:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r9, [r8, #16]
+	add r7, r9, #2
+	lsl r7, r7, #2
+	mov r0, #17
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	mov r10, #13
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	ldr r1, [r8, #72]
+	add r10, r10, r1
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2265:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2265b
+	str r11, [r8, #108]
+	mov r0, #15
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	add r10, r8, #160
+	mov r12, #16
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	ldr r11, [r8, #108]
+	mov r4, #0
+	sub r4, r4, r11
+2266:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2266b
+	mov r0, #13
+	mla r0, r0, r7, r8
+	add r0, r0, #160
+	ldr r1, [r8, #72]
+	add r0, r0, r1
+	mov r10, #17
+	mla r10, r10, r7, r8
+	add r10, r10, #160
+	mov r12, #15
+	mla r12, r12, r7, r8
+	add r12, r12, #160
+	lsr lr, r9, #1
+	add lr, lr, #1
+	mov r11, #0
+2267:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2267b
+	ldr r0, [r8, #72]
+	subs r0, r0, #4
+	str r0, [r8, #72]
 	mov r0, #13
 	mla r0, r0, r7, r8
 	add r0, r0, #160
@@ -12690,7 +14356,7 @@ vg_rsa_check_key:
 	add r1, r1, #160
 	mov lr, r9
 	mov r2, #0
-2234:
+2268:
 	ldr r3, [r0, #0]
 	ldr r12, [r1, #0]
 	eor r3, r3, r12
@@ -12698,7 +14364,7 @@ vg_rsa_check_key:
 	add r0, r0, #4
 	add r1, r1, #4
 	subs lr, lr, #1
-	bne 2234b
+	bne 2268b
 	mov r1, #0
 	sub r1, r1, r2
 	orr r1, r1, r2
