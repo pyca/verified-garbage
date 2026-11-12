@@ -44,14 +44,20 @@ structure Cfg where
   /-- The Jacobian doubling of the digits' additions (of equal points) and
   of the table of `Q`'s odd multiples: `dblJMul` for `a = -3`. -/
   dbl : RcbSlots → Pt → Pt → List FOp := dblJMul
+  /-- Whether the scalars' digits are made without branches on their bits
+  (`prepB`), which the processor mispredicts: with BMI2, for the
+  generator's digits of width nine. -/
+  recodeB : Bool := false
 
-def prep (c : Cfg) (u v : Nat) : Prog isa :=
-  .seq (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else FastNaf.prepN c.K.M.n u c.gBits 7)
-    (FastNaf.prepN c.K.M.n v c.K.bits 5)
-
-/-- `prep` for width nine, by the recoding without branches on the scalars' bits. -/
+/-- The scalars' digits for width nine, by the recoding without branches on the scalars' bits. -/
 def prepB (c : Cfg) (u v : Nat) : Prog isa :=
   .seq (FastNaf.prepB16 c.K.M.n u c.gBits) (FastNaf.prepB c.K.M.n v c.K.bits)
+
+/-- The scalars' digits: the generator's, of width `gw`, then the peer's, of width five. -/
+def prep (c : Cfg) (u v : Nat) : Prog isa :=
+  if c.recodeB then prepB c u v else
+  .seq (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else FastNaf.prepN c.K.M.n u c.gBits 7)
+    (FastNaf.prepN c.K.M.n v c.K.bits 5)
 
 /-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. -/
 def cachedAdd (c : Cfg) : Prog isa :=

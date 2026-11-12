@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.WordStep
 import VerifiedGarbage.Proof.Bignum.WordStepNorm
+import VerifiedGarbage.Proof.Bignum.LongDivision
 
 meta import VerifiedGarbage.Proof.Rsa.X86_64.WordSub
 meta import VerifiedGarbage.Proof.Bignum.Layout
@@ -19,6 +20,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 meta import VerifiedGarbage.Proof.Bignum.WordStep
 meta import VerifiedGarbage.Proof.Bignum.WordStepNorm
+meta import VerifiedGarbage.Proof.Bignum.LongDivision
 
 /-! # A normalized remainder step with a full low input word
 
@@ -55,7 +57,9 @@ theorem stepQ1_val {W y M qh T1 T2 b c : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2
   unfold twos
   rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
 
-theorem step_ok {t : State} {B : Addr} {Z w ex em et ev : Nat} (hs : Scr t B Z)
+/-- `step_ok`, with the quotient's digit `⌊(x 2^64 + digit) / m⌋` left as
+`rcx + r11`: the estimate `q̂` and the mask of its correction. -/
+theorem stepQ_ok {t : State} {B : Addr} {Z w ex em et ev : Nat} (hs : Scr t B Z)
     (hbx : t.gpr .rbx = off B ex) (h10 : t.gpr .r10 = off B em) (h8 : t.gpr .r8 = off B et)
     (h12 : t.gpr .r12 = BitVec.ofNat 64 w) (hbp : t.gpr .rbp = off B ev)
     (hw : 3 ≤ w) (hw' : w < 2 ^ 30)
@@ -68,7 +72,9 @@ theorem step_ok {t : State} {B : Addr} {Z w ex em et ev : Nat} (hs : Scr t B Z)
     (hx : wv t.mem B ex w < wv t.mem B em w) :
     WP isa Impl.Rsa.X86_64.WordReduce.step t fun t' =>
       wv t'.mem B ex w = (wv t.mem B ex w * 2 ^ 64 + (word t.mem B (ev + 8)).toNat) % wv t.mem B em w ∧
-      Frm B [(et, 8 * (w + 1)), (ex, 8 * w)] t.mem t'.mem ∧ Keep mmRegs t t' := by
+      Frm B [(et, 8 * (w + 1)), (ex, 8 * w)] t.mem t'.mem ∧ Keep mmRegs t t' ∧
+      (t'.gpr .rcx + t'.gpr .r11).toNat =
+        (wv t.mem B ex w * 2 ^ 64 + (word t.mem B (ev + 8)).toNat) / wv t.mem B em w := by
   have hn := hs.nowrap
   unfold Impl.Rsa.X86_64.WordReduce.step
   change WP isa (.seq (.block quot) (.seq (.block refine3) (.seq Impl.Rsa.X86_64.WordReduce.mulSub
@@ -125,8 +131,8 @@ theorem step_ok {t : State} {B : Addr} {Z w ex em et ev : Nat} (hs : Scr t B Z)
   have t₃10 : t₃.gpr .r10 = off B em := (k₃.gpr (by decide)).trans t₂'10
   have t₃8 : t₃.gpr .r8 = off B et := (k₃.gpr (by decide)).trans t₂'8
   have t₃12 : t₃.gpr .r12 = BitVec.ofNat 64 w := (k₃.gpr (by decide)).trans t₂'12
-  have hab₃ := addBack_ok hs₃ t₃10 t₃8 t₃12 (by omega_arith) hw31 e2 eT sM
-  refine WP.seq (WP.mono hab₃ fun t₅ ⟨c1, hv₅, ho₅, k₅⟩ => ?_)
+  have hab₃ := addBack_ok' hs₃ t₃10 t₃8 t₃12 (by omega_arith) hw31 e2 eT sM
+  refine WP.seq (WP.mono hab₃ fun t₅ ⟨c1, hv₅, ho₅, k₅, h11₅⟩ => ?_)
   have hs₅ := hs₃.congr k₅.2.2
   have t₅bx : t₅.gpr .rbx = off B ex :=
     (k₅.gpr (by decide)).trans ((k₃.gpr (by decide)).trans t₂'bx)
@@ -209,7 +215,60 @@ theorem step_ok {t : State} {B : Addr} {Z w ex em et ev : Nat} (hs : Scr t B Z)
   rw [hm₆] at f'
   have ff := (f₃.trans f₅).trans f'
   rw [hm₂₂] at ff
-  refine ⟨?_, ff, ((((k₂.trans k₂').trans k₃).trans k₅).trans (k₆.trans k')).mono (by decide)⟩
-  rw [hc, hm₆, hlow, hT3]
+  refine ⟨?_, ff, ((((k₂.trans k₂').trans k₃).trans k₅).trans (k₆.trans k')).mono (by decide), ?_⟩
+  · rw [hc, hm₆, hlow, hT3]
+  -- The digit: `q̂`, less one where the step added `m` back.
+  have tcx : t'.gpr .rcx = t₂'.gpr .rcx :=
+    ((k₆.trans k').gpr (by decide)).trans ((k₅.gpr (by decide)).trans (k₃.gpr (by decide)))
+  have t11 : t'.gpr .r11 = t₅.gpr .r11 := (k₆.trans k').gpr (by decide)
+  rw [tcx, t11, h11₅, BitVec.toNat_add, h2'cx]
+  have hd := Bignum.LongDivision.digit_eq (by omega_arith) hW hge hle (wv_lt _ _ _ _) (Bool.toNat_lt b) hv₃
+  generalize hqh : min (((word t.mem B (ex + 8 * (w - 1))).toNat * 2 ^ 128 + (word t.mem B (ex + 8 * (w - 2))).toNat * 2 ^ 64 +
+    (word t.mem B (ex + 8 * (w - 3))).toNat) / ((word t.mem B (em + 8 * (w - 1))).toNat * 2 ^ 64 +
+      (word t.mem B (em + 8 * (w - 2))).toNat)) (2 ^ 64 - 1) = qh at hd hge hle hv₃ ⊢
+  have hq : qh < 2 ^ 64 := by rw [← hqh]; exact Nat.lt_of_le_of_lt (Nat.min_le_right _ _) (by decide)
+  by_cases hN : 2 ^ 63 ≤ (word t₃.mem B (et + 8 * w)).toNat
+  · simp only [(top_half t₃.mem B et w).mpr hN, ↓reduceIte] at hd
+    simp only [hN, decide_true]
+    have h1 : 1 ≤ qh := by
+      rcases Nat.eq_zero_or_pos qh with h0 | h0
+      · exfalso
+        subst h0
+        have hyM : (X * 2 ^ 64 + g) / M = 0 := by omega_arith
+        have := (top_half t₃.mem B et w).mpr hN
+        have hlt : X * 2 ^ 64 + g < M := (Nat.div_eq_zero_iff_lt (by omega_arith)).mp hyM
+        have := wv_lt t₃.mem B et (w + 1)
+        have : wv t₃.mem B et (w + 1) ≤ X * 2 ^ 64 + g := by
+          rw [Nat.zero_mul, Nat.add_zero] at hv₃
+          cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at hv₃ <;>
+            omega_arith
+        have : M < 2 ^ (64 * (w + 1)) / 2 := by omega_arith
+        omega_arith
+      · exact h0
+    rw [show (mask true).toNat = 2 ^ 64 - 1 from rfl, show qh + (2 ^ 64 - 1) = (qh - 1) + 2 ^ 64 by omega_arith,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
+    exact hd
+  · simp only [show ¬ (2 ^ (64 * (w + 1)) / 2 ≤ wv t₃.mem B et (w + 1)) from fun h => hN ((top_half _ _ _ _).mp h),
+      ↓reduceIte] at hd
+    simp only [hN, decide_false]
+    rw [show (mask false).toNat = 0 from rfl, Nat.add_zero, Nat.mod_eq_of_lt hq]
+    exact hd
+
+/-- A normalized remainder step: `x := (x 2^64 + digit) mod m`. -/
+theorem step_ok {t : State} {B : Addr} {Z w ex em et ev : Nat} (hs : Scr t B Z)
+    (hbx : t.gpr .rbx = off B ex) (h10 : t.gpr .r10 = off B em) (h8 : t.gpr .r8 = off B et)
+    (h12 : t.gpr .r12 = BitVec.ofNat 64 w) (hbp : t.gpr .rbp = off B ev)
+    (hw : 3 ≤ w) (hw' : w < 2 ^ 30)
+    (hXz : ex + 8 * w ≤ Z) (hMz : em + 8 * w ≤ Z) (hTz : et + 8 * (w + 1) ≤ Z) (hE : ev + 16 ≤ Z)
+    (sepX : et + 8 * (w + 1) ≤ ex ∨ ex + 8 * w ≤ et)
+    (sepM : et + 8 * (w + 1) ≤ em ∨ em + 8 * w ≤ et)
+    (hd : 2 ^ 63 ≤ (word t.mem B (em + 8 * (w - 1))).toNat)
+    (hv : (word t.mem B ev).toNat =
+      (2 ^ 128 - 1) / (word t.mem B (em + 8 * (w - 1))).toNat - 2 ^ 64)
+    (hx : wv t.mem B ex w < wv t.mem B em w) :
+    WP isa Impl.Rsa.X86_64.WordReduce.step t fun t' =>
+      wv t'.mem B ex w = (wv t.mem B ex w * 2 ^ 64 + (word t.mem B (ev + 8)).toNat) % wv t.mem B em w ∧
+      Frm B [(et, 8 * (w + 1)), (ex, 8 * w)] t.mem t'.mem ∧ Keep mmRegs t t' :=
+  WP.mono (stepQ_ok hs hbx h10 h8 h12 hbp hw hw' hXz hMz hTz hE sepX sepM hd hv hx) fun _ ⟨a, b, c, _⟩ => ⟨a, b, c⟩
 
 end VG.Proof.Rsa.X86_64.WordReduce

@@ -25,6 +25,8 @@ depend only on `rdi`, `w` and the stride, all public.
   (mod m)` for `a` in `[u]` and an odd `m` in `[m]`, by batches of divsteps
   at a width `n` read at run time (`inverseN`), in arrays of its own from
   16 on (see "The inverse" below).
+* `gcdW u v m`: `[v] = gcd(a, m)` alone, the inverse's batches without
+  `(a, b)` and its end without `[x₂]` (`gcdN` at the width `n` in `r13`).
 
 `vg_rsa_crt_values(dp, dp_len, dq, dq_len, qinv, qinv_len, n, n_len, p,
 p_len, q, q_len, d, d_len, scratch, scratch_len)`: the first six arguments
@@ -443,6 +445,10 @@ each, and the count less one. -/
 def batch : Prog isa := seqs ([.block (bStart ++ bWords ++ bSave ++ absS oU oMu ++ absS oV oMv ++ absS oQ oMq ++
   absS oR oMr)] ++ fgRow ++ abRow ++ [.block [.alu .sub .rsi (.imm 1)]])
 
+/-- A batch of the GCD alone: `batch` without `(a, b)`. -/
+def batchG : Prog isa := seqs ([.block (bStart ++ bWords ++ bSave ++ absS oU oMu ++ absS oV oMv ++ absS oQ oMq ++
+  absS oR oMr)] ++ fgRow ++ [.block [.alu .sub .rsi (.imm 1)]])
+
 /-! ### The end (`rdi` the working space's base again) -/
 
 /-- `rdi` back to the working space's base, `r13 := n`, `r12 := n + 1`. -/
@@ -511,6 +517,15 @@ def finishS (iV iX₂ : Nat) : List (Prog isa) := [
   .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
   copyI iV aA, copyI iX₂ aT]
 
+/-- The end of the GCD alone: `[v] = |f|`. -/
+def finishG (iV : Nat) : List (Prog isa) := [
+  .block unwin, zeroI aA,
+  .block (countN ++ ([.mov32 .rbp (.imm 0)] : List Instr) ++ base aA .r8 ++ base aF .r10 ++ base aS .rsi),
+  wordLoop 0 subBody,
+  .block (isNeg aF ++ base aA .r8 ++ base aF .rsi), wordLoop 0 selBody,
+  .block (nonNeg aF ++ base aA .r8 ++ base aS .rsi), wordLoop 0 selBody,
+  copyI iV aA]
+
 end Inv
 
 /-- The inverse at the width `n` in `r13`. -/
@@ -529,6 +544,15 @@ def inverse (iU iV iX₂ iM : Nat) : Prog isa :=
 /-- The inverse at the width that `k` puts into `r13` after `ws`. -/
 def inverseK (k : List Instr) (iU iV iX₂ iM : Nat) : Prog isa :=
   .seq (.block (ws ++ k)) (inverseN iU iV iX₂ iM)
+
+/-- `[v] = gcd(u, m)` alone, at the width `n` in `r13`: the inverse's batches without `(a, b)`
+(`Inv.batchG`), and no `[x₂]`. -/
+def gcdN (iU iV iM : Nat) : Prog isa :=
+  seqs (Inv.start iU iM ++ [.loop Inv.batchG .ne] ++ Inv.finishG iV)
+
+/-- `gcdN` at the width `w`. -/
+def gcdW (iU iV iM : Nat) : Prog isa :=
+  .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr))) (gcdN iU iV iM)
 
 /-- `r13 := w / 2`. -/
 def kHalf : List Instr := [.mov .r13 (.reg .r12), .shift .shr .r13 1]
@@ -581,8 +605,23 @@ def normalize : List Instr :=
 def recipSetup : List Instr :=
   ws ++ base aM .r10 ++ base aV .r8 ++ [.shift .shr .r12 1]
 
-def countSetup : List Instr :=
-  ws ++ base aV .rbp ++ [.mov .rax (.reg .r12), .store (wm 16) .rax]
+/-- The first digit's index `j₀ = X - w / 2 + 1` into `rax`, for the dividend's `X` words: `w`
+(`top = none`), or `w / 2 + k` (`top = some k`); `r12` from `w` to `w / 2`. The remainder starts as
+the dividend's `w / 2 - 1` words from `j₀` on, and the steps bring down its words `j₀ - 1` to 0. -/
+def start : Option Nat → List Instr
+  | none => [.mov .rax (.reg .r12), .shift .shr .r12 1, .alu .sub .rax (.reg .r12), .alu .add .rax (.imm 1)]
+  | some k => [.mov32 .rax (.imm (BitVec.ofNat 32 (k + 1))), .shift .shr .r12 1]
+
+/-- `rsi` at the dividend's word `j₀`, `rbx` at the remainder, `r12 = w / 2 - 1`. -/
+def seedSetup (top : Option Nat) : List Instr :=
+  ws ++ start top ++ [.shift .shl .rax 3] ++ base aD .rsi ++ [.alu .add .rsi (.reg .rax)] ++ base aR .rbx ++
+    [.alu .sub .r12 (.imm 1)]
+
+/-- The remainder's low `w / 2 - 1` words the dividend's from `j₀` on. -/
+def seed (top : Option Nat) : Prog isa := .seq (.block (seedSetup top)) copyWords
+
+def countSetup (top : Option Nat := none) : List Instr :=
+  ws ++ base aV .rbp ++ start top ++ [.store (wm 16) .rax]
 
 def stepLoad : List Instr :=
   ws ++ base aV .rbp ++ base aD .r11 ++ [.mov .rcx (.mem (wm 16))]
@@ -599,8 +638,9 @@ def next : List Instr :=
 
 def body : Prog isa := seqs [.block stepSetup, WordReduce.step, .block next]
 
-def code : Prog isa := seqs [
-  zeroA aR, .block recipSetup, R2Words.recip, .block countSetup, .loop body .ne]
+/-- `[aR] = [aD] mod [aM]` (`w / 2` words, its top bit set), for the dividend's words `start`'s. -/
+def code (top : Option Nat := none) : Prog isa := seqs [
+  zeroA aR, seed top, .block recipSetup, R2Words.recip, .block (countSetup top), .loop body .ne]
 
 end VG.Impl.Rsa.X86_64.WordDivide
 

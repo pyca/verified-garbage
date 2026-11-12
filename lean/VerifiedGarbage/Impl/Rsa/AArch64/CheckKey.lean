@@ -58,7 +58,7 @@ def main : Prog isa := seqs (
   modChecks sP sPlen sDP sQlen ++ modChecks sQ sQlen sDQ sPlen ++
   -- `qInv < p` and `q qInv ≡ 1 (mod p)`
   loadA aM sP sPlen ++ loadA aX sQI sPlen ++ ltA aX aM ++
-  loadA aR sQ sQlen ++ mulXR ++ wmodOne CheckCrtKey.topQ lenQ ++
+  loadA aR sQ sQlen ++ mulPQ ++ wmodOne CheckCrtKey.topQ lenQ ++
   [.block retMask])
 
 /-- `vg_rsa_check_key`. -/

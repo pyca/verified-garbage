@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.RedLeaves
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Framework.Omega
@@ -40,11 +40,12 @@ theorem relCorrection {c i : Nat} (F : Room Z len) (hc4 : c + 4 ≤ 160) (hi : i
     (h₁ : Ok L (chain L .sbb tmp { (a 11) with byte := (a 11).byte + 4 } (a i) (nBytes .edx 0)))
     (h₂ : Ok L (.seq (.block (VG.Impl.Weierstrass.X86.Inv.maskOf c))
       (selIn L { (a 11) with byte := (a 11).byte + 4 } tmp (nBytes .edi 0)))) :
-    RelCT isa (Both L B Z len N args sp C T2) (correction L c (a 11) (a i) tmp) (Both L B Z len N args sp C T2) := by
+    RelCT isa (Both L B Z len N (nw len) args sp C T2) (correction L c (a 11) (a i) tmp)
+      (Both L B Z len N (nw len) args sp C T2) := by
   have F1 := F.fit
-  have r11 := rv_a len 11; have ri := rv_a len i; have r12 := rv_a len 12
-  have e4 := rv_byte (kw len) (a 11) 4
-  have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
+  have r11 := rv_a len 11 (nw len); have ri := rv_a len i (nw len); have r12 := rv_a len 12 (nw len)
+  have e4 := rv_byte (kw len) (a 11) 4 (nw len)
+  have rt : rv (kw len) tmp (nw len) = rv (kw len) (a 12) (nw len) := rfl
   have hiS : i * (8 * nw len + 8) + (8 * nw len + 8) ≤ 11 * (8 * nw len + 8) :=
     by rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hi
   obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂
@@ -63,8 +64,8 @@ theorem relLinear {u v i j e : Nat} (F : Room Z len) (hu : u + 4 ≤ 160) (hv : 
     (h₅ : Ok L (chain L .sbb tmp { (a 11) with byte := (a 11).byte + 4 } (a j) (nBytes .edx 0)))
     (h₆ : Ok L (.seq (.block (VG.Impl.Weierstrass.X86.Inv.maskOf v))
       (selIn L { (a 11) with byte := (a 11).byte + 4 } tmp (nBytes .edi 0)))) :
-    RelCT isa (Both L B Z len N args sp C T2) (linear L u v (a 11) (a i) (a j) tmp e)
-      (Both L B Z len N args sp C T2) := by
+    RelCT isa (Both L B Z len N (nw len) args sp C T2) (linear L u v (a 11) (a i) (a j) tmp e)
+      (Both L B Z len N (nw len) args sp C T2) := by
   have F1 := F.fit
   have F2 := F.two
   have r11 := rv_a len 11; have ri := rv_a len i; have rj := rv_a len j
@@ -79,20 +80,6 @@ theorem relLinear {u v i j e : Nat} (F : Room Z len) (hu : u + 4 ≤ 160) (hv : 
       (relRowAdd (stable_true _) hv (by omega) rfl (by omega) (by omega) (by omega) h₂))
     (RelCT.seq (relCorrection F hu hi h₃ h₄) (relCorrection F hv hj h₅ h₆))
 
-theorem relRedSum (F : Room Z len)
-    (h₁ : Ok L (.block (redHead L { arr := 11 })))
-    (h₂ : Ok L (mulRow L false { arr := 11 } mo (nBytes .esi 0)))
-    (h₃ : Ok L (.block (redTail L { arr := 11 }))) :
-    RelCT isa (Both L B Z len N args sp C T2) (redSum L { arr := 11 }) (Both L B Z len N args sp C T2) := by
-  have F1 := F.fit
-  have r11 := rv_a len 11; have r2 := rv_a len 2
-  have rmo : rv (kw len) mo = rv (kw len) (a 2) := rfl
-  have ra : rv (kw len) { arr := 11 } = rv (kw len) (a 11) := rfl
-  obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂; obtain ⟨_, h₃⟩ := h₃
-  exact RelCT.seq (relRedHead (stable_true _) rfl rfl (by omega) h₁)
-    (RelCT.seq (relMulRow (stable_true _) (by decide) rfl (by omega) (by omega) (by omega) h₂)
-      (relRedTail (stable_true _) rfl rfl (by omega) h₃))
-
 /-- `csub src o` with any register facts that it keeps (`esi`'s, in the doublings). -/
 theorem relCsub {G : (Reg → BitVec 32) → Prop} {src o : Ref}
     (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp] G) (F : Room Z len) (hsh : src.half = 0) (hoh : o.half = 0)
@@ -104,13 +91,18 @@ theorem relCsub {G : (Reg → BitVec 32) → Prop} {src o : Ref}
     (h₃ : Ok L (if o = src then selIn L o tmp (nBytes .edi 0)
       else .seq (.block (ptr L .ebp src .edx ++ ptr L .ebx tmp .edx ++ nBytes .edx 0 ++ ptr L .edi o .eax))
         (.seq select3LoopX (.block (restoreEdi L))))) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.csub L src o)
-      (Both L B Z len N args sp C fun g => G g ∧ True) := by
+    RelCT isa (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) (VG.Impl.Rsa.X86.InvBatchRt.csub L src o)
+      (Both L B Z len N (nw len) args sp C fun g => G g ∧ True) := by
   have F1 := F.fit
   have r12 := rv_a len 12; have r2 := rv_a len 2
   have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
   have rmo : rv (kw len) mo = rv (kw len) (a 2) := rfl
   have rs := rv_ge (kw len) src
+  -- The parts' statements at rows of `nw len` words, the same places.
+  have qs : rv (kw len) src (nw len) = rv (kw len) src := rfl
+  have qo : rv (kw len) o (nw len) = rv (kw len) o := rfl
+  have qt : rv (kw len) tmp (nw len) = rv (kw len) tmp := rfl
+  have qm : rv (kw len) mo (nw len) = rv (kw len) mo := rfl
   obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂; obtain ⟨_, h₃⟩ := h₃
   unfold VG.Impl.Rsa.X86.InvBatchRt.csub
   refine RelCT.seq (relChainSub (X := Mask) hG (fun _ h => h) (by decide) rfl
@@ -125,37 +117,5 @@ theorem relCsub {G : (Reg → BitVec 32) → Prop} {src o : Ref}
   · rw [ite_eq_right_of_eq_false _ _ (eq_false ho)] at h₃ ⊢
     exact relSelect3 (fun g g' k hg => hG g g' (fun r hr => k r (by simp_all)) hg) hoh hoz (by omega) (by omega)
       (hos ho) hot h₃
-
-theorem relReduce {j : Nat} (F : Room Z len) (hj : 13 ≤ j) (hj' : j < 16)
-    (h₁ : Ok L (.block (redHead L { arr := 11 })))
-    (h₂ : Ok L (mulRow L false { arr := 11 } mo (nBytes .esi 0)))
-    (h₃ : Ok L (.block (redTail L { arr := 11 })))
-    (h₄ : Ok L (chain L .adc tmp { arr := 11, byte := 4 } mo (nBytes .edx 0)))
-    (h₅ : Ok L (.block (negTop L { arr := 11, byte := 4 })))
-    (h₆ : Ok L (selIn L { arr := 11, byte := 4 } tmp (nBytes .edi 1)))
-    (h₇ : Ok L (chain L .sbb tmp { arr := 11, byte := 4 } mo (nBytes .edx 0)))
-    (h₈ : Ok L (.block (borrowMask L { arr := 11, byte := 4 })))
-    (h₉ : Ok L (.seq (.block (ptr L .ebp { arr := 11, byte := 4 } .edx ++ ptr L .ebx tmp .edx ++ nBytes .edx 0 ++
-      ptr L .edi (a j) .eax)) (.seq select3LoopX (.block (restoreEdi L))))) :
-    RelCT isa (Both L B Z len N args sp C T2) (reduce L (a j)) (Both L B Z len N args sp C T2) := by
-  have F1 := F.fit
-  have r11 := rv_a len 11; have r12 := rv_a len 12; have r2 := rv_a len 2; have rj := rv_a len j
-  have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
-  have rmo : rv (kw len) mo = rv (kw len) (a 2) := rfl
-  have r4 : rv (kw len) { arr := 11, byte := 4 } = rv (kw len) (a 11) + 4 := rv_byte (kw len) (a 11) 4
-  have j13 : 13 * (8 * nw len + 8) ≤ j * (8 * nw len + 8) := Nat.mul_le_mul_right _ hj
-  have j15 : j * (8 * nw len + 8) + (8 * nw len + 8) ≤ 16 * (8 * nw len + 8) := by
-    rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hj'
-  have ne : a j ≠ { arr := 11, byte := 4 } := by intro e; cases e
-  obtain ⟨_, h₄⟩ := h₄; obtain ⟨_, h₅⟩ := h₅; obtain ⟨_, h₆⟩ := h₆
-  unfold reduce addIfNeg
-  refine RelCT.seq (relRedSum F h₁ h₂ h₃) (RelCT.seq (RelCT.seq
-    (relChainAdd (X := Mask) (stable_true _) (fun _ h => h) (by decide) rfl
-      (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega)
-      (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega) h₄)
-    (RelCT.seq (relNegTop (stable_true _) rfl (by omega) (by omega) (by omega) h₅)
-      (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) h₆)))
-    (relCsub (stable_true _) F rfl rfl (by omega) (by omega) (by omega) (fun _ => by omega) (by omega)
-      h₇ h₈ (by rw [ite_eq_right_of_eq_false _ _ (eq_false ne)]; exact h₉)))
 
 end VG.Proof.Rsa.X86.InvBatchRt.Time

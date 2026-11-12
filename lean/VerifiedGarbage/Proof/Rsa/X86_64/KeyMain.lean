@@ -294,6 +294,8 @@ theorem wordChecks_ok {s t : State} {B : Addr} {Z k : Nat} {np pd pp pq pdp pdq 
   have hk8 : k ≤ 8 * ((k + 7) / 8) := by omega_arith
   have hev : (word t₀.mem B (8 * sEv)).toNat < 2 ^ 33 := by
     rw [hE]; simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2
+  obtain ⟨hw2g, hwkg, hpk, hpq, -⟩ := WordDivide.guard_zero (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) hg
   unfold wordChecks
   simp only [List.append_assoc]
   refine wsa (by simp [wordMod, loadNum]) (by simp [wordMod, loadNum]) (WP.mono (wordModK h₂ r m₂

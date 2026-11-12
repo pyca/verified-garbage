@@ -52,7 +52,7 @@ def bitChecks : List (Prog isa) :=
   modChecks sP sPlen sDP sQlen ++ modChecks sQ sQlen sDQ sPlen ++
   -- `qInv < p` and `q qInv ≡ 1 (mod p)`
   loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
-  loadNum aR sQ sQlen ++ mulXR ++ CheckCrtKey.reduceTop sPlen CheckCrtKey.topQ ++ eqOne
+  loadNum aR sQ sQlen ++ mulPQ ++ CheckCrtKey.reduceTop sPlen CheckCrtKey.topQ ++ eqOne
 
 /-- `sMask &= ` the mask of `d mod [aM] = [aX]`: `d` into `WordDivide`'s
 dividend, `[aM]` into its divisor, the remainder compared with `[aX]`. -/
@@ -61,21 +61,26 @@ def wordRem : List (Prog isa) :=
   [.seq (.block WordDivide.normalize) WordDivide.code] ++ Keys.eqA WordDivide.aR aX ++
   [.block Keys.CrtValues.andZero]
 
-/-- `modChecks` with `d mod (X - 1) = dX` in place of `d e ≡ 1`. -/
+/-- `sMask &= ` the mask of `[aAcc] mod [aM] = 1`: the accumulator's low `w` words into
+`WordDivide`'s dividend, of the words `top` gives, `[aM]` into its divisor. -/
+def remOne (top : Option Nat) : List (Prog isa) :=
+  [Keys.copyA WordDivide.aD aAcc] ++ [Keys.copyA WordDivide.aM aM] ++
+    [.seq (.block WordDivide.normalize) (WordDivide.code top)] ++ Keys.eqA WordDivide.aR aOne ++
+  [.block Keys.CrtValues.andZero]
+
+/-- `modChecks` with `d mod (X - 1) = dX` in place of `d e ≡ 1`, and `e dX mod (X - 1)` by
+`WordDivide` over the product's `w / 2 + 1` words. -/
 def wordMod (sX sXlen sDX : Nat) : List (Prog isa) :=
   loadNum aM sX sXlen ++ decM ++
   loadNum aX sDX sXlen ++ ltMask aX aM ++
   wordRem ++
-  mulE ++ CheckCrtKey.reduceTop sXlen CheckCrtKey.topE ++ eqOne
+  mulE ++ remOne (some 1)
 
-/-- `qInv < p` and `q qInv mod p = 1`, the product's low `w` words divided by
+/-- `qInv < p` and `q qInv mod p = 1`: the product over the factors' lengths, divided by
 `WordDivide`. -/
 def wordQInv : List (Prog isa) :=
   loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
-  loadNum aR sQ sQlen ++ mulXR ++
-  [Keys.copyA WordDivide.aD aAcc] ++ [Keys.copyA WordDivide.aM aM] ++
-    [.seq (.block WordDivide.normalize) WordDivide.code] ++ Keys.eqA WordDivide.aR aOne ++
-  [.block Keys.CrtValues.andZero]
+  loadNum aR sQ sQlen ++ mulPQ ++ remOne none
 
 /-- The checks with word-level remainders, under `guard`. -/
 def wordChecks : List (Prog isa) :=

@@ -177,26 +177,6 @@ theorem zeroAccsK_ok {p : KPub} {s : State} (h : KK p s) : WP isa (seqs VG.Impl.
       rw [sl] at h1 h2; simp only [aAcc, aTmp] at h1 h2; rw [sl]; simp only [aAcc]; omega_arith))
     (by decide) (by decide) (by decide) k, hs⟩
 
-theorem mulXRK_ct : RelCT isa (Two KK) (seqs mulXR) (Two KK) := by
-  refine kk_ct ?_ fun p s h => ?_
-  · unfold mulXR
-    refine RelCT.seqs_append (by simp [VG.Impl.Rsa.X86_64.Crt.zeroAccs]) (by simp)
-      (RelCT.seq (two_post (two_map (fun p : KPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun _ _ h => h.goodW) zeroAccs_ct)
-        fun _ _ h => zeroAccsK_ok h) ?_)
-    simp only [seqs]
-    refine hdr_ct pins_kk (rs := [.r11, .r10, .r9, .r12, .r8]) (fun p => [(.r11, kb p aX), (.r10, BitVec.ofNat 64 p.w), (.r9, kb p aR),
-      (.r12, BitVec.ofNat 64 p.w), (.r8, kb p aAcc)]) (fun _ => rfl) (by taint_decide) (by taint_decide) fun p s h => ?_
-    obtain ⟨hdi, hl, hw, hb'⟩ := h.lds
-    exact WP.mono (WP.keep [.r11, .r10, .r9, .r12, .r8] (Q := fun t => t.gpr .r11 = kb p aX ∧
-        t.gpr .r10 = BitVec.ofNat 64 p.w ∧ t.gpr .r9 = kb p aR ∧ t.gpr .r12 = BitVec.ofNat 64 p.w ∧
-        t.gpr .r8 = kb p aAcc)
-      (by xrun [State.ea, hdr, hdi, hdrOff, hl sW (by decide), hl (sArr aX) (by decide), hl (sArr aR) (by decide),
-        hl (sArr aAcc) (by decide), hw, hb' aX (by decide), hb' aR (by decide), hb' aAcc (by decide)]) rfl)
-      fun t ⟨⟨a, b, c, d, e⟩, _⟩ => regsAre_cons a (regsAre_cons b (regsAre_cons c (regsAre_cons d
-        (regsAre_cons e regsAre_nil))))
-  · obtain ⟨s₀, minv, N, c, hs⟩ := h
-    exact WP.mono (mulXRK c) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩
-
 theorem mulPQK_ct : RelCT isa (Two KK) (seqs mulPQ) (Two KK) := by
   refine kk_ct ?_ fun p s h => ?_
   · unfold mulPQ
