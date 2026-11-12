@@ -83,7 +83,7 @@ theorem lift_exec {s z : State} {B : Addr} {Z : Nat} {c : Prog isa} {tr : List L
   have E := VG.X86.Exec.widen he cr cw
   simpa only [view, State.withRegions_withRegions, State.withRegions_self] using E
 
-variable {L : Lay} {B : Addr} {Z len N : Nat}
+variable {L : Lay} {B : Addr} {Z len N n : Nat}
 
 theorem callArg_view {s : State} {i : Nat} {v : BitVec 32}
     (h : VG.Proof.Bignum.X86.CallArgument s B Z i v) : VG.Proof.Bignum.X86.CallArgument (view s B Z) B Z i v := by
@@ -96,11 +96,11 @@ theorem RtWs.view {s : State} (h : RtWs L s B Z len N) : RtWs L (view s B Z) B Z
   exact ⟨⟨⟨edi, List.mem_singleton_self _, nw, stk⟩, fits, wpos, wle⟩,
     lenArg.imp fun _ ⟨l, e, c⟩ => ⟨l, e, callArg_view c⟩, callArg_view wsArg, lenLe, layLen⟩
 
-theorem Bx.view {s : State} (h : Bx L s B Z len N) : Bx L (view s B Z) B Z len N :=
+theorem Bx.view {s : State} (h : Bx L s B Z len N n) : Bx L (view s B Z) B Z len N n :=
   ⟨RtWs.view h.ws, h.slots, h.room⟩
 
 /-- Both runs hold the same slot words: the arrays' addresses and the half count. -/
-theorem slot_words {s t : State} (hs : Bx L s B Z len N) (ht : Bx L t B Z len N) :
+theorem slot_words {s t : State} (hs : Bx L s B Z len N n) (ht : Bx L t B Z len N n) :
     ∀ q < 12, w32 s.mem B (52 + 4 * q) = w32 t.mem B (52 + 4 * q) := by
   intro q hq
   rcases Nat.lt_or_ge q 11 with h | h
@@ -109,10 +109,12 @@ theorem slot_words {s t : State} (hs : Bx L s B Z len N) (ht : Bx L t B Z len N)
   · have e : 52 + 4 * q = halfSlot := by simp only [halfSlot]; omega
     rw [e, hs.slots.half, ht.slots.half]
 
-/-- The runs a leaf starts from: the context, and the call's public data, in both. -/
-structure Rel (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s t : State) : Prop where
-  bs : Bx L s B Z len N
-  bt : Bx L t B Z len N
+/-- The runs a leaf starts from: the context with rows of `n` words, and the call's public data,
+in both. -/
+structure Rel (L : Lay) (B : Addr) (Z len N n : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s t : State) :
+    Prop where
+  bs : Bx L s B Z len N n
+  bt : Bx L t B Z len N n
   ps : Public L args B Z sp s
   pt : Public L args B Z sp t
 
@@ -149,11 +151,11 @@ theorem wfS {u : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hu : RtWs L
     rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
 
 theorem agreeS {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32}
-    (h : Rel L B Z len N args sp s t) : VG.X86.Taint.Agree (τS L) (view s B Z) (view t B Z) := by
+    (h : Rel L B Z len N n args sp s t) : VG.X86.Taint.Agree (τS L) (view s B Z) (view t B Z) := by
   have hn := h.bs.nowrap
   have hf := h.bs.fits
   simp only [VG.Impl.Rsa.X86.InvBatchRt.offset] at hf
-  have wf : ∀ {u : State}, Bx L u B Z len N → Public L args B Z sp u → VG.X86.Taint.Wf (τS L) (view u B Z) :=
+  have wf : ∀ {u : State}, Bx L u B Z len N n → Public L args B Z sp u → VG.X86.Taint.Wf (τS L) (view u B Z) :=
     fun hu pu => wfS hu.ws (by omega) pu
   refine ⟨⟨?_, fun h => nomatch h⟩, fun _ => rfl, wf h.bs h.ps, wf h.bt h.pt,
     VG.X86.Taint.slotsOk_of_list rfl (fun sl hsl => by
@@ -206,28 +208,28 @@ theorem Public.view {args : Nat → BitVec 32} {sp : BitVec 32} {s : State} (h :
   | head => exact h.argsOk.2 _ hb
   | tail _ h => cases h
 
-/-- What an operation starts from in each run: the context, the call's public data, and facts `E`
-about the registers and memory, which hold of the view too. -/
-def Pre (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (sp : BitVec 32)
+/-- What an operation starts from in each run: the context with rows of `n` words, the call's
+public data, and facts `E` about the registers and memory, which hold of the view too. -/
+def Pre (L : Lay) (B : Addr) (Z len N n : Nat) (args : Nat → BitVec 32) (sp : BitVec 32)
     (E : (Reg → BitVec 32) → Mem → Prop) (s : State) : Prop :=
-  Bx L s B Z len N ∧ Public L args B Z sp s ∧ E s.gpr s.mem
+  Bx L s B Z len N n ∧ Public L args B Z sp s ∧ E s.gpr s.mem
 
 theorem Pre.view {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 32) → Mem → Prop} {s : State}
-    (h : Pre L B Z len N args sp E s) : Pre L B Z len N args sp E (view s B Z) :=
+    (h : Pre L B Z len N n args sp E s) : Pre L B Z len N n args sp E (view s B Z) :=
   ⟨Bx.view h.1, Public.view h.2.1 h.1.ws.ws.workspace.wr, h.2.2⟩
 
 /-- An operation that the analysis checks from `τS`, run from `Pre`: each run satisfies what the
 operation's correctness says of it. -/
 theorem leafU {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 32) → Mem → Prop}
     {Q : State → Prop} {c : Prog isa}
-    (hf : ∀ s, Pre L B Z len N args sp E s → WP isa c s Q) {hc : VG.Taint.Hint VG.X86.Taint.T}
+    (hf : ∀ s, Pre L B Z len N n args sp E s → WP isa c s Q) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) c hc).isSome = true) :
-    RelCT isa (fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) c
+    RelCT isa (fun s t => Pre L B Z len N n args sp E s ∧ Pre L B Z len N n args sp E t) c
       (fun s t => Q s ∧ Q t) := by
-  have ex : ∀ s, Pre L B Z len N args sp E s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
+  have ex : ∀ s, Pre L B Z len N n args sp E s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
     let ⟨tr, z, e, _⟩ := hf _ ps.view
     ⟨tr, z, e⟩
-  have R := leaf (P := fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) (τS L)
+  have R := leaf (P := fun s t => Pre L B Z len N n args sp E s ∧ Pre L B Z len N n args sp E t) (τS L)
     (fun _ _ ⟨ps, pt⟩ => agreeS ⟨ps.1, pt.1, ps.2.1, pt.2.1⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ps.1.ws.ws.workspace.wr, pt.1.ws.ws.workspace.wr⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ex _ ps, ex _ pt⟩) h

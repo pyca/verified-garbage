@@ -195,6 +195,7 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (h3 : 3 ≤ nw len) {m x 
   have hf16 := h.fits16
   have r0 := rv_a len 0; have r4 := rv_a len 4; have r5 := rv_a len 5; have r12 := rv_a len 12
   have r11 := rv_a len 11
+  have ke' := kw_eq len
   -- `[12] = m`, then `[4] = m`.
   refine extend_ok h h3 (o := a 12) (src := a 4) (by omega_arith) (by omega_arith) (by omega_arith)
     fun s₁ H₁ O₁ V₁ K₁ => ?_
@@ -235,7 +236,7 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (h3 : 3 ≤ nw len) {m x 
     rw [m₅, O₄.val32 (by omega_arith) (by omega_arith)]
     exact (low_eq A₃ (lt_of_lt_of_le mlt (Nat.pow_le_pow_right (by decide) (by omega_arith)))).1
   refine WP.seq (WP.mono (selIn_ok H₅ (o := a 12) (a := a 4) (e := 0) (k := decide (x % 2 = 0))
-    (by rw [C₅, even]; by_cases he : w32 s.mem B (rv (kw len) (a 0)) % 2 = 0 <;> simp [he, cmask])
+    (by rw [C₅, even]; by_cases he : w32 s.mem B (rv (kw len) (a 0)) % 2 = 0 <;> simp [cmask])
     (by decide) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₆ ⟨H₆, O₆, V₆, K₆⟩ => ?_)
   simp only [Nat.add_zero] at O₆ V₆
   rw [M₅] at V₆
@@ -264,7 +265,7 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (h3 : 3 ≤ nw len) {m x 
   have Gu : val32 u.mem B (rv (kw len) (a 5)) (nw len + 1) = oddInput m x := by
     unfold oddInput
     cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at Vu <;>
-      omega_arith
+      (simp only [nw] at *; omega_arith)
   refine k u Hu ?_ Gu ?_ ?_
   · rw [Ou.val32 (by omega_arith) (by omega_arith), O₆.val32 (by omega_arith) (by omega_arith), m₅,
       O₄.val32 (by omega_arith) (by omega_arith), O₃.val32 (by omega_arith) (by omega_arith), V₂]
