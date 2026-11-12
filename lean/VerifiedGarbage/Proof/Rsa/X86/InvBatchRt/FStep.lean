@@ -171,14 +171,6 @@ theorem RowWr.w32_apart {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A
   · have := mul_step (sz := sz) hj; omega
   · exact elem_sep hx ho hxo j
 
-theorem RowWr.sv_apart {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A0 sz o n m m') (ho : o + 4 ≤ sz)
-    {b sz' : Nat} :
-    ∀ {K}, (∀ w < K, (b + sz' * w + 4 ≤ A0 ∨ A0 + sz * (n + 2) ≤ b + sz' * w ∨
-      ∃ j x, b + sz' * w = A0 + sz * j + x ∧ x + 4 ≤ sz ∧ (x + 4 ≤ o ∨ o + 4 ≤ x)) ∧
-      (b + sz' * w + 4 ≤ sP ∨ sP + 8 ≤ b + sz' * w) ∧ b + sz' * w + 4 ≤ 2 ^ 64) →
-      sv m' B b sz' K = sv m B b sz' K :=
-  fun hK => sv_congr fun w hw => by obtain ⟨h1, h2, h3⟩ := hK w hw; exact h.w32_apart ho h1 h2 h3
-
 /-! ## The state between batches -/
 
 /-- `f, g` and `d, e` at byte `i` of the interleaved elements, `p` at byte 16 of the second's. -/

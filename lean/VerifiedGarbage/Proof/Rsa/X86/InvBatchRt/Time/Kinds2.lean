@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
 /-! # The batched inverse's header operations, each in both runs
 
 The slots (from `Pre0`), the start of the state and its count, the inverse word, the windows'
-steps, `redSum`'s two ends, and the counts of the two loops, whose flags agree.
+steps, and the batch count down by one, whose flags agree.
 -/
 
 @[expose] public section
@@ -27,9 +27,6 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt
 open VG.Proof.Weierstrass (Unch)
 open VG.Proof.Weierstrass.X86.Inv (wordClob)
 open VG.Impl.Weierstrass.X86 (decCounter testCounter)
-
-theorem stable_esi {rs : List Reg} (h : Reg.esi ∉ rs) (v : BitVec 32) : Stable rs fun g => g .esi = v :=
-  fun _ _ k e => (k _ h).trans e
 
 /-- `Dynamic.inverse` writes only registers. -/
 theorem inverse_frame (s : State) :
@@ -75,30 +72,6 @@ theorem relWinOne (hG : Stable [.eax] G) (hfit : 160 + 16 * (8 * nw len + 8) ≤
         rw [V₂.mem, V₁.mem]; exact writeW32_outside _ _ _ (by have := hb.nowrap; simp only [win]; omega)
       exact ⟨hb.keepLow (V₁.keeps.trans (V₂.keeps _)) (by decide) (by decide) O₂ (by decide),
         V₁.keeps.trans (V₂.keeps _), O₂.unch, trivial⟩) h
-
-/-- The coefficient `1` in `[7]`. -/
-theorem relA7One (hG : Stable [.eax, .ecx, .edx] G) (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z)
-    {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : (VG.Taint.check sseTaint (τS L) (.block (ptr L .eax (a 7) .edx ++ ([.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx] : List Instr)))
-      hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True)
-      (.block (ptr L .eax (a 7) .edx ++ ([.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx] : List Instr)))
-      (Both L B Z len N args sp C fun g => G g ∧ True) := by
-  have r7 := rv_a len 7
-  refine relOp (ws := [(rv (kw len) (a 7), 4)]) (by decide) hG (ws1 (by omega) (by omega)) (fun s hb _ => ?_) h
-  have hn := hb.nowrap
-  refine ptr_ok hb.ws hb.slots hb.halfZ (r := .eax) (t := .edx) (x := a 7) (by decide) (by decide) (by decide)
-    (by decide) (by intro e; cases e) (by omega) fun u₅ K₅ m₅ p₅ => ?_
-  refine wp_movS rfl fun u₆ V₆ _ => ?_
-  have hw₆ := (hb.ws.rt.of_keeps K₅).of_keeps V₆.keeps
-  have p₆ : PtrAt u₆ B .eax (rv (kw len) (a 7)) := by rw [PtrAt, V₆.other _ (by decide)]; exact p₅
-  have ea₆ : u₆.ea (at_ .eax 0) = off B (rv (kw len) (a 7)) := by simpa using ea_ptr hw₆ p₆ (d := 0) (by omega)
-  refine wp_storeS ea₆ (ws_write hw₆ (by omega)) fun u₇ V₇ => WP.block_nil ?_
-  have K₇ : Keeps [.eax, .ecx, .edx] s u₇ := ((K₅.mono (by decide)).trans (V₆.keeps.mono (by decide))).trans
-    (V₇.keeps _)
-  have O₇ : Outside B (rv (kw len) (a 7)) 4 s.mem u₇.mem := by
-    rw [V₇.mem, V₆.mem, m₅]; exact writeW32_outside _ _ _ (by omega)
-  exact ⟨hb.keep K₇ (by decide) (by decide) O₇ (by omega) (by omega), K₇, O₇.unch, trivial⟩
 
 /-- The inverse word, from `[2]`'s low word. -/
 theorem relInverse (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp] G)

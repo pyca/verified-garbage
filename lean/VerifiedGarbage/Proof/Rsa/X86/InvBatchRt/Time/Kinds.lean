@@ -220,28 +220,6 @@ theorem relMaskOfSel {c : Nat} {acc tmp : Ref} (hG : Stable [.eax, .ebx, .ecx, .
   simp only [Nat.add_zero] at O
   exact ⟨H, (K₂.mono (by decide)).trans (K.mono (by decide)), by rw [m₂] at O; exact O.unch, trivial⟩
 
-theorem relShr30 {dst src : Ref} (hG : Stable VG.Proof.Weierstrass.X86.Inv.wordClob G)
-    (hdh : dst.half = 0) (hev : nw len % 2 = 0) (hsz : rv (kw len) src + 4 * (nw len + 1) ≤ Z)
-    (hdz : rv (kw len) dst + 4 * (nw len + 1) ≤ Z)
-    (sep : rv (kw len) dst + 4 * (nw len + 1) ≤ rv (kw len) src ∨ rv (kw len) src + 4 * (nw len + 1) ≤ rv (kw len) dst)
-    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint (τS L) (shr30 L dst src) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (shr30 L dst src)
-      (Both L B Z len N args sp C fun g => G g ∧ True) :=
-  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) dst; omega) hdz)
-    (fun s hb _ => WP.mono (shr30_ok hb hdh hev hsz hdz sep) fun _ ⟨H, _, K, O⟩ => ⟨H, K, O.unch, trivial⟩) h
-
-theorem relNegTop {acc : Ref} (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp] G) (hah : acc.half = 0)
-    (haz : rv (kw len) acc + 4 * (nw len + 1) ≤ Z) (htz : rv (kw len) tmp + 4 * (nw len + 1) ≤ Z)
-    (sta : rv (kw len) tmp + 4 * (nw len + 1) ≤ rv (kw len) acc ∨ rv (kw len) acc + 4 * (nw len + 1) ≤ rv (kw len) tmp)
-    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint (τS L) (.block (negTop L acc)) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ Mask g) (.block (negTop L acc))
-      (Both L B Z len N args sp C fun g => G g ∧ Mask g) :=
-  relOp (ws := [(rv (kw len) tmp + 4 * nw len, 4)]) (by decide) hG
-    (ws1 (by have := rv_ge (kw len) tmp; omega) (by omega))
-    (fun s hb ⟨k, hk⟩ => by
-      rw [show negTop L acc = negTop L acc ++ [] from (List.append_nil _).symm]
-      exact negTop_ok hb hah haz htz sta hk fun u H K O _ c => WP.block_nil ⟨H, K, O.unch, mask_ite c⟩) h
-
 theorem relBorrowMask {src : Ref} (hG : Stable [.eax, .ebx, .ecx, .edx] G) (hsh : src.half = 0)
     (hsz : rv (kw len) src + 4 * (nw len + 1) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint (τS L) (.block (borrowMask L src)) hc).isSome = true) :

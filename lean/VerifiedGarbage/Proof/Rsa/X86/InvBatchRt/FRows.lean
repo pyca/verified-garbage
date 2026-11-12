@@ -642,11 +642,6 @@ theorem cB_map (m : Mem) (W : Addr) (k : Nat) (ts : List Term) :
     cB m W (ts.map fun t => { t with x := t.x + k }) = cB m W ts := by
   simp only [cB, List.map_map, Function.comp_def]
 
-theorem rowA_congr {m m' : Mem} {W : Addr} {b sz : Nat} {ts : List Term} {N : Nat}
-    (h : ∀ t ∈ ts, m'.readW (off W t.c) 32 = m.readW (off W t.c) 32) :
-    (ts.map fun t => (m'.readW (off W t.c) 32).toInt * (sv m W (b + t.x) sz N : Int)).sum = rowA m W b sz ts N := by
-  unfold rowA; congr 1; exact List.map_congr_left fun t ht => by rw [h t ht]
-
 /-- The facts a word of the row needs, at the state `u` after `N` words, with `esi = W + e` and
 the word's inputs at `e + k` (`= a + sz (N + 1)`). -/
 theorem wordFacts {N e k : Nat} {u : State} (R : RowOk s₀ W bytes a sz o n ts wide)

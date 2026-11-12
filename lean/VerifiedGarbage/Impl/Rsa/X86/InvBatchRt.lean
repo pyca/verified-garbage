@@ -29,9 +29,6 @@ def offset (w j : Nat) : Nat := 160 + j * (4 * w + 8)
 /-- The divstep window: delta, low `f` and `g`, the matrix `u v q r`, and `-p⁻¹ mod 2³²`. -/
 def win : Nat := 16
 
-/-- The reduction's sign word, kept across its product row. -/
-def signSlot : Nat := 48
-
 /-- The arrays whose addresses `init` keeps in the header, from `slotBase` on, and the header word
 holding `4 n`, the bytes of `n` words. -/
 def cached : List Nat := [0, 1, 2, 4, 5, 6, 7, 11, 12, 13, 14]
@@ -178,36 +175,6 @@ def zeroWord (x : Ref) : List Instr := ptr L .ebx x .edx ++ [.mov .eax (.imm 0),
 def mo : Ref := { arr := 2 }
 def tmp : Ref := { arr := 12 }
 
-/-- `redSum`'s start: the sign mask of `[acc + 4 n]` into the header word `signSlot`,
-`[acc + 4 (n + 1)]` zeroed, and the digit `q = [acc] · iv` into `ecx`. -/
-def redHead (acc : Ref) : List Instr :=
-  maskAt L { acc with half := 1 } ++ [.mov .esi (.reg .ecx)] ++ zeroWord L { acc with half := 1, byte := 4 } ++
-    ptr L .ebx acc .edx ++ [.mov .eax (.mem (at_ .ebx 0)), .mov .ecx (.mem (sc (win + 28))), .mul .ecx,
-      .mov .ecx (.reg .eax), .store (sc signSlot) .esi]
-
-/-- `redSum`'s end: the sign word added at `[acc + 4 (n + 1)]`. -/
-def redTail (acc : Ref) : List Instr :=
-  ptr L .ebx { acc with half := 1, byte := 4 } .edx ++
-    [.mov .eax (.mem (at_ .ebx 0)), .alu .add .eax (.mem (sc signSlot)), .store (at_ .ebx 0) .eax]
-
-/-- `redSum`: the sign mask of `[acc + 4 n]` into `esi`, `[acc + 4 (n + 1)]` zeroed, the
-digit `q = [acc] · iv` into `ecx`, `[acc] += q [mo]`, and the sign word added at the top. -/
-def redSum (acc : Ref) : Prog isa :=
-  .seq (.block (redHead L acc)) (.seq (mulRow L false acc mo (nBytes .esi 0)) (.block (redTail L acc)))
-
-/-- `[tmp + 4 n] = [acc + 4 n]` plus the carry of `ecx`'s mask, and the mask of `[acc + 4 n]`'s sign
-into `ecx` (through `ebx`, still at that word: the store would make its slot secret). -/
-def negTop (acc : Ref) : List Instr :=
-  ptr L .ebx { acc with half := 1 } .edx ++ ptr L .ebp { tmp with half := 1 } .edx ++
-    [.mov .eax (.mem (at_ .ebx 0)), .alu .add .ecx (.reg .ecx), .alu .adc .eax (.imm 0), .store (at_ .ebp 0) .eax] ++
-    signOf
-
-/-- `InvMemory.addIfNeg`: `[acc] += [mo]`, `n + 1` words (`mo`'s top word zero), if `[acc + 4 n]` is
-negative: the sum into `[tmp]`, its top word `[acc + 4 n]` plus the carry, then selected into
-place by that word's sign. -/
-def addIfNeg (acc : Ref) : Prog isa :=
-  .seq (chain L .adc tmp acc mo (nBytes .edx 0)) (.seq (.block (negTop L acc)) (selIn L acc tmp (nBytes .edi 1)))
-
 /-- `ecx` all ones where `[src + 4 n]` does not borrow the carry of `ecx`'s mask. -/
 def borrowMask (src : Ref) : List Instr :=
   ptr L .ebx { src with half := 1 } .edx ++
@@ -222,9 +189,6 @@ def csub (src o : Ref) : Prog isa :=
   if o = src then selIn L o tmp (nBytes .edi 0)
   else .seq (.block (ptr L .ebp src .edx ++ ptr L .ebx tmp .edx ++ nBytes .edx 0 ++ ptr L .edi o .eax))
     (.seq select3LoopX (.block (restoreEdi L)))
-
-def reduce (out : Ref) : Prog isa :=
-  .seq (redSum L { arr := 11 }) (.seq (addIfNeg L { arr := 11, byte := 4 }) (csub L { arr := 11, byte := 4 } out))
 
 /-! ## The batch -/
 
