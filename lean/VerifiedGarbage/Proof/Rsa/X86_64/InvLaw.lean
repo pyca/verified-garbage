@@ -8,7 +8,8 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 `InvLaw`: what `Impl/Rsa/X86_64/Keys.lean`'s `inverse u v x₂ m` does, for
 its callers to use without importing the algebra of its proof
 (`InvB/Main.lean`'s `inverse_ok`); the registrations supply the instance
-(`InvInstance.lean`).
+(`InvInstance.lean`). `inverseNS_ok`: `inverseNS`, which leaves `[x₂]` to be
+scaled by `2^(15 n + 10)`.
 
 `inverseN_ok`: at the width `n` in `r13` (`1 ≤ n ≤ w`), of `u` and `m`
 the low `n` words of `[u]` and `[m]`; `inverse_ok`: at the width `w`. With room for its
@@ -38,6 +39,19 @@ class InvLaw : Prop where
           wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) n) (wv s.mem B (slot w iM) n) ∧
           ((wv s.mem B (slot w iM) n : Nat) : Int) ∣
             (wv t.mem B (slot w iX₂) w : Int) * wv s.mem B (slot w iU) n - wv t.mem B (slot w iV) w ∧
+          wv t.mem B (slot w iX₂) w < wv s.mem B (slot w iM) n)
+  inverseNS_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws s B Z w) (hZ : slot w 26 ≤ Z)
+      (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))) (h13 : s.gpr .r13 = BitVec.ofNat 64 n) (hn1 : 1 ≤ n)
+      (hnw : n ≤ w) (hn20 : n < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16)
+      (hVX : iV ≠ iX₂) :
+      WP isa (inverseNS iU iV iX₂ iM) s fun t => t.gpr .rdi = B ∧
+        Frm B [(slot w iV, 8 * w), (slot w iX₂, 8 * w), (slot w 16, 80 * (w + 2))] s.mem t.mem ∧
+        Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t ∧
+        (wv s.mem B (slot w iM) n % 2 = 1 →
+          wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) n) (wv s.mem B (slot w iM) n) ∧
+          ((wv s.mem B (slot w iM) n : Nat) : Int) ∣
+            (wv t.mem B (slot w iX₂) w : Int) * 2 ^ (15 * n + 10) * wv s.mem B (slot w iU) n -
+              wv t.mem B (slot w iV) w ∧
           wv t.mem B (slot w iX₂) w < wv s.mem B (slot w iM) n)
   inverse_ok {s : State} {B : Addr} {Z w iU iV iX₂ iM : Nat} (h : Ws s B Z w) (hZ : slot w 26 ≤ Z)
       (hw20 : w < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16) (hVX : iV ≠ iX₂) :
