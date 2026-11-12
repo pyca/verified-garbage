@@ -174,8 +174,8 @@ def keyBody : Prog isa := seqs [crtBody, dChecks1, Rsa.Arm.Div.code, .block ctxD
 /-- `[aVR] := [a] mod [d]` by words (`KeyDiv.divW`): `[d]`, of `w / 2` words, copied
 to `aVD` with its top word made not zero (as it is for `p`, `p - 1`, `q` and `q - 1`
 when `p q = n`), through `aVT`, `aY` and `aX`. -/
-def divK (a d : Nat) : List (Prog isa) :=
-  [copy aVD d, .block (KeyDiv.fixTop aVD), KeyDiv.divW a aVR aVD aVT aY aX]
+def divK (a d : Nat) (top : Option Nat := none) : List (Prog isa) :=
+  [copy aVD d, .block (KeyDiv.fixTop aVD), KeyDiv.divW a aVR aVD aVT aY aX top]
 
 /-- `w` again, `1` and the mask `p` odd. -/
 def startW : Prog isa := .block (ctxK ++ setOne aOne ++ bitOf sMask aP)
@@ -185,8 +185,8 @@ exact there), and `e dP mod (p - 1)`, `e dQ mod (q - 1)` (`dX e mod 2^(32 w)`, e
 valid `e`) and `q qInv mod p` by words. -/
 def crtChecksW : List (Prog isa) := [KeyDiv.mulLo aVQ aP aQ] ++ eqA aVQ aN ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
-  ltA aDP aM1 ++ [KeyDiv.mulLo aA aDP aE] ++ divK aA aM1 ++ eqA aVR aOne ++
-  ltA aDQ aM2 ++ [KeyDiv.mulLo aA aDQ aE] ++ divK aA aM2 ++ eqA aVR aOne ++
+  ltA aDP aM1 ++ [KeyDiv.mulLo aA aE aDP (some 2)] ++ divK aA aM1 (some 2) ++ eqA aVR aOne ++
+  ltA aDQ aM2 ++ [KeyDiv.mulLo aA aE aDQ (some 2)] ++ divK aA aM2 (some 2) ++ eqA aVR aOne ++
   ltA aQI aP ++ [KeyDiv.mulLo aT aQ aQI] ++ divK aT aP ++ eqA aVR aOne
 
 /-- The checks of `d` for a balanced key: its remainders by words. -/
