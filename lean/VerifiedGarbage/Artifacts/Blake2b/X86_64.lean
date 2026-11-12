@@ -31,9 +31,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Blake2b.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Blake2.initBApi.artifact X86_64.target {
-    code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.b
-    verified := Proof.Blake2.X86_64.Stream.initB_verified }] ++
+  Spec.Blake2.initBApi.artifact X86_64.target Proof.Blake2.X86_64.initBReg] ++
   (VG.Proof.Variants.Blake2b.X86_64.variants.flatMap fun (v : Proof.Blake2.X86_64.Backend) => [
     Spec.Blake2.updateBApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.updateBReg v),
     Spec.Blake2.finalizeBApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.finalizeBReg v)])

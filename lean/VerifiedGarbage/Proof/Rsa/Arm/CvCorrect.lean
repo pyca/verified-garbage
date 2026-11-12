@@ -88,8 +88,8 @@ theorem branches_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (pre : CvPre s
     (hz : s.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (nBytes s0)) (cvK s0)) :
     WP isa (.ite .eq valid fail) s (CvMid s0) := by
   refine WP.ite s.z rfl (fun hv => ?_) (fun hv => ?_)
-  · refine WP.mono (valid_ok hb) fun (t : State) ⟨X₁, X₂, V, R₂, R₃, X, h₁, h₂, h₃, h₄, o⟩ => ⟨o.done, ?_⟩
-    rw [hz] at hv
+  · rw [hz] at hv
+    refine WP.mono (valid_ok hb hv) fun (t : State) ⟨X₁, X₂, V, R₂, R₃, X, h₁, h₂, h₃, h₄, o⟩ => ⟨o.done, ?_⟩
     exact written_valid o (crtKey_valid pre hv h₁ h₂ h₃ h₄)
   · refine WP.mono (fail_ok hb p0 p3) fun (t : State) ⟨d, r0, dp, dq, qi⟩ => ⟨d, ?_⟩
     rw [hz] at hv

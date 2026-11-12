@@ -49,6 +49,10 @@ def prep (c : Cfg) (u v : Nat) : Prog isa :=
   .seq (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else FastNaf.prepN c.K.M.n u c.gBits 7)
     (FastNaf.prepN c.K.M.n v c.K.bits 5)
 
+/-- `prep` for width nine, by the recoding without branches on the scalars' bits. -/
+def prepB (c : Cfg) (u v : Nat) : Prog isa :=
+  .seq (FastNaf.prepB16 c.K.M.n u c.gBits) (FastNaf.prepB c.K.M.n v c.K.bits)
+
 /-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. -/
 def cachedAdd (c : Cfg) : Prog isa :=
   match c.pts with

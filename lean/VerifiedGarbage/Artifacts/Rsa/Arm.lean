@@ -26,6 +26,11 @@ def direct : List Artifact := [
     stack := 0
     verified := Proof.Rsa.Arm.CrtValues.crt_values_verified },
   Spec.Rsa.checkKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Rsa.Arm.CheckKey.codeU
+    stack := 0
+    verified := Proof.Rsa.Arm.CheckKey.check_key_umaal_verified },
+  Spec.Rsa.checkKeyApi.artifact Arm.target {
     code := Impl.Rsa.Arm.CheckKey.code
     stack := 0
     verified := Proof.Rsa.Arm.CheckKey.check_key_verified },

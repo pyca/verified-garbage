@@ -199,22 +199,24 @@ others), `[v] = gcd(a, m)` and
 the width `n` read at run time: `f = m`, `g = a` or `a + m` if `a` is even
 (odd, so its first divstep swaps it below `m` if it is larger), `n + 1`
 words each in two's complement, `(a, b) = (0, 1)` reduced by one word of
-Montgomery reduction per batch (`mred`) modulo `m` with its low bit set (so
+Montgomery reduction per batch modulo `m` with its low bit set (so
 that the batches run on an odd modulus whatever `m` is), `3 n + 2` batches (`177 n + 118`
 divsteps, enough for numbers below `2^(64 n + 32)`). Then `g = 0` and
 `f = ±gcd`, `x₂ = ±a 2^(5 B) mod m` by `5 B` modular doublings, and
 `v = |f|`.
 
 Its working space is arrays of its own, from 16 on: a window (`aWin`, three
-arrays), `f`, `g`, `a`, `b`, a product `t` (`n + 2` words), a staging array
-and `m` (`aP`, its words above `n` zero). In a batch `rdi` points at the
-window, whose words are the low words of `f` and `g` and the chunks'
-temporary (at 0, 8, 16: `pchunk`'s), `d`, the matrix `u, v, q, r`, the two
-masks of the coefficients' signs and `-m⁻¹ mod 2^64`; the other arrays'
-bases are `rdi` plus multiples of the stride in `r9`. `n` is in `r15`, the
-count of batches in `rsi`, and the stride in `r14` across the divsteps,
-which write `r9`–`r13`. Every branch and address depends only on `rdi`,
-the stride, `n` and the counts. -/
+arrays), `f`, `g`, `a`, `b`, the end's temporaries `t` and `s`, and `m`
+(`aP`, its words above `n` zero). In a batch `rdi` points at the window,
+whose words are the low words of `f` and `g` and the chunks' temporary (at
+0, 8, 16: `pchunk`'s), `d`, the matrix `u, v, q, r`, the masks of the
+coefficients' signs and `-m⁻¹ mod 2^64`; the other arrays' bases are `rdi`
+plus multiples of the stride in `r9`. A batch updates `(f, g)` and then
+`(a, b)` a word at a time, each pair in place in one pass (`fgRow`,
+`abRow`). `n` is in `r15` (the end of a row while it runs), the count of
+batches in `rsi`, and the stride in `r14` across the divsteps, which write
+`r9`–`r13`. Every branch and address depends only on `rdi`, the stride, `n`
+and the counts, all in registers. -/
 
 namespace Inv
 
@@ -315,67 +317,131 @@ def bSave : List Instr :=
   [.store (wm oD) .rbx, .store (wm oU) .r9, .store (wm oV) .r10, .store (wm oQ) .r11, .store (wm oR) .r12,
     .mov .r9 (.reg .r14), .mov .r12 (.reg .r15), .alu .add .r12 (.imm 1)]
 
-/-- `a = |c|` for the coefficient at `[c]`, and the mask of its sign into `[m]`. -/
-def absM (c m : Nat) (a : Reg) : List Instr :=
-  [.mov a (.mem (wm c)), .mov .rax (.reg a), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
-    .store (wm m) .rdx, .alu .xor a (.reg .rdx), .alu .sub a (.reg .rdx)]
+/-- The slots of `q`'s and `r`'s masks and of the factors `k` of `m` (the chunks' temporary words
+and a free word, which the updates use after the divsteps). -/
+def oMq : Nat := 0
+def oMr : Nat := 8
+def oKd : Nat := 16
+def oKe : Nat := 88
 
-/-- Column `i` (`r14`) of `[r11] = u [rbx] + v [r10]`: the two products of
-`|u|` (`rcx`) and `|v|` (`rbp`) by the words complemented under the masks
-added to the accumulator `r8`, `r13`, whose low word is stored. -/
-def linBody : List Instr :=
-  [.mov .rax (.mem (ix .rbx .r14)), .alu .xor .rax (.mem (wm oMu)), .mul .rcx, .alu .add .r8 (.reg .rax),
-    .alu .adc .r13 (.reg .rdx), .mov .rax (.mem (ix .r10 .r14)), .alu .xor .rax (.mem (wm oMv)), .mul .rbp,
-    .alu .add .r8 (.reg .rax), .alu .adc .r13 (.reg .rdx), .store (ix .r11 .r14) .r8, .mov .r8 (.reg .r13),
-    .mov32 .r13 (.imm 0)]
+/-- `[c] := |c|` and the mask of its sign into `[m]`. -/
+def absS (c m : Nat) : List Instr :=
+  [.mov .rcx (.mem (wm c)), .mov .rax (.reg .rcx), .shift .shr .rax 63, .mov32 .rdx (.imm 0),
+    .alu .sub .rdx (.reg .rax), .store (wm m) .rdx, .alu .xor .rcx (.reg .rdx), .alu .sub .rcx (.reg .rdx),
+    .store (wm c) .rcx]
 
-/-- `[t] = c [16 + kX] + c' [16 + kY]` for the coefficients at `[cu]`, `[cv]`,
-over `n + 1` words (`r12`), modulo `2^(64 (n + 1))`. -/
-def lin (cu cv kX kY : Nat) : List (Prog isa) := [
-  .block (absM cu oMu .rcx ++ absM cv oMv .rbp ++
-    ([.mov .r8 (.reg .rcx), .alu .and .r8 (.mem (wm oMu)), .mov .rax (.reg .rbp), .alu .and .rax (.mem (wm oMv)),
-      .alu .add .r8 (.reg .rax), .mov32 .r13 (.imm 0)] : List Instr) ++ wa kX .rbx ++ wa kY .r10 ++ wa 7 .r11),
-  wordLoop 0 linBody]
+/-- Word `j` of the first row's input (`r8`) and of the second's (`r8 + r9`), and of `m`
+(`r8 + 4 r9`). -/
+def px (d : Int) : MemOp := { base := .r8, disp := d }
+def py (d : Int) : MemOp := { base := .r8, index := some .r9, scale := 1, disp := d }
+def pm (d : Int) : MemOp := { base := .r8, index := some .r9, scale := 4, disp := d }
 
-/-- Word `i` (`r14`) of `[r10] = [rbx] / 2^59`, from words `i` and `i + 1`. -/
-def shrBody : List Instr :=
-  [.mov .rax (.mem (ix .rbx .r14)), .shift .shr .rax 59, .mov .r8 (.mem (ix .rbx .r14 8)), .shift .shl .r8 5,
-    .alu .add .rax (.reg .r8), .store (ix .r10 .r14) .rax]
+/-- A factor: in a register, or in its slot (loaded into `rdx`). -/
+inductive Co | reg (r : Reg) | slot (c : Nat)
 
-/-- `[16 + kD] = [t] / 2^59`, arithmetic, `n + 1` words: `n` from pairs of
-words, then the top one from its sign. -/
-def shr (kD : Nat) : List (Prog isa) := [
-  .block (wa 7 .rbx ++ wa kD .r10 ++ ([.mov .r12 (.reg .r15)] : List Instr)),
-  wordLoop 0 shrBody,
-  .block [.mov .rdx (.mem (ix .rbx .r14)), .mov .r8 (.reg .rdx), .shift .shr .r8 63, .mov32 .rax (.imm 0),
-    .alu .sub .rax (.reg .r8), .mov .r8 (.reg .rax), .mov .rax (.reg .rdx), .shift .shr .rax 59, .shift .shl .r8 5,
-    .alu .add .rax (.reg .r8), .store (ix .r10 .r14) .rax, .alu .add .r12 (.imm 1)]]
+/-- `rdx:rax := rax · c`. -/
+def mulCo : Co → List Instr
+  | .reg r => [.mul r]
+  | .slot c => [.mov .rdx (.mem (wm c)), .mul .rdx]
 
-/-- `[16 + kD] = ([t] + k m) / 2^64` (`n + 1` words), for `k = [t]₀ (-m⁻¹)
-mod 2^64` and `[t]` sign-extended to `n + 2` words: `[t]`'s word `n + 1`
-zeroed, `k m` added by `mulAddRow` (with `m`'s base in `r9`, the stride
-kept in `r13`), and the mask of `[t]`'s sign (kept at `oMu`) added to its
-word `n + 1`; then its words `1 … n + 1`. -/
-def mred (kD : Nat) : List (Prog isa) := [
-  .block (wa 7 .r8 ++ wa 9 .r10 ++ wa kD .r11 ++
-    ([.mov .rax (.mem (at0 .r8)), .mov .rcx (.mem (wm oMi)), .mul .rcx, .mov .rcx (.reg .rax),
-      .mov .rax (.mem (ix .r8 .r15)), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
-      .store (wm oMu) .rdx, .mov32 .rax (.imm 0), .store (ix .r8 .r15 8) .rax, .mov .r13 (.reg .r9),
-      .mov .r9 (.reg .r10), .mov .r12 (.reg .r15)] : List Instr)),
-  mulAddRow,
-  .block [.mov .r9 (.reg .r13), .mov .rax (.mem (ix .r8 .r15 8)), .alu .add .rax (.mem (wm oMu)),
-    .store (ix .r8 .r15 8) .rax, .alu .add .r12 (.imm 1)],
-  wordLoop 0 [.mov .rax (.mem (ix .r8 .r14 8)), .store (ix .r11 .r14) .rax]]
+/-- `lo:hi += |c| (x ^ mask)`. -/
+def term2 (x : MemOp) (c : Co) (m : Nat) (lo hi : Reg) : List Instr :=
+  [.mov .rax (.mem x), .alu .xor .rax (.mem (wm m))] ++ mulCo c ++
+    [.alu .add lo (.reg .rax), .alu .adc hi (.reg .rdx)]
 
-/-- `[16 + kD] = [16 + kS]`, `n + 1` words. -/
-def copyW (kS kD : Nat) : List (Prog isa) :=
-  [.block (wa kS .rbx ++ wa kD .r10), wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .store (ix .r10 .r14) .rax]]
+/-- `lo:mid:top += |c| (x ^ mask)`. -/
+def term3 (x : MemOp) (c : Co) (m : Nat) (lo mid top : Reg) : List Instr :=
+  [.mov .rax (.mem x), .alu .xor .rax (.mem (wm m))] ++ mulCo c ++
+    [.alu .add lo (.reg .rax), .alu .adc mid (.reg .rdx), .alu .adc top (.imm 0)]
 
-/-- A batch: the divsteps, `(f, g) := (u f + v g, q f + r g) / 2^59` (`f`
-staged), `(a, b)` likewise by `mred`, and the count less one. -/
-def batch : Prog isa := seqs ([.block (bStart ++ bWords ++ bSave)] ++ lin oU oV 3 4 ++ shr 8 ++ lin oQ oR 3 4 ++
-  shr 4 ++ copyW 8 3 ++ lin oU oV 5 6 ++ mred 8 ++ lin oQ oR 5 6 ++ mred 6 ++ copyW 8 5 ++
-  [.block [.alu .sub .rsi (.imm 1)]])
+/-- `lo:mid:top += k m_j`. -/
+def termM (k : Co) (lo mid top : Reg) : List Instr :=
+  [.mov .rax (.mem (pm 0))] ++ mulCo k ++ [.alu .add lo (.reg .rax), .alu .adc mid (.reg .rdx), .alu .adc top (.imm 0)]
+
+/-- `lo := (|c| & mc) + (|c'| & mc')`: the ones of the complements. -/
+def ones (cu mu cv mv : Nat) (lo : Reg) : List Instr :=
+  [.mov lo (.mem (wm cu)), .alu .and lo (.mem (wm mu)), .mov .rax (.mem (wm cv)), .alu .and .rax (.mem (wm mv)),
+    .alu .add lo (.reg .rax)]
+
+/-- `r8` to word 0 of array `16 + k`, `r15` (`n`) to its word `n + 1`. -/
+def rowStart (k : Nat) : List Instr :=
+  wa k .r8 ++ ([.alu .add .r15 (.imm 1), .shift .shl .r15 3, .alu .add .r15 (.reg .r8)] : List Instr)
+
+/-- `r15` back to `n`, from the end of array `16 + k`'s words. -/
+def rowEnd (k : Nat) : List Instr :=
+  wa k .rax ++ ([.alu .sub .r15 (.reg .rax), .shift .shr .r15 3, .alu .sub .r15 (.imm 1)] : List Instr)
+
+/-- The previous word's top bits (`prev`) and this one's low (`lo`) into `dst`, `lo` kept in
+`prev`, the accumulator down a word. -/
+def outS (prev lo hi : Reg) (dst : MemOp) : List Instr :=
+  [.mov .rax (.reg prev), .shift .shr .rax 59, .mov prev (.reg lo), .shift .shl lo 5, .alu .add .rax (.reg lo),
+    .store dst .rax, .mov lo (.reg hi), .mov32 hi (.imm 0)]
+
+/-- The last word: `prev`'s top bits and its sign's. -/
+def outTop (prev : Reg) (dst : MemOp) : List Instr :=
+  [.mov .rax (.reg prev), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax), .shift .shl .rdx 5,
+    .mov .rax (.reg prev), .shift .shr .rax 59, .alu .add .rax (.reg .rdx), .store dst .rax]
+
+/-- The step to the next word, and the end. -/
+def next : List Instr := [.alu .add .r8 (.imm 8), .alu .cmp .r8 (.reg .r15)]
+
+/-- `(f, g) := (u f + v g, q f + r g) / 2^59` in place, a word at a time: `r10:r11` and
+`r12:r13` the sums, `rbx` and `rbp` their previous low words, `|u|` and `|v|` in `rcx`
+and `r14`. -/
+def fgCol : List Instr :=
+  term2 (px 0) (.reg .rcx) oMu .r10 .r11 ++ term2 (py 0) (.reg .r14) oMv .r10 .r11 ++
+    term2 (px 0) (.slot oQ) oMq .r12 .r13 ++ term2 (py 0) (.slot oR) oMr .r12 .r13
+
+def fgRow : List (Prog isa) := [
+  .block (rowStart 3 ++ ([.mov .rcx (.mem (wm oU)), .mov .r14 (.mem (wm oV))] : List Instr) ++
+    ones oU oMu oV oMv .r10 ++ ([.mov32 .r11 (.imm 0)] : List Instr) ++
+    ones oQ oMq oR oMr .r12 ++ ([.mov32 .r13 (.imm 0)] : List Instr) ++ fgCol ++
+    ([.mov .rbx (.reg .r10), .mov .r10 (.reg .r11), .mov32 .r11 (.imm 0), .mov .rbp (.reg .r12),
+      .mov .r12 (.reg .r13), .mov32 .r13 (.imm 0), .alu .add .r8 (.imm 8)] : List Instr)),
+  .loop (.block (fgCol ++ outS .rbx .r10 .r11 (px (-8)) ++ outS .rbp .r12 .r13 (py (-8)) ++ next)) .ne,
+  .block (outTop .rbx (px (-8)) ++ outTop .rbp (py (-8)) ++ rowEnd 3)]
+
+/-- The sign word of `x` into `rdx`. -/
+def signX (x : MemOp) : List Instr :=
+  [.mov .rax (.mem x), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax)]
+
+/-- `lo:mid:top += |c| (rdx ^ mask)`, `|c|` in `rcx` (which it overwrites). -/
+def termR (c m : Nat) (lo mid top : Reg) : List Instr :=
+  [.mov .rax (.reg .rdx), .alu .xor .rax (.mem (wm m)), .mov .rcx (.mem (wm c)), .mul .rcx,
+    .alu .add lo (.reg .rax), .alu .adc mid (.reg .rdx), .alu .adc top (.imm 0)]
+
+def shift3 (lo mid top : Reg) : List Instr := [.mov lo (.reg mid), .mov mid (.reg top), .mov32 top (.imm 0)]
+
+/-- `k := lo (-m⁻¹) mod 2^64` into the slot `o`, then `lo:mid:top += k m₀`. -/
+def kOf (o : Nat) (lo mid top : Reg) : List Instr :=
+  [.mov .rax (.reg lo), .mov .rdx (.mem (wm oMi)), .mul .rdx, .store (wm o) .rax] ++ termM (.slot o) lo mid top
+
+/-- `(a, b) := ((u a + v b + k m) / 2^64, (q a + r b + k' m) / 2^64)` in place: `r10:r11:r12`
+and `r13:r14:rbx` the sums, `|u|` and `|v|` in `rcx` and `rbp`. -/
+def abCol : List Instr :=
+  term3 (px 0) (.reg .rcx) oMu .r10 .r11 .r12 ++ term3 (py 0) (.reg .rbp) oMv .r10 .r11 .r12 ++
+    termM (.slot oKd) .r10 .r11 .r12 ++
+    term3 (px 0) (.slot oQ) oMq .r13 .r14 .rbx ++ term3 (py 0) (.slot oR) oMr .r13 .r14 .rbx ++
+    termM (.slot oKe) .r13 .r14 .rbx
+
+def abRow : List (Prog isa) := [
+  .block (rowStart 5 ++ ([.mov .rcx (.mem (wm oU)), .mov .rbp (.mem (wm oV))] : List Instr) ++
+    ones oU oMu oV oMv .r10 ++ ([.mov32 .r11 (.imm 0), .mov32 .r12 (.imm 0)] : List Instr) ++
+    term3 (px 0) (.reg .rcx) oMu .r10 .r11 .r12 ++ term3 (py 0) (.reg .rbp) oMv .r10 .r11 .r12 ++
+    kOf oKd .r10 .r11 .r12 ++ shift3 .r10 .r11 .r12 ++
+    ones oQ oMq oR oMr .r13 ++ ([.mov32 .r14 (.imm 0), .mov32 .rbx (.imm 0)] : List Instr) ++
+    term3 (px 0) (.slot oQ) oMq .r13 .r14 .rbx ++ term3 (py 0) (.slot oR) oMr .r13 .r14 .rbx ++
+    kOf oKe .r13 .r14 .rbx ++ shift3 .r13 .r14 .rbx ++ ([.alu .add .r8 (.imm 8)] : List Instr)),
+  .loop (.block (abCol ++ ([.store (px (-8)) .r10, .store (py (-8)) .r13] : List Instr) ++
+    shift3 .r10 .r11 .r12 ++ shift3 .r13 .r14 .rbx ++ next)) .ne,
+  .block (signX (px (-8)) ++ termR oU oMu .r10 .r11 .r12 ++ signX (px (-8)) ++ termR oQ oMq .r13 .r14 .rbx ++
+    signX (py (-8)) ++ termR oV oMv .r10 .r11 .r12 ++ signX (py (-8)) ++ termR oR oMr .r13 .r14 .rbx ++
+    ([.store (px (-8)) .r10, .store (py (-8)) .r13] : List Instr) ++ rowEnd 5)]
+
+/-- A batch: the divsteps, the coefficients' magnitudes and signs, `(f, g)` and `(a, b)` a row
+each, and the count less one. -/
+def batch : Prog isa := seqs ([.block (bStart ++ bWords ++ bSave ++ absS oU oMu ++ absS oV oMv ++ absS oQ oMq ++
+  absS oR oMr)] ++ fgRow ++ abRow ++ [.block [.alu .sub .rsi (.imm 1)]])
 
 /-! ### The end (`rdi` the working space's base again) -/
 

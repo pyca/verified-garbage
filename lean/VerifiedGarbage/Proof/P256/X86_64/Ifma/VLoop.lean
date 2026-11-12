@@ -5,12 +5,14 @@ module
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Pass
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInvariant
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16State
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -66,68 +68,43 @@ theorem accPt_step (hC : Law Cv) (ha : AM3 Cv) {acc : Option (Fin pN × Fin pN �
     obtain ⟨hi, hy⟩ := entQ_inv hC hJ neg a.1 a.2.1 a.2.2
     exact pinv_add hC ha hA hB h hi hy (entQ_zz X Y Z neg _ _ _) (entQ_zzz X Y Z neg _ _ _)
 
-/-! ### The joint multiplication's invariant is kept by the vectors' code -/
-
-/-- `JointStable.keep`, for memory kept but in ranges `W`. -/
-theorem jointStable_unch {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C} {u v : Nat} {s t : State}
-    {W : List (Nat × Nat)} (h : JointStable c C base Q u v s) (hu : Unch base W s.mem t.mem)
-    (hb : ∀ r ∈ jointStableRanges c, r.1 + r.2 ≤ 2 ^ 64)
-    (hsep : ∀ r ∈ jointStableRanges c, ∀ w ∈ W, r.1 + r.2 ≤ w.1 ∨ w.1 + w.2 ≤ r.1) :
-    JointStable c C base Q u v t := by
-  have hrange (x : Nat) (hx : x ∈ jointStableFields c) : (x, 8 * c.K.M.n) ∈ jointStableRanges c :=
-    List.mem_append_left _ (List.mem_map.mpr ⟨x, hx, rfl⟩)
-  have hf (x : Nat) (hx : x ∈ jointStableFields c) : tmv C c.K.M.n base t x = tmv C c.K.M.n base s x := by
-    unfold tmv
-    rw [hu.wordsVal (hsep _ (hrange x hx)) (hb _ (hrange x hx))]
-  have hbits (d l : Nat) (ho : (d, l) ∈ jointStableRanges c) (j : Nat) (hj : j < l) :
-      t.mem (off base (d + j)) = s.mem (off base (d + j)) := by
-    apply hu.byte
-    · intro w hw
-      have := hsep _ ho w hw
-      dsimp only at this ⊢; omega
-    · have := hb _ ho; dsimp only at this; omega
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hf c.K.zero (by simp [jointStableFields, winRo]), h.zero]
-  · intro a ha hb
-    rw [hf _ (jointStable_table c ha (by omega) (by simp [jacCoords])),
-      hf _ (jointStable_table c ha (by omega) (by simp [jacCoords])),
-      hf _ (jointStable_table c ha (by omega) (by simp [jacCoords]))]
-    exact h.table a ha hb
-  · intro j hj
-    rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
-    exact h.peer j hj
-  · intro j hj
-    rw [hbits c.gBits _ (by simp [jointStableRanges]) j hj]
-    exact h.generator j hj
-  · intro i hi
-    rw [hf _ (jointStable_cache2 c hi), hf _ (jointStable_table c (a := i + 1) (by omega) (by omega) (by simp [jacCoords]))]
-    exact h.cache2 i hi
-  · intro i hi
-    rw [hf _ (jointStable_cache3 c hi), hf _ (jointStable_cache2 c hi),
-      hf _ (jointStable_table c (a := i + 1) (by omega) (by omega) (by simp [jacCoords]))]
-    exact h.cache3 i hi
+/-! ### What the vectors' code has of the joint multiplication -/
 
 /-- What the loop in vectors writes of the working space: the vectors' slots, MXCSR saved, the
 blocks' constants, and `Q`'s multiples kept as limbs. -/
-def vW : List (Nat × Nat) := [(5056, 288), (5864, 8), (6432, 1760), (3616, 1424)]
+def vW : List (Nat × Nat) := [(5056, 288), (5864, 8), (6432, 1760), (2752, 1624)]
 
-/-- Where the vectors' slots are among what the joint multiplication keeps in the working space. -/
+/-- Where the vectors' part of the working space is among what the loop in vectors reads of the joint
+multiplication's: the fields it only reads, `R`, and both scalars' digits. -/
 structure VLay (c : Joint.Cfg) (size : Nat) : Prop where
   big : 5920 ≤ size
   mx : 5872 ≤ size
   pool : 8192 ≤ size
-  live : ∀ x ∈ jointLive c, ∀ w ∈ vW, x + 8 * c.K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x
-  liveB : ∀ x ∈ jointLive c, x + 8 * c.K.M.n ≤ size
+  live : ∀ x ∈ winRo c.K ++ jacCoords c.K.R, ∀ w ∈ vW, x + 8 * c.K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x
+  liveB : ∀ x ∈ winRo c.K ++ jacCoords c.K.R, x + 8 * c.K.M.n ≤ size
   mo : ∀ w ∈ vW, c.K.M.mo + 8 * c.K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ c.K.M.mo
-  stable : ∀ r ∈ jointStableRanges c, ∀ w ∈ vW, r.1 + r.2 ≤ w.1 ∨ w.1 + w.2 ≤ r.1
-  stableB : ∀ r ∈ jointStableRanges c, r.1 + r.2 ≤ size
+  bits : ∀ r ∈ [(c.K.bits, 64 * c.K.M.n + 1), (c.gBits, jointGLen c)], ∀ w ∈ vW, r.1 + r.2 ≤ w.1 ∨ w.1 + w.2 ≤ r.1
+  bitsB : ∀ r ∈ [(c.K.bits, 64 * c.K.M.n + 1), (c.gBits, jointGLen c)], r.1 + r.2 ≤ size
   n : c.K.M.n = 4
-  tbl : c.K.tbl + 768 ≤ TOFF
-  cache : 5920 ≤ c.cache
-  cacheH : c.cache + 512 ≤ 6432
+  px : c.K.P.x + 96 ≤ TOFF
+  py : c.K.P.y + 64 ≤ TOFF
   rxy : c.K.R.x ≠ c.K.R.y
   rxz : c.K.R.x ≠ c.K.R.z
   ryz : c.K.R.y ≠ c.K.R.z
+
+/-- What the loop in vectors has of the joint multiplication: the fields it only reads and `R`, and the
+loop's input, which is `Q` in `P`, both scalars' digits and the generator's rows; the fields it only reads
+are `E`, and `R` is still `O`. The table of `Q`'s odd multiples as words is not part of it: the loop in
+vectors has its own, as limbs, in its place. -/
+structure VCore (c : Joint.Cfg) (base T : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)
+    (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv) (s : State) : Prop where
+  field : Inv c.K.M base size Cv.p (· ∈ nafSlots c.K) (winRo c.K ++ jacCoords c.K.R) (tmv Cv c.K.M.n base s) s
+  ro : ∀ x ∈ winRo c.K, tmv Cv c.K.M.n base s x = E x
+  rz : tmv Cv c.K.M.n base s c.K.R.z = 0
+  input : JointWindowInput c Cv base T size u v Q row s
+
+/-- The triples of the table of `Q`'s odd multiples, of `Q`'s coordinates among the field elements `E`. -/
+abbrev tqE (c : Joint.Cfg) (E : Nat → Fe Cv) : Nat → Fin pN × Fin pN × Fin pN := tabQ (E c.K.P.x) (E c.K.P.y)
 
 /-- What the loop keeps: the registers but its own, and memory but the vectors' slots. -/
 structure VKeep (s t : State) : Prop where
@@ -155,50 +132,69 @@ theorem VKeep.of_skeep {rs : List Reg} {s t : State} (h : SKeep rs s t)
   ⟨fun r h' => h.gpr r fun hin => h' (List.contains_iff_mem.mp (List.all_eq_true.mp hr r hin)), h.rd, h.wr,
     by rw [h.mem]; exact Unch.refl _ _ _⟩
 
-/-- The joint multiplication's invariant is kept by writes to the vectors' part of the working space. -/
-theorem jointCore_unch {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat} {G Q A : Point C}
-    {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State} (hV : VLay c size)
-    (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s)
-    (hdi : t.gpr .rdi = s.gpr .rdi) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) (hu : Unch base vW s.mem t.mem)
-    (hs : t.syms = s.syms) : JointCore c C base size Q u v (JointGenerator c C base T size row) A t := by
+/-- What the loop has of the joint multiplication is kept by writes to the vectors' part of the working space. -/
+theorem VCore.unch {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s t : State} (hV : VLay c size)
+    (h : VCore c base T size u v Q row E s) (hdi : t.gpr .rdi = s.gpr .rdi) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
+    (hu : Unch base vW s.mem t.mem) (hs : t.syms = s.syms) : VCore c base T size u v Q row E t := by
   have hnw := h.field.scr.nowrap
   have st : Scr t base size := ⟨hdi.trans h.field.scr.rdi, hwr ▸ h.field.scr.wr, hnw⟩
-  have hi : Inv c.K.M base size C.p (· ∈ jointSlots c) (jointLive c) (tmv C c.K.M.n base s) t :=
-    Inv.of_unch h.field st hu hV.liveB hV.live hV.mo
-  refine ⟨hi.to_tmv, jointStable_unch h.stable hu (fun r hr => by have := hV.stableB r hr; omega) hV.stable, ?_,
-    hi.point_tmv (jointLive_R c) h.point⟩
-  intro a ha hb ho
-  refine (h.external a ha hb ho).keep_of_mem hs hrd hwr fun z hz => ?_
-  exact hu z fun w hw => by
-    have := hV.pool
-    simp only [vW, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  have hi := Inv.of_unch h.field st hu hV.liveB hV.live hV.mo
+  have ro (x : Nat) (hx : x ∈ winRo c.K) : tmv Cv c.K.M.n base t x = tmv Cv c.K.M.n base s x :=
+    hi.val x (List.mem_append_left _ hx)
+  have hbits (d l : Nat) (ho : (d, l) ∈ [(c.K.bits, 64 * c.K.M.n + 1), (c.gBits, jointGLen c)]) (j : Nat)
+      (hj : j < l) : t.mem (off base (d + j)) = s.mem (off base (d + j)) := by
+    apply hu.byte
+    · intro w hw
+      have := hV.bits _ ho w hw
+      dsimp only at this ⊢; omega
+    · have := hV.bitsB _ ho; dsimp only at this; omega
+  refine ⟨hi.to_tmv, fun x hx => (ro x hx).trans (h.ro x hx),
+    (hi.val _ (List.mem_append_right _ (by simp [jacCoords]))).trans h.rz, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+  · rw [ro _ (by simp [winRo]), ro _ (by simp [winRo]), ro _ (by simp [winRo])]
+    exact h.input.point
+  · rw [ro _ (by simp [winRo])]
+    exact h.input.affine
+  · rw [ro _ (by simp [winRo])]
+    exact h.input.zero
+  · intro j hj
+    rw [hbits c.K.bits _ (by simp) j hj]
+    exact h.input.peer j hj
+  · intro j hj
+    rw [hbits c.gBits _ (by simp) j hj]
+    exact h.input.generator j hj
+  · intro a ha hb ho
+    refine (h.input.external a ha hb ho).keep_of_mem hs hrd hwr fun z hz => ?_
+    exact hu z fun w hw => by
+      have := hV.pool
+      simp only [vW, List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
 
-/-- The joint multiplication's invariant is kept by the loop's code. -/
-theorem jointCore_vkeep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat} {G Q A : Point C}
-    {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State} (hV : VLay c size)
-    (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s) (k : VKeep s t)
-    (hs : t.syms = s.syms) : JointCore c C base size Q u v (JointGenerator c C base T size row) A t := by
-  refine jointCore_unch hV h (k.gpr .rdi (by decide)) k.rd k.wr ?_ hs
+/-- What the loop has of the joint multiplication is kept by the loop's code. -/
+theorem VCore.vkeep {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s t : State} (hV : VLay c size)
+    (h : VCore c base T size u v Q row E s) (k : VKeep s t) (hs : t.syms = s.syms) :
+    VCore c base T size u v Q row E t := by
+  refine h.unch hV (k.gpr .rdi (by decide)) k.rd k.wr ?_ hs
   have := k.mem
   rw [h.field.scr.rdi] at this
   exact this.mono (by decide)
 
-theorem jointCore_lkeep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat} {G Q A : Point C}
-    {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State} (hV : VLay c size)
-    (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s) (k : LKeep s t)
-    (hs : t.syms = s.syms) : JointCore c C base size Q u v (JointGenerator c C base T size row) A t :=
-  jointCore_vkeep hV h (.of_lkeep k) hs
+theorem VCore.lkeep {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s t : State} (hV : VLay c size)
+    (h : VCore c base T size u v Q row E s) (k : LKeep s t) (hs : t.syms = s.syms) :
+    VCore c base T size u v Q row E t :=
+  h.vkeep hV (.of_lkeep k) hs
 
 /-! ### A digit of `Q`'s scalar -/
 
-/-- The accumulator after digit `j` of `Q`'s scalar `v`: with the digit's multiple of `Q`, from the table. -/
-def qNext (c : Joint.Cfg) (E : Nat → Fe Cv) (v j : Nat) (acc : Option (Fin pN × Fin pN × Fin pN)) :
+/-- The accumulator after digit `j` of `Q`'s scalar `v`: with the digit's multiple of `Q`, from the table of
+the triples `Tq`. -/
+def qNext (Tq : Nat → Fin pN × Fin pN × Fin pN) (v j : Nat) (acc : Option (Fin pN × Fin pN × Fin pN)) :
     Option (Fin pN × Fin pN × Fin pN) :=
   if FastNaf.byte 5 v j = 0 then acc
-  else some (accStep (E (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).x)
-    (E (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).y)
-    (E (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).z) (FastNaf.negative 5 v j) acc)
+  else some (accStep (Tq ((FastNaf.magnitude 5 v j - 1) / 2)).1 (Tq ((FastNaf.magnitude 5 v j - 1) / 2)).2.1
+    (Tq ((FastNaf.magnitude 5 v j - 1) / 2)).2.2 (FastNaf.negative 5 v j) acc)
 
 theorem accSt_skeep {rs : List Reg} {s t : State} (k : SKeep rs s t) (h11 : Reg.r11 ∉ rs)
     {acc : Option (Fin pN × Fin pN × Fin pN)} (h : AccSt s acc) : AccSt t acc := by
@@ -214,30 +210,29 @@ theorem qNeg (b : BitVec 8) : (!decide (b.toNat < 128)) = decide (128 ≤ b.toNa
     exact (decide_eq_true (by omega)).symm
 
 /-- A digit of `Q`'s scalar: its multiple of `Q` added to the accumulator, if it is not zero. -/
-theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Point Cv}
-    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s : State} (hV : VLay c size)
-    (h : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) A s)
-    (hc : Ctx par s) (hB : EnvOK s stB) (hq : LTab c s.mem base) (hj : j < 257)
+theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
+    (h : VCore c base T size u v Q row E s) (hc : Ctx par s) (hB : EnvOK s stB)
+    {Tq : Nat → Fin pN × Fin pN × Fin pN} (hq : LTab Tq s.mem base) (hj : j < 257)
     (hb : s.gpr .rbx = BitVec.ofNat 64 j) {acc : Option (Fin pN × Fin pN × Fin pN)} (hacc : AccSt s acc) :
-    WP isa (qPass c) s fun t =>
-      JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) A t ∧ Ctx par t ∧ EnvOK t stB ∧
-        AccSt t (qNext c (tmv Cv c.K.M.n base s) v j acc) ∧ LKeep s t := by
+    WP isa (qPass c) s fun t => Ctx par t ∧ EnvOK t stB ∧ AccSt t (qNext Tq v j acc) ∧ LKeep s t := by
   have hn := hV.n
   have hbytes : c.K.bits + j < size := by
-    have := hV.stableB (c.K.bits, 64 * c.K.M.n + 1) (by simp [jointStableRanges])
+    have := hV.bitsB (c.K.bits, 64 * c.K.M.n + 1) (by simp)
     rw [hn] at this
     dsimp only at this
     omega
   rw [qPass, qBody]
   apply WP.seq
-  have hr := WP.mono (nafRead_ok h.field.scr hbytes hb (h.stable.peer j (by rw [hn]; omega)))
+  have hr := WP.mono (nafRead_ok h.field.scr hbytes hb (h.input.peer j (by rw [hn]; omega)))
     fun t (x : t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧ t.zf = some (decide (FastNaf.byte 5 v j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧
         t.zf = some (decide (FastNaf.byte 5 v j = 0))) ∧ VG.Proof.X25519.X86_64.Keeps [.r8] s t)
-  refine WP.mono_syms (WP.skeep rfl hr) fun a ⟨⟨a8, az⟩, ka⟩ sa => ?_
+  refine WP.mono (WP.skeep rfl hr) fun a ⟨⟨a8, az⟩, ka⟩ => ?_
   have la : LKeep s a := LKeep.of_skeep ka
-  have ca := jointCore_lkeep hV h la sa
+  have hsa : Scr a base size :=
+    ⟨(ka.gpr .rdi (by decide)).trans h.field.scr.rdi, by rw [ka.wr]; exact h.field.scr.wr, h.field.scr.nowrap⟩
   have hca : Ctx par a := ctx_skeep hc ka (by decide) (by decide) (fun r d hr' hd => by
     rw [List.mem_singleton] at hr'; subst hr'
     rw [lim_other (by decide) (by decide) (by decide)] at hd; omega)
@@ -245,7 +240,7 @@ theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
   have hacca : AccSt a acc := accSt_skeep ka (by decide) hacc
   refine WP.ite (decide (FastNaf.byte 5 v j = 0)) az (fun hz => ?_) (fun hnz => ?_)
   · have hz' : FastNaf.byte 5 v j = 0 := of_decide_eq_true hz
-    refine WP.block_nil ⟨ca, hca, hBa, ?_, la⟩
+    refine WP.block_nil ⟨hca, hBa, ?_, la⟩
     simp only [qNext, hz', ↓reduceIte]
     exact hacca
   · have hnz' : ¬FastNaf.byte 5 v j = 0 := of_decide_eq_false hnz
@@ -253,29 +248,11 @@ theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
     have hl := FastNaf.magnitude_le (Or.inl rfl) v j
     have ho := (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hmag
     have em : qMag (FastNaf.byte 5 v j) = FastNaf.magnitude 5 v j := FastNaf.byte_magnitude 5 v j
-    have hi : (FastNaf.magnitude 5 v j - 1) / 2 < 8 := by omega
-    have tv (x : Nat) : tmv Cv c.K.M.n base a x = tmv Cv c.K.M.n base s x := by
-      unfold tmv; rw [ka.mem]
-    have tw (x d : Nat) (hx : x = d) :
-        toM pN (2 ^ 256) (wordsVal a.mem base d 4) = tmv Cv c.K.M.n base s x := by
-      subst hx; unfold tmv; rw [ka.mem, hn]; rfl
-    have c2 := ca.stable.cache2 _ hi
-    have c3 := ca.stable.cache3 _ hi
-    rw [tv, tv] at c2
-    rw [tv, tv, tv] at c3
-    rw [c2] at c3
-    refine WP.mono_syms (qDigit_ok hn ca.field.scr hca hBa a8 (by rw [em]; omega) (by rw [em]; exact hl)
-      (by rw [em]; exact ho) hV.tbl hV.cache (by have := hV.cacheH; have := hV.pool; omega)
-      (by have := hV.cacheH; omega) (by rw [ka.mem]; exact hq)
-      (tw (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).x _ (by rw [tblPt_x, hn, em] <;> omega))
-      (tw (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).y _ (by rw [tblPt_y, hn, em] <;> omega))
-      (tw (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1)).z _ (by rw [tblPt_z, hn, em] <;> omega))
-      ((tw (c.cache + 16 * c.K.M.n * ((FastNaf.magnitude 5 v j - 1) / 2)) _ (by rw [hn, em] <;> omega)).trans c2)
-      ((tw (c.cache + 16 * c.K.M.n * ((FastNaf.magnitude 5 v j - 1) / 2) + 8 * c.K.M.n) _
-        (by rw [hn, em] <;> omega)).trans c3) hacca) fun t ⟨hct, hBt, hat, kt⟩ st => ?_
-    refine ⟨jointCore_lkeep hV ca kt st, hct, hBt, ?_, la.trans kt⟩
+    refine WP.mono (qDigit_ok hsa hca hBa a8 (by rw [em]; omega) (by rw [em]; exact hl) (by rw [em]; exact ho)
+      hV.pool (Tq := Tq) (by rw [ka.mem]; exact hq) hacca) fun t ⟨hct, hBt, hat, kt⟩ => ?_
+    refine ⟨hct, hBt, ?_, la.trans kt⟩
     simp only [qNext, hnz', ↓reduceIte]
-    rw [qNeg, FastNaf.byte_negative 5 v j] at hat
+    rw [qNeg, FastNaf.byte_negative 5 v j, em] at hat
     exact hat
 
 /-! ### A digit of the generator's scalar -/
@@ -298,6 +275,28 @@ def gNext (c : Joint.Cfg) {G : Point Cv} (row : JointGeneratorRow c.K.M.n Cv G (
   else some (accStep (toM Cv.p (2 ^ (64 * c.K.M.n)) (row.x (FastNaf.magnitude 9 u j)))
     (toM Cv.p (2 ^ (64 * c.K.M.n)) (row.y (FastNaf.magnitude 9 u j))) 1 (FastNaf.negative 9 u j) acc)
 
+/-- The read of the generator's digit `j`, two bytes: `jointFixedRead_ok`, of what the loop in vectors has. -/
+theorem vFixedRead_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
+    (h9 : c.gw = 9) (h : VCore c base T size u v Q row E s) (hj : j < 64 * c.K.M.n + 1) (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
+    WP isa (.block (Joint.fixedRead c)) s fun a =>
+      a.gpr .r8 = jointGCell c u j ∧ a.zf = some (decide (FastNaf.magnitude c.gw u j = 0)) ∧
+        VG.Proof.X25519.X86_64.Keeps [.r8] s a := by
+  have hh := hV.bitsB (c.gBits, jointGLen c) (by simp)
+  dsimp only at hh
+  rw [Joint.fixedRead, ite_eq_left h9]
+  have hl : jointGLen c = 2 * (64 * c.K.M.n + 1) := by rw [jointGLen, ite_eq_left h9]
+  have g0 := h.input.generator (2 * j) (by omega)
+  have g1 := h.input.generator (2 * j + 1) (by omega)
+  rw [jointGByte, ite_eq_left h9, FastNaf.wbyte] at g0 g1
+  rw [show 2 * j / 2 = j by omega, show 2 * j % 2 = 0 by omega, Nat.mul_zero] at g0
+  rw [show (2 * j + 1) / 2 = j by omega, show (2 * j + 1) % 2 = 1 by omega, Nat.mul_one, ← Nat.add_assoc] at g1
+  refine WP.mono (nafRead16_ok h.field.scr (by omega) hb g0 g1) fun a ⟨a8, az, ka⟩ => ⟨?_, ?_, ka⟩
+  · rw [a8, jointGCell, ite_eq_left h9]
+  · rw [az, h9]
+    congr 1
+    exact decide_eq_decide.mpr (FastNaf.word_zero_iff u j)
+
 theorem gNeg (w : BitVec 16) : (!decide (w.toNat < 256)) = decide (256 ≤ w.toNat) := by
   by_cases h : w.toNat < 256
   · simp only [h, decide_true, Bool.not_true]
@@ -306,14 +305,12 @@ theorem gNeg (w : BitVec 16) : (!decide (w.toNat < 256)) = decide (256 ≤ w.toN
     exact (decide_eq_true (by omega)).symm
 
 /-- A digit of the generator's scalar: its multiple of the generator added to the accumulator, if it is not zero. -/
-theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Point Cv}
-    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {s : State} (hV : VLay c size) (hL : JointLayout c size)
-    (h9 : c.gw = 9) (h : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) A s)
+theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point Cv}
+    {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv} {s : State} (hV : VLay c size)
+    (h9 : c.gw = 9) (h : VCore c base T size u v Q row E s)
     (hG : GTab base T size s) (hc : Ctx par s) (hB : EnvOK s stB) (hj : j < 257)
     (hb : s.gpr .rbx = BitVec.ofNat 64 j) {acc : Option (Fin pN × Fin pN × Fin pN)} (hacc : AccSt s acc) :
-    WP isa (gPass c) s fun t =>
-      JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) A t ∧ Ctx par t ∧ EnvOK t stB ∧
-        AccSt t (gNext c row u j acc) ∧ LKeep s t := by
+    WP isa (gPass c) s fun t => Ctx par t ∧ EnvOK t stB ∧ AccSt t (gNext c row u j acc) ∧ LKeep s t := by
   have hn := hV.n
   have hdi := h.field.scr.rdi
   have hnw := h.field.scr.nowrap
@@ -322,7 +319,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
   have hbig := hV.big
   rw [gPass, gBody]
   apply WP.seq
-  have hr := WP.mono (jointFixedRead_ok hL h (by rw [hn]; omega) hb)
+  have hr := WP.mono (vFixedRead_ok hV h9 h (by rw [hn]; omega) hb)
     fun t (x : t.gpr .r8 = jointGCell c u j ∧ t.zf = some (decide (FastNaf.magnitude c.gw u j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = jointGCell c u j ∧
@@ -331,7 +328,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
   rw [h9] at az
   have a8' : a.gpr .r8 = (FastNaf.word u j).setWidth 64 := by rw [a8, jointGCell, ite_eq_left h9]
   have la : LKeep s a := LKeep.of_skeep ka
-  have ca := jointCore_lkeep hV h la sa
+  have ca := h.lkeep hV la sa
   have hca : Ctx par a := ctx_skeep hc ka (by decide) (by decide) (fun r d hr' hd => by
     rw [List.mem_singleton] at hr'; subst hr'
     rw [lim_other (by decide) (by decide) (by decide)] at hd; omega)
@@ -339,7 +336,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
   have hacca : AccSt a acc := accSt_skeep ka (by decide) hacc
   refine WP.ite (decide (FastNaf.magnitude 9 u j = 0)) az (fun hz => ?_) (fun hnz => ?_)
   · have hz' : FastNaf.magnitude 9 u j = 0 := of_decide_eq_true hz
-    refine WP.block_nil ⟨ca, hca, hBa, ?_, la⟩
+    refine WP.block_nil ⟨hca, hBa, ?_, la⟩
     simp only [gNext, hz', ↓reduceIte]
     exact hacca
   · have hnz' : ¬FastNaf.magnitude 9 u j = 0 := of_decide_eq_false hnz
@@ -352,7 +349,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
     have hl : FastNaf.magnitude 9 u j ≤ 255 := by rw [e9]; exact FastNaf9.magnitude_le u j
     have ho : FastNaf.magnitude 9 u j % 2 = 1 := by
       rw [e9] at hnz' ⊢; exact (FastNaf9.magnitude_odd_or_zero u j).resolve_left hnz'
-    have hrow := ca.external (FastNaf.magnitude 9 u j) (by omega) (by rw [jointGTop, ite_eq_left h9]; exact hl) ho
+    have hrow := ca.input.external (FastNaf.magnitude 9 u j) (by omega) (by rw [jointGTop, ite_eq_left h9]; exact hl) ho
     have hGa := hG.lkeep la
     have eo : 16 * c.K.M.n * (FastNaf.magnitude 9 u j - 1) = 64 * (FastNaf.magnitude 9 u j - 1) := by rw [hn]
     have key : ∀ (n : Nat) (_ : n = 4) (P : Addr) (d d' w : Nat), d = d' → wordsVal a.mem P d n = w →
@@ -367,7 +364,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
       (x := toM Cv.p (2 ^ (64 * c.K.M.n)) (row.x (FastNaf.magnitude 9 u j)))
       (y := toM Cv.p (2 ^ (64 * c.K.M.n)) (row.y (FastNaf.magnitude 9 u j)))
       (by rw [em]; exact key _ hn _ _ _ _ rfl xv) (by rw [em]; exact key _ hn _ _ _ _ (by rw [hn]) yv) hacca)
-      fun t ⟨hct, hBt, hat, kt⟩ st => ?_
+      fun t ⟨hct, hBt, hat, kt⟩ _ => ?_
     · rw [em]
       obtain ⟨r, hr, hreg⟩ := hGa.1
       simp only [off, Offset.add_add]
@@ -380,7 +377,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q A : Poi
       have := (x - base).isLt
       simp only [ofs] at ho
       omega
-    refine ⟨jointCore_lkeep hV ca kt st, hct, hBt, ?_, la.trans kt⟩
+    refine ⟨hct, hBt, ?_, la.trans kt⟩
     simp only [gNext, hnz', ↓reduceIte]
     rw [gNeg, show FastNaf.word u j = FastNaf9.word u j from rfl, FastNaf9.word_negative u j, ← en] at hat
     exact hat
@@ -394,15 +391,10 @@ theorem point_zero {P : Point Cv} {w k j : Nat} (h : FastNaf.magnitude w k j = 0
   rw [FastNaf.point, h, h0]
   split <;> rfl
 
-/-- The table of the odd multiples of `Q`, as the field elements `E` of its slots. -/
-def QTab (c : Joint.Cfg) (E : Nat → Fe Cv) (Q : Point Cv) : Prop :=
-  ∀ a, 1 ≤ a → a ≤ 8 → InvJ Cv (E (c.K.tblPt a).x) (E (c.K.tblPt a).y) (E (c.K.tblPt a).z)
-    (Spec.Weierstrass.mul (2 * a - 1) Q)
-
-theorem accPt_qNext (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {E : Nat → Fe Cv} {v : Nat} {Q A : Point Cv}
-    (hT : QTab c E Q) (hQ : onCurve Cv Q = true) (hA : onCurve Cv A = true)
+theorem accPt_qNext (hC : Law Cv) (ha : AM3 Cv) {Tq : Nat → Fin pN × Fin pN × Fin pN} {v : Nat} {Q A : Point Cv}
+    (hT : QPts Tq 8 Q) (hQ : onCurve Cv Q = true) (hA : onCurve Cv A = true)
     {acc : Option (Fin pN × Fin pN × Fin pN)} (hacc : AccPt acc A) (j : Nat) :
-    AccPt (qNext c E v j acc) (Spec.Weierstrass.add A (FastNaf.point Cv Q 5 v j)) := by
+    AccPt (qNext Tq v j acc) (Spec.Weierstrass.add A (FastNaf.point Cv Q 5 v j)) := by
   unfold qNext
   split
   · rename_i hz
@@ -412,8 +404,8 @@ theorem accPt_qNext (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {E : Nat → Fe 
     have hmag : FastNaf.magnitude 5 v j ≠ 0 := fun he => hz ((FastNaf.byte_zero_iff 5 v j).mpr he)
     have hl := FastNaf.magnitude_le (Or.inl rfl) v j
     have ho := (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hmag
-    have ht := hT ((FastNaf.magnitude 5 v j - 1) / 2 + 1) (by omega) (by omega)
-    rw [show 2 * ((FastNaf.magnitude 5 v j - 1) / 2 + 1) - 1 = FastNaf.magnitude 5 v j by omega] at ht
+    have ht := hT ((FastNaf.magnitude 5 v j - 1) / 2) (by omega)
+    rw [show 2 * ((FastNaf.magnitude 5 v j - 1) / 2) + 1 = FastNaf.magnitude 5 v j by omega] at ht
     exact accPt_step hC ha (FastNaf.negative 5 v j) hA (hC.onCurve_mul hQ _) hacc ht
 
 theorem accPt_gNext (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {G A : Point Cv}
@@ -435,21 +427,22 @@ theorem accPt_gNext (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {G A : Point Cv}
     exact accPt_step hC ha (FastNaf.negative 9 u j) hA (hC.onCurve_mul hG _) hacc hp
 
 /-- The accumulator after digit `j` of both scalars. -/
-def stepAcc (c : Joint.Cfg) {G : Point Cv} (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv)
-    (u v j : Nat) (acc : Option (Fin pN × Fin pN × Fin pN)) : Option (Fin pN × Fin pN × Fin pN) :=
-  gNext c row u j (qNext c E v j (accDbl acc))
+def stepAcc (c : Joint.Cfg) {G : Point Cv} (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c))
+    (Tq : Nat → Fin pN × Fin pN × Fin pN) (u v j : Nat) (acc : Option (Fin pN × Fin pN × Fin pN)) :
+    Option (Fin pN × Fin pN × Fin pN) :=
+  gNext c row u j (qNext Tq v j (accDbl acc))
 
 /-- The accumulator after the `k` digits from the top of both scalars. -/
-def accN (c : Joint.Cfg) {G : Point Cv} (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv)
-    (u v : Nat) : Nat → Option (Fin pN × Fin pN × Fin pN)
+def accN (c : Joint.Cfg) {G : Point Cv} (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c))
+    (Tq : Nat → Fin pN × Fin pN × Fin pN) (u v : Nat) : Nat → Option (Fin pN × Fin pN × Fin pN)
   | 0 => none
-  | k + 1 => stepAcc c row E u v (256 - k) (accN c row E u v k)
+  | k + 1 => stepAcc c row Tq u v (256 - k) (accN c row Tq u v k)
 
 /-- The accumulator stands for the sum of the digits so far, or its `z` is zero. -/
 theorem accN_pt (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {G Q : Point Cv}
-    (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) {E : Nat → Fe Cv} {u v : Nat} (h9 : c.gw = 9)
-    (hT : QTab c E Q) (hG : onCurve Cv G = true) (hQ : onCurve Cv Q = true) (hu : u < 2 ^ 256) (hv : v < 2 ^ 256) :
-    ∀ k, k ≤ 257 → AccPt (accN c row E u v k) (jointPoint G Q u v (257 - k) 9)
+    (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) {Tq : Nat → Fin pN × Fin pN × Fin pN} {u v : Nat}
+    (h9 : c.gw = 9) (hT : QPts Tq 8 Q) (hG : onCurve Cv G = true) (hQ : onCurve Cv Q = true) (hu : u < 2 ^ 256)
+    (hv : v < 2 ^ 256) : ∀ k, k ≤ 257 → AccPt (accN c row Tq u v k) (jointPoint G Q u v (257 - k) 9)
   | 0, _ => jointPoint_top G Q hu hv 9
   | k + 1, hk => by
     have ih := accN_pt hC ha row h9 hT hG hQ hu hv k (by omega)
@@ -463,46 +456,19 @@ theorem accN_pt (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {G Q : Point Cv}
     rw [show 257 - (k + 1) = 256 - k by omega]
     exact h2
 
-/-- The slots of the table of `Q`'s odd multiples are among those the invariant has the values of. -/
-theorem qNext_congr {c : Joint.Cfg} {E E' : Nat → Fe Cv} (h : ∀ x ∈ jointLive c, E x = E' x) (v j : Nat)
-    (acc : Option (Fin pN × Fin pN × Fin pN)) : qNext c E v j acc = qNext c E' v j acc := by
-  unfold qNext
-  split
-  · rfl
-  · rename_i hz
-    have hmag : FastNaf.magnitude 5 v j ≠ 0 := fun he => hz ((FastNaf.byte_zero_iff 5 v j).mpr he)
-    have hl := FastNaf.magnitude_le (Or.inl rfl) v j
-    have hm (x : Nat) (hx : x ∈ jacCoords (c.K.tblPt ((FastNaf.magnitude 5 v j - 1) / 2 + 1))) :
-        x ∈ jointLive c := jointStable_live c x (jointStable_table c (by omega) (by omega) hx)
-    rw [h _ (hm _ (by simp [jacCoords])), h _ (hm _ (by simp [jacCoords])), h _ (hm _ (by simp [jacCoords]))]
-
-/-- The loop's invariant before digit `j - 1`: the joint multiplication's, with `R` still `O` and the
-field elements `E` in its slots; the accumulator `acc` in the vectors. -/
+/-- The loop's invariant before digit `j - 1`: what the loop has of the joint multiplication, the table of
+`Q`'s odd multiples as limbs, and the accumulator `acc` in the vectors. -/
 structure VInv (c : Joint.Cfg) (base T K : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)
     (row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)) (E : Nat → Fe Cv) (j : Nat)
     (acc : Option (Fin pN × Fin pN × Fin pN)) (t : State) : Prop where
-  core : JointCore c Cv base size Q u v (JointGenerator c Cv base T size row) .infinity t
-  live : ∀ x ∈ jointLive c, tmv Cv c.K.M.n base t x = E x
+  core : VCore c base T size u v Q row E t
   gtab : GTab base T size t
   ctx : Ctx par t
   env : EnvOK t stB
-  ltab : LTab c t.mem base
+  ltab : LTab (tqE c E) t.mem base
   acc : AccSt t acc
   rbx : t.gpr .rbx = BitVec.ofNat 64 j
   k : t.gpr .r10 = K
-
-/-- The field elements of the joint multiplication's slots are kept by the loop's code. -/
-theorem live_vkeep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat} {G Q A : Point C}
-    {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State} (hV : VLay c size)
-    (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s) (k : VKeep s t) :
-    ∀ x ∈ jointLive c, tmv C c.K.M.n base t x = tmv C c.K.M.n base s x := by
-  have hnw := h.field.scr.nowrap
-  have hu : Unch base vW s.mem t.mem := by
-    have := k.mem
-    rw [h.field.scr.rdi] at this
-    exact this.mono (by decide)
-  have st : Scr t base size := ⟨(k.gpr .rdi (by decide)).trans h.field.scr.rdi, k.wr ▸ h.field.scr.wr, hnw⟩
-  exact (Inv.of_unch h.field st hu hV.liveB hV.live hV.mo).val
 
 /-- The invariant after code that keeps what the loop keeps. -/
 theorem VInv.vkeep {c : Joint.Cfg} {base T K : Addr} {size u v j j' : Nat} {G Q : Point Cv}
@@ -511,8 +477,8 @@ theorem VInv.vkeep {c : Joint.Cfg} {base T K : Addr} {size u v j j' : Nat} {G Q 
     (h : VInv c base T K size u v Q row E j acc s) (k : VKeep s t) (hs : t.syms = s.syms) (hc : Ctx par t)
     (hB : EnvOK t stB) (ha : AccSt t acc') (hb : t.gpr .rbx = BitVec.ofNat 64 j')
     (h10 : t.gpr .r10 = s.gpr .r10) : VInv c base T K size u v Q row E j' acc' t :=
-  ⟨jointCore_vkeep hV h.core k hs, fun x hx => (live_vkeep hV h.core k x hx).trans (h.live x hx),
-    h.gtab.vkeep k, hc, hB, h.ltab.unch (h.core.field.scr.rdi ▸ k.mem) hV.tbl (Nat.le_refl 7) (fun w hw => by
+  ⟨h.core.vkeep hV k hs, h.gtab.vkeep k, hc, hB,
+    h.ltab.unch (h.core.field.scr.rdi ▸ k.mem) (Nat.le_refl 8) (fun w hw => by
       rw [List.mem_singleton] at hw; subst hw; exact Or.inl (by decide)), ha, hb, h10.trans h.k⟩
 
 /-- The invariant after scalar code that keeps the registers the blocks read through. -/
@@ -579,11 +545,11 @@ theorem vqRead_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Po
         t.zf = some (decide (FastNaf.byte 5 v j = 0)) := by
   have hn := hV.n
   have hbytes : c.K.bits + j < size := by
-    have := hV.stableB (c.K.bits, 64 * c.K.M.n + 1) (by simp [jointStableRanges])
+    have := hV.bitsB (c.K.bits, 64 * c.K.M.n + 1) (by simp)
     rw [hn] at this
     dsimp only at this
     omega
-  have hr := WP.mono (nafRead_ok h.core.field.scr hbytes h.rbx (h.core.stable.peer j (by rw [hn]; omega)))
+  have hr := WP.mono (nafRead_ok h.core.field.scr hbytes h.rbx (h.core.input.peer j (by rw [hn]; omega)))
     fun t (x : t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧ t.zf = some (decide (FastNaf.byte 5 v j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧
@@ -595,22 +561,21 @@ theorem vq_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Point 
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv}
     {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (hj : j < 257)
     (h : VInv c base T K size u v Q row E j acc s) :
-    WP isa (qPass c) s fun t => VInv c base T K size u v Q row E j (qNext c E v j acc) t ∧ VKeep s t := by
-  refine WP.mono_syms (qPass_ok hV h.core h.ctx h.env h.ltab hj h.rbx h.acc) fun t ⟨_, hct, hBt, hat, kt⟩ st => ?_
-  rw [qNext_congr h.live] at hat
+    WP isa (qPass c) s fun t => VInv c base T K size u v Q row E j (qNext (tqE c E) v j acc) t ∧ VKeep s t := by
+  refine WP.mono_syms (qPass_ok hV h.core h.ctx h.env h.ltab hj h.rbx h.acc) fun t ⟨hct, hBt, hat, kt⟩ st => ?_
   exact ⟨h.vkeep hV (.of_lkeep kt) st hct hBt hat ((kt.gpr .rbx (by decide)).trans h.rbx) (kt.gpr .r10 (by decide)),
     .of_lkeep kt⟩
 
 /-- A digit of the generator's scalar, read. -/
 theorem vgRead_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv}
-    {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (hL : JointLayout c size)
-    (h9 : c.gw = 9) (hj : j < 257) (h : VInv c base T K size u v Q row E j acc s) :
+    {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (h9 : c.gw = 9)
+    (hj : j < 257) (h : VInv c base T K size u v Q row E j acc s) :
     WP isa (.block (Joint.fixedRead c)) s fun t =>
       VInv c base T K size u v Q row E j acc t ∧ t.gpr .r8 = (FastNaf.word u j).setWidth 64 ∧
         t.zf = some (decide (FastNaf.magnitude 9 u j = 0)) := by
   have hn := hV.n
-  have hr := WP.mono (jointFixedRead_ok hL h.core (by rw [hn]; omega) h.rbx)
+  have hr := WP.mono (vFixedRead_ok hV h9 h.core (by rw [hn]; omega) h.rbx)
     fun t (x : t.gpr .r8 = jointGCell c u j ∧ t.zf = some (decide (FastNaf.magnitude c.gw u j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = jointGCell c u j ∧
@@ -622,11 +587,11 @@ theorem vgRead_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Po
 /-- A digit of the generator's scalar. -/
 theorem vg_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv}
-    {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (hL : JointLayout c size)
-    (h9 : c.gw = 9) (hj : j < 257) (h : VInv c base T K size u v Q row E j acc s) :
+    {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (h9 : c.gw = 9)
+    (hj : j < 257) (h : VInv c base T K size u v Q row E j acc s) :
     WP isa (gPass c) s fun t => VInv c base T K size u v Q row E j (gNext c row u j acc) t ∧ VKeep s t := by
-  refine WP.mono_syms (gPass_ok hV hL h9 h.core h.gtab h.ctx h.env hj h.rbx h.acc)
-    fun t ⟨_, hct, hBt, hat, kt⟩ st => ?_
+  refine WP.mono_syms (gPass_ok hV h9 h.core h.gtab h.ctx h.env hj h.rbx h.acc)
+    fun t ⟨hct, hBt, hat, kt⟩ st => ?_
   exact ⟨h.vkeep hV (.of_lkeep kt) st hct hBt hat ((kt.gpr .rbx (by decide)).trans h.rbx) (kt.gpr .r10 (by decide)),
     .of_lkeep kt⟩
 
@@ -643,10 +608,10 @@ theorem vtail_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Poi
 /-- A digit of each scalar. -/
 theorem vstep_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Point Cv}
     {row : JointGeneratorRow c.K.M.n Cv G (jointGTop c)} {E : Nat → Fe Cv}
-    {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (hL : JointLayout c size)
-    (h9 : c.gw = 9) (hj : j < 257) (h : VInv c base T K size u v Q row E (j + 1) acc s) :
+    {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State} (hV : VLay c size) (h9 : c.gw = 9)
+    (hj : j < 257) (h : VInv c base T K size u v Q row E (j + 1) acc s) :
     WP isa (vstep c) s fun t =>
-      (VInv c base T K size u v Q row E j (stepAcc c row E u v j acc) t ∧ t.zf = some (decide (j = 0))) ∧
+      (VInv c base T K size u v Q row E j (stepAcc c row (tqE c E) u v j acc) t ∧ t.zf = some (decide (j = 0))) ∧
         VKeep s t := by
   rw [vstep]
   apply WP.assoc
@@ -655,7 +620,7 @@ theorem vstep_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Poi
   apply WP.seq
   refine WP.mono (vq_ok hV hj ia) fun b ⟨ib, kb⟩ => ?_
   apply WP.seq
-  refine WP.mono (vg_ok hV hL h9 hj ib) fun d ⟨id, kd⟩ => ?_
+  refine WP.mono (vg_ok hV h9 hj ib) fun d ⟨id, kd⟩ => ?_
   exact WP.mono (vtail_ok hV hj id) fun t ⟨it, kt⟩ => ⟨it, ((ka.trans kb).trans kd).trans kt⟩
 
 end VG.Proof.P256.X86_64.Ifma

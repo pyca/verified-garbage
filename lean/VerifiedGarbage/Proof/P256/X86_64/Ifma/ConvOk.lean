@@ -4,6 +4,8 @@ module
 
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Ends
 public import VerifiedGarbage.Impl.P256.X86_64.Ifma.Loop
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # P-256 on x86-64 with AVX512_IFMA: an entry from the words of field elements
@@ -22,7 +24,7 @@ namespace VG.Proof.P256.X86_64.Ifma
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 open VG.Proof.Poly1305.X86_64.Avx2 (sel4)
 open VG.Proof.Bignum.X86_64.Ifma (vi_vreg qv)
-open VG.Impl.Rsa.X86_64.CrtIfma (vreg)
+open VG.Impl.Rsa.X86_64.CrtIfma (vreg at_)
 open VG.Proof.Weierstrass (Unch)
 
 /-- The number whose four words are the lanes of `v`. -/
@@ -477,22 +479,6 @@ theorem loadB_ok {w : State} (hc : Ctx par w) (hB : EnvOK w (bndsOf regs25 (stBT
     · exact hS.car 4 3 (by decide) rfl rfl hx
   · exact hS.car 5 0 (by decide) rfl rfl (hE.zzz.limbs lm)
 
-/-- Two facts of one run. -/
-theorem WP.both {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : WP isa c s Q₁) (h₂ : WP isa c s Q₂) :
-    WP isa c s fun t => Q₁ t ∧ Q₂ t := by
-  obtain ⟨t₁, s₁, e₁, q₁⟩ := h₁
-  obtain ⟨t₂, s₂, e₂, q₂⟩ := h₂
-  obtain ⟨-, rfl⟩ := Exec.det e₁ e₂
-  exact ⟨t₁, s₁, e₁, q₁, q₂⟩
-
-/-- `convQ` keeps the accumulator's registers, whatever they hold. -/
-theorem convQ_regs {s₀ : State} (hc : Ctx par s₀) :
-    WP isa (.block convQPieces.flatten) s₀ fun s => ∀ r, r < 20 → ∀ k, k < 4 → qv s (vreg r) k = qv s₀ (vreg r) k := by
-  have hT : ∀ r, r < 20 → (segT (convQ tops) convQT)[r]? = some (.reg r) := by decide +kernel
-  have hL : ∀ r, r < 20 → regs30[r]? = some (.reg r) := by decide
-  rw [convQPieces_flat]
-  exact WP.mono (stage_wp convQ_chk0 hc) fun s ⟨_, _, h⟩ r hr k hk => h r _ _ (hL r hr) (hT r hr) k hk
-
 /-- The accumulator's registers zero are within the bounds a block starts from. -/
 theorem envOK_zero {t : State} (hz : ∀ r, r < 20 → ∀ k, k < 4 → qv t (vreg r) k = 0) : EnvOK t stB := by
   refine envOK_of fun n l hl k hk b hb => ?_
@@ -517,68 +503,117 @@ theorem envOK_zero {t : State} (hz : ∀ r, r < 20 → ∀ k, k < 4 → qv t (vr
 
 /-! ### An entry stored -/
 
-/-- What the code that stores an entry at `o` of the working space runs with: the constants, and
-the entry's seven vectors. -/
-def parT (o : Nat) : Par := ⟨.r10, par.cst, fun _ => 0, o + 224, o, o % 32⟩
+/-- The first four limbs of the first lane of `ymm5`–`ymm9`. -/
+abbrev packV : T := Id.run (col tops (.reg 5) (.reg 6) (.reg 7) (.reg 8) 0)
 
-/-- The first four limbs of the first lane of `ymm25`–`ymm29`. -/
-abbrev packV : T := Id.run (col tops (.reg 25) (.reg 26) (.reg 27) (.reg 28) 0)
-
-/-- Entry `a`'s code stores `ymm20`–`ymm24`, the limbs of `packV` and `ymm29`, and keeps the accumulator. -/
-def chkStore (a : Nat) : Bool :=
-  match VSym.init.run (parT (TOFF + 200 * a)) (packTPieces.flatten ++ storeEnt (TOFF + 200 * a)) with
-  | some σ => ((List.range 5).all fun i => decide (look σ.st (TOFF + 200 * a + 32 * i) = .reg (20 + i))) &&
-      decide (look σ.st (TOFF + 200 * a + 160) = packV) && decide (look σ.st (TOFF + 200 * a + 192) = .reg 29) &&
-      (List.range 20).all fun r => decide (σ.reg r = .reg r)
+/-- `packT0` leaves `packV` in `ymm5`, keeps the other registers and stores nothing. -/
+def chkPack : Bool :=
+  match VSym.init.run par packT0Pieces.flatten with
+  | some σ => σ.st.isEmpty && decide (σ.reg 5 = packV) &&
+      (List.range 20).all fun r => r == 5 || decide (σ.reg r = .reg r)
   | none => false
 
-theorem store_chk : (List.range 7).all chkStore = true := by decide +kernel
+theorem pack_chk : chkPack = true := by decide +kernel
 
-theorem packV_eval (s : State) {k : Nat} (hk : k < 4) : packV.eval s k = qv s (vreg (25 + k)) 0 := by
+theorem packV_eval (s : State) {k : Nat} (hk : k < 4) : packV.eval s k = qv s (vreg (5 + k)) 0 := by
   rw [packV, col_eq]
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
 
-/-- An entry's vectors stored at `TOFF + 200 a` of the working space. -/
-theorem store_ok {a : Nat} (ha : a < 7) {s : State} (hc : Ctx (parT (TOFF + 200 * a)) s) :
-    WP isa (.block (packTPieces.flatten ++ storeEnt (TOFF + 200 * a))) s fun t =>
-      vm s t = t ∧ Unch (s.gpr .rdi) [(TOFF + 200 * a, 224)] s.mem t.mem ∧
-        (∀ r, r < 20 → ∀ k, k < 4 → qv t (vreg r) k = qv s (vreg r) k) ∧
-        (∀ i, i < 5 → ∀ k, k < 4 →
-          t.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (TOFF + 200 * a + 32 * i + 8 * k)) 64 = qv s (vreg (20 + i)) k) ∧
-        (∀ k, k < 4 →
-          t.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (TOFF + 200 * a + 160 + 8 * k)) 64 = qv s (vreg (25 + k)) 0) ∧
-        t.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (TOFF + 200 * a + 192 + 8 * 0)) 64 = qv s (vreg 29) 0 := by
-  have hchk := List.all_eq_true.1 store_chk a (List.mem_range.2 ha)
-  unfold chkStore at hchk
+/-- The first four limbs of `tb`'s first lane into the lanes of `ymm5`. -/
+theorem pack_ok {s : State} (hc : Ctx par s) :
+    WP isa (.block packT0Pieces.flatten) s fun t =>
+      vm s t = t ∧ t.mem = s.mem ∧ (∀ r, r < 20 → r ≠ 5 → ∀ k, k < 4 → qv t (vreg r) k = qv s (vreg r) k) ∧
+        ∀ k, k < 4 → qv t (vreg 5) k = qv s (vreg (5 + k)) 0 := by
+  have hchk := pack_chk
+  unfold chkPack at hchk
   split at hchk
   case h_2 => cases hchk
   rename_i σ hσ
-  simp only [Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, List.mem_range] at hchk
-  obtain ⟨⟨⟨c1, c2⟩, c3⟩, c4⟩ := hchk
-  have hw : (parT (TOFF + 200 * a)).win < 2 ^ 62 := by show TOFF + 200 * a + 224 < 2 ^ 62; simp only [TOFF]; omega
-  refine WP.mono (srun_ok hc _ (SRel.init _ s) hσ) fun t h => ⟨h.eq, ?_, fun r hr k hk => ?_, fun i hi k hk => ?_,
-    fun k hk => ?_, ?_⟩
-  · rw [h.mem]
-    have := stores_unchP hw s σ.st fun e he => ⟨h.lo e he, (h.al e he).2⟩
-    rwa [show (parT (TOFF + 200 * a)).win - (parT (TOFF + 200 * a)).lo = 224 from Nat.add_sub_cancel_left ..] at this
+  simp only [Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, List.all_eq_true, List.mem_range, beq_iff_eq,
+    List.isEmpty_iff] at hchk
+  obtain ⟨⟨c0, c5⟩, c4⟩ := hchk
+  refine WP.mono (srun_ok hc _ (SRel.init _ s) hσ) fun t h => ⟨h.eq, ?_, fun r hr hn k hk => ?_, fun k hk => ?_⟩
+  · rw [h.mem, c0]; rfl
   · have := h.reg (vreg r) k hk
-    rw [vi_vreg r (by omega), c4 r hr] at this
+    rw [vi_vreg r (by omega), (c4 r hr).resolve_left hn] at this
     exact this
-  · rw [h.mem, stores_look hw (show (TOFF + 200 * a + 32 * i) % 32 = (TOFF + 200 * a) % 32 by omega)
-      (show TOFF + 200 * a + 32 * i + 32 ≤ TOFF + 200 * a + 224 by omega) hk σ.st h.al, c1 i hi]
-    rfl
-  · rw [h.mem, stores_look hw (show (TOFF + 200 * a + 160) % 32 = (TOFF + 200 * a) % 32 by omega)
-      (show TOFF + 200 * a + 160 + 32 ≤ TOFF + 200 * a + 224 by omega) hk σ.st h.al, c2]
-    exact packV_eval s hk
-  · rw [h.mem, stores_look hw (show (TOFF + 200 * a + 192) % 32 = (TOFF + 200 * a) % 32 by omega)
-      (show TOFF + 200 * a + 192 + 32 ≤ TOFF + 200 * a + 224 by omega) (by decide) σ.st h.al, c3]
-    rfl
+  · have := h.reg (vreg 5) k hk
+    rw [vi_vreg 5 (by decide), c5] at this
+    exact this.trans (packV_eval s hk)
+
+/-- Memory after 32-byte stores at offsets of `p`, the first first. -/
+def wr32 (m : Mem) (p : Addr) : List (Nat × BitVec 256) → Mem
+  | [] => m
+  | (e, v) :: l => wr32 (m.writeW (p + BitVec.ofNat 64 e) v) p l
+
+/-- A quadword that the stores are apart from. -/
+theorem wr32_off (p : Addr) {o k al : Nat} (hk : k < 4) (ho : o % 32 = al) (ho' : o < 2 ^ 62) :
+    ∀ (l : List (Nat × BitVec 256)) (m : Mem), (∀ e ∈ l, e.1 % 32 = al ∧ e.1 < 2 ^ 62 ∧ e.1 ≠ o) →
+      (wr32 m p l).readW (p + BitVec.ofNat 64 (o + 8 * k)) 64 = m.readW (p + BitVec.ofNat 64 (o + 8 * k)) 64
+  | [], _, _ => rfl
+  | (e, v) :: l, m, he => by
+    have he0 := he (e, v) List.mem_cons_self
+    simp only [wr32]
+    rw [wr32_off p hk ho ho' l _ (fun x hx => he x (List.mem_cons_of_mem _ hx))]
+    exact readW_writeW_off m p v (d := o + 8 * k) (e := e) (n := 8) (by omega) (by simp only [Nat.reduceDiv]; omega)
+      (by simp only [Nat.reduceDiv]; omega)
+
+/-- A quadword of one of the stores, which are at different offsets. -/
+theorem wr32_read (p : Addr) {k al : Nat} (hk : k < 4) :
+    ∀ (l : List (Nat × BitVec 256)) (m : Mem), (∀ e ∈ l, e.1 % 32 = al ∧ e.1 < 2 ^ 62) →
+      l.Pairwise (fun a b => a.1 ≠ b.1) → ∀ o v, (o, v) ∈ l →
+      (wr32 m p l).readW (p + BitVec.ofNat 64 (o + 8 * k)) 64 = qword256 v k
+  | [], _, _, _, _, _, h => nomatch h
+  | (e, t) :: l, m, he, hp, o, v, h => by
+    have he0 := he (e, t) List.mem_cons_self
+    obtain ⟨hne, hp'⟩ := List.pairwise_cons.mp hp
+    simp only [wr32]
+    rcases List.mem_cons.mp h with heq | hin
+    · cases heq
+      rw [wr32_off p hk he0.1 he0.2 l _ (fun x hx => ⟨(he x (List.mem_cons_of_mem _ hx)).1,
+        (he x (List.mem_cons_of_mem _ hx)).2, fun h' => hne x hx h'.symm⟩)]
+      have r1 := readW_writeW_inside m (p + BitVec.ofNat 64 e) t (k := 8 * k) (n := 8) (by omega) (by decide)
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add] at r1
+      rw [r1, qword256, show 64 * k = 8 * (8 * k) by omega]
+    · exact wr32_read p hk l _ (fun x hx => he x (List.mem_cons_of_mem _ hx)) hp' o v hin
+
+/-- The stores change nothing outside the bytes they are to. -/
+theorem wr32_unch (p : Addr) {lo n : Nat} (hn : lo + n < 2 ^ 62) :
+    ∀ (l : List (Nat × BitVec 256)) (m : Mem), (∀ e ∈ l, lo ≤ e.1 ∧ e.1 + 32 ≤ lo + n) →
+      Unch p [(lo, n)] m (wr32 m p l)
+  | [], _, _ => Unch.refl _ _ _
+  | (e, v) :: l, m, he => by
+    have he0 := he (e, v) List.mem_cons_self
+    intro x hx
+    have h1 := hx (lo, n) (List.mem_singleton.2 rfl)
+    simp only [wr32]
+    rw [wr32_unch p hn l _ (fun y hy => he y (List.mem_cons_of_mem _ hy)) x hx, writeW_byte_off _ _ _ _ ?_]
+    simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.reduceDiv]
+    have := (x - p).isLt
+    simp only [VG.Proof.Mont.ofs] at h1
+    omega
+
+theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVec.ofNat 64 d :=
+  VG.Proof.Bignum.X86_64.AmmSym.baseOff_ok (m := at_ b d) rfl s
+
+/-- Vector registers stored through `b`, which is at `o` from `p`. -/
+theorem evStores_ok (b : Reg) (p : Addr) (o : Nat) :
+    ∀ (l : List (Nat × VReg)) (s : State), s.gpr b = p + BitVec.ofNat 64 o →
+      (∀ e ∈ l, InRegions s.wr (p + BitVec.ofNat 64 (o + e.1)) 32) →
+      WP isa (.block (l.map fun e => Instr.evStore (at_ b e.1) e.2)) s fun t =>
+        t = { s with mem := wr32 s.mem p (l.map fun e => (o + e.1, s.vy e.2)) }
+  | [], _, _, _ => WP.block_nil rfl
+  | (d, r) :: l, s, hb, hin => by
+    have h0 := hin (d, r) List.mem_cons_self
+    refine WP.block_cons_iff.2 ⟨{ s with mem := s.mem.writeW (p + BitVec.ofNat 64 (o + d)) (s.vy r) }, ?_, ?_⟩
+    · simp only [exec, ea_at, hb, VG.Offset.add_add, State.store256, h0, ite_true]
+    · exact evStores_ok b p o l _ hb (fun e he => hin e (List.mem_cons_of_mem _ he))
 
 /-- The entry stored stands for what the registers did. -/
-theorem lent_of {s : State} {m : Mem} {p : Addr} {P : AP (Fin pN)} (hE : EntOk (envOf s) (t5 20) (t5 25) P)
-    (ha : ∀ i, i < 5 → ∀ k, k < 4 → m.readW (p + BitVec.ofNat 64 (32 * i + 8 * k)) 64 = qv s (vreg (20 + i)) k)
-    (hb : ∀ k, k < 4 → m.readW (p + BitVec.ofNat 64 (160 + 8 * k)) 64 = qv s (vreg (25 + k)) 0)
-    (hl : m.readW (p + BitVec.ofNat 64 (192 + 8 * 0)) 64 = qv s (vreg 29) 0) : LEnt m p P := by
+theorem lent_of {s : State} {m : Mem} {p : Addr} {P : AP (Fin pN)} (hE : EntOk (envOf s) (t5 0) (t5 5) P)
+    (ha : ∀ i, i < 5 → ∀ k, k < 4 → m.readW (p + BitVec.ofNat 64 (32 * i + 8 * k)) 64 = qv s (vreg i) k)
+    (hb : ∀ k, k < 4 → m.readW (p + BitVec.ofNat 64 (160 + 8 * k)) 64 = qv s (vreg (5 + k)) 0)
+    (hl : m.readW (p + BitVec.ofNat 64 (192 + 8 * 0)) 64 = qv s (vreg 9) 0) : LEnt m p P := by
   -- a quadword that is a limb is its number
   have nat (x : BitVec 64) (h : 0 ≤ x.toInt) : (x.toNat : Int) = x.toInt := by
     have := x.isLt
@@ -586,19 +621,19 @@ theorem lent_of {s : State} {m : Mem} {p : Addr} {P : AP (Fin pN)} (hE : EntOk (
     split at h <;> rename_i hx
     · simp only [hx, ite_true]
     · omega
-  have ta (k : Nat) (hk : k < 4) (hc : Carried (envOf s) k (t5 20)) (i : Nat) (hi : i < 5) :
-      (taL.get i).int (memEnv m p) k = ((t5 20).get i).int (envOf s) k := by
-    have e : (taL.get i).int (memEnv m p) k = ((qv s (vreg (20 + i)) k).toNat : Int) := by
+  have ta (k : Nat) (hk : k < 4) (hc : Carried (envOf s) k (t5 0)) (i : Nat) (hi : i < 5) :
+      (taL.get i).int (memEnv m p) k = ((t5 0).get i).int (envOf s) k := by
+    have e : (taL.get i).int (memEnv m p) k = ((qv s (vreg i) k).toNat : Int) := by
       rw [← ha i hi k hk]
       rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
-    have e' : ((t5 20).get i).int (envOf s) k = (qv s (vreg (20 + i)) k).toInt := by
+    have e' : ((t5 0).get i).int (envOf s) k = (qv s (vreg i) k).toInt := by
       rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
     rw [e, e']
     exact nat _ (e' ▸ (hc.get hi).1)
-  have tb (i : Nat) (hi : i < 5) : (tbL.get i).int (memEnv m p) 0 = ((t5 25).get i).int (envOf s) 0 := by
-    have e' : ((t5 25).get i).int (envOf s) 0 = (qv s (vreg (25 + i)) 0).toInt := by
+  have tb (i : Nat) (hi : i < 5) : (tbL.get i).int (memEnv m p) 0 = ((t5 5).get i).int (envOf s) 0 := by
+    have e' : ((t5 5).get i).int (envOf s) 0 = (qv s (vreg (5 + i)) 0).toInt := by
       rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
-    have e : (tbL.get i).int (memEnv m p) 0 = ((qv s (vreg (25 + i)) 0).toNat : Int) := by
+    have e : (tbL.get i).int (memEnv m p) 0 = ((qv s (vreg (5 + i)) 0).toNat : Int) := by
       rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
       · rw [← hb 0 (by decide)]; rfl
       · rw [← hb 1 (by decide)]; rfl

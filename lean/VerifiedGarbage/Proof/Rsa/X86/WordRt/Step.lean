@@ -138,7 +138,7 @@ theorem step_ok {s : State} (h : RtWs L s B Z len N) {ml a r m t : Nat} (hm : ML
   have m160 : 160 ≤ arr (kw len) m := by simp only [arr, VG.Impl.Rsa.X86.Keys.hdr]; omega
   obtain ⟨k, hk⟩ : ∃ k, wq a = k + 3 := ⟨wq a - 3, by omega⟩
   -- `r`'s top three words.
-  have hx3 := VG.Proof.Bignum.X86.R2Words.val32_top3 s.mem B (arr (kw len) r) k
+  have hx3 := VG.Proof.Bignum.WordTop32.val32_top3 s.mem B (arr (kw len) r) k
   rw [← hk, hR] at hx3
   obtain ⟨u0, hu0⟩ : ∃ u0, u0 = w32 s.mem B (arr (kw len) r + 4 * k) := ⟨_, rfl⟩
   obtain ⟨u1, hu1⟩ : ∃ u1, u1 = w32 s.mem B (arr (kw len) r + 4 * (k + 1)) := ⟨_, rfl⟩
@@ -221,7 +221,7 @@ theorem step_ok {s : State} (h : RtWs L s B Z len N) {ml a r m t : Nat} (hm : ML
       (d := d) (by rw [w₁ _ (by decide)]; exact H.d.trans hdd.symm)
       (by rw [w₁ _ (by decide), hdd]; exact H.v) hd1 hd2 hud hu1') rfl)
     fun s₁ ⟨⟨hq₁, O₁', C₁, K₁'⟩, KK⟩ => ?_
-  rw [VG.Proof.Bignum.X86.R2Words.qhat_min hud hu1' (by omega)] at hq₁
+  rw [VG.Proof.Bignum.WordTop32.qhat_min hud hu1' (by omega)] at hq₁
   have bp₂ : s₁.gpr .ebp = BitVec.ofNat 32 u1 := (KK.1 _ (by decide)).trans bp₁
   have K₀s₁ : Keeps [.eax, .ebx, .ecx, .edx, .esi, .ebp] s s₁ := (K₀₁.mono (by decide)).trans K₁'
   have di₂ : PtrAt s₁ B .edi 0 := by rw [PtrAt, K₁'.1 _ (by decide)]; exact di₁
@@ -277,7 +277,7 @@ theorem step_ok {s : State} (h : RtWs L s B Z len N) {ml a r m t : Nat} (hm : ML
   have tb : ∀ mm : Mem, (2 ^ 31 ≤ w32 mm B (arr (kw len) t + 4 * wq a)) ↔
       2 ^ (32 * (wq a + 1)) / 2 ≤ val32 mm B (arr (kw len) t) (wq a + 1) := fun mm => by
     rw [val32_succ]
-    exact (VG.Proof.Bignum.X86.R2Words.topBit_iff (val32_lt _ _ _ _) (mm.readW _ 32).isLt).symm
+    exact (VG.Proof.Bignum.WordTop32.topBit_iff (val32_lt _ _ _ _) (mm.readW _ 32).isLt).symm
   have hv₄' : val32 s₄.mem B (arr (kw len) t) (wq a + 1) + 2 ^ (32 * (wq a + 1)) * c =
       val32 s₃.mem B (arr (kw len) t) (wq a + 1) +
         if 2 ^ (32 * (wq a + 1)) / 2 ≤ val32 s₃.mem B (arr (kw len) t) (wq a + 1) then M else 0 := by
