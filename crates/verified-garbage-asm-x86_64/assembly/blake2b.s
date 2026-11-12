@@ -54,6 +54,9 @@ vg_blake2b_init:
 	jmp 21f
 20:
 21:
+	xor eax, eax
+	xor ecx, ecx
+	xor r8d, r8d
 	ret
 	.p2align 6
 

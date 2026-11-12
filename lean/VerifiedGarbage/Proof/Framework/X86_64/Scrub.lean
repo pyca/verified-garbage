@@ -779,6 +779,8 @@ structure ScrubAbi (A : Abi isa) : Prop where
   argsLen : ∀ ws f, A.args ws = some f → ∀ s, (f s).length = ws.length
   args : ∀ ws, A.args ws = abi.args ws
   argRo : ∀ ws s, ∀ p ∈ A.argArea ws s, p.2 = false
+  argArea : ∀ ws s, A.argArea ws s = abi.argArea ws s
+  wfAbi : ∀ ws n s, A.wf ws n s → abi.wf ws n s
 
 theorem abi_args_len (ws : List Nat) (f : State → List (BitVec 64)) (h : abi.args ws = some f) (s : State) :
     (f s).length = ws.length := by
@@ -808,14 +810,16 @@ theorem abi_argRo (ws : List Nat) (s : State) : ∀ p ∈ abi.argArea ws s, p.2 
 
 theorem ScrubAbi.plain : ScrubAbi abi :=
   ⟨rfl, rfl, fun _ => rfl, fun _ _ _ h => ⟨abi_wf_stack h, fun _ hr hn => absurd hr hn⟩,
-    fun _ _ h => h, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len, fun _ => rfl, abi_argRo⟩
+    fun _ _ h => h, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len, fun _ => rfl, abi_argRo,
+    fun _ _ => rfl, fun _ _ _ h => h⟩
 
 theorem ScrubAbi.consts (cs : List (String × List (BitVec 64))) : ScrubAbi (abi.withConsts cs) := by
   cases cs with
   | nil => exact ScrubAbi.plain
   | cons c cs =>
     refine ⟨rfl, rfl, fun _ => rfl, fun ws n s h => ?_, fun _ _ h => h.1, fun _ => rfl, fun _ => rfl,
-      fun _ _ h => List.mem_of_mem_take h, abi_args_len, fun _ => rfl, abi_argRo⟩
+      fun _ _ h => List.mem_of_mem_take h, abi_args_len, fun _ => rfl, abi_argRo, fun _ _ => rfl,
+      fun _ _ _ h => h.1⟩
     obtain ⟨hw, hdrop, -, hdis, -⟩ := h
     refine ⟨abi_wf_stack hw, fun r hr hn q hq => ?_⟩
     have hr' : r ∈ (abi.rd s).drop ((abi.rd s).length - (c :: cs).length) := by
@@ -833,7 +837,8 @@ theorem ScrubAbi.tables {A : Abi isa} (hA : ScrubAbi A) (sig : Sig) (ts : List (
   | nil => exact hA
   | cons t ts =>
     exact ⟨hA.ptrBits, hA.reserved, hA.wr, fun ws n s h => hA.wf ws n s h.1,
-      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen, hA.args, hA.argRo⟩
+      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen, hA.args, hA.argRo, hA.argArea,
+      fun ws n s h => hA.wfAbi ws n s h.1⟩
 
 theorem withMode_ptrBits (A : Abi isa) (b : Bool) : (A.withMode b).ptrBits = A.ptrBits := by
   cases b <;> rfl

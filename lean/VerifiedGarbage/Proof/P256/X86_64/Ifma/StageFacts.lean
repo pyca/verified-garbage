@@ -1,7 +1,5 @@
 module
 
--- separate module: the kernel's evaluation of the stages' checks (about 11 s) is not repeated when `DblOk` changes
-
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Step
 
 /-!
@@ -238,5 +236,148 @@ theorem convG_iv0 : ivWithin stB (segT (convG tops) convGT) convGIV0 = true := b
   decide +kernel
 
 theorem convG_ov0 : ovOk (stBT ++ entBT) convGIV0 convGOv0 = true := by decide +kernel
+
+/-- The lanes of stage 0 of `tabG` that are known to be carried by their number. -/
+def tabGOv0 : List (Nat × Nat) := []
+
+theorem tabG_chk0 : chkSeg (tabGPieces.getD 0 []) [rawPT] (tabG tops) regs10 = true := by
+  decide +kernel
+
+theorem tabG_iv0 : ivWithin stB (segT (tabG tops) [rawPT]) tabGIV0 = true := by
+  decide +kernel
+
+theorem tabG_ov0 : ovOk entBT tabGIV0 tabGOv0 = true := by decide +kernel
+
+/-- The lanes of stage 0 of `dblu` that are known to be carried by their number. -/
+def dbluOv0 : List (Nat × Nat) := []
+
+theorem dblu_chk0 : chkSeg (dbluPieces.getD 0 []) [t5 0, t5 5] (dblu1 tops) (dbluLocs.getD 0 []) = true := by
+  decide +kernel
+
+theorem dblu_iv0 : ivWithin (bndsOf regs10 entBT) (segT (dblu1 tops) [t5 0, t5 5]) dbluIV0 = true := by
+  decide +kernel
+
+theorem dblu_ov0 : ovOk dbluBT0 dbluIV0 dbluOv0 = true := by decide +kernel
+
+/-- The lanes of stage 1 of `dblu` that are known to be carried by their number. -/
+def dbluOv1 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
+
+theorem dblu_chk1 : chkSeg (dbluPieces.getD 1 []) (leaves (dbluLocs.getD 0 [])) (dblu2 tops) (dbluLocs.getD 1 []) = true := by
+  decide +kernel
+
+theorem dblu_iv1 : ivWithin (bndsOf (dbluLocs.getD 0 []) dbluBT0) (segT (dblu2 tops) (leaves (dbluLocs.getD 0 []))) dbluIV1 = true := by
+  decide +kernel
+
+theorem dblu_ov1 : ovOk dbluBT1 dbluIV1 dbluOv1 = true := by decide +kernel
+
+/-- The lanes of stage 2 of `dblu` that are known to be carried by their number. -/
+def dbluOv2 : List (Nat × Nat) := []
+
+theorem dblu_chk2 : chkSeg (dbluPieces.getD 2 []) (leaves (dbluLocs.getD 1 [])) (dblu3 tops) (dbluLocs.getD 2 []) = true := by
+  decide +kernel
+
+theorem dblu_iv2 : ivWithin (bndsOf (dbluLocs.getD 1 []) dbluBT1) (segT (dblu3 tops) (leaves (dbluLocs.getD 1 []))) dbluIV2 = true := by
+  decide +kernel
+
+theorem dblu_ov2 : ovOk dbluBT2 dbluIV2 dbluOv2 = true := by decide +kernel
+
+/-- The lanes of stage 3 of `dblu` that are known to be carried by their number. -/
+def dbluOv3 : List (Nat × Nat) := [(0, 0), (0, 1)]
+
+theorem dblu_chk3 : chkSeg (dbluPieces.getD 3 []) (leaves (dbluLocs.getD 2 [])) (dblu4 tops) (dbluLocs.getD 3 []) = true := by
+  decide +kernel
+
+theorem dblu_iv3 : ivWithin (bndsOf (dbluLocs.getD 2 []) dbluBT2) (segT (dblu4 tops) (leaves (dbluLocs.getD 2 []))) dbluIV3 = true := by
+  decide +kernel
+
+theorem dblu_ov3 : ovOk dbluBT3 dbluIV3 dbluOv3 = true := by decide +kernel
+
+/-- The lanes of stage 4 of `dblu` that are known to be carried by their number. -/
+def dbluOv4 : List (Nat × Nat) := []
+
+theorem dblu_chk4 : chkSeg (dbluPieces.getD 4 []) (leaves (dbluLocs.getD 3 [])) (dblu5 tops) regs20 = true := by
+  decide +kernel
+
+theorem dblu_iv4 : ivWithin (bndsOf (dbluLocs.getD 3 []) dbluBT3) (segT (dblu5 tops) (leaves (dbluLocs.getD 3 []))) dbluIV4 = true := by
+  decide +kernel
+
+theorem dblu_ov4 : ovOk tabBT dbluIV4 dbluOv4 = true := by decide +kernel
+
+/-- The lanes of stage 0 of `zaddu` that are known to be carried by their number. -/
+def zadduOv0 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
+
+theorem zaddu_chk0 : chkSeg (zadduPieces.getD 0 []) tabT (zaddu1 tops) (zadduLocs.getD 0 []) = true := by
+  decide +kernel
+
+theorem zaddu_iv0 : ivWithin (bndsOf regs20 tabBT) (segT (zaddu1 tops) tabT) zadduIV0 = true := by
+  decide +kernel
+
+theorem zaddu_ov0 : ovOk zadduBT0 zadduIV0 zadduOv0 = true := by decide +kernel
+
+/-- The lanes of stage 1 of `zaddu` that are known to be carried by their number. -/
+def zadduOv1 : List (Nat × Nat) := []
+
+theorem zaddu_chk1 : chkSeg (zadduPieces.getD 1 []) (leaves (zadduLocs.getD 0 [])) (zaddu2 tops) (zadduLocs.getD 1 []) = true := by
+  decide +kernel
+
+theorem zaddu_iv1 : ivWithin (bndsOf (zadduLocs.getD 0 []) zadduBT0) (segT (zaddu2 tops) (leaves (zadduLocs.getD 0 []))) zadduIV1 = true := by
+  decide +kernel
+
+theorem zaddu_ov1 : ovOk zadduBT1 zadduIV1 zadduOv1 = true := by decide +kernel
+
+/-- The lanes of stage 2 of `zaddu` that are known to be carried by their number. -/
+def zadduOv2 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
+
+theorem zaddu_chk2 : chkSeg (zadduPieces.getD 2 []) (leaves (zadduLocs.getD 1 [])) (zaddu3 tops) (zadduLocs.getD 2 []) = true := by
+  decide +kernel
+
+theorem zaddu_iv2 : ivWithin (bndsOf (zadduLocs.getD 1 []) zadduBT1) (segT (zaddu3 tops) (leaves (zadduLocs.getD 1 []))) zadduIV2 = true := by
+  decide +kernel
+
+theorem zaddu_ov2 : ovOk zadduBT2 zadduIV2 zadduOv2 = true := by decide +kernel
+
+/-- The lanes of stage 3 of `zaddu` that are known to be carried by their number. -/
+def zadduOv3 : List (Nat × Nat) := []
+
+theorem zaddu_chk3 : chkSeg (zadduPieces.getD 3 []) (leaves (zadduLocs.getD 2 [])) (zaddu4 tops) (zadduLocs.getD 3 []) = true := by
+  decide +kernel
+
+theorem zaddu_iv3 : ivWithin (bndsOf (zadduLocs.getD 2 []) zadduBT2) (segT (zaddu4 tops) (leaves (zadduLocs.getD 2 []))) zadduIV3 = true := by
+  decide +kernel
+
+theorem zaddu_ov3 : ovOk zadduBT3 zadduIV3 zadduOv3 = true := by decide +kernel
+
+/-- The lanes of stage 4 of `zaddu` that are known to be carried by their number. -/
+def zadduOv4 : List (Nat × Nat) := [(0, 0), (0, 1), (0, 2), (0, 3)]
+
+theorem zaddu_chk4 : chkSeg (zadduPieces.getD 4 []) (leaves (zadduLocs.getD 3 [])) (zaddu5 tops) (zadduLocs.getD 4 []) = true := by
+  decide +kernel
+
+theorem zaddu_iv4 : ivWithin (bndsOf (zadduLocs.getD 3 []) zadduBT3) (segT (zaddu5 tops) (leaves (zadduLocs.getD 3 []))) zadduIV4 = true := by
+  decide +kernel
+
+theorem zaddu_ov4 : ovOk zadduBT4 zadduIV4 zadduOv4 = true := by decide +kernel
+
+/-- The lanes of stage 5 of `zaddu` that are known to be carried by their number. -/
+def zadduOv5 : List (Nat × Nat) := []
+
+theorem zaddu_chk5 : chkSeg (zadduPieces.getD 5 []) (leaves (zadduLocs.getD 4 [])) (zaddu6 tops) (zadduLocs.getD 5 []) = true := by
+  decide +kernel
+
+theorem zaddu_iv5 : ivWithin (bndsOf (zadduLocs.getD 4 []) zadduBT4) (segT (zaddu6 tops) (leaves (zadduLocs.getD 4 []))) zadduIV5 = true := by
+  decide +kernel
+
+theorem zaddu_ov5 : ovOk zadduBT5 zadduIV5 zadduOv5 = true := by decide +kernel
+
+/-- The lanes of stage 6 of `zaddu` that are known to be carried by their number. -/
+def zadduOv6 : List (Nat × Nat) := [(0, 3), (1, 0)]
+
+theorem zaddu_chk6 : chkSeg (zadduPieces.getD 6 []) (leaves (zadduLocs.getD 5 [])) (zaddu7 tops) regs20 = true := by
+  decide +kernel
+
+theorem zaddu_iv6 : ivWithin (bndsOf (zadduLocs.getD 5 []) zadduBT5) (segT (zaddu7 tops) (leaves (zadduLocs.getD 5 []))) zadduIV6 = true := by
+  decide +kernel
+
+theorem zaddu_ov6 : ovOk tabBT zadduIV6 zadduOv6 = true := by decide +kernel
 
 end VG.Proof.P256.X86_64.Ifma

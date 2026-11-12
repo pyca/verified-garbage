@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.X86_64.Verified
 public import VerifiedGarbage.Proof.AesCfb.X86_64.Final
+public import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
@@ -16,18 +17,8 @@ open VG.Proof.AesCfb.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.BlocksImpl) => [
-    Spec.Cfb.aesEncryptApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.AesCfb.X86_64.encrypt v.enc
-      stack := 8
-      verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v)
-      spSafe := encrypt_spSafe v },
-    Spec.Cfb.aesDecryptApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.AesCfb.X86_64.decrypt v.enc
-      stack := 8
-      verified := Proof.AesCfb.decrypt_keyed (decrypt_verified v)
-      spSafe := decrypt_spSafe v },
+    Spec.Cfb.aesEncryptApi.artifact X86_64.target (Proof.Aes.X86_64.ModesScrub.cfbEncryptReg v),
+    Spec.Cfb.aesDecryptApi.artifact X86_64.target (Proof.Aes.X86_64.ModesScrub.cfbDecryptReg v),
     Spec.Cfb.aesEncryptFinalApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (Impl.AesCfb.X86_64.encryptFinal v.enc v.suffix)

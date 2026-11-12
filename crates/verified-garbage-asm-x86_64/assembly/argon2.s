@@ -488,7 +488,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]
@@ -3311,7 +3311,7 @@ vg_argon2_blake2b_avx2_g_avx512:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]
@@ -6134,7 +6134,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]
@@ -8957,7 +8957,7 @@ vg_argon2:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]

@@ -46,8 +46,10 @@ def vals (v : Vals) : Nat → Nat :=
   upd (upd (upd (upd (upd (upd (upd (upd (fun _ => 0) aE v.e) aD v.d) aP v.p) aQ v.q) aDP v.dP) aDQ v.dQ)
     aQI v.qI) aN v.n
 
-/-- The header words the checks write. -/
-abbrev bodySlots : List Nat := [0, 4, 8, 12, sB, sC, sT, sF, sMask]
+/-- The header words the checks write: the division's, the shared routines', the check and the
+mask, and those of the division and product by words (`KeyDiv`). -/
+abbrev bodySlots : List Nat := [0, 4, 8, 12, sB, sC, sT, sF, sMask, KeyDiv.sU0, KeyDiv.sU2, KeyDiv.sJ,
+  KeyDiv.sP, KeyDiv.sD, KeyDiv.sV, KeyDiv.sD1, KeyDiv.sMk, KeyDiv.sQ]
 
 /-- The registers the checks may change: all but `r8`. -/
 abbrev bodyRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12, .lr]
@@ -103,7 +105,8 @@ theorem Stg.next {g : Geo} {s0 s t : State} {A : Nat → Nat} {live : List Nat} 
     h.rest.trans (r.mono hrs), ?_, ha, hl, vd, mk⟩
   rw [slot_eq_of_keep k (by decide) (fun d hd => by
     have := hds d hd
-    simp only [bodySlots, sB, sC, sT, sF, sMask, List.mem_cons, List.not_mem_nil, or_false] at this
+    simp only [bodySlots, sB, sC, sT, sF, sMask, KeyDiv.sU0, KeyDiv.sU2, KeyDiv.sJ, KeyDiv.sP, KeyDiv.sD,
+      KeyDiv.sV, KeyDiv.sD1, KeyDiv.sMk, KeyDiv.sQ, List.mem_cons, List.not_mem_nil, or_false] at this
     omega), h.cnt]
 
 /-- The mask through a step that leaves its slot. -/

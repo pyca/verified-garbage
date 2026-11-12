@@ -680,11 +680,13 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     obtain ⟨gp8, gpw, gpq, gp32⟩ := hiff.mp (by simpa using hz)
     have hw8 : 8 ≤ g.w := by omega
     have hw2 : g.w % 2 = 0 := by omega
-    rw [kc_seqs_append (l₁ := crtChecksW) (by simp [crtChecksW, mulQ]) (by simp [dChecksW, ltA])]
-    refine WP.mono (crtChecksW_ok g11 hw8 hw2) fun t12 ⟨Xq, X₁, X₂, hXq, hX₁, hX₂, g12⟩ => ?_
-    refine WP.mono (dChecksW_ok g12 hw8 hw2) fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
     have b32 : ∀ {x l : Nat}, x < 2 ^ (8 * l) → l = 4 * g.w → x < 2 ^ (32 * g.w) := fun hx hl => by
       rw [hl, ← Nat.mul_assoc] at hx; exact hx
+    have e32 : 64 * (g.w / 2) = 32 * g.w := by omega
+    rw [kc_seqs_append (l₁ := crtChecksW) (by simp [crtChecksW, mulQH]) (by simp [dChecksW, ltA])]
+    refine WP.mono (crtChecksW_ok g11 hw8 hw2 (by rw [e32]; exact b32 hpv gpw.symm)
+      (by rw [e32]; exact b32 hqv (by omega))) fun t12 ⟨Xq, X₁, X₂, hXq, hX₁, hX₂, g12⟩ => ?_
+    refine WP.mono (dChecksW_ok g12 hw8 hw2) fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
     have hqIv : v.qI < 2 ^ (8 * (s0.gpr .a7).toNat) := by
       have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 6) (s0.gpr .a7).toNat)
       rw [len_bytes] at this; rw [Nat.pow_mul]; exact this

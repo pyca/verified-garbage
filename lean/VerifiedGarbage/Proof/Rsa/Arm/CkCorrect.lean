@@ -1,6 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.Arm.KcPost
+public import VerifiedGarbage.Proof.Rsa.Arm.KcPost
+public import VerifiedGarbage.Proof.Rsa.Arm.KcBodyW
+import VerifiedGarbage.Proof.Rsa.Arm.KcShape
+import VerifiedGarbage.Proof.Rsa.KeyCheckWords
 public import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
@@ -24,7 +27,7 @@ open VG.Proof.Rsa.Arm.CrtValues (reg)
 /-- The numbers on the stack: their pointers' words and arrays. -/
 abbrev insK : List (Nat × Nat) := [(0, aD), (2, aP), (4, aQ), (6, aDP), (8, aDQ), (10, aQI)]
 
-theorem code_eq : VG.Impl.Rsa.Arm.CheckKey.code = fn (4 * 12) (insK.map fun p => (4 * p.1, p.2)) keyBody := rfl
+theorem code_eq : VG.Impl.Rsa.Arm.CheckKey.code = fn (4 * 12) (insK.map fun p => (4 * p.1, p.2)) (keyBodyS 12 20 28 36) := rfl
 
 theorem ck_pre (s : State) (h : (Spec.Rsa.checkKeyContract abi 0).pre s) : FnPre 14 12 insK s := by
   sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, reduceClassify, Loc.val,
@@ -67,6 +70,46 @@ theorem ck_hA {σ : State} (pre : FnPre 14 12 insK σ) : ∀ j < nArr, aEnt insK
     (bytesV_lt (k := (stackArg σ 7).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 9).toNat) (by omega))
     (bytesV_lt (k := (stackArg σ 11).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 1).toNat) (by omega)) j
 
+/-- `BodyIn` after code that changes only `r0`–`r3` and the flags. -/
+theorem _root_.VG.Proof.Rsa.Arm.KeyCheck.BodyIn.of_rest {g : Geo} {v : Vals} {s t : State} (h : BodyIn g v s) (r : Rest [.r0, .r1, .r2, .r3] s t)
+    (m : t.mem = s.mem) : BodyIn g v t :=
+  ⟨h.nowrap, r.wr ▸ h.writable, h.fits, h.kb, (r.gpr _ (by decide)).trans h.r8, (r.gpr _ (by decide)).trans h.r11,
+    m ▸ h.cnt, m ▸ h.arrs, m ▸ h.vdTop⟩
+
+/-- `Stg` from before code that changes only `r0`–`r3` and the flags. -/
+theorem _root_.VG.Proof.Rsa.Arm.KeyCheck.Stg.of_pre {g : Geo} {s t u : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g t A live c u) (r : Rest [.r0, .r1, .r2, .r3] s t) (m : t.mem = s.mem) : Stg g s A live c u :=
+  ⟨h.ws, m ▸ h.keep, (r.mono fun x hx => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl <;> decide).trans h.rest,
+    h.cnt, h.arrs, h.live_lt, h.vdTop, h.mask⟩
+
+/-- `keyBodyS`: the balanced key's checks or the others; either way the mask is `keyP`'s. -/
+theorem keyBodyS_post {σ s : State} (m : Mid 14 12 insK σ s (aEnt insK σ)) (bi : BodyIn (geo 12 σ) (vK σ) s)
+    (hm : Spec.Rsa.modulusValid (nV σ) (fK σ) = true) (hev : Spec.Rsa.exponentValid (eV σ) = true) :
+    WP isa (keyBodyS 12 20 28 36) s fun t => ∃ A live c, Stg (geo 12 σ) s A live c t ∧ keyP (geo 12 σ) (vK σ) c := by
+  have pre := m.base.pre
+  have kb := pre.kb
+  have e33 : eV σ < 2 ^ 33 := by
+    simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hev; exact hev.2
+  unfold keyBodyS
+  rw [WP.seq_iff]
+  refine shape_ok m.base m.r11 (by decide) fun t bt rt mt zt => ?_
+  have bi' := bi.of_rest rt mt
+  refine WP.ite t.z rfl (fun hz => ?_) (fun _ => ?_)
+  · rw [zt] at hz
+    obtain ⟨lp, lq, ld, le, he⟩ := of_decide_eq_true hz
+    have hpw : (stackArg σ 3).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
+    have hqw : (stackArg σ 5).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
+    have hdw : (stackArg σ 7).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
+    have hew : (stackArg σ 9).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
+    refine WP.mono (keyBodyW_ok bi' he (bytesV_lt hpw) (bytesV_lt hqw) (bytesV_lt hdw) (bytesV_lt hew))
+      fun u ⟨A, live, hu⟩ => ⟨A, live, _, hu.of_pre rt mt, _, _, _, _, _, _, _, fun _ => ⟨rfl, rfl⟩,
+        ⟨fun _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl⟩, fun _ => rfl, fun _ => rfl,
+        VG.Proof.Rsa.keyBits_words2 hm rfl (by simp only [Geo.w]; omega) he (bytesV_lt hpw) (bytesV_lt hqw)
+          (bytesV_lt hdw) (bytesV_lt hew) e33⟩
+  · exact WP.mono (keyBody_post bi') fun u ⟨A, live, c, hu, hk⟩ => ⟨A, live, c, hu.of_pre rt mt, hk⟩
+
 theorem ck_ok {σ : State} (pre : FnPre 14 12 insK σ) (l1 : (stackArg σ 7).toNat = (stackArg σ 3).toNat)
     (l2 : (stackArg σ 11).toNat = (stackArg σ 3).toNat) (l3 : (stackArg σ 9).toNat = (stackArg σ 5).toNat)
     (hp : (stackArg σ 3).toNat < fK σ) (hq : (stackArg σ 5).toNat < fK σ) :
@@ -82,7 +125,7 @@ theorem ck_ok {σ : State} (pre : FnPre 14 12 insK σ) (l1 : (stackArg σ 7).toN
           (Spec.Rsa.bytesAt σ.mem (State.addr (stackArg σ 10)) (stackArg σ 3).toNat) then 1 else 0 := by
   have kb := pre.kb
   rw [code_eq]
-  refine WP.mono (fn_ok pre (by decide) (ck_hv σ) (ck_hA pre) fun s hs => keyBody_post hs)
+  refine WP.mono (fn_ok pre (by decide) (ck_hv σ) (ck_hA pre) fun s m hs hm he => keyBodyS_post m hs hm he)
     fun u ⟨pres, c, hc, hr⟩ => ⟨pres, ?_⟩
   rw [hr, key_result (g := geo 12 σ) (VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _)
     (by show 0 < fK σ; omega) (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hp)

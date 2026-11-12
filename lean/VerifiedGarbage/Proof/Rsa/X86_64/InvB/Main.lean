@@ -67,13 +67,6 @@ theorem pOf_lt {m n : Nat} (hn : 1 ≤ n) (hm : m < 2 ^ (64 * n)) : pOf m < 2 ^ 
       rw [← Nat.pow_succ']; congr 1; omega
     omega
 
-theorem keep_drop {rs : List Reg} {r : Reg} {s t : State} (k : Keep (r :: rs) s t) (h : t.gpr r = s.gpr r) :
-    Keep rs s t :=
-  ⟨fun x hx => by
-    by_cases e : x = r
-    · subst e; exact h
-    · exact k.1 x (by simp [e, hx]), k.2⟩
-
 theorem finish_eq (iV iX₂ : Nat) : finish iV iX₂ = fin1L ++ fin2L ++ fin3L iV iX₂ := rfl
 
 theorem finishS_eq (iV iX₂ : Nat) : finishS iV iX₂ = fin1L ++ fin2SL ++ fin3L iV iX₂ := rfl

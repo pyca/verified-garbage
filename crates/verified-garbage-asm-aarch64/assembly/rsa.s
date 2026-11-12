@@ -13640,9 +13640,12 @@ vg_rsa_check_key:
 	add x8, x8, x0
 	add x8, x8, #256
 	add x11, x5, #0
-	sub x12, x12, #2
-	lsr x12, x12, #1
-	add x13, x12, #0
+	ldr x12, [x0, #208]
+	add x12, x12, #7
+	lsr x12, x12, #3
+	ldr x13, [x0, #192]
+	add x13, x13, #7
+	lsr x13, x13, #3
 	movz x7, #0, lsl #0
 228:
 	ldr x1, [x11, #0]
