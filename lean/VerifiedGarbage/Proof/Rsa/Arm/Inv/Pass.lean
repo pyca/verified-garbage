@@ -944,3 +944,216 @@ theorem body_ok (ok : p.Ok σ Z N) {s : State} {n : Nat} (I : p.Inv σ (n + 1) s
     simp only [decide_eq_decide]; omega
 
 end Pass.Ok
+
+namespace Pass.Ok
+variable {p : Pass} {σ : State} {Z N : Nat}
+
+/-- A pass's loop: words `1` to `k`. -/
+theorem loop_ok (ok : p.Ok σ Z N) {s : State} (I : p.Inv σ 1 s) :
+    WP isa (.loop (.block p.body) .ne) s (p.Inv σ (p.k + 1)) := by
+  have hk := ok.g.kpos
+  refine WP.loop (M := isa) (fun n t => ∃ i, i + n = p.k ∧ 0 < n ∧ p.Inv σ (i + 1) t) ?_ p.k s
+    ⟨0, by omega, hk, I⟩
+  rintro n t ⟨i, hin, hn, hi⟩
+  refine WP.mono (body_ok ok hi (by omega)) fun u ⟨hu, hz⟩ => ?_
+  by_cases he : i + 2 = p.k + 1
+  · exact Or.inl ⟨by change some (!u.z) = some false; simp only [hz, he, decide_true, Bool.not_true],
+      by rw [show p.k + 1 = i + 2 by omega]; exact hu⟩
+  · exact Or.inr ⟨by change some (!u.z) = some true; simp only [hz, he, decide_false, Bool.not_false],
+      n - 1, by omega, i + 1, by omega, by omega, hu⟩
+
+/-- The rows' top words: the carries less the corrections. -/
+theorem top_ok (ok : p.Ok σ Z N) {s : State} (I : p.Inv σ (p.k + 1) s) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Rest (tClob ++ (.lr :: p.srcs)) σ t → Keep p.B p.W [p.out false, p.out true] [] p.mI t.mem →
+      (∀ row, val32 t.mem (State.addr p.B) (arr p.W (p.out row)) (p.k + 1) =
+        p.rs row (p.k + 1) % 2 ^ (32 * (p.k + 1)) / 2 ^ 30 + 2 ^ (32 * p.k + 2) *
+          ((BitVec.ofNat 32 (p.rs row (p.k + 1) / 2 ^ (32 * (p.k + 1))) - p.scw (corrOff (if row then 1 else 0))).toNat
+            % 2 ^ 30)) →
+      WP isa (.block is) t Q) :
+    WP isa (.block (outTop .r0 .r2 0 ++ (outTop .r1 .r4 1 ++ is))) s Q := by
+  have hk := ok.g.kle
+  have hW := ok.hW
+  have e12 : s.gpr .r12 = σ.gpr .r12 := I.rest.gpr _ (by
+    intro hm
+    rcases List.mem_append.mp hm with hm | hm
+    · simp at hm
+    rcases List.mem_cons.mp hm with hm | hm
+    · simp at hm
+    · have := (ok.srcs _ hm).1; simp at this)
+  have ca : ∀ (t : State), t.gpr .r12 = σ.gpr .r12 → t.rd = σ.rd → t.wr = σ.wr → ∀ row : Nat, row ≤ 1 →
+      InRegions (t.rd ++ t.wr) (State.addr (t.gpr .r12 + BitVec.ofNat 32 (corrOff row))) 4 ∧
+      State.addr (t.gpr .r12 + BitVec.ofNat 32 (corrOff row)) = off (State.addr p.B) (arr p.W bT1 + corrOff row) :=
+    fun t h12 hrd hwr row hr => by
+      have hf := ok.scr_fit (d := corrOff row) (by simp only [corrOff, S]; omega)
+      have ea : State.addr (t.gpr .r12 + BitVec.ofNat 32 (corrOff row)) = off (State.addr p.B) (arr p.W bT1 + corrOff row) := by
+        rw [h12, ok.r12]; exact ok.addr_at (by omega)
+      exact ⟨by rw [ea, hrd, hwr]; exact ok.g.read hf, ea⟩
+  have ptr : ∀ row, s.gpr (if row then .r1 else .r0) = p.B + BitVec.ofNat 32 (arr p.W (p.out row) + 4 * p.k) := fun row => by
+    rw [I.ptr _ (ok.out_src row), Nat.add_sub_cancel]
+  have ofit : ∀ row (d : Nat), d + 4 ≤ S p.W → arr p.W (p.out row) + d + 4 ≤ Z := fun row d hd =>
+    ok.src_fit (ok.out_src row) hd
+  have ea : ∀ row, State.addr (s.gpr (if row then .r1 else .r0) + BitVec.ofNat 32 0) =
+      off (State.addr p.B) (arr p.W (p.out row) + 4 * p.k) := fun row => by
+    rw [ptr row, ok.addr_at (by have := ofit row (4 * p.k) (by simp only [S]; omega); omega), Nat.add_zero]
+  have wa : ∀ (t : State), t.wr = σ.wr → ∀ row,
+      InRegions t.wr (off (State.addr p.B) (arr p.W (p.out row) + 4 * p.k)) 4 := fun t ht row => by
+    rw [ht]; exact ok.g.write (by have := ofit row (4 * p.k) (by simp only [S]; omega); omega)
+  obtain ⟨c0, a0⟩ := ca s e12 I.rest.rd I.rest.wr 0 (by omega)
+  refine outTop_ok (a0 := off (State.addr p.B) (arr p.W (p.out false) + 4 * p.k)) (by decide) (by decide)
+    (by decide) (by simp only [corrOff]; omega) (ea false) (wa _ I.rest.wr false) c0 fun s1 m1 r1 => ?_
+  have e12' : s1.gpr .r12 = σ.gpr .r12 := (r1.gpr _ (by decide)).trans e12
+  obtain ⟨c1, a1⟩ := ca s1 e12' (r1.rd.trans I.rest.rd) (r1.wr.trans I.rest.wr) 1 (by omega)
+  refine outTop_ok (a0 := off (State.addr p.B) (arr p.W (p.out true) + 4 * p.k)) (by decide) (by decide)
+    (by decide) (by simp only [corrOff]; omega) (by rw [r1.gpr _ (by decide)]; exact ea true)
+    (wa _ (r1.wr.trans I.rest.wr) true) c1 fun s2 m2 r2 => ?_
+  have kp : Keep p.B p.W [p.out false, p.out true] [] p.mI s2.mem := by
+    rw [m2, m1]; exact I.keep.trans ((ok.keep_store _ (Nat.le_refl _) _).trans (ok.keep_store _ (Nat.le_refl _) _))
+  refine k s2 (I.rest.trans ((r1.mono (by simp)).trans (r2.mono (by simp)))) kp fun row => ?_
+  have sc0 : sw s (corrOff 0) = p.scw (corrOff 0) := by
+    simp only [sw]; rw [a0, ok.scr_keep I.keep (by simp only [corrOff, S]; omega)]
+  have sc1 : sw s1 (corrOff 1) = p.scw (corrOff 1) := by
+    simp only [sw]; rw [a1, m1, ok.scr_keep (I.keep.trans (ok.keep_store _ (Nat.le_refl _) _))
+      (by simp only [corrOff, S]; omega)]
+  have rB : s1.mem.readW (off (State.addr p.B) (arr p.W (p.out true) + 4 * p.k)) 32 =
+      s.mem.readW (off (State.addr p.B) (arr p.W (p.out true) + 4 * p.k)) 32 := by
+    apply BitVec.eq_of_toNat_eq
+    change w32 s1.mem _ _ = w32 s.mem _ _
+    rw [m1, ok.w32_store _ (Nat.le_refl _) (Nat.le_refl _)]
+    simp
+  have lo : ∀ row, s.gpr (rlo row) = BitVec.ofNat 32 (p.rs row (p.k + 1) / 2 ^ (32 * (p.k + 1))) := fun row => by
+    rw [← I.lo row, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have e4 : s1.gpr .r4 = s.gpr .r4 := r1.gpr _ (by decide)
+  have wv : ∀ j, j ≤ p.k → w32 s2.mem (State.addr p.B) (arr p.W (p.out row) + 4 * j) =
+      if j = p.k then (s.mem.readW (off (State.addr p.B) (arr p.W (p.out row) + 4 * p.k)) 32 |||
+        (BitVec.ofNat 32 (p.rs row (p.k + 1) / 2 ^ (32 * (p.k + 1))) - p.scw (corrOff (if row then 1 else 0))) <<< 2).toNat
+      else w32 s.mem (State.addr p.B) (arr p.W (p.out row) + 4 * j) := by
+    intro j hj
+    rw [m2, ok.w32_store _ hj (Nat.le_refl _), rB, e4, sc1, m1, ok.w32_store _ hj (Nat.le_refl _), sc0]
+    have l0 := lo false
+    have l1 := lo true
+    simp only [rlo, Bool.false_eq_true, ↓reduceIte] at l0 l1
+    cases row <;> by_cases e : j = p.k <;> simp [e, l0, l1]
+  have top := low_top (n := p.k) (I.low row)
+  have lowk : val32 s2.mem (State.addr p.B) (arr p.W (p.out row)) p.k =
+      val32 s.mem (State.addr p.B) (arr p.W (p.out row)) p.k :=
+    val32_congr fun j hj => by rw [wv j (by omega)]; simp [show j ≠ p.k by omega]
+  have hw : (s.mem.readW (off (State.addr p.B) (arr p.W (p.out row) + 4 * p.k)) 32).toNat =
+      w32 s.mem (State.addr p.B) (arr p.W (p.out row) + 4 * p.k) := rfl
+  have wk := wv p.k (Nat.le_refl _)
+  simp only [↓reduceIte] at wk
+  rw [val32_succ, lowk, wk, or_shl2 _ _ top, hw, ← I.low row, val32_succ, Nat.pow_add,
+    show (2 : Nat) ^ 2 = 4 from rfl]
+  generalize (2 : Nat) ^ (32 * p.k) = P
+  rw [Nat.mul_add, Nat.mul_assoc]; omega
+
+end Pass.Ok
+
+/-! ## A row's value -/
+
+/-- The top word less the correction, modulo `2^30`. -/
+theorem sub_mod30 (h C : Nat) (hC : C < 2 ^ 32) :
+    (((BitVec.ofNat 32 h - BitVec.ofNat 32 C).toNat % 2 ^ 30 : Nat) : Int) = ((h : Int) - C) % 2 ^ 30 := by
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hC]
+  omega
+
+/-- A row's output, `(R mod 2^L) / 2^30 + 2^(L - 30) ((R / 2^L - C) mod 2^30)`, is `V / 2^30` modulo `2^L`
+(`Q = 2^L = 2^30 P`) for `R = V + C 2^L` and `V` a multiple of `2^30`. -/
+theorem out_val {P Q R C : Nat} {V : Int} (hQ : Q = 2 ^ 30 * P) (hR : (R : Int) = V + C * Q)
+    (hdiv : (2 : Int) ^ 30 ∣ V) (hC : C < 2 ^ 32) :
+    ((R % Q / 2 ^ 30 + P * ((BitVec.ofNat 32 (R / Q) - BitVec.ofNat 32 C).toNat % 2 ^ 30) : Nat) : Int) % Q =
+      V / 2 ^ 30 % Q := by
+  have e1 : ((R % Q / 2 ^ 30 + P * ((BitVec.ofNat 32 (R / Q) - BitVec.ofNat 32 C).toNat % 2 ^ 30) : Nat) : Int) =
+      ((R % Q / 2 ^ 30 : Nat) : Int) + (P : Int) * ((((R / Q : Nat) : Int) - C) % 2 ^ 30) := by
+    rw [Int.natCast_add, Int.natCast_mul, sub_mod30 _ _ hC]
+  rw [e1]
+  have hS := Nat.div_add_mod R Q
+  generalize R / Q = h at *
+  generalize R % Q = r at *
+  have hQi : (Q : Int) = 2 ^ 30 * P := by rw [hQ, Int.natCast_mul, Int.natCast_pow]; rfl
+  have hRi : (R : Int) = Q * h + r := by rw [← hS, Int.natCast_add, Int.natCast_mul]
+  have hV : V = (Q : Int) * ((h : Int) - C) + r := by rw [Int.mul_sub]; grind
+  have hr : (2 : Int) ^ 30 ∣ (r : Int) := by
+    have : (2 : Int) ^ 30 ∣ (Q : Int) * ((h : Int) - C) := by rw [hQi, Int.mul_assoc]; exact Int.dvd_mul_right _ _
+    exact (Int.dvd_add_right this).mp (hV ▸ hdiv)
+  obtain ⟨r', hr'⟩ := hr
+  have er : ((r / 2 ^ 30 : Nat) : Int) = r' := by
+    rw [Int.natCast_ediv, hr', Int.natCast_pow]
+    exact Int.mul_ediv_cancel_left _ (by decide)
+  have eV : V / 2 ^ 30 = P * ((h : Int) - C) + r' := by
+    rw [hV, hQi, hr', Int.mul_assoc, ← Int.mul_add]
+    exact Int.mul_ediv_cancel_left _ (by decide)
+  rw [er, eV]
+  have := Int.emod_add_mul_ediv ((h : Int) - C) (2 ^ 30)
+  generalize ((h : Int) - C) % 2 ^ 30 = a at *
+  generalize ((h : Int) - C) / 2 ^ 30 = b at *
+  rw [← this, Int.mul_add, ← Int.mul_assoc, Int.mul_comm (P : Int) (2 ^ 30), ← hQi, Int.add_comm _ r',
+    ← Int.add_assoc, Int.add_mul_emod_self_left, Int.add_comm]
+
+namespace Pass
+
+/-- A source's low `n` words XORed with a mask. -/
+def xv (p : Pass) (a : Nat) (M : BitVec 32) : Nat → Nat
+  | 0 => 0
+  | n + 1 => xv p a M n + (p.xw a n ^^^ M).toNat * 2 ^ (32 * n)
+
+/-- A row's terms over the low `n` words. -/
+def rowv (p : Pass) (row : Bool) (n : Nat) : List TSpec → Nat
+  | [] => 0
+  | sp :: L => (if sp.row = row then p.cm sp.t * p.xv (p.arrOf sp.xs) (p.scw (coefOff sp.t)) n else 0) + rowv p row n L
+
+theorem rowv_succ (p : Pass) (row : Bool) (n : Nat) :
+    ∀ L, p.rowv row (n + 1) L = p.rowv row n L + p.tw row n L * 2 ^ (32 * n)
+  | [] => by simp only [rowv, tw, Nat.zero_mul, Nat.add_zero]
+  | sp :: L => by
+    simp only [rowv, tw, xv, rowv_succ p row n L]
+    split <;> grind
+
+theorem rs_eq (p : Pass) (row : Bool) : ∀ n, p.rs row n = p.init row + p.rowv row n p.L
+  | 0 => by
+    simp only [rs]
+    suffices ∀ L, p.rowv row 0 L = 0 by rw [this, Nat.add_zero]
+    intro L; induction L with
+    | nil => rfl
+    | cons sp L ih => simp [rowv, xv, ih]
+  | n + 1 => by rw [rs, rs_eq p row n, rowv_succ, Nat.add_assoc]
+
+theorem xv_zero (p : Pass) (a : Nat) : ∀ n, p.xv a 0 n = val32 p.mI (State.addr p.B) (arr p.W a) n
+  | 0 => rfl
+  | n + 1 => by
+    have z : ∀ x : BitVec 32, x ^^^ (0 : BitVec 32) = x := fun x => by simp
+    rw [xv, xv_zero p a n, val32_succ, z, Nat.mul_comm (2 ^ _)]
+
+theorem xv_ones (p : Pass) (a : Nat) : ∀ n, p.xv a (BitVec.allOnes 32) n + 1 + val32 p.mI (State.addr p.B) (arr p.W a) n = 2 ^ (32 * n)
+  | 0 => rfl
+  | n + 1 => by
+    have ih := xv_ones p a n
+    rw [xv, val32_succ, pow32_succ]
+    have hx : (p.xw a n ^^^ BitVec.allOnes 32).toNat = 2 ^ 32 - 1 - (p.xw a n).toNat := by
+      rw [BitVec.xor_allOnes, BitVec.toNat_not]
+    rw [hx]
+    have hw := (p.xw a n).isLt
+    have e : (p.xw a n).toNat = w32 p.mI (State.addr p.B) (arr p.W a + 4 * n) := rfl
+    rw [e] at hw ⊢
+    generalize w32 p.mI (State.addr p.B) (arr p.W a + 4 * n) = w at *
+    generalize 2 ^ (32 * n) = P at *
+    generalize p.xv a (BitVec.allOnes 32) n = A at *
+    have h1 : (2 ^ 32 - 1 - w) * P + (1 + w) * P = 2 ^ 32 * P := by rw [← Nat.add_mul]; congr 1; omega
+    rw [Nat.add_mul, Nat.one_mul] at h1
+    rw [Nat.mul_comm P w]
+    omega
+
+end Pass
+
+/-- A term's value, signed: `|c| (X ^ m_c) + |c| [c < 0] - 2^L |c| [c < 0 ≠ X < 0] = c X`, for `X`'s low `L` bits
+`Xn = X + 2^L [X < 0]`. -/
+theorem term_signed {c X : Int} {L Xn xvv : Nat} (hXn : (Xn : Int) = X + if X < 0 then 2 ^ L else 0)
+    (hxv : (xvv : Int) = if c < 0 then (2 : Int) ^ L - 1 - (Xn : Int) else (Xn : Int)) :
+    (c.natAbs : Int) * xvv + (if c < 0 then (c.natAbs : Int) else 0) -
+      (if (c < 0) ≠ (X < 0) then (c.natAbs : Int) else 0) * 2 ^ L = c * X := by
+  have ha : (c.natAbs : Int) = if c < 0 then -c else c := by split <;> omega
+  by_cases hc : c < 0 <;> by_cases hX : X < 0 <;> simp only [hc, hX, ↓reduceIte, ne_eq, not_true_eq_false,
+    Int.add_zero] at hXn hxv ha ⊢
+  · rw [hxv, ha, hXn]; grind
+  · rw [hxv, ha, hXn]; grind
+  · rw [hxv, ha, hXn]; grind
+  · rw [hxv, ha, hXn]; grind
