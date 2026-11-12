@@ -94,8 +94,8 @@ def vtabHead (c : Joint.Cfg) : List Instr :=
 def vtabStep : List Instr := zadduPieces.flatten ++ (putEnt ++ [.alu .sub .rax (.imm 1)])
 
 /-- The table of `Q`, `3 Q`, …, `15 Q` as limbs, each entry 200 bytes on from the last, from `TOFF`. The
-seven after the first are a loop: its code runs from the processor's cache of decoded instructions after
-the first, which seven copies of it would not. -/
+seven after the first are a loop, which was measured faster than its code written out seven times, and
+is a seventh of it. -/
 def vtab (c : Joint.Cfg) : Prog isa := .seq (.block (vtabHead c)) (.loop (.block vtabStep) .ne)
 
 /-- `rcx` at the limbs of the odd multiple of `Q` whose magnitude is in `r8` (`TOFF + 100 (r8 - 1)`),
