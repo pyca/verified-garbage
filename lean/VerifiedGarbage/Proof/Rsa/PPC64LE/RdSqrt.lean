@@ -3,6 +3,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
+import VerifiedGarbage.Proof.Rsa.PPC64LE.RdSqrtW
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -22,9 +23,11 @@ namespace VG.Proof.Rsa.PPC64LE.RecDet
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Proof.Rsa.PPC64LE.Recover
 open VG.Proof.Rsa (b2n)
-open VG.Proof.Rsa.RecoverDet (wsub wsub_neg sqrtStep sqrtStep_code two_div_le)
+open VG.Proof.Rsa.RecoverDet (wsub wsub_neg)
+open VG.Spec.Rsa (isqrt)
+open VG.Proof.Rsa.KeyWorkspace (arr S num)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
-open VG.Impl.Rsa.PPC64LE.RecoverDet (sqrt sqrtBody factors sB0 sB1 sLt sExact sC1 sC2 sBb sOk5)
+open VG.Impl.Rsa.PPC64LE.RecoverDet (sqrt factors sB0 sB1 sLt sExact sC1 sC2 sBb sOk5)
 
 /-- The arrays of the square root: the radicand, the remainder, the root, `b` and zero. -/
 abbrev sqL : List (Bool × Nat) := [(true, 18), (false, 2), (false, 4), (false, 25), (false, 30)]
@@ -35,111 +38,73 @@ abbrev sqS : List Nat := [sC2, sC1, sExact, sLt, sB1, sB0]
 section
 variable {s0 s : State} {A : Bool → Nat → Nat} {V : Nat → Nat}
 
-theorem one_sub_ite (p : Prop) [Decidable p] : 1 - (if p then 1 else 0) = if p then 0 else 1 := by
-  split <;> rfl
-
-/-- A step of the square root. -/
-theorem sqrtBody_ok (h : DS s0 false A sqL V sqS s) :
-    WP isa sqrtBody s fun t => ∃ A' V', DS s0 false A' sqL V' sqS t ∧
-      (A' true 18, A' false 2, A' false 4) =
-        sqrtStep (32 * ww (kK s0)) (32 * wW (kK s0)) (A true 18, A false 2, A false 4) ∧
-      A' false 25 = A false 25 ∧ A' false 30 = A false 30 ∧ (∀ d ∈ sqS, V' d = V d) ∧
-      t.gpr .r27 = s.gpr .r27 - BitVec.ofNat 64 1 := by
-  have w1 := h.base.sz.w1
-  have lX := h.lt (b' := true) (j := 18) (by decide)
-  have lR := h.lt (b' := false) (j := 2) (by decide)
-  rw [vw_true] at lX
-  rw [vw_false] at lR
-  unfold sqrtBody
-  simp only [seqs]
-  -- The radicand's top bit into the remainder.
-  refine WP.seq (WP.mono h.toWB fun s1 ⟨h1, k1⟩ => ?_)
-  refine WP.seq (WP.mono (h1.shl (j := 18) (by decide) (live' := [(false, 2), (false, 4), (false, 25), (false, 30)])
-    (by decide)) fun s2 ⟨h2, c2, k2⟩ => ?_)
-  refine WP.seq (WP.mono h2.toNB fun s3 ⟨h3, k3⟩ => ?_)
-  have c3 : (s3.gpr .r9).toNat = 2 * A true 18 / 2 ^ (32 * wW (kK s0)) := by
-    rw [k3.gpr _ (by decide), c2]; rd_simp
-  refine WP.seq (WP.mono (h3.shlC (j := 2) (by decide) c3 (two_div_le lX)
-    (live' := [(true, 18), (false, 4), (false, 25), (false, 30)]) (by decide)) fun s4 ⟨h4, _, k4⟩ => ?_)
-  -- The next bit.
-  refine WP.seq (WP.mono h4.toWB fun s5 ⟨h5, k5⟩ => ?_)
-  refine WP.seq (WP.mono (h5.shl (j := 18) (by decide) (live' := [(false, 2), (false, 4), (false, 25), (false, 30)])
-    (by decide)) fun s6 ⟨h6, c6, k6⟩ => ?_)
-  refine WP.seq (WP.mono h6.toNB fun s7 ⟨h7, k7⟩ => ?_)
-  have c7 : (s7.gpr .r9).toNat = 2 * (2 * A true 18 % 2 ^ (32 * wW (kK s0))) / 2 ^ (32 * wW (kK s0)) := by
-    rw [k7.gpr _ (by decide), c6]; rd_simp
-  refine WP.seq (WP.mono (h7.shlC (j := 2) (by decide) c7 (two_div_le (Nat.mod_lt _ (Nat.two_pow_pos _)))
-    (live' := [(true, 18), (false, 4), (false, 25), (false, 30)]) (by decide)) fun s8 ⟨h8, _, k8⟩ => ?_)
-  -- `4 y + 1`.
-  refine WP.seq (WP.mono (h8.copy (o := 6) (a := 4) (by decide) (by decide) (by decide) (live' := sqL)
-    (by decide)) fun s9 ⟨h9, k9, _⟩ => ?_)
-  refine WP.seq (WP.mono (h9.shl (j := 6) (by decide) (live' := sqL) (by decide)) fun s10 ⟨h10, _, k10⟩ => ?_)
-  refine WP.seq (WP.mono (h10.li9 (v := 1) (by decide)) fun s11 ⟨h11, r11, k11⟩ => ?_)
-  refine WP.seq (WP.mono (h11.shlC (j := 6) (c := 1) (by decide) (by rw [r11]; rfl) (by decide) (live' := sqL) (by decide))
-    fun s12 ⟨h12, _, k12⟩ => ?_)
-  -- The comparison and the new remainder.
-  refine WP.seq (WP.mono (h12.sub3 (o := 8) (a := 2) (c := 6) (by decide) (by decide) (by decide)
-    (live' := (false, 6) :: sqL) (by decide)) fun s13 ⟨h13, b13, k13⟩ => ?_)
-  refine WP.seq (WP.mono (h13.stBorrowB (sl := sBb) (by decide) b13 (by split <;> decide) (ls' := sqS)
-    (by decide)) fun s14 ⟨h14, k14⟩ => ?_)
-  refine WP.seq (WP.mono (h14.sel (o := 2) (a := 8) (c := 2) (sl := sBb) (by decide) (by decide) (by decide)
-    (by decide) (by rd_simp) (live' := [(true, 18), (false, 4), (false, 25), (false, 30)]) (by decide))
-    fun s15 ⟨h15, k15⟩ => ?_)
-  -- The root's new bit.
-  refine WP.seq (WP.mono (h15.not9' (d := sBb) (by decide) (by rd_simp))
-    fun s16 ⟨h16, r16, k16⟩ => ?_)
-  refine WP.seq (WP.mono (h16.shlC (j := 4) (by decide) r16 (by omega)
-    (live' := [(false, 2), (true, 18), (false, 25), (false, 30)]) (by decide)) fun s17 ⟨h17, _, k17⟩ => ?_)
-  refine WP.mono h17.next fun t ⟨ht, c, kt⟩ => ⟨_, _, ht.drop (by decide) (by decide), ?_, ?_, ?_, ?_, ?_⟩
-  · rw [sqrtStep_code (by omega) lX]
-    rd_simp
-    refine ⟨?_, ?_⟩
-    · simp only [← Nat.not_lt, ite_not]
-    · simp only [one_sub_ite]
-  · rd_simp
-  · rd_simp
-  · intro d hd; simp only [sqS, List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> rd_simp
-  · rw [c, k17.gpr _ (by decide), k16.gpr _ (by decide), k15.gpr _ (by decide), k14.gpr _ (by decide),
-      k13.gpr _ (by decide), k12.gpr _ (by decide), k11.gpr _ (by decide), k10.gpr _ (by decide),
-      k9.gpr _ (by decide), k8.gpr _ (by decide), k7.gpr _ (by decide), k6.gpr _ (by decide),
-      k5.gpr _ (by decide), k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide)]
-
-/-- The square root: `16 W` steps from `(X, 0, 0)`, and whether the remainder is zero. -/
+/-- The square root by words (`RdSqrtW.sqrtW_ok`) of `X`, the wide radicand's low `2 H` words (`H` the words
+of `n`), and whether `X` is a square; the root in the narrow array 4, `b` and zero kept. -/
 theorem sqrt_ok (h : DS s0 true A [(true, 18), (true, 15), (false, 25)] V sqS s) (z : A true 15 = 0) :
     WP isa sqrt s fun t => ∃ A' V', DS s0 false A' [(false, 4), (false, 25), (false, 30)] V' (sOk5 :: sqS) t ∧
-      A' false 4 = ((sqrtStep (32 * ww (kK s0)) (32 * wW (kK s0)))^[32 * ww (kK s0) + 32] (A true 18, 0, 0)).2.2 ∧
+      A' false 4 = isqrt (A true 18 % 2 ^ (64 * (2 * ((kK s0 + 7) / 8)))) ∧
       A' false 25 = A false 25 ∧ A' false 30 = 0 ∧
-      V' sOk5 = b2n (decide (((sqrtStep (32 * ww (kK s0)) (32 * wW (kK s0)))^[32 * ww (kK s0) + 32]
-        (A true 18, 0, 0)).2.1 = 0)) ∧ (∀ d ∈ sqS, V' d = V d) := by
+      V' sOk5 = b2n (decide (isqrt (A true 18 % 2 ^ (64 * (2 * ((kK s0 + 7) / 8)))) *
+        isqrt (A true 18 % 2 ^ (64 * (2 * ((kK s0 + 7) / 8)))) = A true 18 % 2 ^ (64 * (2 * ((kK s0 + 7) / 8))))) ∧
+      (∀ d ∈ sqS, V' d = V d) := by
+  have w1 := h.base.sz.w1
   have w2 := h.base.sz.w2
-  unfold sqrt
-  simp only [seqs]
-  refine WP.seq (WP.mono h.toNB fun s1 ⟨h1, _⟩ => ?_)
-  have h1a := h1.addLow (k := 15) (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (h1a.copy (o := 2) (a := 30) (by decide) (by decide) (by decide)
-    (live' := [(false, 30), (true, 18), (false, 25)]) (by decide)) fun s2 ⟨h2, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h2.copy (o := 4) (a := 30) (by decide) (by decide) (by decide)
-    (live' := [(false, 2), (false, 30), (true, 18), (false, 25)]) (by decide)) fun s3 ⟨h3, _, _⟩ => ?_)
-  refine WP.seq (WP.mono h3.countS fun s4 ⟨h4, c4, _⟩ => ?_)
-  let Inv : Nat → State → Prop := fun i t => ∃ A' V', DS s0 false A' sqL V' sqS t ∧
-    (A' true 18, A' false 2, A' false 4) = (sqrtStep (32 * ww (kK s0)) (32 * wW (kK s0)))^[i] (A true 18, 0, 0) ∧
-    A' false 25 = A false 25 ∧ A' false 30 = 0 ∧ (∀ d ∈ sqS, V' d = V d)
-  refine WP.seq (WP.mono (VG.Proof.Bignum.PPC64LE.wp_countdown (body := sqrtBody) (cnt := .r27)
-    (N := 32 * ww (kK s0) + 32) (by omega) (by omega) Inv (fun i _ t ⟨A', V', ht, e, b', z', v⟩ _ => ?_)
-    ⟨_, _, h4.drop (by decide) (by decide), by rd_simp [z], by rd_simp, by rd_simp [z], fun _ _ => rfl⟩ c4)
-    fun s5 ⟨A5, V5, h5, e5, b5, z5, v5⟩ => ?_)
-  · refine WP.mono (sqrtBody_ok ht) fun t' ⟨A'', V'', ht', e', b'', z'', v', c'⟩ =>
-      ⟨⟨A'', V'', ht', ?_, b''.trans b', z''.trans z', fun d hd => (v' d hd).trans (v d hd)⟩, c'⟩
-    rw [e', Function.iterate_succ_apply', ← e]
-  refine WP.mono (h5.eqS (d := sOk5) (a := 2) (c := 30) (by decide) (by decide) (by decide) (ls' := sqS)
-    (by decide)) fun t ⟨ht, _⟩ => ⟨_, _, ht.drop (by decide) (by decide), ?_, ?_, ?_, ?_, ?_⟩
-  · have e := congrArg (fun p => p.2.2) e5; simp only at e; rw [← e]
-  · rd_simp [b5]
-  · rd_simp [z5]
-  · have e := congrArg (fun p => p.2.1) e5; simp only at e; rw [← e]; rd_simp [z5]
-  · intro d hd; simp only [sqS, List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> rd_simp [v5]
+  obtain ⟨H, hH⟩ : ∃ H, H = (kK s0 + 7) / 8 := ⟨_, rfl⟩
+  rw [← hH]
+  have hwW : vw s0 true = 4 * H + 6 := by rw [vw_true, hH]; simp only [wW, ww]; omega
+  have hww : vw s0 false = 2 * H + 2 := by rw [vw_false, hH]
+  have hwH : ww (kK s0) = 2 * H + 2 := by rw [hH]
+  have hL : vw s0 true = 2 * (2 * H + 3) := by omega
+  have hz15 : num s.mem (rvB s0) (vw s0 true) 15 = 0 := by rw [h.val (by decide)]; exact z
+  have eX : A true 18 % 2 ^ (64 * (2 * H)) = wordsVal s.mem (rvB s0) (arr (vw s0 true) 18) (2 * H) := by
+    rw [RdSqrtW.wv_low s.mem (rvB s0) (L := 2 * H + 3) (by omega),
+      ← VG.Proof.Rsa.PPC64LE.RdShift.num_words _ _ _ hL, h.val (by decide)]
+  generalize hX : A true 18 % 2 ^ (64 * (2 * H)) = X at eX ⊢
+  have hXlt : X < 2 ^ (64 * (2 * H)) := by rw [← hX]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  refine RdSqrtW.sqrtW_ok h.ws (by decide) (by decide) hwW (by omega) (by omega) hz15 eX
+    fun t e1 e2 Wt kt rt => ?_
+  have kn := keep_W_w (w := vw s0 false) kt
+  have fitN : ∀ j, j < vN false → arr (vw s0 false) j + S (vw s0 false) ≤ 2 ^ 64 := fun j hj => h.fit false hj
+  have n25 : num t.mem (rvB s0) (vw s0 false) 25 = A false 25 :=
+    (kn.num (by decide) (by decide) (fitN 25 (by decide))).trans (h.val (by decide))
+  have n30 : num t.mem (rvB s0) (vw s0 false) 30 = 0 := by
+    rw [kn.num (by decide) (by decide) (fitN 30 (by decide)), vw_false, show 30 = 2 * 15 from rfl, h.low (by decide),
+      z]; rfl
+  have hy : isqrt X < 2 ^ (64 * H) := by
+    have := VG.Proof.Rsa.RecoverDet.isqrt_sq_le X
+    refine Nat.lt_of_not_le fun hc => ?_
+    have := Nat.mul_le_mul hc hc
+    rw [← Nat.pow_add, show 64 * H + 64 * H = 64 * (2 * H) by omega] at this
+    omega
+  have n4 : num t.mem (rvB s0) (vw s0 false) 4 = isqrt X := by
+    rw [VG.Proof.Rsa.PPC64LE.RdShift.num_words _ _ _ (show vw s0 false = 2 * (H + 1) by omega),
+      show arr (vw s0 false) 4 = arr (vw s0 true) 2 from (arr_wide _ 2).symm,
+      RdSqrtW.wv_low t.mem (rvB s0) (L := 2 * H + 3) (by omega), e1]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega)))
+  have ht : DS s0 true (upd (upd A false 4 (isqrt X)) false 30 0) [(false, 4), (false, 25), (false, 30)]
+      (updV V sOk5 (b2n (decide (isqrt X * isqrt X = X)))) (sOk5 :: sqS) t := by
+    refine ⟨h.base.of_keep kt (fun j hj => fit_sv s0 true (by simp at hj; show j < 22; omega)) (by decide) rt,
+      Wt, (rt.gpr _ (by decide)).trans h.r21, (rt.gpr _ (by decide)).trans h.r23, (rt.gpr _ (by decide)).trans h.r25,
+      fun e he => ?_, fun e he => ?_, fun d hd => ?_, fun d hd => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl
+      · rw [n4]; simp [upd]
+      · rw [n25]; simp [upd]
+      · rw [n30]; simp [upd]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl <;> decide
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · rw [show sOk5 = 48 from rfl, e2]; simp [updV, b2n]
+      all_goals
+        rw [kt.slot (by decide) (by decide), h.sl _ (by decide)]
+        simp [updV, sOk5, sB0, sB1, sLt, sExact, sC1, sC2]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  refine WP.mono ht.toNB fun u ⟨hu, _⟩ => ⟨_, _, hu, by simp [upd], by simp [upd], by simp [upd], by simp [updV],
+    fun d hd => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+  rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [updV, sOk5, sB0, sB1, sLt, sExact, sC1, sC2]
 
 /-- The factors and the mask. -/
 theorem factors_ok (h : DS s0 false A [(false, 4), (false, 25), (false, 30)] V (sOk5 :: sqS) s) (z : A false 30 = 0)

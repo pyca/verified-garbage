@@ -11,10 +11,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 public import VerifiedGarbage.Proof.Rsa.BoolNat
-import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod
+import VerifiedGarbage.Proof.Rsa.PPC64LE.RdMulW
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
-import VerifiedGarbage.Proof.Rsa.ProductExact
 import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 public import Init.Data.Int.Order
@@ -29,7 +28,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: `d e`, and the factors or zeros written out
 
-`prod_ok`: `M = d e` by `mulMod`. `fail_ok`: zeros to `p` and `q`, and 0 in
+`prod_ok`: `M = d e` by rows of words (`mulW`). `fail_ok`: zeros to `p` and `q`, and 0 in
 `r3`; `stores_ok`: both factors, masked, and the mask returned. `NOk`: a
 valid modulus is odd and above 1.
 -/
@@ -234,8 +233,7 @@ end VG.Proof.Rsa.PPC64LE.Recover
 namespace VG.Proof.Rsa.PPC64LE.Recover
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
-open VG.Impl.Rsa.PPC64LE.Recover (loads prod prodSet nArr aN aOne aZ wZ wE wD wM wMod wT
-)
+open VG.Impl.Rsa.PPC64LE.Recover (loads prod nArr aN aOne aZ wZ wE wD wM)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Proof.Rsa.KeyWorkspace (arr S num)
 
@@ -272,39 +270,54 @@ theorem os2ip_lt8 (bs : List Byte) : Spec.Rsa.os2ip bs < 2 ^ (8 * bs.length) := 
   have := VG.Proof.Rsa.lt_of_os2ip bs
   rwa [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
 
-/-- `prod`: `M = d e` in the array `wM` of the `W` view. -/
+theorem shr3_ofNat {L : Nat} (hL : L + 7 < 2 ^ 64) :
+    (BitVec.ofNat 64 L + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((L + 7) / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  omega
+
+/-- The low `2 R` digits of a number below `2^(64 R)` are the number. -/
+theorem val32_low_words {m : Mem} {B : Addr} {d W R v : Nat} (hv : val32 m B d W = v) (hvR : v < 2 ^ (64 * R))
+    (hR : 2 * R ≤ W) : wordsVal m B d R = v := by
+  have e := val32_append m B d (2 * R) (W - 2 * R)
+  rw [show 2 * R + (W - 2 * R) = W by omega, hv, show 32 * (2 * R) = 64 * R by omega] at e
+  rw [wordsVal_eq_val32]
+  have := Nat.one_le_two_pow (n := 64 * R)
+  rcases Nat.eq_zero_or_pos (val32 m B (d + 4 * (2 * R)) (W - 2 * R)) with h0 | h0
+  · rw [h0, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
+  · have : 2 ^ (64 * R) ≤ 2 ^ (64 * R) * val32 m B (d + 4 * (2 * R)) (W - 2 * R) := Nat.le_mul_of_pos_right _ h0
+    omega
+
+/-- `prod`: `M = d e` in the array `wM` of the `W` view, by a row of words for each word of `e`. -/
 theorem prod_ok {s0 t : State} (h : LdD s0 t) :
     WP isa prod t fun u => Ws u (rvB s0) (rvZ s0) (wW (kK s0)) 16 ∧
-      KeyWorkspace.Keep (rvB s0) (wW (kK s0)) [wMod, wE, wD, wM, wT, wT + 1, wT + 2, wT + 3]
-        [VG.Impl.Rsa.PPC64LE.Keys.sB, VG.Impl.Rsa.PPC64LE.Keys.sC] t.mem u.mem ∧
+      KeyWorkspace.Keep (rvB s0) (wW (kK s0)) [wM] [] t.mem u.mem ∧
       num u.mem (rvB s0) (wW (kK s0)) wM = dV s0 * eV s0 ∧
-      num u.mem (rvB s0) (wW (kK s0)) wZ = 0 ∧ Keep (.r4 :: opRegs) t u := by
+      num u.mem (rvB s0) (wW (kK s0)) wZ = 0 ∧ Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] t u := by
   have z := h.base.sz
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, -, -, e1, e2, d1, d2,
     -⟩ := id h.base.pre
   have w1 := z.w1; have w2 := z.w2; have kw := z.kw
   have hkK : kK s0 = (s0.gpr .r8).toNat := rfl
   have hW : wW (kK s0) = 2 * ww (kK s0) + 2 := rfl
-  unfold prod prodSet
+  have w16 : Ws t (rvB s0) (rvZ s0) (wW (kK s0)) 16 := h.ws
+  have fit : ∀ j < 16, arr (wW (kK s0)) j + S (wW (kK s0)) ≤ 2 ^ 64 := fun j hj => w16.fit64 hj
+  unfold prod
   refine WP.seq ?_
-  refine setTop_ok h.ws (j := wMod) (by decide) (by decide) (fun i hi => h.zW wMod (by decide) i (by omega_arith))
-    fun t1 w1' k1 v1 kr1 => ?_
-  have e4 : t1.gpr .r27 = s0.gpr .r10 := (kr1.gpr _ (by decide)).trans h.r27
-  refine WP.mono (WP.keep [.r4] (Q := fun u => u.gpr .r4 = BitVec.ofNat 64 (8 * (s0.gpr .r10).toNat) ∧
-    u.mem = t1.mem) (by prun [e4, shl3]) (by decide)) fun t2 ⟨⟨a4, m2⟩, k2⟩ => ?_
-  have w2' := w1'.of_keep k2
-  have fit : ∀ j < 16, arr (wW (kK s0)) j + S (wW (kK s0)) ≤ 2 ^ 64 := fun j hj => w2'.fit64 hj
+  -- `R = ⌈e_len / 8⌉` rows.
+  have e27 : t.gpr .r27 = BitVec.ofNat 64 (s0.gpr .r10).toNat := by rw [h.r27, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have h27 : Reg.r27 ≠ .r0 := by decide
+  have hsh := shr3_ofNat (L := (s0.gpr .r10).toNat) (by omega_arith)
+  refine WP.mono (WP.keep [.r4] (Q := fun u => u.gpr .r4 = BitVec.ofNat 64 (((s0.gpr .r10).toNat + 7) / 8) ∧
+    u.mem = t.mem) (by prun [e27, exec_addi h27 (show 7 < 2 ^ 15 by decide), hsh]) (by decide))
+    fun t2 ⟨⟨a4, m2⟩, k2⟩ => ?_
+  have w2' := w16.of_keep k2
   -- The values before the product.
-  have n0 : ∀ j ∈ [wZ, wM], num t2.mem (rvB s0) (wW (kK s0)) j = 0 := fun j hj => by
-    have hj' : j = 0 ∨ j = 3 := by simpa [wZ, wM] using hj
-    rw [m2, k1.num (fun k hk => by simp only [List.mem_singleton] at hk; subst hk; simp only [wMod]; omega_arith)
-      (by simp) (fit j (by omega_arith))]
-    exact CrtValues.val32_of_zero fun i hi => h.zW j (by rcases hj' with rfl | rfl <;> decide) i (by omega_arith)
-  have nE : num t2.mem (rvB s0) (wW (kK s0)) wE = eV s0 := by
-    rw [m2, k1.num (by decide) (by simp) (fit wE (by decide))]; exact h.vE
-  have nD : num t2.mem (rvB s0) (wW (kK s0)) wD = dV s0 := by
-    rw [m2, k1.num (by decide) (by simp) (fit wD (by decide))]; exact h.vD
-  have hM : num t2.mem (rvB s0) (wW (kK s0)) wMod = 2 ^ (32 * wW (kK s0) - 1) := by rw [m2]; exact v1
+  have nZ : num t2.mem (rvB s0) (wW (kK s0)) wZ = 0 := by
+    rw [m2]; exact CrtValues.val32_of_zero fun i hi => h.zW wZ (by decide) i (by omega_arith)
+  have nE : num t2.mem (rvB s0) (wW (kK s0)) wE = eV s0 := by rw [m2]; exact h.vE
+  have nD : num t2.mem (rvB s0) (wW (kK s0)) wD = dV s0 := by rw [m2]; exact h.vD
   have bD : dV s0 < 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat) := by
     have := os2ip_lt8 (dB s0); simp only [dB, Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
     exact this
@@ -313,20 +326,28 @@ theorem prod_ok {s0 t : State} (h : LdD s0 t) :
     exact this
   have fitT : 8 * (PPC64LE.stackArg s0 1).toNat + 8 * (s0.gpr .r10).toNat ≤ 32 * wW (kK s0) - 1 := by
     rw [hW]; omega_arith
-  have p1 : 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat) ≤ 2 ^ (32 * wW (kK s0) - 1) :=
-    Nat.pow_le_pow_right (by decide) (by omega_arith)
-  refine WP.mono (mulMod_ok w2' (by decide) (show MulIdx 16 wZ wE wD wM wMod wT by decide)
-    (k := 8 * (s0.gpr .r10).toNat) (by omega_arith) (by omega_arith) a4) fun u ⟨wu, ku, kru, val⟩ => ?_
-  have hm2 : 2 * 2 ^ (32 * wW (kK s0) - 1) ≤ 2 ^ (32 * wW (kK s0)) := by
-    rw [← Nat.pow_succ']; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have hv := val (n0 wZ (by simp)) (by rw [n0 wM (by simp), hM]; exact Nat.two_pow_pos _)
-    (by rw [nD, hM]; omega_arith) (by rw [hM]; exact hm2)
-  rw [n0 wM (by simp), nE, nD, hM] at hv
-  refine ⟨wu, ?_, ?_, ?_, ((kr1.trans k2).trans kru).mono⟩
-  · rw [m2] at ku
-    exact KeyWorkspace.Keep.join k1 ku
-  · rw [hv]; exact VG.Proof.Rsa.recover_product_exact bD bE fitT
-  · rw [ku.num (by decide) (by simp [VG.Impl.Rsa.PPC64LE.Keys.sB, VG.Impl.Rsa.PPC64LE.Keys.sC, KeyWorkspace.hdr]) (fit wZ (by decide))]; exact n0 wZ (by simp)
+  have hR2 : 2 * (((s0.gpr .r10).toNat + 7) / 8) ≤ wW (kK s0) := by rw [hW]; omega_arith
+  have bE' : eV s0 < 2 ^ (64 * (((s0.gpr .r10).toNat + 7) / 8)) :=
+    Nat.lt_of_lt_of_le bE (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have eW2 : 2 * (wW (kK s0) / 2) = wW (kK s0) := by rw [hW]; omega
+  refine WP.mono (VG.Proof.Rsa.PPC64LE.Recover.mulW_ok w2' (by decide) (o := wM) (x := wE) (y := wD)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [hW]; omega) a4 (by omega_arith) hR2)
+    fun u ⟨wu, ku, val, kru⟩ => ?_
+  have hDw : wordsVal t2.mem (rvB s0) (arr (wW (kK s0)) wD) (wW (kK s0) / 2) = dV s0 := by
+    rw [wordsVal_eq_val32, eW2]; exact nD
+  rw [val32_low_words nE bE' hR2, hDw] at val
+  refine ⟨wu, ?_, ?_, ?_, (k2.trans kru).mono (by decide)⟩
+  · rw [m2] at ku; exact ku
+  · show val32 _ _ _ (wW (kK s0)) = _
+    rw [show val32 u.mem (rvB s0) (arr (wW (kK s0)) wM) (wW (kK s0)) =
+        wordsVal u.mem (rvB s0) (arr (wW (kK s0)) wM) (wW (kK s0) / 2) by rw [wordsVal_eq_val32, eW2],
+      val, show 64 * (wW (kK s0) / 2) = 32 * wW (kK s0) by omega,
+      Nat.mul_comm, Nat.mod_eq_of_lt]
+    calc dV s0 * eV s0 < 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat) * 2 ^ (8 * (s0.gpr .r10).toNat) :=
+          Nat.mul_lt_mul'' bD bE
+      _ = 2 ^ (8 * (PPC64LE.stackArg s0 1).toNat + 8 * (s0.gpr .r10).toNat) := (Nat.pow_add _ _ _).symm
+      _ ≤ 2 ^ (32 * wW (kK s0)) := Nat.pow_le_pow_right (by decide) (by omega)
+  · rw [ku.num (by decide) (by simp) (fit wZ (by decide))]; exact nZ
 
 end VG.Proof.Rsa.PPC64LE.Recover
 
@@ -341,9 +362,10 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 structure NOk (s0 : State) : Prop where
   odd : nV s0 % 2 = 1
   big : 128 ≤ nV s0
+  top : 256 ^ (kK s0 - 1) ≤ nV s0
 
 theorem NOk.of_valid {s0 : State} (h : Spec.Rsa.modulusValid (nV s0) (kK s0) = true) : NOk s0 := by
   simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-  exact ⟨h.1.1.1, Nat.le_trans (Nat.pow_le_pow_right (n := 2) (by decide) (show 7 ≤ 511 by decide)) h.1.1.2⟩
+  exact ⟨h.1.1.1, Nat.le_trans (Nat.pow_le_pow_right (n := 2) (by decide) (show 7 ≤ 511 by decide)) h.1.1.2, h.2⟩
 
 end VG.Proof.Rsa.PPC64LE.Recover

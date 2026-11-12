@@ -858,6 +858,69 @@ theorem batch_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n c p iv : Nat} 
       kvu _ (by decide) (by decide) (by decide) nM _ hk, kv1 _ (by decide) nM _ hk]
     exact hst.P1
 
+/-- A batch of `f` and `g` alone: the next `d`, `f` and `g`, and the count of the batches left, `c`, in
+`r10` and whether it is zero in `r3`. -/
+theorem batchG_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n c p iv : Nat} {I : Divstep.IState}
+    (h : Ctx s B Z w N n (c + 1)) (hst : BG s B w n I)
+    (hN : N ≤ 256) (hd : |I.d| + 2 * 59 < 2 ^ 62) (hodd : I.f % 2 = 1)
+    (hF : |I.f| ≤ 2 ^ (64 * nu n) * 2 ^ 3) (hG : |I.g| ≤ 2 ^ (64 * nu n) * 2 ^ 3) :
+    WP isa batchG s fun t => Ctx t B Z w N n c ∧ BG t B w n (Divstep.batchS 59 p iv I) ∧
+      ((t.gpr .r3).toNat ≠ 0 ↔ c ≠ 0) ∧
+      KeyWorkspace.Keep B w [aF, aG, aT1, aT2, aT3, aW] [] s.mem t.mem ∧ Keep (.r10 :: kRegs) s t := by
+  have room := h.room
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.wbig
+  have := h.nuw
+  have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
+  have nW : aW < N := by unfold aW; omega
+  have nF : aF < N := by unfold aF; omega
+  have nG : aG < N := by unfold aG; omega
+  have n1 : aT1 < N := by unfold aT1; omega
+  have n2 : aT2 < N := by unfold aT2; omega
+  have n3 : aT3 < N := by unfold aT3; omega
+  have hk : 8 * (nu n + 1) ≤ S w := by omega
+  simp only [batchG, seqs, updateGS]
+  rw [WP.seq_iff]
+  refine WP.mono (head_ok h hst hN hd hodd) fun t1 ⟨h1, K1, out1, d1, u1, v1, q1, r1, k1⟩ => ?_
+  have fW := fit _ nW
+  have kv1 : ∀ j, j ≠ aW → j < N → ∀ k, 8 * k ≤ S w → wordsVal t1.mem B (arr w j) k = wordsVal s.mem B (arr w j) k :=
+    fun j hj hjN k hk => keep_wv K1 hk (by simp [Ne.symm hj]) (by simp) (fit _ hjN)
+  rw [WP.seq_iff, WP.seq_iff]
+  -- The borrowed registers kept.
+  refine WP.mono (spill_ok h1) fun u ⟨ku, Ku, s1, s2, s3⟩ => ?_
+  have hu := h1.of_keep' ku
+  have wdu : ∀ o, o + 8 ≤ 48 → u.mem.readW (off B (arr w aW + o)) 64 = t1.mem.readW (off B (arr w aW + o)) 64 :=
+    fun o ho => keep_word Ku (by omega) (by decide) (by simp) (fit _ nW)
+  have kvu : ∀ j, j ≠ aT1 → j ≠ aT2 → j ≠ aT3 → j < N → ∀ k, 8 * k ≤ S w →
+      wordsVal u.mem B (arr w j) k = wordsVal t1.mem B (arr w j) k :=
+    fun j h1 h2 h3 hjN k hk => keep_wv Ku hk (by simp [Ne.symm h1, Ne.symm h2, Ne.symm h3]) (by simp) (fit _ hjN)
+  rw [WP.seq_iff]
+  refine WP.mono (updateG_ok hu hN
+    (by rw [kvu _ (by decide) (by decide) (by decide) nF _ hk, kv1 _ (by decide) nF _ hk]; exact hst.f)
+    (by rw [kvu _ (by decide) (by decide) (by decide) nG _ hk, kv1 _ (by decide) nG _ hk]; exact hst.g)
+    (by rw [wdu _ (by decide)]; exact u1) (by rw [wdu _ (by decide)]; exact v1)
+    (by rw [wdu _ (by decide)]; exact q1) (by rw [wdu _ (by decide)]; exact r1) hodd hF hG)
+    fun t2 ⟨h2, K2, ef, eg, k2⟩ => ?_
+  have wd2 : ∀ o, o + 8 ≤ 48 → t2.mem.readW (off B (arr w aW + o)) 64 = t1.mem.readW (off B (arr w aW + o)) 64 :=
+    fun o ho => (keep_word K2 (by omega) (by decide) (by simp) (fit _ nW)).trans (wdu o ho)
+  -- The borrowed registers back.
+  refine WP.mono (restore_ok h2) fun t4 ⟨k4, m4, l1, l2, l3⟩ => ?_
+  have wd : ∀ j, j ≠ aF → j ≠ aG → j < N → ∀ i < 6,
+      word t2.mem B (arr w j + 8 * i) = word u.mem B (arr w j + 8 * i) := fun j h1 h2 hj i hi =>
+    keep_word K2 (o := 8 * i) (b := 64) (by omega) (by simp [Ne.symm h1, Ne.symm h2]) (by simp) (fit _ hj)
+  have kb : Keep (.r3 :: kRegs) t1 t4 := spill_restore ku s1 s2 s3 k2
+    (wd _ (by decide) (by decide) n1) (wd _ (by decide) (by decide) n2)
+    (fun i hi => wd _ (by decide) (by decide) n3 i (by omega)) k4 l1 l2 l3
+  have h4 := h1.of_keep' kb
+  refine WP.mono (countDown_ok h4) fun t5 ⟨⟨h5, r3, m5⟩, k5⟩ => ?_
+  have k : Keep (.r10 :: kRegs) s t5 :=
+    ((k1.trans' (kb.mono (by decide))).mono (by decide)).trans' (k5.mono (by decide))
+  have em : t5.mem = t2.mem := m5.trans m4
+  rw [batchS_eq]
+  refine ⟨h5, ⟨?_, by rw [em]; exact ef, by rw [em]; exact eg⟩, r3,
+    by rw [em]; exact ((K1.mono (by simp)).trans (Ku.mono (by simp))).trans (K2.mono (by simp)), k⟩
+  rw [em, wd2 _ (by decide)]; dsimp only; exact d1
+
 end VG.Proof.Rsa.PPC64LE.InvBatch
 
 
@@ -904,6 +967,27 @@ theorem loop_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n p iv x : Nat} (
   obtain ⟨bd, fo, fb, gb, ha, hb⟩ := run_bounds (k := k) odd hinv pc xc
   rw [show 3 * nu n + 2 - k = (3 * nu n + 2 - k - 1) + 1 by omega] at Ht
   refine WP.mono (batch_ok Ht It hN (by push_cast at bd ⊢; omega) fo fb gb ha hb hp0 pc hinv)
+    fun u ⟨Hu, Iu, ru, Ku, ku⟩ => ?_
+  rw [show 3 * nu n + 2 - k - 1 = 3 * nu n + 2 - (k + 1) by omega] at Hu
+  exact ⟨⟨Hu, Iu, Kt.trans Ku, kt.trans' ku⟩, by rw [ru]; omega⟩
+
+/-- After `k` batches of `f` and `g` alone. -/
+def LoopGAt (s₀ : State) (B : Addr) (Z w N n p iv x : Nat) (k : Nat) (t : State) : Prop :=
+  Ctx t B Z w N n (3 * nu n + 2 - k) ∧ BG t B w n (Divstep.invRunS 59 p iv x k) ∧
+    KeyWorkspace.Keep B w [aF, aG, aT1, aT2, aT3, aW] [] s₀.mem t.mem ∧ Keep (.r10 :: kRegs) s₀ t
+
+theorem loopG_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n p iv x : Nat} (hN : N ≤ 256)
+    (h : Ctx s B Z w N n (3 * nu n + 2)) (hst : BG s B w n (Divstep.invRunS 59 p iv x 0))
+    (odd : p % 2 = 1) (hinv : (p * iv + 1) % 2 ^ 64 = 0)
+    (pc : p < 2 ^ (64 * nu n)) (xc : x < 2 * 2 ^ (64 * nu n)) :
+    WP isa (.loop batchG (.nonzero .d .r3)) s (LoopGAt s B Z w N n p iv x (3 * nu n + 2)) := by
+  have hn := h.nuw
+  have hw := h.ws.wle
+  refine count_loop (by omega) (LoopGAt s B Z w N n p iv x) (fun k hk t ⟨Ht, It, Kt, kt⟩ => ?_)
+    ⟨by simpa using h, hst, KeyWorkspace.Keep.refl _ _ _ _ _, Keep.refl _ _⟩
+  obtain ⟨bd, fo, fb, gb, -, -⟩ := run_bounds (k := k) odd hinv pc xc
+  rw [show 3 * nu n + 2 - k = (3 * nu n + 2 - k - 1) + 1 by omega] at Ht
+  refine WP.mono (batchG_ok (p := p) (iv := iv) Ht It hN (by push_cast at bd ⊢; omega) fo fb gb)
     fun u ⟨Hu, Iu, ru, Ku, ku⟩ => ?_
   rw [show 3 * nu n + 2 - k - 1 = 3 * nu n + 2 - (k + 1) by omega] at Hu
   exact ⟨⟨Hu, Iu, Kt.trans Ku, kt.trans' ku⟩, by rw [ru]; omega⟩
@@ -1918,6 +2002,29 @@ theorem inverseS_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h :
   rw [g5, y5, hfI]
   exact ⟨Nat.gcd_comm _ _, (scaled_cong c2 hcong).symm.dvd, y2⟩
 
+/-- `gcd(x, m)` alone, by the batches of `f` and `g`. -/
+theorem gcd_ok [Divstep.TcSLaw] {s : State} {B : Addr} {Z w N n : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
+    (hw : 10 ≤ w) (h11 : s.gpr .r11 = BitVec.ofNat 64 n) (hn1 : 1 ≤ n) (hnw : n ≤ w) (hfit : n + n % 2 ≤ w)
+    {x m : Nat} (hx : num s.mem B w aX = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w aMin = m)
+    (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
+    WP isa gcd s fun t => Ws t B Z w N ∧ KeyWorkspace.Keep B w invArrs [] s.mem t.mem ∧ Keep invRegs s t ∧
+      (1 < m → num t.mem B w 1 = Nat.gcd x m) := by
+  have := h.wle
+  have hν : 2 * nu n ≤ w := by unfold nu; omega
+  obtain ⟨pc, xc⟩ := inputs_lt hmn hxn
+  simp only [gcd, seqs]
+  rw [WP.seq_iff]
+  refine WP.mono (init_ok h hN15 hN hw h11 hn1 hnw hfit hx hxn hm hmn hodd)
+    fun t0 ⟨h0, ⟨iv, hiv, st0⟩, K0, k0⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (loopG_ok hN h0 st0.toBG hodd hiv pc xc) fun t1 ⟨h1, st1, K1, k1⟩ => ?_
+  obtain ⟨hfI, -⟩ := run_done hodd hiv hmn hxn (by omega)
+  have gle : Nat.gcd m x ≤ m := Nat.le_of_dvd (by omega) (Nat.gcd_dvd_left _ _)
+  refine WP.mono (finishG_ok h1 hN st1.f (by rw [hfI]; omega)) fun t2 ⟨h2, K2, g2, k2⟩ => ?_
+  refine ⟨h2.ws, (K0.mono (by decide)).trans ((K1.mono (by decide)).trans (K2.mono (by decide))),
+    (k0.trans' k1).trans' (k2.mono (by decide)), fun _ => ?_⟩
+  rw [show (1 : Nat) = aGcd from rfl, g2, hfI, Nat.gcd_comm]
+
 end VG.Proof.Rsa.PPC64LE.InvBatch
 
 namespace VG.Proof.Rsa.PPC64LE
@@ -1925,5 +2032,6 @@ namespace VG.Proof.Rsa.PPC64LE
 instance invLaw [Divstep.TcSLaw] : InvLaw where
   inverse_ok := InvBatch.inverse_ok
   inverseS_ok := InvBatch.inverseS_ok
+  gcd_ok := InvBatch.gcd_ok
 
 end VG.Proof.Rsa.PPC64LE

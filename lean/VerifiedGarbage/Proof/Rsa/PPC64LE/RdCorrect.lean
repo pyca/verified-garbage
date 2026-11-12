@@ -8,9 +8,11 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.RdProd
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdDiv
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdSquare
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdSqrt
+import VerifiedGarbage.Proof.Rsa.RecoverRoot
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdContract
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdEntry
+import VerifiedGarbage.Proof.Rsa.RecoverDetWords
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdFinish
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -42,10 +44,51 @@ open VG.Proof.Rsa (b2n)
 open VG.Proof.Rsa.RecoverDet
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Impl.Rsa.PPC64LE.RecoverDet (det sB0 sB1 sLt sExact sC1 sC2 sOk5)
+open VG.Spec.Rsa (isqrt)
 
 theorem mask_eq (c0 c1 c2 c3 c4 c5 c6 : Bool) :
     ((((((!c0 && !c1) && c2) && c3) && !c4) && !c5) && c6) = (!(c0 || c1) && c2 && (c3 && !(c4 || c5) && c6)) := by
   revert c0 c1 c2 c3 c4 c5 c6; decide
+
+/-- The root's bit only matters where the earlier checks pass. -/
+theorem mask_c6 {x l r k c c' : Bool} (h : l = true → k = true → c' = c) :
+    (x && l && (r && k && c')) = (x && l && (r && k && c)) := by
+  cases l <;> cases k <;> simp_all
+
+/-- Where the model's earlier checks pass, `X = b² - 4 n` fits the square root's `2 H` words. -/
+theorem x_lt {H nb wb n de q : Nat} (three : 3 ≤ n) (hn : n < 2 ^ (64 * H)) (hnb : nb = 64 * H + 64)
+    (hw : wb = 2 * nb + 64) (hlt : ltOf nb wb n de = true) (hq : q = dOf nb wb n de / m1Of nb wb n de)
+    (h4 : ok4Of nb wb n (bOf nb q) = true) : xOf nb wb n (bOf nb q) < 2 ^ (64 * (2 * H)) := by
+  have p1 : 8 * 2 ^ (64 * H) ≤ 2 ^ nb := by
+    rw [show 8 * 2 ^ (64 * H) = 2 ^ (64 * H + 3) by rw [Nat.pow_add]; omega]
+    exact Nat.pow_le_pow_right (by decide) (by omega)
+  have p3 : 2 ^ nb ≤ 2 ^ wb := Nat.pow_le_pow_right (by decide) (by omega)
+  have p2 : 2 ^ nb * 2 ^ nb ≤ 2 ^ wb := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega)
+  have pM : 2 ^ (64 * H) * 2 ^ (64 * H) = 2 ^ (64 * (2 * H)) := by rw [← Nat.pow_add]; congr 1; omega
+  have rlt : rOf nb wb n de < n := Nat.mod_lt _ (by omega)
+  have dv : dOf nb wb n de = n - rOf nb wb n de := by
+    unfold dOf; rw [Nat.mod_eq_of_lt (by omega), wsub_of_le (by omega) (by omega)]
+  have mlt : mOf nb wb n de < n := by simpa [ltOf] using hlt
+  have m1 : m1Of nb wb n de = mOf nb wb n de + 1 := by
+    unfold m1Of; rw [Nat.mod_eq_of_lt (a := mOf nb wb n de) (by omega), Nat.mod_eq_of_lt (by omega)]
+  have qle : q ≤ n := by rw [hq, dv, m1]; exact Nat.le_trans (Nat.div_le_self _ _) (by omega)
+  have hb : bOf nb q = q + 1 := by unfold bOf; exact Nat.mod_eq_of_lt (by omega)
+  rw [hb] at h4 ⊢
+  have blt : q + 1 < 2 ^ nb := by omega
+  have bb : (q + 1) * (q + 1) < 2 ^ wb := Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' blt blt) p2
+  have sq : sqOf nb wb (q + 1) = (q + 1) * (q + 1) := by
+    unfold sqOf; rw [prod_iter _ _ _ (by omega)]; simp only
+    rw [Nat.mod_eq_of_lt blt, Nat.mod_eq_of_lt bb]
+  have f4 : fourN wb n = 4 * n := by
+    unfold fourN
+    rw [Nat.mod_eq_of_lt (a := 2 * n) (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+  have big : ¬ ((q + 1) * (q + 1) < 4 * n) := by
+    unfold ok4Of at h4; rw [sq, f4] at h4; simp at h4; omega
+  unfold xOf; rw [sq, f4, wsub_of_le bb (by omega)]
+  have e1 : (q + 1) * (q + 1) ≤ (n + 1) * (n + 1) := Nat.mul_self_le_mul_self (by omega)
+  have e2 : (n + 1) * (n + 1) = n * n + 2 * n + 1 := by rw [Nat.add_mul, Nat.mul_add, Nat.mul_add]; omega
+  have e3 : n * n < 2 ^ (64 * (2 * H)) := pM ▸ Nat.mul_self_lt_mul_self hn
+  omega
 
 /-- The bytes of a factor. -/
 abbrev outB (b : Bool) (v k : Nat) : List Byte := if b then Spec.Rsa.i2osp v k else List.replicate k 0
@@ -53,6 +96,18 @@ abbrev outB (b : Bool) (v k : Nat) : List Byte := if b then Spec.Rsa.i2osp v k e
 theorem nV_lt256 (s0 : State) : nV s0 < 256 ^ kK s0 := by
   have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s0.mem (s0.gpr .r7) (kK s0))
   rwa [VG.Proof.Bignum.bytesAt_length] at this
+
+/-- A valid modulus's top word is not zero. -/
+theorem n_top {s0 : State} (top : 256 ^ (kK s0 - 1) ≤ nV s0) : 2 ^ (64 * ((kK s0 + 7) / 8 - 1)) ≤ nV s0 := by
+  refine Nat.le_trans ?_ top
+  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+  exact Nat.pow_le_pow_right (by decide) (by omega)
+
+/-- `n` fits its `⌈k / 8⌉` words. -/
+theorem n_lt (s0 : State) : nV s0 < 2 ^ (64 * ((kK s0 + 7) / 8)) := by
+  refine Nat.lt_of_lt_of_le (nV_lt256 s0) ?_
+  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+  exact Nat.pow_le_pow_right (by decide) (by omega)
 
 section
 variable [VG.Proof.Rsa.PPC64LE.InvLaw] {s0 s : State} {A : Bool → Nat → Nat} {V : Nat → Nat}
@@ -70,7 +125,7 @@ theorem det_gcd_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s)
   -- `d e - 1`, and the halvings.
   refine WP.seq (WP.mono (deMinus_ok h z) fun s1 ⟨A1, V1, h1, a15, a10, a9, a32, vb0, vb1⟩ => ?_)
   rw [vw_true] at a10 vb1
-  refine WP.seq (WP.mono (twos_ok h1 a15) fun s2 ⟨A2, V2, h2, e2, b15, b8, b9, b32, b42, wb0, wb1⟩ => ?_)
+  refine WP.seq (WP.mono (twos_ok h1 a15 (by rw [a32]; omega)) fun s2 ⟨A2, V2, h2, e2, b15, b8, b9, b32, b42, wb0, wb1⟩ => ?_)
   rw [a10, a32, vw_true] at e2
   rw [a9] at b9
   rw [a32] at b32
@@ -103,16 +158,20 @@ theorem det_gcd_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s)
 
 /-- Appendix C.2, from `n` (narrow array 32) and `d e` (wide array 3). -/
 theorem det_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s) (z : A true 0 = 0)
-    (three : 3 ≤ A false 32) :
+    (three : 3 ≤ A false 32) (top : 2 ^ (64 * ((kK s0 + 7) / 8 - 1)) ≤ A false 32)
+    (nlt : A false 32 < 2 ^ (64 * ((kK s0 + 7) / 8))) :
     WP isa det s fun t => ∃ A' V' q rem,
       DS s0 false A' [(false, 5), (false, 6)] V' [VG.Impl.Rsa.PPC64LE.Recover.sMask] t ∧
-      (0 < m1Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) →
+      (ltOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) = true →
+        0 < m1Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) →
         q = dOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) /
             m1Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) ∧
           rem = dOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) %
             m1Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3)) ∧
-      A' false 5 = (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) q rem).2.1 ∧
-      A' false 6 = (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) q rem).2.2 ∧
+      ((okDE (32 * wW (kK s0)) (A true 3) && ltOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) &&
+        (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) q rem).1) = true →
+        A' false 5 = (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) q rem).2.1 ∧
+        A' false 6 = (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) q rem).2.2) ∧
       V' VG.Impl.Rsa.PPC64LE.Recover.sMask = b2n (okDE (32 * wW (kK s0)) (A true 3) &&
         ltOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) &&
         (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) q rem).1) := by
@@ -124,7 +183,7 @@ theorem det_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s) (z 
   -- `d e - 1`, and the halvings.
   refine WP.seq (WP.mono (deMinus_ok h z) fun s1 ⟨A1, V1, h1, a15, a10, a9, a32, vb0, vb1⟩ => ?_)
   rw [vw_true] at a10 vb1
-  refine WP.seq (WP.mono (twos_ok h1 a15) fun s2 ⟨A2, V2, h2, e2, b15, b8, b9, b32, b42, wb0, wb1⟩ => ?_)
+  refine WP.seq (WP.mono (twos_ok h1 a15 (by rw [a32]; omega)) fun s2 ⟨A2, V2, h2, e2, b15, b8, b9, b32, b42, wb0, wb1⟩ => ?_)
   rw [a10, a32, vw_true] at e2
   rw [a9] at b9
   rw [a32] at b32
@@ -162,11 +221,11 @@ theorem det_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s) (z 
     rw [p17, aOf, tw]
   -- `m`, `r`, and the second division.
   have n4 : A4 false 32 = A false 32 := by rw [p32, g32, b32]
-  refine WP.seq (WP.mono (divA_ok h4 p15 (by rw [n4]; omega))
+  refine WP.seq (WP.mono (divA_ok h4 p15 (by rw [n4]; exact top) (by rw [n4]; exact nlt))
     fun s5 ⟨A5, V5, h5, m5, r5, n5, z5, o5, nn5, vlt, db0, db1⟩ => ?_)
   rw [n4, ha] at m5 r5 vlt
   rw [n4] at n5 nn5
-  refine WP.seq (WP.mono (divB_ok h5 z5) fun s6 ⟨Q, R, A6, V6, h6, qr, q6, n6, z6, nW6, zz6, o6, nn6, vex, vlt6, eb0,
+  refine WP.seq (WP.mono (divB_ok h5 z5 (by rw [nn5]; exact nlt)) fun s6 ⟨Q, R, A6, V6, h6, qr, q6, n6, z6, nW6, zz6, o6, nn6, vex, vlt6, eb0,
     eb1⟩ => ?_)
   rw [m5, r5, nn5] at qr
   -- `b`, `b²` and `b² - 4 n`.
@@ -177,37 +236,74 @@ theorem det_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s) (z 
   rw [b7, q6] at b8'
   -- The square root and the factors.
   refine WP.seq (WP.mono (sqrt_ok h8 (by rw [z8, z7])) fun s9 ⟨A9, V9, h9, y9, b9', z9, vok, v9⟩ => ?_)
-  rw [x8] at y9 vok
   rw [b8'] at b9'
-  have K : 32 * wW (kK s0) / 2 = 32 * ww (kK s0) + 32 := by show 32 * (2 * ww (kK s0) + 2) / 2 = _; omega
+  -- The model's names.
+  have hnb : 32 * ww (kK s0) = 64 * ((kK s0 + 7) / 8) + 64 := by simp only [ww]; omega
+  have hwb : 32 * wW (kK s0) = 2 * (32 * ww (kK s0)) + 64 := by simp only [wW]; omega
+  have xe : A8 true 18 = xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) := by
+    rw [x8]; rfl
+  rw [xe] at y9 vok
+  have hqr : ltOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) = true →
+      Q = dOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) /
+          m1Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) ∧
+        R = dOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) %
+          m1Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) := by
+    intro hl
+    have hm : aOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) / A false 32 < A false 32 := by
+      unfold ltOf mOf at hl; exact of_decide_eq_true hl
+    unfold m1Of dOf mOf rOf
+    exact qr (Nat.lt_of_le_of_lt (Nat.mod_le _ _) hm)
+      (Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.mod_lt _ (by omega)))
+  -- Where the earlier checks pass, the root by words is the model's.
+  have link : ltOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) = true →
+      ok4Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) = true →
+      xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) %
+          2 ^ (64 * (2 * ((kK s0 + 7) / 8))) =
+        xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) ∧
+      (rootOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q)).2.2 =
+          isqrt (xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q)) ∧
+      ((rootOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q)).2.1 = 0 ↔
+        isqrt (xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q)) *
+          isqrt (xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q)) =
+          xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q)) := by
+    intro hl h4
+    have hq := (hqr hl).1
+    have rb := root_bridge (de := A true 3) (by omega)
+      (by rw [hnb, Nat.pow_add]; have := Nat.two_pow_pos (64 * ((kK s0 + 7) / 8)); omega) (by omega)
+      (by omega) hl hq h4
+    exact ⟨Nat.mod_eq_of_lt (x_lt (by omega) nlt hnb hwb hl hq h4), rb.1, rb.2.1⟩
   refine WP.mono (factors_ok h9 z9 (c0 := decide (A true 3 < 1)) (c1 := decide (deX (32 * wW (kK s0)) (A true 3) < 1))
-    (c2 := decide (aOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) / A false 32 < A false 32))
+    (c2 := ltOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3))
     (c3 := decide (R = 0))
-    (c4 := decide (((prodStep (32 * wW (kK s0)))^[32 * ww (kK s0)] ((Q + 1) % 2 ^ (32 * ww (kK s0)),
-      (Q + 1) % 2 ^ (32 * ww (kK s0)), 0)).2.2 < fourN (32 * wW (kK s0)) (A false 32)))
-    (c5 := decide (wsub (32 * wW (kK s0)) (((prodStep (32 * wW (kK s0)))^[32 * ww (kK s0)]
-      ((Q + 1) % 2 ^ (32 * ww (kK s0)), (Q + 1) % 2 ^ (32 * ww (kK s0)), 0)).2.2) (fourN (32 * wW (kK s0)) (A false 32))
-      < 1))
-    (c6 := decide (((sqrtStep (32 * ww (kK s0)) (32 * wW (kK s0)))^[32 * ww (kK s0) + 32]
-      (wsub (32 * wW (kK s0)) (((prodStep (32 * wW (kK s0)))^[32 * ww (kK s0)] ((Q + 1) % 2 ^ (32 * ww (kK s0)),
-        (Q + 1) % 2 ^ (32 * ww (kK s0)), 0)).2.2) (fourN (32 * wW (kK s0)) (A false 32)), 0, 0)).2.1 = 0))
+    (c4 := decide (sqOf (32 * ww (kK s0)) (32 * wW (kK s0)) (bOf (32 * ww (kK s0)) Q) <
+      fourN (32 * wW (kK s0)) (A false 32)))
+    (c5 := decide (xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) < 1))
+    (c6 := decide (isqrt (xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) %
+          2 ^ (64 * (2 * ((kK s0 + 7) / 8)))) *
+        isqrt (xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) %
+          2 ^ (64 * (2 * ((kK s0 + 7) / 8)))) =
+        xOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) %
+          2 ^ (64 * (2 * ((kK s0 + 7) / 8)))))
     (by rw [v9 _ (by decide), v8 _ (by decide), v7 _ (by decide), eb0, db0, pb0, gb0, wb0, vb0])
     (by rw [v9 _ (by decide), v8 _ (by decide), v7 _ (by decide), eb1, db1, pb1, gb1, wb1, vb1])
-    (by rw [v9 _ (by decide), v8 _ (by decide), v7 _ (by decide), vlt6, vlt])
+    (by rw [v9 _ (by decide), v8 _ (by decide), v7 _ (by decide), vlt6, vlt]; rfl)
     (by rw [v9 _ (by decide), v8 _ (by decide), v7 _ (by decide), vex])
-    (by rw [v9 _ (by decide), vc1])
-    (by rw [v9 _ (by decide), vc2])
-    vok) fun t ⟨A10, V10, h10, p10, q10, m10⟩ => ⟨A10, V10, Q, R, h10, ?_, ?_, ?_, ?_⟩
-  · unfold m1Of dOf mOf rOf; exact qr
-  · rw [p10, b9', y9]
-    unfold stage2 rootOf xOf sqOf bOf
-    rw [K]
-  · rw [q10, b9', y9]
-    unfold stage2 rootOf xOf sqOf bOf
-    rw [K]
-  · rw [m10, mask_eq]
-    unfold okDE ltOf mOf stage2 ok4Of rootOf xOf sqOf bOf
-    rw [K]
+    (by rw [v9 _ (by decide), vc1]; rfl)
+    (by rw [v9 _ (by decide), vc2]; rfl)
+    vok) fun t ⟨A10, V10, h10, p10, q10, m10⟩ => ⟨A10, V10, Q, R, h10, fun hl _ => hqr hl, ?_, ?_⟩
+  · intro hm
+    simp only [Bool.and_eq_true] at hm
+    obtain ⟨⟨_, hl⟩, hs⟩ := hm
+    have h4 : ok4Of (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (bOf (32 * ww (kK s0)) Q) = true := by
+      unfold stage2 at hs; simp only [Bool.and_eq_true] at hs; exact hs.1.2
+    obtain ⟨xm, ry, _⟩ := link hl h4
+    rw [p10, q10, b9', y9, xm, ← ry]
+    exact ⟨rfl, rfl⟩
+  · rw [m10, mask_eq, mask_c6 (c := decide ((rootOf (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32)
+      (bOf (32 * ww (kK s0)) Q)).2.1 = 0)) fun hl h4 => by
+        obtain ⟨xm, _, rz⟩ := link hl h4
+        rw [xm]; exact decide_eq_decide.mpr rz.symm]
+    rfl
 
 end
 
@@ -239,10 +335,9 @@ theorem prodD_ok {s0 t : State} (l : LdD s0 t) :
     w2.r29, w2.r30, w2.r31⟩, (k2.gpr _ (by decide)).trans l.r21, (k2.gpr _ (by decide)).trans l.r23,
     (k2.gpr _ (by decide)).trans l.r25, fun e he => ?_, by decide, by simp, by simp⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-    have : j < 16 := by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    exact Nat.le_trans (VG.Proof.Rsa.KeyWorkspace.arr_end this) z.svW
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases hd with rfl | rfl <;> decide
+    subst hj
+    exact Nat.le_trans (VG.Proof.Rsa.KeyWorkspace.arr_end (show VG.Impl.Rsa.PPC64LE.Recover.wM < 16 by decide)) z.svW
+  · simp at hd
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl
     · simp only [A0, vw_true]
@@ -300,17 +395,21 @@ theorem valid_ok {s0 t : State} (hd : rdP.pre s0) (e : REnt s0 t)
   simp only [seqs]
   refine WP.seq (WP.mono (loads_ok e) fun t1 ⟨l1, _⟩ => ?_)
   refine WP.seq (WP.mono (prodD_ok l1) fun t2 h2 => ?_)
-  refine WP.seq (WP.mono (det_ok h2 (by simp only [A0]; rd_simp) (by simp only [A0]; rd_simp; have := hn.big; omega))
-    fun t3 ⟨A3, V3, q, rem, h3, hdiv, p5, p6, msk⟩ => ?_)
+  refine WP.seq (WP.mono (det_ok h2 (by simp only [A0]; rd_simp) (by simp only [A0]; rd_simp; have := hn.big; omega)
+      (by simp only [A0]; rd_simp; exact n_top hn.top) (by simp only [A0]; rd_simp; exact n_lt s0))
+    fun t3 ⟨A3, V3, q, rem, h3, hdiv, pf, msk⟩ => ?_)
   have a3 : A0 s0 true 3 = dV s0 * eV s0 := by simp only [A0]; rd_simp
   have a32 : A0 s0 false 32 = nV s0 := by simp only [A0]; rd_simp
-  simp only [a3, a32] at hdiv p5 p6 msk
-  have mc := model_correct (nb := 32 * ww (kK s0)) (wb := 32 * wW (kK s0)) (q := q) (rem := rem) hn.odd
+  simp only [a3, a32] at hdiv pf msk
+  have mc0 := model_correct_lt (nb := 32 * ww (kK s0)) (wb := 32 * wW (kK s0)) (q := q) (rem := rem) hn.odd
     (by have := hn.big; omega) b8 bde bw bwe hdiv
-  unfold result at mc
+  unfold result at mc0
   generalize (okDE (32 * wW (kK s0)) (dV s0 * eV s0) && ltOf (32 * ww (kK s0)) (32 * wW (kK s0)) (nV s0)
-    (dV s0 * eV s0) && (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (nV s0) q rem).1) = b at msk mc
-  rw [← p5, ← p6] at mc
+    (dV s0 * eV s0) && (stage2 (32 * ww (kK s0)) (32 * wW (kK s0)) (nV s0) q rem).1) = b at msk mc0 pf
+  have mc : (if b then some (A3 false 5, A3 false 6) else none) = recoverDet (nV s0) (eV s0) (dV s0) := by
+    cases b
+    · exact mc0
+    · obtain ⟨e5, e6⟩ := pf rfl; rw [e5, e6]; exact mc0
   have sm : slot t3.mem (rvB s0) VG.Impl.Rsa.PPC64LE.Recover.sMask = b2n b := by
     rw [h3.sl _ (by decide)]; exact msk
   have w3 : Ws t3 (rvB s0) (rvZ s0) (ww (kK s0)) VG.Impl.Rsa.PPC64LE.Recover.nArr := h3.ws

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish64
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.WordStepNorm
 import VerifiedGarbage.Proof.Bignum.WordStep
+import VerifiedGarbage.Proof.Bignum.LongDivision
 import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -1047,15 +1048,17 @@ theorem ea_add (B : Addr) (d w : Nat) : BitVec.ofNat 64 (2 * w) <<< 2 + off B d 
 
 /-- `addBack`, `n` (`w` words) at `dN` (`r10`), `x`'s `w + 1` words `t` at
 `dA` (`r5`) and zero in `r20`: `t := t + n` modulo
-`2^(64 (w + 1))` (with the carry `c`) if `t`'s top half is set. -/
-theorem addBack_ok {s : State} {B : Addr} {Z dA dN w : Nat} (hs : Scr s B Z)
+`2^(64 (w + 1))` (with the carry `c`) if `t`'s top half is set, whose
+mask (all ones if so, else zero) is left in `r12`. -/
+theorem addBackM_ok {s : State} {B : Addr} {Z dA dN w : Nat} (hs : Scr s B Z)
     (h5 : s.gpr .r5 = off B dA) (h10 : s.gpr .r10 = off B dN) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (h20 : s.gpr .r20 = BitVec.ofNat 64 0) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hA : dA + 8 * (w + 1) ≤ Z)
     (hN : dN + 8 * w ≤ Z) (dNA : dN + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dN) :
     WP isa addBack s fun t =>
-      (∃ c < 2, wordsVal t.mem B dA (w + 1) + 2 ^ (64 * (w + 1)) * c = wordsVal s.mem B dA (w + 1) +
+      ((∃ c < 2, wordsVal t.mem B dA (w + 1) + 2 ^ (64 * (w + 1)) * c = wordsVal s.mem B dA (w + 1) +
         if 2 ^ (64 * (w + 1)) / 2 ≤ wordsVal s.mem B dA (w + 1) then wordsVal s.mem B dN w else 0) ∧
-      Mont.Outside B dA (8 * (w + 1)) s.mem t.mem ∧ Keep [.r0, .r3, .r12, .r14, .r15, .r17] s t := by
+      Mont.Outside B dA (8 * (w + 1)) s.mem t.mem ∧ Keep [.r0, .r3, .r12, .r14, .r15, .r17] s t) ∧
+      t.gpr .r12 = if 2 ^ (64 * (w + 1)) / 2 ≤ wordsVal s.mem B dA (w + 1) then BitVec.allOnes 64 else 0 := by
   have hnw := hs.nowrap
   unfold addBack
   refine WP.seq ?_
@@ -1089,7 +1092,7 @@ theorem addBack_ok {s : State} {B : Addr} {Z dA dN w : Nat} (hs : Scr s B Z)
     (cnt := .r17) (N := w) (by omega) (by omega) Inv (fun i hi t ⟨j14, j15, j12, j20, jout, jeq, jk⟩ hc => ?_)
     ⟨by rw [i14]; rfl, by rw [i15]; rfl, rfl, q20, by rw [← im]; exact Mont.Outside.refl _ _ _ _,
       by rw [ica]; simp [wordsVal], k₁⟩ i17)
-    fun t ⟨j14, _, _, j20, jout, jeq, jk⟩ => ?_)
+    fun t ⟨j14, _, j12, j20, jout, jeq, jk⟩ => ?_)
   · have hst : WP isa (.block [.load .d .r0 .r15 0, .logic .and .r0 .r0 .r12, .load .d .r3 .r14 0,
         .adde .r3 .r3 .r0, .store .d .r3 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8, .subi .r17 .r17 1]) t
         fun t' => (t'.gpr .r14 = off B (dA + 8 * i + 8) ∧ t'.gpr .r15 = off B (dN + 8 * i + 8) ∧
@@ -1146,8 +1149,8 @@ theorem addBack_ok {s : State} {B : Addr} {Z dA dN w : Nat} (hs : Scr s B Z)
       refine WP.keep _ ?_ (by decide)
       mcrun [exec_adde, j14, (hs.congr jk.wr).ld (show dA + 8 * w + 8 ≤ Z by omega),
         (hs.congr jk.wr).st (show dA + 8 * w + 8 ≤ Z by omega)]
-    refine WP.mono hst fun t' ⟨⟨lm, lca⟩, lk⟩ => ⟨⟨t'.ca.toNat, by cases t'.ca <;> decide, ?_⟩, ?_,
-      jk.trans' (lk.mono (by decide))⟩
+    refine WP.mono hst fun t' ⟨⟨lm, lca⟩, lk⟩ => ⟨⟨⟨t'.ca.toNat, by cases t'.ca <;> decide, ?_⟩, ?_,
+      jk.trans' (lk.mono (by decide))⟩, by rw [lk.gpr .r12 (by decide), j12, i12]⟩
     · have wa : Mont.word t.mem B (dA + 8 * w) = Mont.word s.mem B (dA + 8 * w) := jout.word (by omega) (by omega)
       have h0 : (t.gpr .r20).toNat = 0 := by rw [j20]; rfl
       have hv : (Mont.word t.mem B (dA + 8 * w)).toNat + (t.gpr .r20).toNat + t.ca.toNat < 2 ^ 65 := by
@@ -1174,6 +1177,18 @@ theorem addBack_ok {s : State} {B : Addr} {Z dA dN w : Nat} (hs : Scr s B Z)
         ((writeW_outside _ B (d := dA + 8 * w) _ (by omega)).mono (by omega) (by omega))
 
 /-! ## The 3-by-2 estimate -/
+
+
+/-- `addBackM_ok` without the mask. -/
+theorem addBack_ok {s : State} {B : Addr} {Z dA dN w : Nat} (hs : Scr s B Z)
+    (h5 : s.gpr .r5 = off B dA) (h10 : s.gpr .r10 = off B dN) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h20 : s.gpr .r20 = BitVec.ofNat 64 0) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hA : dA + 8 * (w + 1) ≤ Z)
+    (hN : dN + 8 * w ≤ Z) (dNA : dN + 8 * w ≤ dA ∨ dA + 8 * (w + 1) ≤ dN) :
+    WP isa addBack s fun t =>
+      (∃ c < 2, wordsVal t.mem B dA (w + 1) + 2 ^ (64 * (w + 1)) * c = wordsVal s.mem B dA (w + 1) +
+        if 2 ^ (64 * (w + 1)) / 2 ≤ wordsVal s.mem B dA (w + 1) then wordsVal s.mem B dN w else 0) ∧
+      Mont.Outside B dA (8 * (w + 1)) s.mem t.mem ∧ Keep [.r0, .r3, .r12, .r14, .r15, .r17] s t :=
+  WP.mono (addBackM_ok hs h5 h10 h11 h20 hw hw' hA hN dNA) fun _ h => h.1
 
 /-- `quot3Sub`: `t = U - q̂ D` over three words, with its borrow `b`. -/
 theorem sub3w_ok (s : State) : WP isa (.block quot3Sub) s fun t => ((∃ b < 2,
@@ -1511,10 +1526,34 @@ theorem wordStep_ok {s : State} {B : Addr} {Z w z : Nat} (hs : Scr s B Z)
   · rw [m1] at o2
     exact (o2.mono (by omega) (by omega)).trans (o3.mono (by omega) (by omega))
 
+/-- The quotient's digit in a register: `q̂` (`q`) plus the add-back's mask,
+all ones exactly when `t₁ = y - q̂ m` is negative (`LongDivision.digit_eq`),
+and then `q̂ ≥ 1`. -/
+theorem digit_word {W y M qh T1 b : Nat} (hM0 : 0 < M) (hMW : 2 * M < W / 2)
+    (hge : y / M ≤ qh) (hle : qh ≤ y / M + 1) (hT1 : T1 < W) (hb : b < 2) (h1 : T1 + qh * M = y + W * b)
+    (q : BitVec 64) (hq : q.toNat = qh) :
+    (q + if W / 2 ≤ T1 then BitVec.allOnes 64 else 0).toNat = y / M := by
+  have e := LongDivision.digit_eq hM0 hMW hge hle hT1 hb h1
+  have hq64 := q.isLt
+  by_cases hn : W / 2 ≤ T1
+  · obtain ⟨-, hv1, hv2⟩ := addBack_one (W := W) hM0 hMW hge hle
+    have e1 := twos_of_sub hT1 hb (by omega_using [h1]) hv1 hv2
+    have hneg := (twos_neg hv1 hv2).mp (e1 ▸ hn)
+    have hpos : 1 ≤ qh := by
+      rcases Nat.eq_zero_or_pos qh with h0 | h0
+      · rw [h0, Nat.zero_mul] at hneg; omega_using [hneg]
+      · exact h0
+    simp only [hn, ite_true] at e ⊢
+    rw [BitVec.toNat_add, BitVec.toNat_allOnes, hq, ← e]
+    omega_using [hpos, hq64, hq]
+  · simp only [hn, ite_false] at e ⊢
+    show (q + 0#64).toNat = _
+    rw [BitVec.add_zero, hq, e]
+
 /-- `wordStepU`, `x` (`w` words, and room for a word more) at `dX` (`r5`), `n`
 at `dN` (`r10`), the temporary's `P = 2^z`, `d'`, `v`, `d'ₗ` at `dT` (`r9`)
 and the word `u` at `dU` (`r8`): `x := (x 2^64 + u) mod n`, for `x < n`. -/
-theorem wordStepU_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr s B Z)
+theorem wordStepQ_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr s B Z)
     (h9 : s.gpr .r9 = off B dT) (h10 : s.gpr .r10 = off B dN) (h5 : s.gpr .r5 = off B dX)
     (h8 : s.gpr .r8 = off B dU) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 4 ≤ w) (hw' : w < 2 ^ 31)
     (hXZ : dX + 8 * (w + 1) ≤ Z) (hNZ : dN + 8 * w ≤ Z) (hTZ : dT + 32 ≤ Z) (hUZ : dU + 8 ≤ Z)
@@ -1527,9 +1566,11 @@ theorem wordStepU_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr 
       wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 2)))
     (hx : wordsVal s.mem B dX w < wordsVal s.mem B dN w) :
     WP isa wordStepU s fun t =>
-      (wordsVal t.mem B dX w = (wordsVal s.mem B dX w * 2 ^ 64 + (Mont.word s.mem B dU).toNat) %
+      ((wordsVal t.mem B dX w = (wordsVal s.mem B dX w * 2 ^ 64 + (Mont.word s.mem B dU).toNat) %
         wordsVal s.mem B dN w ∧ Mont.word t.mem B (dX + 8 * w) = 0) ∧
-      Mont.Outside B dX (8 * (w + 1)) s.mem t.mem ∧ Keep quotRegs s t := by
+      Mont.Outside B dX (8 * (w + 1)) s.mem t.mem ∧ Keep quotRegs s t) ∧
+      (t.gpr .r18 + t.gpr .r12).toNat =
+        (wordsVal s.mem B dX w * 2 ^ 64 + (Mont.word s.mem B dU).toNat) / wordsVal s.mem B dN w := by
   have hnw := hs.nowrap
   generalize hX : wordsVal s.mem B dX w = X at hx ⊢
   generalize hN : wordsVal s.mem B dN w = N at hx hd hd63 hdl ⊢
@@ -1585,10 +1626,10 @@ theorem wordStepU_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr 
   have z2 : s₂.gpr .r20 = BitVec.ofNat 64 0 := (k2.gpr .r20 (by decide)).trans z1
   have n2 : wordsVal s₂.mem B dN w = N := by rw [o2.wordsVal (by omega) (by omega), m1, hN]
   -- `n` added once if negative.
-  refine WP.mono (addBack_ok (dA := dX) (dN := dN) (hs.congr k12.wr)
+  refine WP.mono (addBackM_ok (dA := dX) (dN := dN) (hs.congr k12.wr)
     ((g2 .r5 (by decide)).trans h5) ((g2 .r10 (by decide)).trans h10) ((g2 .r11 (by decide)).trans h11)
-    z2 (by omega) hw' hXZ hNZ dNX) fun t ⟨⟨c, hc, a3⟩, o3, k3⟩ =>
-    ⟨?_, ?_, k12.trans' (k3.mono (by decide))⟩
+    z2 (by omega) hw' hXZ hNZ dNX) fun t ⟨⟨⟨c, hc, a3⟩, o3, k3⟩, m3⟩ =>
+    ⟨⟨?_, ?_, k12.trans' (k3.mono (by decide))⟩, ?_⟩
   · rw [n2] at a3
     have hN0 : 0 < N := by omega
     have hNlt : N < 2 ^ (64 * w) := hN ▸ wordsVal_lt _ _ _ _
@@ -1612,6 +1653,35 @@ theorem wordStepU_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr 
     exact ⟨e5.symm, BitVec.eq_of_toNat_eq top⟩
   · rw [m1] at o2
     exact o2.trans o3
+  · have hN0 : 0 < N := by omega
+    have hNlt : N < 2 ^ (64 * w) := hN ▸ wordsVal_lt _ _ _ _
+    have hW : 2 * N < 2 ^ (64 * (w + 1)) / 2 := by
+      rw [show 2 ^ (64 * (w + 1)) / 2 = 2 ^ (64 * w) * 2 ^ 63 by
+        rw [Nat.mul_succ, Nat.pow_add, show (2 : Nat) ^ 64 = 2 ^ 63 * 2 from rfl, ← Nat.mul_assoc,
+          Nat.mul_div_cancel _ (by decide)]]
+      have := Nat.mul_le_mul_left (2 ^ (64 * w)) (show 2 ≤ 2 ^ 63 by decide)
+      omega
+    rw [m3, (k3.gpr .r18 (by decide)).trans (k2.gpr .r18 (by decide))]
+    exact digit_word hN0 hW hge hle (wordsVal_lt _ _ _ _) hb a2 _ q1
+
+/-- `wordStepQ_ok` without the quotient's digit. -/
+theorem wordStepU_ok {s : State} {B : Addr} {Z dX dN dT dU w z : Nat} (hs : Scr s B Z)
+    (h9 : s.gpr .r9 = off B dT) (h10 : s.gpr .r10 = off B dN) (h5 : s.gpr .r5 = off B dX)
+    (h8 : s.gpr .r8 = off B dU) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 4 ≤ w) (hw' : w < 2 ^ 31)
+    (hXZ : dX + 8 * (w + 1) ≤ Z) (hNZ : dN + 8 * w ≤ Z) (hTZ : dT + 32 ≤ Z) (hUZ : dU + 8 ≤ Z)
+    (dNX : dN + 8 * w ≤ dX ∨ dX + 8 * (w + 1) ≤ dN)
+    (hP : (Mont.word s.mem B dT).toNat = 2 ^ z) (hz : z ≤ 63)
+    (hd : (Mont.word s.mem B (dT + 8)).toNat = wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 1)))
+    (hd63 : 2 ^ 63 ≤ wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 1)))
+    (hv : (Mont.word s.mem B (dT + 16)).toNat = (2 ^ 128 - 1) / (Mont.word s.mem B (dT + 8)).toNat - 2 ^ 64)
+    (hdl : (Mont.word s.mem B (dT + 8)).toNat * 2 ^ 64 + (Mont.word s.mem B (dT + 24)).toNat =
+      wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 2)))
+    (hx : wordsVal s.mem B dX w < wordsVal s.mem B dN w) :
+    WP isa wordStepU s fun t =>
+      (wordsVal t.mem B dX w = (wordsVal s.mem B dX w * 2 ^ 64 + (Mont.word s.mem B dU).toNat) %
+        wordsVal s.mem B dN w ∧ Mont.word t.mem B (dX + 8 * w) = 0) ∧
+      Mont.Outside B dX (8 * (w + 1)) s.mem t.mem ∧ Keep quotRegs s t :=
+  WP.mono (wordStepQ_ok hs h9 h10 h5 h8 h11 hw hw' hXZ hNZ hTZ hUZ dNX hP hz hd hd63 hv hdl hx) fun _ h => h.1
 
 /-- `wordSteps`, from `x = 2^(64 (w - 1)) < n` and `norm`'s `P` and `d'` in
 the temporary: `x := 2^(128 w) mod n`, changing only arrays 1 and 2. -/
