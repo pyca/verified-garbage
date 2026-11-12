@@ -56,6 +56,25 @@ theorem taints : Taints params :=
 theorem callee {f : Callee} (hf : f.Ok) : CalleeOk (P := params) md f.code :=
   ⟨hf.verified, hf.ct, hf.nosp, hf.depth, hf.keeps_rdi, hf.keeps_rcx⟩
 
+/-- `params` with `so` bytes of working space for the compression function
+(`Impl.Pbkdf2.Md.X86_64.Hash.withSo`), for the implementations that use
+less than AVX2's: the code made with it is part of functions that call no
+function made with `params` by name (HMAC's `init` for a key of at most a
+block). -/
+abbrev paramsS (so : Nat) : Impl.MdStream.X86_64.Params := { params with so := so }
+
+theorem taintsS (so : Nat) (h : so = 0 ∨ so = 112) : Taints (paramsS so) := by
+  rcases h with rfl | rfl <;>
+  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, by decide, by decide⟩
+
+/-- `callee`, for an implementation verified with `so` bytes of scratch space. -/
+theorem calleeS {f : Callee} (hf : f.Ok) {so : Nat}
+    (hv : Verified X86_64.target f.code (Proof.Sha256.compressX86_64S so)) :
+    CalleeOk (P := paramsS so) md f.code :=
+  ⟨hv.1, hv.2.1, hf.nosp, hf.depth, hf.keeps_rdi, hf.keeps_rcx⟩
+
 namespace Update
 
 variable {f : Callee} (hf : f.Ok)

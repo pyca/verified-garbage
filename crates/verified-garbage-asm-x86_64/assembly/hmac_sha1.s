@@ -7,15 +7,15 @@
 vg_hmac_sha1_init_shani:
 	cmp rcx, 65
 	jae 20f
-	lea rsp, [rsp-216]
+	lea rsp, [rsp-104]
 	mov r8, rsp
 	add r8, 8
-	mov QWORD PTR [r8+160], rbx
-	mov QWORD PTR [r8+168], rbp
-	mov QWORD PTR [r8+176], r12
-	mov QWORD PTR [r8+184], r13
-	mov QWORD PTR [r8+192], r14
-	mov QWORD PTR [r8+200], r15
+	mov QWORD PTR [r8+48], rbx
+	mov QWORD PTR [r8+56], rbp
+	mov QWORD PTR [r8+64], r12
+	mov QWORD PTR [r8+72], r13
+	mov QWORD PTR [r8+80], r14
+	mov QWORD PTR [r8+88], r15
 	mov rbx, rdi
 	mov r12, rsi
 	mov r15, r8
@@ -95,13 +95,13 @@ vg_hmac_sha1_init_shani:
 	call {vg_sha1_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
-	mov rbx, QWORD PTR [r15+160]
-	mov rbp, QWORD PTR [r15+168]
-	mov r12, QWORD PTR [r15+176]
-	mov r13, QWORD PTR [r15+184]
-	mov r14, QWORD PTR [r15+192]
-	mov r15, QWORD PTR [r15+200]
-	lea rsp, [rsp+216]
+	mov rbx, QWORD PTR [r15+48]
+	mov rbp, QWORD PTR [r15+56]
+	mov r12, QWORD PTR [r15+64]
+	mov r13, QWORD PTR [r15+72]
+	mov r14, QWORD PTR [r15+80]
+	mov r15, QWORD PTR [r15+88]
+	lea rsp, [rsp+104]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -119,14 +119,7 @@ vg_hmac_sha1_init_shani:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-232]
-	movdqu XMMWORD PTR [rsp+216], xmm0
-	movdqu XMMWORD PTR [rsp+200], xmm0
-	movdqu XMMWORD PTR [rsp+184], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
-	movdqu XMMWORD PTR [rsp+152], xmm0
-	movdqu XMMWORD PTR [rsp+136], xmm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
+	lea rsp, [rsp-120]
 	movdqu XMMWORD PTR [rsp+104], xmm0
 	movdqu XMMWORD PTR [rsp+88], xmm0
 	movdqu XMMWORD PTR [rsp+72], xmm0
@@ -135,7 +128,7 @@ vg_hmac_sha1_init_shani:
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+232]
+	lea rsp, [rsp+120]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx

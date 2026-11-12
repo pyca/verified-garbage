@@ -244,18 +244,18 @@ open Spec.Md5
 
 open VG.X86_64 in
 /-- x86-64 contract for
-`vg_md5_compress(state: *mut [u32; 4], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 8])`:
+`vg_md5_compress(state: *mut [u32; 4], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 0])`:
 updates the MD buffer at `state` with the `n` 64-byte blocks at `blocks`.
 
 The code may read `blocks` (`64 * n` bytes) and read and write `state`
-(16 bytes) and `scratch` (64 bytes, whose contents on exit are unspecified).
+(16 bytes); it uses no scratch space (`scratch` is empty).
 These may not overlap each other, nor the return address on the stack.
 The pointers and `n` are public; the MD buffer and the blocks are secret. -/
 def compressX86_64 : Contract X86_64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 16⟩
     let blocks : Region := ⟨s.gpr .rsi, 64 * (s.gpr .rdx).toNat⟩
-    let scratch : Region := ⟨s.gpr .rcx, 64⟩
+    let scratch : Region := ⟨s.gpr .rcx, 0⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
@@ -283,13 +283,13 @@ def initX86_64 : Contract X86_64.isa where
 
 open VG.X86_64 in
 /-- x86-64 contract for
-`vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 14])`:
+`vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 6])`:
 if the streaming state at `state` represents a message `m` of `count` bytes
 (modulo 2⁶⁴), then afterwards it represents `m` followed by the `len` bytes at
 `data`.
 
 The code may read `data` (`len` bytes) and read and write `state` (80
-bytes) and `scratch` (112 bytes, whose contents on exit are unspecified).
+bytes) and `scratch` (48 bytes, whose contents on exit are unspecified).
 These may not overlap each other, nor the return address on the stack, nor
 the 8 bytes below it (where the call of `vg_md5_compress` stores its
 return address).
@@ -299,7 +299,7 @@ def updateX86_64 : Contract X86_64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 80⟩
     let data : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
-    let scratch : Region := ⟨s.gpr .r8, 112⟩
+    let scratch : Region := ⟨s.gpr .r8, 48⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
     s.rd = [data] ∧ s.wr = [state, scratch] ∧
@@ -314,12 +314,12 @@ def updateX86_64 : Contract X86_64.isa where
 
 open VG.X86_64 in
 /-- x86-64 contract for
-`vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 14])`:
+`vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 6])`:
 if the streaming state at `state` represents a message `m` of `count` bytes
 (modulo 2⁶⁴), writes the MD5 digest of `m` to `out`.
 
 The code may read and write `state` (80 bytes, whose contents on exit are
-unspecified), `out` (16 bytes) and `scratch` (112 bytes, whose contents on
+unspecified), `out` (16 bytes) and `scratch` (48 bytes, whose contents on
 exit are unspecified). These may not overlap each other, nor the return
 address on the stack, nor the 8 bytes below it (where the call of
 `vg_md5_compress` stores its return address). The pointers and `count`
@@ -328,7 +328,7 @@ def finalizeX86_64 : Contract X86_64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 80⟩
     let out : Region := ⟨s.gpr .rdx, 16⟩
-    let scratch : Region := ⟨s.gpr .rcx, 112⟩
+    let scratch : Region := ⟨s.gpr .rcx, 48⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
     s.rd = [] ∧ s.wr = [state, out, scratch] ∧
@@ -398,7 +398,7 @@ abbrev nb : Nat := (s₀.gpr .rdx).toNat
 abbrev scr : Addr := s₀.gpr .rcx
 abbrev stR : Region := ⟨st s₀, 16⟩
 abbrev blR : Region := ⟨bp s₀, 64 * nb s₀⟩
-abbrev scrR : Region := ⟨scr s₀, 64⟩
+abbrev scrR : Region := ⟨scr s₀, 0⟩
 abbrev retR : Region := ⟨s₀.gpr .rsp, 8⟩
 abbrev H₀ : HashValue := stateAt s₀.mem (st s₀)
 
@@ -712,7 +712,7 @@ def satState : State where
   of := none
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 16⟩, ⟨0x3000, 64⟩]
+  wr := [⟨0x1000, 16⟩, ⟨0x3000, 0⟩]
 
 theorem compress_verified :
     Verified X86_64.target Impl.Md5.X86_64.compress Proof.Md5.compressX86_64 := by

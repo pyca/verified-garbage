@@ -167,9 +167,9 @@ theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I X8
 
 /-- A state satisfying the precondition of `init_scratch` with the working
 space `init` uses (`initWords`). -/
-theorem satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.md5I.S 20 X86_64.abi 16).pre s := by
+theorem satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.md5I.S 12 X86_64.abi 16).pre s := by
   inst_sat [Spec.Hmac.md5I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 20
+    Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 12
 
 theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I X86_64.abi 16).pre s := by
   inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.md5I, Proof.Hmac.finalizeScratchContract,
@@ -194,17 +194,20 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi,
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- The working space of `unscrubbed`'s code: the hash function's (`OwnWs`). -/
+def own : OwnWs Spec.Hmac.md5I :=
+  ⟨_, ok, coreOK, callees, rfl, rfl, 12, by simp only [initWords_eq, hash]; decide, satW, by
+    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+
 /-- `variant` before the residue analysis of HMAC's `finalize`. -/
-def unscrubbed : MdHash :=
+def unscrubbed (o : OwnWs Spec.Hmac.md5I := own) : MdHash :=
   MdHash.of ok coreOK callees ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    20 (by simp only [initWords_eq, hash]; decide) satW
-    (by
-      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    o
     (by decide)
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract

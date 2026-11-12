@@ -25,7 +25,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84
     core::arch::naked_asm!(
         r#".base64 "SIP5QQ=="
 jae 20f
-.base64 "SI2kJCj///9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
+.base64 "SI1kJJhJieBJg8AISYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0TYnHSInVSYnNSInf"
 call {vg_sha1_init_core}
 .base64 "TInn"
 call {vg_sha1_init_core}
@@ -49,7 +49,7 @@ jmp 26f
 call {vg_sha1_compress_shani}
 .base64 "SIn7SYnPTInjTInmSIPGFEiJ37oBAAAATIn5"
 call {vg_sha1_compress_shani}
-.base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJNgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkGP////MPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMdI="
+.base64 "SIn7SYnPSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39YSI1kJGhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkiPMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkeDHAMckx0jH2Mf9FMcBFMdI="
 21:
 .base64 "ww=="
 20:

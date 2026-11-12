@@ -111,6 +111,53 @@ theorem coreOK : CoreOK coreH := by
     fitF := ?_ }
   taint_decide_all
 
+/-- `coreH` with no working space for the compression function
+(`Hash.withSo`), for an implementation that uses none. -/
+def coreH0 : Hash := ⟨Proof.Sha1.X86_64.Stream.params0, 20, 56, "", .block [], "", .block [], "", "", "", "",
+  "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+
+theorem coreOK0 : CoreOK coreH0 := by
+  refine {
+    pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    hinit := {
+      pro := ⟨?_, ?_⟩
+      argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
+      keys := ⟨?_, ?_⟩
+      mid := ⟨?_, ?_⟩
+      restore := ⟨?_, ?_⟩ }
+    hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    pbkMx := ?_
+    pbkSp := ?_
+    hinitMx := ?_
+    hinitSp := ?_
+    hinitNs := ?_
+    hinitD := ?_
+    hfinMx := ?_
+    hfinSp := ?_
+    hfinNs := ?_
+    hfinD := ?_
+    hinitXD := ?_
+    hfinXD := ?_
+    pbkXD := ?_
+    iterMx := ?_
+    iterSp := ?_
+    iterNs := ?_
+    iterD := ?_
+    updMx := ?_
+    updNs := ?_
+    updD := ?_
+    finMx := ?_
+    finNs := ?_
+    finD := ?_
+    fitI := ?_
+    fitF := ?_ }
+  taint_decide_all
+
 theorem anyOK : Any.AnyOK coreH := by
   refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
   taint_decide_all
@@ -240,17 +287,35 @@ def digFn : StreamFn :=
 `digest`. -/
 def stream : List StreamFn := [updFn v, finFn v, digFn v]
 
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses with no working space for the compression function. -/
+theorem satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha1I.S 12 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using initSat 84 12
+
+/-- The working space of HMAC's `init` with an implementation `v` of the
+compression function that uses none (`hc`), such as `vg_sha1_compress_shani`. -/
+def own0 (v : Compress) (hc : MdStream.X86_64.CalleeOk (P := Proof.Sha1.X86_64.Stream.params0) Proof.Sha1.md
+    v.callee.code) : OwnWs Spec.Hmac.sha1I :=
+  ⟨_, (ok v).withSo 0 (by decide) Proof.Sha1.X86_64.Stream.taints0 hc (by simp only [hash]; decide) rfl (callees v) coreOK0,
+    coreOK0, (callees v).withSo 0, rfl, rfl, 12, by simp only [initWords_eq, Hash.withSo, hash], satW0, by
+    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+
+/-- The working space of `variant`'s code: the hash function's (`OwnWs`). -/
+def own (v : Compress) : OwnWs Spec.Hmac.sha1I :=
+  ⟨_, (ok v), coreOK, (callees v), rfl, rfl, 26, by simp only [initWords_eq, hash]; decide, satW, by
+    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+
 /-- SHA-1 with the implementation `v` of its compression function. -/
-def variant : MdHash :=
+def variant (o : OwnWs Spec.Hmac.sha1I := own v) : MdHash :=
   MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.sha1_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    26 (by simp only [initWords_eq, hash]; decide) satW
-    (by
-      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    o
     (by decide)
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract

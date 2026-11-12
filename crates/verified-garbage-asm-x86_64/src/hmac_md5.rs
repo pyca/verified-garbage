@@ -21,7 +21,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_init(inner: *mut [u8; 80], oute
     core::arch::naked_asm!(
         r#".base64 "SIP5QQ=="
 jae 20f
-.base64 "SI2kJFj///9JieBJg8AISYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0TYnHSInVSYnNSInf"
+.base64 "SI1kJJhJieBJg8AISYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0TYnHSInVSYnNSInf"
 call {vg_md5_init_core}
 .base64 "TInn"
 call {vg_md5_init_core}
@@ -45,7 +45,7 @@ jmp 26f
 call {vg_md5_compress}
 .base64 "SIn7SYnPTInjTInmSIPGEEiJ37oBAAAATIn5"
 call {vg_md5_compress}
-.base64 "SIn7SYnPSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkSP////MPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkuAAAADHAMckx0jH2Mf9FMcBFMclFMdJFMds="
+.base64 "SIn7SYnPSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39YSI1kJGhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkiPMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkeDHAMckx0jH2Mf9FMcBFMclFMdJFMds="
 21:
 .base64 "ww=="
 20:
@@ -92,11 +92,11 @@ jmp 21b
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9JieBJg8AISYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0SYnNTYnHSInWTIn6SIHCoAAAAEyJ+Q=="
+        r#".base64 "SI2kJHj+//9JieBJg8AISYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0SYnNTYnHSInWTIn6SIPCYEyJ+Q=="
 call {vg_md5_finalize_scratch}
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYuHoAAAAIlDEEGLh6QAAACJQxRBi4eoAAAAiUMYQYuHrAAAAIlDHEiJ3UiDxRC4gAAAAIlFELgAAAAAiUUUiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxQAAAATIngSAHASAHASAHASIlDSEiJ7kiJ37oBAAAATIn5"
+.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtHYIlDEEGLR2SJQxRBi0doiUMYQYtHbIlDHEiJ3UiDxRC4gAAAAIlFELgAAAAAiUUUiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxQAAAATIngSAHASAHASAHASIlDSEiJ7kiJ37oBAAAATIn5"
 call {vg_md5_compress}
-.base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19wSYtveE2Lp4AAAABNi6+IAAAATYu3kAAAAE2Lv5gAAABIjaQkiAEAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRo/v//8w9/hCTIAAAA8w9/hCS4AAAASI2kJJgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi18wSYtvOE2LZ0BNi29ITYt3UE2Lf1hIjaQkiAEAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRo/v//8w9/hCSIAAAA8w9/RCR4SI2kJJgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,

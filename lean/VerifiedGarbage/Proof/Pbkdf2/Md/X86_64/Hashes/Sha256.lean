@@ -106,6 +106,55 @@ theorem coreOK : CoreOK coreH := by
     fitF := ?_ }
   taint_decide_all
 
+/-- `coreH` with `so` bytes of working space for the compression function
+(`Hash.withSo`), for the implementations that use less than the hash
+function's slowest. -/
+def coreHS (so : Nat) : Hash := ⟨{ Impl.Sha256.X86_64.Stream.params with so := so }, 32, 104, "", .block [], "", .block [], "", "", "", "",
+  "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+
+theorem coreOKS (so : Nat) (h : so = 0 ∨ so = 112) : CoreOK (coreHS so) := by
+  rcases h with rfl | rfl <;>
+  refine {
+    pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    hinit := {
+      pro := ⟨?_, ?_⟩
+      argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
+      keys := ⟨?_, ?_⟩
+      mid := ⟨?_, ?_⟩
+      restore := ⟨?_, ?_⟩ }
+    hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    pbkMx := ?_
+    pbkSp := ?_
+    hinitMx := ?_
+    hinitSp := ?_
+    hinitNs := ?_
+    hinitD := ?_
+    hfinMx := ?_
+    hfinSp := ?_
+    hfinNs := ?_
+    hfinD := ?_
+    hinitXD := ?_
+    hfinXD := ?_
+    pbkXD := ?_
+    iterMx := ?_
+    iterSp := ?_
+    iterNs := ?_
+    iterD := ?_
+    updMx := ?_
+    updNs := ?_
+    updD := ?_
+    finMx := ?_
+    finNs := ?_
+    finD := ?_
+    fitI := ?_
+    fitF := ?_ }
+  taint_decide_all
+
 theorem anyOK : Any.AnyOK coreH := by
   refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
   taint_decide_all
@@ -239,17 +288,51 @@ def digFn : StreamFn :=
 `digest`. -/
 def stream : List StreamFn := [updFn v, finFn v, digFn v]
 
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses with 0 bytes of working space for the compression function. -/
+theorem satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha256I.S 12 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi, X86_64.argRegs] using initSat 96 12
+
+/-- A state satisfying the precondition of `init_scratch` with the working
+space `init` uses with 112 bytes of working space for the compression function. -/
+theorem satW112 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha256I.S 26 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.sha256I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi, X86_64.argRegs] using initSat 96 26
+
+/-- The working space of HMAC's `init` with the implementation `v` of the
+compression function verified with `so` bytes of scratch space (`hv`), one
+of the sizes HMAC's code is checked with (`coreOKS`): `init` for a key of at
+most a block gives the compression function only that much. -/
+def ownS (v : Compress) (so : Nat) (h : so = 0 ∨ so = 112)
+    (hv : Verified X86_64.target v.callee.code (Proof.Sha256.compressX86_64S so)) (w : Nat)
+    (hsW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha256I.S w X86_64.abi 16).pre s)
+    (hw : initWords ((hash v).withSo so) = w := by
+      simp only [VG.Proof.Pbkdf2.Md.X86_64.initWords_eq, VG.Impl.Pbkdf2.Md.X86_64.Hash.withSo,
+        VG.Proof.Pbkdf2.Md.X86_64.Sha256.hash] <;> decide)
+    (hsIF : ∃ s, (Spec.Hmac.sha256I.initContract X86_64.abi (24 + 8 * w)).pre s := by
+      unfold VG.Spec.Hmac.Instance.initContract VG.Spec.Hmac.initContract
+      exact VG.X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)) :
+    OwnWs Spec.Hmac.sha256I :=
+  ⟨_, (ok v).withSo so (by rcases h with rfl | rfl <;> decide) (Proof.Sha256.X86_64.Stream.taintsS so h)
+      (Proof.Sha256.X86_64.Stream.calleeS v.ok hv) (by rcases h with rfl | rfl <;> simp only [hash] <;> decide) rfl
+      (callees v) (coreOKS so h),
+    coreOKS so h, (callees v).withSo so, rfl, rfl, w, hw, hsW, hsIF⟩
+
+/-- The working space of `variant`'s code: the hash function's (`OwnWs`). -/
+def own (v : Compress) : OwnWs Spec.Hmac.sha256I :=
+  ⟨_, (ok v), coreOK, (callees v), rfl, rfl, 82, by simp only [initWords_eq, hash]; decide, satW, by
+    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+
 /-- SHA-256 with the implementation `v` of its compression function. -/
-def variant : MdHash :=
+def variant (o : OwnWs Spec.Hmac.sha256I := own v) : MdHash :=
   MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.sha256_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    82 (by simp only [initWords_eq, hash]; decide) satW
-    (by
-      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    o
     (by decide)
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract

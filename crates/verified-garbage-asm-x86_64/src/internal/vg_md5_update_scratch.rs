@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_update_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "SYlYQEmJaEhNiWBQTYloWE2JcGBNiXhoSIn7TYnHSInVSYnMSYn1SYPlPw=="
+        r#".base64 "SYkYSYloCE2JYBBNiWgYTYlwIE2JeChIiftNicdIidVJicxJifVJg+U/"
 20:
 .base64 "TYXt"
 je 21f
@@ -90,7 +90,7 @@ call {vg_md5_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYtfQEmLb0hNi2dQTYtvWE2Ld2BNi39oww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyjD"
 .p2align 6"#,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )

@@ -5,12 +5,12 @@
 // gives.
 
 vg_md5_finalize_scratch:
-	mov QWORD PTR [rcx+64], rbx
-	mov QWORD PTR [rcx+72], rbp
-	mov QWORD PTR [rcx+80], r12
-	mov QWORD PTR [rcx+88], r13
-	mov QWORD PTR [rcx+96], r14
-	mov QWORD PTR [rcx+104], r15
+	mov QWORD PTR [rcx], rbx
+	mov QWORD PTR [rcx+8], rbp
+	mov QWORD PTR [rcx+16], r12
+	mov QWORD PTR [rcx+24], r13
+	mov QWORD PTR [rcx+32], r14
+	mov QWORD PTR [rcx+40], r15
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbp, rdx
@@ -131,11 +131,11 @@ vg_md5_finalize_scratch:
 	mov DWORD PTR [rbp+8], eax
 	mov eax, DWORD PTR [rbx+12]
 	mov DWORD PTR [rbp+12], eax
-	mov rbx, QWORD PTR [r15+64]
-	mov rbp, QWORD PTR [r15+72]
-	mov r12, QWORD PTR [r15+80]
-	mov r13, QWORD PTR [r15+88]
-	mov r14, QWORD PTR [r15+96]
-	mov r15, QWORD PTR [r15+104]
+	mov rbx, QWORD PTR [r15]
+	mov rbp, QWORD PTR [r15+8]
+	mov r12, QWORD PTR [r15+16]
+	mov r13, QWORD PTR [r15+24]
+	mov r14, QWORD PTR [r15+32]
+	mov r15, QWORD PTR [r15+40]
 	ret
 	.p2align 6
