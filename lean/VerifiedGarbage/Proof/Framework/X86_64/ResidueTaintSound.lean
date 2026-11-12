@@ -1962,15 +1962,15 @@ theorem storeR_eq (m : MemOp) (w : Nat) (r : Reg) :
   simp only [Taint.storeStepKD, storeSlotsR_eq]
 
 theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)}
-    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, post τ i t = t)
+    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
     (hf : flOf i = none) (hm : ∀ τ, mbAfter τ i = τ.mb)
     (hu : ∀ τ, (ubNew τ i).toList ++ ubKill τ.ub i = u τ.ub) (τ : FT) :
     (fastU (Taint.stepKDFn i) u).run τ = step τ i := by
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show post τ i = id from funext (hp τ), Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]; rfl
   unfold step
   rw [hb, hf, hm, hsp, hu τ]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
   cases ok
   · rfl
   · simp only [fastU, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
@@ -1990,29 +1990,37 @@ theorem post_mb_nil {τ : FT} (h : τ.mb = []) (d : Reg) (m : MemOp) (t : Taint.
   simp only [post, h, List.find?_nil]
   split <;> rfl
 
+theorem argPost_nil {τ : FT} (ha : τ.sa = []) (hp : τ.sp = []) (i : Instr) (t : Taint.T) :
+    argPost τ i t = t := by
+  unfold argPost saPub
+  simp only [ha, hp, List.any_nil, Bool.false_eq_true, ↓reduceIte, List.find?_nil]
+  split <;> (try split) <;> rfl
+
+theorem argPost_lens (τ : FT) (i : Instr) (t : Taint.T) : (argPost τ i t).lens = t.lens := by
+  unfold argPost; split <;> (try split) <;> (try split) <;> (try split) <;> rfl
+
 theorem post_lens (τ : FT) (i : Instr) (t : Taint.T) : (post τ i t).lens = t.lens := by
   unfold post; split <;> (try split) <;> (try split) <;> rfl
 
 theorem fastLoad_eq {d : Reg} {m : MemOp} (hsp : isa.writesSp (.mov d (.mem m)) = false) (τ : FT) :
     (fastLoad (Taint.stepKDFn (.mov d (.mem m))) d (.mov d (.mem m))).run τ = step τ (.mov d (.mem m)) := by
   have hb : baseStep τ (.mov d (.mem m)) =
-      ((Taint.stepKDFn (.mov d (.mem m))).run τ.t).map (post τ (.mov d (.mem m))) := rfl
+      ((Taint.stepKDFn (.mov d (.mem m))).run τ.t).map
+        fun t' => argPost τ (.mov d (.mem m)) (post τ (.mov d (.mem m)) t') := rfl
   have hk : ubKill τ.ub (.mov d (.mem m)) = ubDrop (some d) τ.ub :=
     (ubDrop_eq (i := .mov d (.mem m)) (fun _ => rfl) τ.ub).symm
   have hm : mbAfter τ (.mov d (.mem m)) = τ.mb := rfl
   unfold step
   rw [hb, hk, hm, hsp, show ubNew τ (.mov d (.mem m)) = none from rfl, show flOf (.mov d (.mem m)) = none from rfl]
-  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw⟩ := τ
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
   cases ok
   · rfl
   · simp only [fastLoad, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
     cases (Taint.stepKDFn (.mov d (.mem m))).run t with
     | none => rfl
     | some t' =>
-      simp only [Option.map_some, post_lens, Bool.cond_eq_ite, Option.toList, List.nil_append]
-      cases mb with
-      | nil => rw [post_mb_nil rfl]
-      | cons e mb => rfl
+      simp only [Option.map_some, argPost_lens, post_lens, Bool.cond_eq_ite, Option.toList, List.nil_append]
+      cases mb <;> cases sa <;> cases sp <;> (try simp only [post_mb_nil, argPost_nil]) <;> rfl
 
 theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
   unfold stepFn

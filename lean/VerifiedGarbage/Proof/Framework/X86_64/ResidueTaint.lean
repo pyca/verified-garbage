@@ -478,7 +478,8 @@ analysis and its results are the same) written for the kernel:
   the register they write dropped. Stores without an index register only
   need the pointers in slots (`fastStore`), and look for the slot of a
   public value with `mem3R`; loads (`mov r, [m]`) need `post` only when a
-  slot holds a pointer (`fastLoad`); constants, `mul` and `mulx` only change
+  slot holds a pointer (`fastLoad`), and `argPost` only when the argument
+  area has public or pointer bytes; constants, `mul` and `mulx` only change
   bounds (`fastU`).
 * `leF` compares lists of slots in one pass when one is a sublist of the
   other in order (`subl`), as a hint's taints usually are of the analysis's,
@@ -598,11 +599,11 @@ def fastStore (b : Taint.Step) (m : MemOp) (w : Nat) (src : Option Reg) : RStep 
 bounds `u` gives (`ubNew` and `ubKill`). -/
 def fastU (b : Taint.Step) (u : List (Reg × Nat) → List (Reg × Nat)) : RStep := ⟨fun τ =>
   match τ with
-  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw⟩ =>
+  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw, an, sa, sp⟩ =>
     bif ok then
       match b.run t with
       | some t' =>
-        bif natsEq t'.lens t.lens then some ⟨true, t', nfr, depth, room, sec, ras, u ub, none, mb, fw⟩
+        bif natsEq t'.lens t.lens then some ⟨true, t', nfr, depth, room, sec, ras, u ub, none, mb, fw, an, sa, sp⟩
         else none
       | none => none
     else none⟩
@@ -615,16 +616,19 @@ def ubDrop2 (a b : Reg) (ub : List (Reg × Nat)) : List (Reg × Nat) :=
   | ub => KList.filter (fun p => !(regEq p.1 a || regEq p.1 b)) ub
 
 /-- `step` of a load `i` = `mov d, [m]`, whose base step is `b`: `post` only
-if a slot holds a pointer (`mb`), and nothing else but the base step. -/
+if a slot holds a pointer (`mb`), `argPost` only if the analysis knows of
+public or pointer bytes in the argument area (`sa`, `sp`), and nothing else
+but the base step. -/
 def fastLoad (b : Taint.Step) (d : Reg) (i : Instr) : RStep := ⟨fun τ =>
   match τ with
-  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw⟩ =>
+  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw, an, sa, sp⟩ =>
     bif ok then
       match b.run t with
       | some t' =>
         bif natsEq t'.lens t.lens then
-          some ⟨true, (match mb with | [] => t' | _ => post τ i t'), nfr, depth, room, sec, ras,
-            ubDrop (some d) ub, none, mb, fw⟩
+          let t₁ := match mb with | [] => t' | _ => post τ i t'
+          some ⟨true, (match sa, sp with | [], [] => t₁ | _, _ => argPost τ i t₁), nfr, depth, room, sec,
+            ras, ubDrop (some d) ub, none, mb, fw, an, sa, sp⟩
         else none
       | none => none
     else none⟩
