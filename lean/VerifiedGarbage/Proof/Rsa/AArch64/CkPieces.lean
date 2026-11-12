@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 # `vg_rsa_check_key` on AArch64: the pieces
 
 In the layout of `W = 2 w + 2` words: the mask of `[a] < [b]` (`ltA_ok`),
-and the products `[aX] e` (`mulE_ok`) and `[aX] [aR]` (`mulXR_ok`) of
+and the products `[aX] e` (`mulE_ok`) and `[aX] [aR]` (`mulPQ_ok`) of
 numbers below `2^(64 w)`, by rows of `w` words.
 -/
 
@@ -151,54 +151,6 @@ theorem mulE_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z (2 * w + 2)) (h
   rw [wv_prod (n := w + 2) (by omega_arith) hz₁ (o.mono (Nat.le_refl _) (Nat.le_refl _)) (by omega_arith), hv, eA₄, eX₄, h1₄,
     Nat.zero_add, Nat.mul_comm]
 
-theorem mulXR_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z (2 * w + 2)) (hw1 : 1 ≤ w) {X R : Nat}
-    (hX : wv s.mem B (slot (2 * w + 2) aX) (2 * w + 2) = X) (hXl : X < 2 ^ (64 * w))
-    (hR : wv s.mem B (slot (2 * w + 2) aR) (2 * w + 2) = R) (hRl : R < 2 ^ (64 * w)) :
-    WP isa (seqs mulXR) s fun t =>
-      wv t.mem B (slot (2 * w + 2) aA) (2 * w + 2) = X * R ∧
-      Outside B (slot (2 * w + 2) aA) (8 * (2 * w + 2 + 2)) s.mem t.mem ∧ Keep ckRegs s t := by
-  have hn := h.scr.nowrap
-  have hw2 := h.w2
-  have sA := h.sl (j := aA) (by decide)
-  have sX := h.sl (j := aX) (by decide)
-  have sR := h.sl (j := aR) (by decide)
-  have pAX := slot_sep (w := 2 * w + 2) (show aA ≠ aX by decide)
-  have pAR := slot_sep (w := 2 * w + 2) (show aA ≠ aR by decide)
-  simp only [mulXR, seqs]
-  refine WP.seq (WP.mono (zeroAA_ok h) fun s₁ ⟨h₁, hz, o₁, k₁⟩ => ?_)
-  have eX : wv s₁.mem B (slot (2 * w + 2) aX) (2 * w + 2) = X := by rw [o₁.wv (by omega_arith) (by omega_arith), hX]
-  have eR : wv s₁.mem B (slot (2 * w + 2) aR) (2 * w + 2) = R := by rw [o₁.wv (by omega_arith) (by omega_arith), hR]
-  have e : ws ++ base aX .x5 ++ base aR .x9 ++ base aA .x8 ++ [mov .x11 .x5] ++ narrow ++
-      [mov .x13 .x12, movi .x7 0] =
-      ws ++ ((base aX .x5 ++ base aR .x9 ++ base aA .x8) ++ ([mov .x11 .x5] ++ narrow ++
-        [mov .x13 .x12, movi .x7 0])) := by
-    simp only [List.append_assoc]
-  rw [e]
-  refine WP.seq (WP.block_append_iff.mpr (WP.mono h₁.ws_ok fun s₂ ⟨⟨h12, h11, m₂, _⟩, k₂⟩ =>
-    WP.block_append_iff.mpr (WP.mono (base3_ok aX aR aA .x5 .x9 .x8 ((k₂.gpr .x0 (by decide)).trans h₁.x0) h11)
-      fun s₃ ⟨⟨h5, h9, h8, m₃, _⟩, k₃⟩ => ?_)))
-  refine WP.mono (WP.keep [.x11, .x12, .x13, .x7] (Q := fun t => t.gpr .x11 = off B (slot (2 * w + 2) aX) ∧
-      t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x13 = BitVec.ofNat 64 w ∧ t.gpr .x7 = 0 ∧ t.mem = s₃.mem) (by
-    brun [narrow, h5, (k₃.gpr .x12 (by decide)).trans h12, narrow_val w (by omega_arith)])
-    (by decide) (by decide) (by decide +kernel)) fun s₄ ⟨⟨h11₄, h12₄, h13₄, h7₄, m₄⟩, k₄⟩ => ?_
-  have k14 := ((k₁.trans k₂).trans k₃).trans k₄
-  have eX₄ : wv s₄.mem B (slot (2 * w + 2) aX) w = X := by
-    rw [m₄, m₃, m₂, wv_low_of_lt (v := w) (w := 2 * w + 2) (by omega_arith) (by rw [eX]; exact hXl), eX]
-  have eR₄ : wv s₄.mem B (slot (2 * w + 2) aR) w = R := by
-    rw [m₄, m₃, m₂, wv_low_of_lt (v := w) (w := 2 * w + 2) (by omega_arith) (by rw [eR]; exact hRl), eR]
-  have hz₁ : wv s₄.mem B (slot (2 * w + 2) aA) (2 * w + 2 + 2) = 0 := by rw [m₄, m₃, m₂, hz]
-  have eA₄ : wv s₄.mem B (slot (2 * w + 2) aA) (w + w + 2) = 0 := by
-    have := wv_add s₄.mem B (slot (2 * w + 2) aA) (w + w + 2) 2
-    rw [show w + w + 2 + 2 = 2 * w + 2 + 2 by omega_arith, hz₁] at this
-    omega_arith
-  refine WP.mono (mulRows_ok (wa := w) (wb := w) (h.scr.congr k14.wr) h11₄ ((k₄.gpr .x9 (by decide)).trans h9)
-    h13₄ h12₄ ((k₄.gpr .x8 (by decide)).trans h8) h7₄ hw1 hw1 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (by rw [eA₄]; exact Nat.two_pow_pos _)) fun t ⟨hv, o, k₅⟩ => ?_
-  have o' : Outside B (slot (2 * w + 2) aA) (8 * (2 * w + 2 + 2)) s.mem t.mem := fun x hx => by
-    rw [o x (by omega_arith), m₄, m₃, m₂]; exact o₁ x hx
-  refine ⟨?_, o', (k14.trans k₅).mono (by decide)⟩
-  refine (congrArg (wv t.mem B (slot (2 * w + 2) aA)) (show 2 * w + 2 = w + w + 2 by omega_arith)).trans ?_
-  rw [hv, eA₄, eX₄, eR₄, Nat.zero_add]
 
 /-- `mulPQ`'s setup: the bases, and `⌈q_len / 8⌉` and `⌈p_len / 8⌉` from the header. -/
 theorem pqSetupK_ok {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z (2 * w + 2))
