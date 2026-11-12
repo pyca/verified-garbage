@@ -111,6 +111,11 @@ def mulSubHead : List Instr :=
   [mov .x16 .x11, mov .x17 .x9, mov .x14 .x12, mov .x2 .x7, movi .x15 0, .subImm .x .x15 .x15 1,
     mov .x13 .x15, .adds .x .x3 .x7 .x7]
 
+/-- `mulSubHead` with `x13 := ~u` for `u` in `x10`, the word below `x`. -/
+def mulSubHeadU : List Instr :=
+  [mov .x16 .x11, mov .x17 .x9, mov .x14 .x12, mov .x2 .x7, movi .x15 0, .subImm .x .x15 .x15 1,
+    .logic .eor .x .x13 .x10 .x15, .adds .x .x3 .x7 .x7]
+
 /-- A word of `mulSub`, which computes the complement `x'` of `t` as a sum:
 `x'ᵢ = q̂ mᵢ + c + ~xᵢ₋₁` (`~xᵢ₋₁` in `x13`), the product's carry in `x2`
 and the sum's in the carry flag, as `mac`'s; `tᵢ = ~x'ᵢ` over `xᵢ`, whose
@@ -128,6 +133,10 @@ def mulSubTop : List Instr := [.adc .x .x4 .x13 .x2, .logic .eor .x .x4 .x4 .x15
 def mulSub : Prog isa :=
   .seq (.block mulSubHead) (.seq (countLoop .x14 mulSubWord) (.block mulSubTop))
 
+/-- `mulSub` of `x 2^64 + u`, `u` in `x10`: `t := x 2^64 + u - q̂ m`. -/
+def mulSubU : Prog isa :=
+  .seq (.block mulSubHeadU) (.seq (countLoop .x14 mulSubWord) (.block mulSubTop))
+
 /-- `t := t + m` if `t` is negative (the top bit of its word `w`), over its
 `w + 1` words at `x11`: `m` masked by the sign, added by a chain of `adcs`
 from the carry clear, then the carry into word `w`. -/
@@ -141,6 +150,9 @@ def addBack : Prog isa :=
 /-- `x := x 2^64 mod m`: `q̂` within one of the quotient, `t = x 2^64 - q̂ m`
 in place of `x`, and `m` added back once if `t` is negative. -/
 def step : Prog isa := seqs [.block (bases ++ quot), .block quot3, mulSub, addBack]
+
+/-- `x := (x 2^64 + u) mod m`, `u` in `x10`, from the registers of a step. -/
+def stepU : Prog isa := seqs [.block quot, .block quot3, mulSubU, addBack]
 
 /-- `step` `x13` times (a public count, at least 1), counted in `sCnt`. -/
 def steps : Prog isa :=
