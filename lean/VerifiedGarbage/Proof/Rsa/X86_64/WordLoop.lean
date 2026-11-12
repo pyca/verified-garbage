@@ -14,18 +14,6 @@ namespace VG.Proof.Rsa.X86_64.WordDivide
 open VG VG.X86_64 VG.Impl.Rsa.X86_64.WordDivide
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-/-- The high input inputPrefix after processing the words above `j`. -/
-def inputPrefix (m : Mem) (B : Addr) (W j : Nat) : Nat :=
-  wv m B (slot W aD + 8 * j) (W - j)
-
-theorem prefix_step (m : Mem) (B : Addr) {W j : Nat} (hj : 1 ≤ j) (hjW : j ≤ W) :
-    inputPrefix m B W (j - 1) = (word m B (slot W aD + 8 * (j - 1))).toNat +
-      2 ^ 64 * inputPrefix m B W j := by
-  unfold inputPrefix
-  rw [show W - (j - 1) = 1 + (W - j) by omega_using [hj, hjW], wv_add]
-  simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.zero_add, Nat.one_mul]
-  rw [show slot W aD + 8 * (j - 1) + 8 * 1 = slot W aD + 8 * j by omega_using [hj]]
-
 theorem core_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
     (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) (hj : 1 ≤ j) (hjW : j ≤ W)
     (hc : word s.mem B (slot W aV + 16) = BitVec.ofNat 64 j)
@@ -141,19 +129,21 @@ theorem body_ok {s : State} {B : Addr} {Z W j : Nat} (h : Ws s B Z W)
   · rw [X₃, v₂, X₁, M₁, hm₁, word_writeW_self]
   · rw [hm₃, word_writeW_self]
 
-/-- The fixed word-count loop computes the entire dividend's remainder. -/
-theorem loop_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W)
-    (hc : word s.mem B (slot W aV + 16) = BitVec.ofNat 64 W)
-    (ha : s.gpr .rax = BitVec.ofNat 64 W)
+/-- The loop from the digit `j₀`, the remainder the dividend's words from `j₀` on reduced, computes the
+entire dividend's remainder. -/
+theorem loop_ok {s : State} {B : Addr} {Z W j₀ : Nat} (h : Ws s B Z W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) (hj₀ : 1 ≤ j₀) (hj₀W : j₀ ≤ W)
+    (hc : word s.mem B (slot W aV + 16) = BitVec.ofNat 64 j₀)
+    (ha : s.gpr .rax = BitVec.ofNat 64 j₀)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat)
     (hv : (word s.mem B (slot W aV)).toNat =
       (2 ^ 128 - 1) / (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat - 2 ^ 64)
-    (h0 : wv s.mem B (slot W aR) (W / 2) = 0)
+    (P : Nat → Nat)
+    (hP : ∀ j, 1 ≤ j → j ≤ j₀ → P (j - 1) = (word s.mem B (slot W aD + 8 * (j - 1))).toNat + 2 ^ 64 * P j)
+    (h0 : wv s.mem B (slot W aR) (W / 2) = P j₀ % wv s.mem B (slot W aM) (W / 2))
     (hMpos : 0 < wv s.mem B (slot W aM) (W / 2)) :
     WP isa (.loop body .ne) s fun t =>
-      wv t.mem B (slot W aR) (W / 2) =
-        wv s.mem B (slot W aD) W % wv s.mem B (slot W aM) (W / 2) ∧
+      wv t.mem B (slot W aR) (W / 2) = P 0 % wv s.mem B (slot W aM) (W / 2) ∧
       Frm B (ranges W) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := h.scr.nowrap
   have hw := h.w2
@@ -162,10 +152,10 @@ theorem loop_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
   have hDz := h.sl (j := aD) (by decide)
   let M := wv s.mem B (slot W aM) (W / 2)
   let Inv (i : Nat) (t : State) : Prop :=
-    Ws t B Z W ∧ word t.mem B (slot W aV + 16) = BitVec.ofNat 64 (W - i) ∧
-      wv t.mem B (slot W aR) (W / 2) = inputPrefix s.mem B W (W - i) % M ∧
+    Ws t B Z W ∧ word t.mem B (slot W aV + 16) = BitVec.ofNat 64 (j₀ - i) ∧
+      wv t.mem B (slot W aR) (W / 2) = P (j₀ - i) % M ∧
       Frm B (ranges W) s.mem t.mem ∧ Keep mmRegs s t
-  refine wp_countdown (cnt := .rax) (by omega_using [hw]) (by omega_using [hW]) Inv ?_ ?_ ?_ ha
+  refine wp_countdown (cnt := .rax) (by omega_using [hw, hj₀W]) (by omega_using [hj₀]) Inv ?_ ?_ ?_ ha
   · intro i hi t hI hcnt
     obtain ⟨ht, ct, xt, ft, kt⟩ := hI
     have tm := range_modulus ft (by omega_arith)
@@ -180,27 +170,25 @@ theorem loop_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
       refine ⟨range_ws h ff kk, ?_, ?_, ff, kk⟩
       · simpa only [Nat.sub_add_eq] using ct'
       · rw [xt', xt, tm]
-        have digit : word t.mem B (slot W aD + 8 * (W - i - 1)) =
-            word s.mem B (slot W aD + 8 * (W - i - 1)) :=
+        have digit : word t.mem B (slot W aD + 8 * (j₀ - i - 1)) =
+            word s.mem B (slot W aD + 8 * (j₀ - i - 1)) :=
           ft.word_eq (by
             intro r hr
             simp only [ranges, List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl | rfl <;> simp only [slot, aD, aR, aT, aV] <;> omega_arith)
             (by omega_arith)
-        rw [digit, show W - (i + 1) = W - i - 1 by omega_arith,
-          prefix_step s.mem B (by omega_using [hi]) (by omega_arith)]
+        rw [digit, show j₀ - (i + 1) = j₀ - i - 1 by omega_arith, hP (j₀ - i) (by omega_using [hi]) (by omega_arith)]
         simp only [M, Nat.add_mod, Nat.mul_mod, Nat.mod_mod, Nat.add_comm, Nat.mul_comm]
     refine ⟨nextI, ?_, ?_⟩
-    · rw [at', show t.gpr .rax = BitVec.ofNat 64 (W - i) from hcnt,
-        ofNat64_pred (by omega_using [hi]) (by omega_using [hw])]
-    · rw [zt', show t.gpr .rax = BitVec.ofNat 64 (W - i) from hcnt,
-        ofNat64_pred (by omega_using [hi]) (by omega_using [hw]),
-        ofNat64_beq_zero (by omega_using [hw])]
-      simp only [show (W - i - 1 = 0) ↔ W - i = 1 by omega_using [hi]]
+    · rw [at', show t.gpr .rax = BitVec.ofNat 64 (j₀ - i) from hcnt,
+        ofNat64_pred (by omega_using [hi]) (by omega_using [hw, hj₀W])]
+    · rw [zt', show t.gpr .rax = BitVec.ofNat 64 (j₀ - i) from hcnt,
+        ofNat64_pred (by omega_using [hi]) (by omega_using [hw, hj₀W]),
+        ofNat64_beq_zero (by omega_using [hw, hj₀W])]
+      simp only [show (j₀ - i - 1 = 0) ↔ j₀ - i = 1 by omega_using [hi]]
   · intro t hI
     obtain ⟨_, _, xt, ft, kt⟩ := hI
-    exact ⟨by simpa only [Nat.sub_self, inputPrefix, Nat.mul_zero, Nat.add_zero, Nat.sub_zero] using xt, ft, kt⟩
-  · exact ⟨h, by simpa using hc, by simp only [Nat.sub_zero, inputPrefix, Nat.sub_self, wv, Nat.zero_mod, h0],
-      Frm.refl _ _ _, Keep.refl _ _⟩
+    exact ⟨by simpa only [Nat.sub_self] using xt, ft, kt⟩
+  · exact ⟨h, by simpa using hc, by simpa only [Nat.sub_zero] using h0, Frm.refl _ _ _, Keep.refl _ _⟩
 
 end VG.Proof.Rsa.X86_64.WordDivide

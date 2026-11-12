@@ -345,7 +345,7 @@ theorem fwTaint {g : CallGeometry} {sp : BitVec 32} {c : Prog isa} (hc : Ck τV 
 
 theorem fwWordMod {g : CallGeometry} {sp : BitVec 32} {r : Nat} (hr : r = aDR2 ∨ r = aDR3)
     (c₀ : Ck τV (.seq (.seq (.block (VG.Impl.Rsa.X86.WordModRt.orTop lay 9 aDD)) (VG.Impl.Rsa.X86.WordModRt.recip lay))
-      (VG.Impl.Rsa.X86.WordModRt.seed lay 9 aDQ r false)))
+      (VG.Impl.Rsa.X86.WordModRt.seed lay 9 aDQ r none)))
     (c₁ : Ck τV (.block (VG.Proof.Rsa.X86.WordRt.digitHead lay aDQ)))
     (c₂ : Ck τV₂ (.seq (.block VG.Proof.Rsa.X86.WordRt.digitH₂) (VG.Proof.Rsa.X86.WordRt.digitTail lay 9 aDQ r aDD aDT))) :
     RelCT isa (fun t₁ t₂ => FW g sp t₁ ∧ FW g sp t₂) (VG.Impl.Rsa.X86.WordModRt.wordMod lay 9 aDQ r aDD aDT)
@@ -355,9 +355,8 @@ theorem fwWordMod {g : CallGeometry} {sp : BitVec 32} {r : Nat} (hr : r = aDR2 �
   have d2 : r ≠ aDD := by rcases hr with rfl | rfl <;> decide
   have d3 : r ≠ aDQ := by rcases hr with rfl | rfl <;> decide
   refine fwStep ?_ fun t h => WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_ok h.2.1 h.2.2.1 (x := aDQ) (r := r) (m := aDD)
-    (t := aDT) (wide := false) (by decide) hrN (by decide) (by decide) d1 (by decide) d2 d3 (by decide) (by decide)
-    (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) h.2.2.2.1
-    h.2.2.2.2) fun t' ⟨hw, k, _, _, _, K⟩ => h.next hw k (by
+    (t := aDT) (top := none) (by decide) hrN (by decide) (by decide) d1 (by decide) d2 d3 (by decide) (by decide)
+    h.2.2.2.1 h.2.2.2.2 (by simp)) fun t' ⟨hw, k, _, _, _, K⟩ => h.next hw k (by
       intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl
       · decide
@@ -368,8 +367,7 @@ theorem fwWordMod {g : CallGeometry} {sp : BitVec 32} {r : Nat} (hr : r = aDR2 �
     (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O)
     (by intro r hr; change r ∈ RegSet.ofList [Reg.edi, .esp]; simpa only [RegSet.mem_ofList] using hr)
     (by decide) hrN (by decide) (by decide) d1 (by decide) d2 d3 (by decide) (by decide)
-    (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
-    hp.1.2.2.2.1 hp.1.2.2.2.2 c₀ c₁ c₂ _ _ _ _ _ _
+    hp.1.2.2.2.1 hp.1.2.2.2.2 (by simp) c₀ c₁ c₂ _ _ _ _ _ _
     ⟨⟨hp.1.2.1, hp.1.1, hp.1.2.2.1⟩, ⟨hp.2.2.1, hp.2.1, hp.2.2.2.1⟩⟩ e₁ e₂
 
 theorem wordRems_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :

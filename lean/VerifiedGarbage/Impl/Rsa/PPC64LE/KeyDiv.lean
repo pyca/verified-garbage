@@ -11,7 +11,7 @@ of 64 bits (`w` digits of 32 bits for the working space's numbers, a
 multiple of 4), by long division a word at a time (Knuth, TAOCP vol. 2,
 §4.3.1, Algorithm D), with `vg_rsa_public_precompute`'s word step
 (`Precompute.wordStepU`): `[r] := ([r] 2^64 + u) mod [m]` for each of
-`[a]`'s `w / 2` words `u`, most significant first, from `[r] = 0`.
+`[a]`'s words `u` below `j₀`, most significant first, from `[r]` its words from `j₀` on.
 
 The step needs the divisor normalized: `P = 2^z`, `d'` and `d'ₗ`, the top two
 words of `[m] P`, are computed for any top word that is not zero
@@ -55,10 +55,32 @@ def fixTop (m : Nat) : List Instr :=
 /-- `r10 :=` `[m]`'s address, `r9 :=` `[t]`'s, `r11 := w / 2`. -/
 def normSetup (m t : Nat) : List Instr := ptr .r10 m ++ ptr .r9 t ++ [.lsr .d .r11 .r29 1]
 
-/-- `r5 := [r]`'s address, `r8 :=` the address of `[a]`'s top word (`w / 2 -
-1`), `r4 := w / 2` steps. -/
-def stepsSetup (a r : Nat) : List Instr :=
-  ptr .r5 r ++ ptr .r8 a ++ [.lsl .r0 .r11 3, .add .r8 .r8 .r0, .subi .r8 .r8 8, .addi .r4 .r11 0]
+/-! ## The dividend's length
+
+The dividend `[a]` has `X` words: its `2 wd` (`top = none`), or `wd + k` (`top = some k`), the
+words above them zero. The remainder starts as its `wd - 1` words from `j₀ = X - wd + 1` on, below
+the divisor, and the steps bring down its words `j₀ - 1` to 0. -/
+
+/-- `r6 +=` the bytes of `j₀` words, `j₀ = wd + 1` or `k + 1`, `w = 4 wd` in `r29`. -/
+def srcOff : Option Nat → List Instr
+  | none => [.lsl .r0 .r29 1, .add .r6 .r6 .r0, .addi .r6 .r6 8]
+  | some k => [.addi .r6 .r6 (8 * (k + 1))]
+
+/-- `r5 :=` `[r]`'s address, `r6 :=` that of `[a]`'s word `j₀`, `r8 := 2 (wd - 1)` digits. -/
+def seedSetup (top : Option Nat) (a r : Nat) : List Instr :=
+  ptr .r5 r ++ ptr .r6 a ++ srcOff top ++ [.lsr .d .r8 .r29 1, .subi .r8 .r8 2]
+
+/-- `[r]`'s low `wd - 1` words: `[a]`'s from `j₀` on. -/
+def seed (top : Option Nat) (a r : Nat) : Prog isa := .seq (.block (seedSetup top a r)) (countLoop .r8 copyBody)
+
+/-- `r8 +=` the bytes of `j₀ - 1` words, `r4 := j₀`, from `r11 = 2 wd`. -/
+def stepsCount : Option Nat → List Instr
+  | none => [.lsl .r0 .r11 2, .add .r8 .r8 .r0, .lsr .d .r4 .r11 1, .addi .r4 .r4 1]
+  | some k => [.addi .r8 .r8 (8 * k), .li .r4 (k + 1)]
+
+/-- `r5 := [r]`'s address, `r8 :=` the address of `[a]`'s word `j₀ - 1`, `r4 := j₀` steps. -/
+def stepsSetup (top : Option Nat) (a r : Nat) : List Instr :=
+  ptr .r5 r ++ ptr .r8 a ++ stepsCount top
 
 /-- A step, then `u`'s address a word down and a step less. -/
 def step : Prog isa := .seq wordStepU (.block [.subi .r8 .r8 8, .subi .r4 .r4 1])
@@ -68,11 +90,12 @@ def prepA (r sv : Nat) : Prog isa :=
   seqs [.block (save sv), .block (ptr .r14 r ++ [.addi .r11 .r29 0]), zeroWords]
 
 /-- The divisor and the temporary, and the steps' registers. -/
-def prepB (a r m t : Nat) : Prog isa := seqs [.block (normSetup m t), norm, recip, .block (stepsSetup a r)]
+def prepB (top : Option Nat) (a r m t : Nat) : Prog isa :=
+  seqs [.block (normSetup m t), norm, recip, .block (stepsSetup top a r)]
 
 /-- `[r] := [a] mod [m]`, for `[m]`'s top word not zero, through `[t]` and the
-save area `sv`. -/
-def divW (a r m t sv : Nat) : Prog isa := seqs [prepA r sv, prepB a r m t, .loop step (.nonzero .d .r4),
-  .block (restore sv)]
+save area `sv`, the dividend's words `top`'s. -/
+def divW (a r m t sv : Nat) (top : Option Nat := none) : Prog isa :=
+  seqs [prepA r sv, seed top a r, prepB top a r m t, .loop step (.nonzero .d .r4), .block (restore sv)]
 
 end VG.Impl.Rsa.PPC64LE.KeyDiv

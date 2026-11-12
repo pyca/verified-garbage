@@ -257,89 +257,16 @@ theorem wordRemK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
       rw [wv_norm f₃ hn hZ (j := aX) (.inl rfl), e₂ aX (by decide), e₁ aX (.inl rfl)]
     rw [m₅, word_writeW_self, ex]; rfl
 
-/-- `wordMod`: `dX < M`, `d mod M = dX` (when `M = X - 1` has `w / 2`
-words, its top bit set) and `e dX mod M = 1`, for `M = X - 1`. -/
-theorem wordModK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
-    (hm : word t.mem B (8 * sMask) = mask b)
-    {sX sXlen sDX : Nat} (hsX : sX < 32) (hsXl : sXlen < 32) (hsDX : sDX < 32)
-    (nX : sX ≠ sMask) (nXl : sXlen ≠ sMask) (nDX : sDX ≠ sMask)
-    {px pdx pd : Addr} {xb dxb db : List Byte}
-    (hpx : word s.mem B (8 * sX) = px) (hxl : word s.mem B (8 * sXlen) = BitVec.ofNat 64 xb.length)
-    (hpdx : word s.mem B (8 * sDX) = pdx) (hpd : word s.mem B (8 * sD) = pd)
-    (hdl : word s.mem B (8 * sDlen) = BitVec.ofNat 64 db.length)
-    (srcX : Src s B Z px xb) (srcDX : Src s B Z pdx dxb) (srcD : Src s B Z pd db)
-    (hdxl : dxb.length = xb.length) (hx1 : 1 ≤ xb.length) (hxk : xb.length ≤ 8 * w)
-    (hd1 : 1 ≤ db.length) (hdk : db.length ≤ 8 * w)
-    (hev : (word s.mem B (8 * sEv)).toNat < 2 ^ 33) :
-    WP isa (seqs (wordMod sX sXlen sDX)) t fun t' => KCtx s t' B Z w minv N ∧
-      ∃ M Y R2 : Nat, (0 < Spec.Rsa.os2ip xb → M = Spec.Rsa.os2ip xb - 1) ∧
-        (2 ^ (64 * (w / 2) - 1) ≤ M → M < 2 ^ (64 * (w / 2)) → Y = Spec.Rsa.os2ip db % M) ∧
-        (0 < Spec.Rsa.os2ip xb → Spec.Rsa.os2ip dxb < M → R2 = (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb % M) ∧
-        word t'.mem B (8 * sMask) =
-          mask (b && decide (Spec.Rsa.os2ip dxb < M) && decide (Y = Spec.Rsa.os2ip dxb) && decide (R2 = 1)) := by
-  have hn := h.good.scr.nowrap
-  have hZ := h.hZ
-  have := h.w2
-  simp only [wordMod, List.append_assoc]
-  refine wsa (by simp [loadNum]) (by simp [decM]) (WP.mono (loadK h (j := aM) (by decide) (by decide)
-    (by decide) hsX hsXl nX nXl hpx hxl srcX hx1 hxk) fun t₁ ⟨h₁, v₁, a₁⟩ => ?_)
-  refine wsa (by simp [decM]) (by simp [loadNum]) (WP.mono (decK h₁) fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
-  rw [v₁] at v₂
-  refine wsa (by simp [loadNum]) (by simp [ltMask]) (WP.mono (loadK h₂ (j := aX) (by decide) (by decide)
-    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega_arith) (by omega_arith))
-    fun t₃ ⟨h₃, v₃, a₃⟩ => ?_)
-  have M₃ : wv t₃.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := Arrays.wv_other a₃ (by decide) (by decide) hZ hn
-  refine wsa (by simp [ltMask]) (by simp [wordRem]) (WP.mono (ltK h₃ (a := aX) (b := aM) (by decide) (by decide))
-    fun t₄ ⟨h₄, m₄, o₄⟩ => ?_)
-  rw [v₃, M₃, Arrays.mask_eq a₃ hn hZ, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₄
-  have M₄ : wv t₄.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
-    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega_arith), M₃]
-  have X₄ : wv t₄.mem B (slot w aX) w = Spec.Rsa.os2ip dxb := by
-    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega_arith), v₃]
-  refine wsa (by simp [wordRem]) (by simp [mulE]) (WP.mono (wordRemK h₄ r m₄ hpd hdl srcD hd1 hdk)
-    fun t₅ ⟨h₅, X₅, M₅, Y, hY, m₅⟩ => ?_)
-  rw [M₄] at hY M₅
-  rw [X₄] at X₅ m₅
-  refine wsa (by simp [mulE]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (WP.mono (mulEK h₅) fun t₁₀ ⟨h₁₀, v₁₀, a₁₀⟩ => ?_)
-  have M₁₀ : wv t₁₀.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
-    rw [Arrays.wv_other a₁₀ (by decide) (by decide) hZ hn, M₅]
-  refine wsa (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (by simp [eqOne])
-    (WP.mono (reduceTopK h₁₀ (sl := sXlen) (top := Impl.Rsa.X86_64.CheckCrtKey.topE)
-      (L := xb.length) (c := 1) (Nx := w + 2) hsXl nXl hxl hx1 hxk
-      (fun t' _ _ => topE_ok t') (Nat.le_refl _) (by omega_arith) (by omega_arith)) fun t₁₁ ⟨h₁₁, v₁₁, a₁₁⟩ => ?_)
-  rw [M₁₀, v₁₀, X₅] at v₁₁
-  refine WP.mono (eqOneK h₁₁) fun t₁₂ ⟨h₁₂, m₁₂, _⟩ => ⟨h₁₂, wv t₂.mem B (slot w aM) w, Y,
-    wv t₁₁.mem B (slot w aR) w, fun hx => by have := v₂ hx; omega_arith, hY, ?_, ?_⟩
-  · intro hx hlt
-    have eM := v₂ hx
-    have hM : wv t₂.mem B (slot w aM) w < 2 ^ (64 * ((xb.length + 7) / 8)) := by
-      have := Proof.Rsa.lt_of_os2ip xb
-      have := pow_len_le xb.length
-      omega_arith
-    refine v₁₁ hM (by omega_arith) (top_lt ?_)
-    rw [show 1 + (w + 2 - 1) = w + 2 by omega_arith, v₁₀, X₅]
-    calc (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb
-        ≤ (word s.mem B (8 * sEv)).toNat * wv t₂.mem B (slot w aM) w := Nat.mul_le_mul_left _ (Nat.le_of_lt hlt)
-      _ < 2 ^ (64 * 1) * wv t₂.mem B (slot w aM) w :=
-          Nat.mul_lt_mul_of_pos_right (by omega_arith) (by omega_arith)
-  · rw [m₁₂, Arrays.mask_eq a₁₁ hn hZ, Arrays.mask_eq a₁₀ hn hZ, m₅, mask_and']
-
-/-- `wordQInv`: `qInv < p` and `q qInv mod p = 1`, the remainder right when
-`p` has `w / 2` words, its top bit set, and `q` fits in `w / 2` words. -/
-theorem wordQInvK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
-    (hm : word t.mem B (8 * sMask) = mask b)
-    {pp pq pqi : Addr} {pb qb qib : List Byte} (hpp : word s.mem B (8 * sP) = pp)
-    (hpl : word s.mem B (8 * sPlen) = BitVec.ofNat 64 pb.length) (hpq : word s.mem B (8 * sQ) = pq)
-    (hql : word s.mem B (8 * sQlen) = BitVec.ofNat 64 qb.length) (hpqi : word s.mem B (8 * sQI) = pqi)
-    (srP : Src s B Z pp pb) (srQ : Src s B Z pq qb) (srQI : Src s B Z pqi qib) (hqil : qib.length = pb.length)
-    (hp1 : 1 ≤ pb.length) (hpk : pb.length ≤ 8 * w) (hq1 : 1 ≤ qb.length) (hqk : qb.length ≤ 8 * w) :
-    WP isa (seqs wordQInv) t fun t' =>
-      KCtx s t' B Z w minv N ∧ ∃ R : Nat,
-        (2 ^ (64 * (w / 2) - 1) ≤ Spec.Rsa.os2ip pb → Spec.Rsa.os2ip pb < 2 ^ (64 * (w / 2)) →
-          Spec.Rsa.os2ip qb < 2 ^ (64 * (w / 2)) → Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb →
-          R = Spec.Rsa.os2ip qib * Spec.Rsa.os2ip qb % Spec.Rsa.os2ip pb) ∧
-        word t'.mem B (8 * sMask) =
-          mask (b && decide (Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb) && decide (R = 1)) := by
+/-- `remOne top`: `[aAcc] mod [aM]` (the accumulator's low `w` words, of the words `top` gives)
+compared with 1 and and'ed into `sMask`, the remainder right when `[aM]` has `w / 2` words, its top
+bit set. -/
+theorem remOneK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
+    (hm : word t.mem B (8 * sMask) = mask b) {top : Option Nat} (hk : ∀ k, top = some k → k ≤ w / 2)
+    (hX : wv t.mem B (slot w aAcc) w < 2 ^ (64 * WordDivide.xw w top)) :
+    WP isa (seqs (remOne top)) t fun t' => KCtx s t' B Z w minv N ∧ ∃ R : Nat,
+      (2 ^ (64 * (w / 2) - 1) ≤ wv t.mem B (slot w aM) w → wv t.mem B (slot w aM) w < 2 ^ (64 * (w / 2)) →
+        R = wv t.mem B (slot w aAcc) w % wv t.mem B (slot w aM) w) ∧
+      word t'.mem B (8 * sMask) = mask (b && decide (R = 1)) := by
   have hn := h.good.scr.nowrap
   have hZ := h.hZ
   have hZ17 := r.hZ
@@ -347,38 +274,18 @@ theorem wordQInvK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
   have := h.w2
   have hm0 : ∀ j, 8 * sMask + 8 ≤ slot w j := fun j => hdr_lt_slot w j (by decide)
   have hmz : 8 * sMask + 8 < 2 ^ 64 := by unfold sMask sFn; omega_arith
-  simp only [wordQInv, List.append_assoc]
-  refine wsa (by simp [loadNum]) (by simp [loadNum]) (WP.mono (loadK h (j := aM) (by decide) (by decide)
-    (by decide) (show sP < 32 by decide) (show sPlen < 32 by decide) (by decide) (by decide) hpp hpl srP hp1 hpk)
-    fun t₁ ⟨h₁, v₁, a₁⟩ => ?_)
-  refine wsa (by simp [loadNum]) (by simp [ltMask]) (WP.mono (loadK h₁ (j := aX) (by decide) (by decide)
-    (by decide) (show sQI < 32 by decide) (show sPlen < 32 by decide) (by decide) (by decide) hpqi
-    (by rw [hqil]; exact hpl) srQI (by omega_arith) (by omega_arith)) fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
-  rw [← Arrays.wv_other a₂ (by decide) (by decide) hZ hn] at v₁
-  refine wsa (by simp [ltMask]) (by simp [loadNum]) (WP.mono (ltK h₂ (a := aX) (b := aM) (by decide) (by decide))
-    fun t₃ ⟨h₃, m₃, o₃⟩ => ?_)
-  rw [v₁, v₂, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₃
-  rw [← Outside.wv_arr o₃ (by decide) hZ hn (by omega_arith)] at v₁ v₂
-  refine wsa (by simp [loadNum]) (by simp [mulXR]) (WP.mono (loadK h₃ (j := aR) (by decide) (by decide)
-    (by decide) (show sQ < 32 by decide) (show sQlen < 32 by decide) (by decide) (by decide) hpq hql srQ hq1 hqk)
-    fun t₄ ⟨h₄, v₄, a₄⟩ => ?_)
-  rw [← Arrays.wv_other a₄ (by decide) (by decide) hZ hn] at v₁ v₂
-  refine wsa (by simp [mulXR]) (by simp) (WP.mono (mulXRK h₄) fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
-  rw [← Arrays.wv_other a₅ (by decide) (by decide) hZ hn] at v₁
-  rw [v₂, v₄] at v₅
-  have mk₅ : word t₅.mem B (8 * sMask) = mask (b && decide (Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb)) := by
-    rw [Arrays.mask_eq a₅ hn hZ, Arrays.mask_eq a₄ hn hZ, m₃]
-  -- `[5] := ` the product's low `w` words
-  refine wsa (by simp) (by simp) (WP.mono (copyA_ok (h₅.ws r)
+  simp only [remOne, List.append_assoc]
+  -- `[5] := ` the accumulator's low `w` words
+  refine wsa (by simp) (by simp) (WP.mono (copyA_ok (h.ws r)
     (o := Impl.Rsa.X86_64.WordDivide.aD) (a := aAcc) (by decide) (by decide) (by decide)) fun t₆ ⟨v₆, o₆, k₆⟩ => ?_)
   simp only [Impl.Rsa.X86_64.WordDivide.aD] at v₆ o₆
-  have h₆ := h₅.frm (Frm.of_outside o₆ (List.mem_singleton_self _))
+  have h₆ := h.frm (Frm.of_outside o₆ (List.mem_singleton_self _))
     (by simp only [List.mem_singleton, forall_eq]; exact away_slot w (by decide) (.inl (by decide)) (by omega_arith))
     (by simp only [List.mem_singleton, forall_eq]; have := slot_lt (w := w) (show 5 < 17 by decide); omega_arith)
     (k₆.mono (by decide))
-  have P₆ : wv t₆.mem B (slot w aM) w = wv t₅.mem B (slot w aM) w :=
+  have P₆ : wv t₆.mem B (slot w aM) w = wv t.mem B (slot w aM) w :=
     o₆.wv (.inl (by simp only [slot_eq, aM]; omega_arith)) (by have := slot_le (w := w) (show aM < 8 by decide); omega_arith)
-  -- `[9] := p`
+  -- `[9] := [aM]`
   refine wsa (by simp) (by simp) (WP.mono (copyA_ok (h₆.ws r)
     (o := Impl.Rsa.X86_64.WordDivide.aM) (a := aM) (by decide) (by decide) (by decide)) fun t₇ ⟨v₇, o₇, k₇⟩ => ?_)
   simp only [Impl.Rsa.X86_64.WordDivide.aM] at v₇ o₇
@@ -389,7 +296,7 @@ theorem wordQInvK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
   have D₇ : wv t₇.mem B (slot w 5) w = wv t₆.mem B (slot w 5) w :=
     o₇.wv (.inl (by simp only [slot_eq]; omega_arith)) (by have := slot_lt (w := w) (show 5 < 17 by decide); omega_arith)
   -- the division
-  refine wsa (by simp) (by simp [Impl.Rsa.X86_64.Keys.eqA]) (WP.mono (WordDivide.fast_ok (h₇.ws r) hZ17 w4)
+  refine wsa (by simp) (by simp [Impl.Rsa.X86_64.Keys.eqA]) (WP.mono (WordDivide.fastAt_ok (h₇.ws r) hZ17 w4 hk)
     fun t₈ ⟨v₈, f₈, k₈⟩ => ?_)
   have h₈ := h₇.frm f₈ (fun r' hr' => by
       simp only [WordDivide.normRanges, WordDivide.allRanges, List.mem_cons, List.not_mem_nil, or_false,
@@ -413,36 +320,154 @@ theorem wordQInvK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
   refine wsa (by simp [Impl.Rsa.X86_64.Keys.eqA]) (by simp) (WP.mono (eqA_ok (h₈.ws r)
     (a := Impl.Rsa.X86_64.WordDivide.aR) (b := aOne) (by decide) (by decide)) fun t₉ ⟨z₉, m₉, k₉⟩ => ?_)
   have h₉ := h₈.same m₉ (k₉.mono (by decide))
-  have mk₈ : word t₈.mem B (8 * sMask) = mask (b && decide (Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb)) := by
+  have mk₈ : word t₈.mem B (8 * sMask) = mask b := by
     rw [f₈.word_eq (fun r' hr' => by
         simp only [WordDivide.normRanges, WordDivide.allRanges, List.mem_cons, List.not_mem_nil, or_false] at hr'
         rcases hr' with rfl | rfl | rfl | rfl <;> exact .inl (hm0 _)) (Nat.le_of_lt hmz),
-      o₇.word (.inl (hm0 _)) (Nat.le_of_lt hmz), o₆.word (.inl (hm0 _)) (Nat.le_of_lt hmz), mk₅]
+      o₇.word (.inl (hm0 _)) (Nat.le_of_lt hmz), o₆.word (.inl (hm0 _)) (Nat.le_of_lt hmz), hm]
   rw [h₈.one] at z₉
-  refine WP.mono (andZero_ok (h₉.ws r) (c := b && decide (Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb)) (by rw [m₉]; exact mk₈) z₉) fun t₁₀ ⟨m₁₀, k₁₀⟩ => ?_
+  refine WP.mono (andZero_ok (h₉.ws r) (c := b) (by rw [m₉]; exact mk₈) z₉) fun t₁₀ ⟨m₁₀, k₁₀⟩ => ?_
   have h₁₀ := h₉.msk (by rw [m₁₀]; exact writeW_outside _ B _ (Nat.le_of_lt hmz)) (k₁₀.mono (by decide))
-  refine ⟨h₁₀, wv t₈.mem B (slot w 3) w, fun hb hlt hq hqi => ?_, by rw [m₁₀, word_writeW_self]; rfl⟩
-  have hpw : Spec.Rsa.os2ip pb = wv t₅.mem B (slot w aM) w := v₁.symm
-  have d₇ : wv t₇.mem B (slot w 9) (w / 2) = Spec.Rsa.os2ip pb := by
-    rw [wv_trunc _ _ _ (show w / 2 ≤ w by omega_arith), v₇, P₆, ← hpw, Nat.mod_eq_of_lt hlt]
-  have top := WordDivide.top_of_bound (m := t₇.mem) (B := B) (e := slot w 9) (show 1 ≤ w / 2 by omega_arith)
+  refine ⟨h₁₀, wv t₈.mem B (slot w 3) w, fun hb hlt => ?_, by rw [m₁₀, word_writeW_self]; rfl⟩
+  have d₇ : wv t₇.mem B (slot w 9) (w / 2) = wv t.mem B (slot w aM) w := by
+    rw [wv_trunc _ _ _ (show w / 2 ≤ w by omega_arith), v₇, P₆, Nat.mod_eq_of_lt hlt]
+  have htop := WordDivide.top_of_bound (m := t₇.mem) (B := B) (e := slot w 9) (show 1 ≤ w / 2 by omega_arith)
     (by rw [d₇]; exact hb)
-  have q := v₈ top
+  have q := v₈ (by simp only [Impl.Rsa.X86_64.WordDivide.aD]; rw [D₇, v₆]; exact hX) htop
+  simp only [Impl.Rsa.X86_64.WordDivide.aR, Impl.Rsa.X86_64.WordDivide.aD, Impl.Rsa.X86_64.WordDivide.aM] at q
+  rw [D₇, v₆, d₇] at q
+  have pos : 0 < wv t.mem B (slot w aM) w := by have := Nat.one_le_two_pow (n := 64 * (w / 2) - 1); omega_arith
+  have lt : wv t.mem B (slot w aAcc) w % wv t.mem B (slot w aM) w < 2 ^ (64 * w) :=
+    Nat.lt_of_lt_of_le (Nat.mod_lt _ pos)
+      (Nat.le_trans (Nat.le_of_lt hlt) (Nat.pow_le_pow_right (by decide) (by omega_arith)))
+  rw [wv_of_lt _ _ _ (Nat.le_succ w) (by rw [q]; exact lt), q]
+
+/-- `wordMod`: `dX < M`, `d mod M = dX` (when `M = X - 1` has `w / 2`
+words, its top bit set) and `e dX mod M = 1`, for `M = X - 1`. -/
+theorem wordModK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
+    (hm : word t.mem B (8 * sMask) = mask b)
+    {sX sXlen sDX : Nat} (hsX : sX < 32) (hsXl : sXlen < 32) (hsDX : sDX < 32)
+    (nX : sX ≠ sMask) (nXl : sXlen ≠ sMask) (nDX : sDX ≠ sMask)
+    {px pdx pd : Addr} {xb dxb db : List Byte}
+    (hpx : word s.mem B (8 * sX) = px) (hxl : word s.mem B (8 * sXlen) = BitVec.ofNat 64 xb.length)
+    (hpdx : word s.mem B (8 * sDX) = pdx) (hpd : word s.mem B (8 * sD) = pd)
+    (hdl : word s.mem B (8 * sDlen) = BitVec.ofNat 64 db.length)
+    (srcX : Src s B Z px xb) (srcDX : Src s B Z pdx dxb) (srcD : Src s B Z pd db)
+    (hdxl : dxb.length = xb.length) (hx1 : 1 ≤ xb.length) (hxk : xb.length ≤ 8 * (w / 2))
+    (hd1 : 1 ≤ db.length) (hdk : db.length ≤ 8 * w)
+    (hev : (word s.mem B (8 * sEv)).toNat < 2 ^ 33) :
+    WP isa (seqs (wordMod sX sXlen sDX)) t fun t' => KCtx s t' B Z w minv N ∧
+      ∃ M Y R2 : Nat, (0 < Spec.Rsa.os2ip xb → M = Spec.Rsa.os2ip xb - 1) ∧
+        (2 ^ (64 * (w / 2) - 1) ≤ M → M < 2 ^ (64 * (w / 2)) → Y = Spec.Rsa.os2ip db % M) ∧
+        (0 < Spec.Rsa.os2ip xb → 2 ^ (64 * (w / 2) - 1) ≤ M → M < 2 ^ (64 * (w / 2)) → Spec.Rsa.os2ip dxb < M →
+          R2 = (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb % M) ∧
+        word t'.mem B (8 * sMask) =
+          mask (b && decide (Spec.Rsa.os2ip dxb < M) && decide (Y = Spec.Rsa.os2ip dxb) && decide (R2 = 1)) := by
+  have hn := h.good.scr.nowrap
+  have hZ := h.hZ
+  have := h.w2
+  simp only [wordMod, List.append_assoc]
+  refine wsa (by simp [loadNum]) (by simp [decM]) (WP.mono (loadK h (j := aM) (by decide) (by decide)
+    (by decide) hsX hsXl nX nXl hpx hxl srcX hx1 (by omega_arith)) fun t₁ ⟨h₁, v₁, a₁⟩ => ?_)
+  refine wsa (by simp [decM]) (by simp [loadNum]) (WP.mono (decK h₁) fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
+  rw [v₁] at v₂
+  refine wsa (by simp [loadNum]) (by simp [ltMask]) (WP.mono (loadK h₂ (j := aX) (by decide) (by decide)
+    (by decide) hsDX hsXl nDX nXl hpdx (by rw [hdxl]; exact hxl) srcDX (by omega_arith) (by omega_arith))
+    fun t₃ ⟨h₃, v₃, a₃⟩ => ?_)
+  have M₃ : wv t₃.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := Arrays.wv_other a₃ (by decide) (by decide) hZ hn
+  refine wsa (by simp [ltMask]) (by simp [wordRem]) (WP.mono (ltK h₃ (a := aX) (b := aM) (by decide) (by decide))
+    fun t₄ ⟨h₄, m₄, o₄⟩ => ?_)
+  rw [v₃, M₃, Arrays.mask_eq a₃ hn hZ, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₄
+  have M₄ : wv t₄.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
+    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega_arith), M₃]
+  have X₄ : wv t₄.mem B (slot w aX) w = Spec.Rsa.os2ip dxb := by
+    rw [Outside.wv_arr o₄ (by decide) hZ hn (by omega_arith), v₃]
+  refine wsa (by simp [wordRem]) (by simp [mulE]) (WP.mono (wordRemK h₄ r m₄ hpd hdl srcD hd1 hdk)
+    fun t₅ ⟨h₅, X₅, M₅, Y, hY, m₅⟩ => ?_)
+  rw [M₄] at hY M₅
+  rw [X₄] at X₅ m₅
+  refine wsa (by simp [mulE]) (by simp [remOne]) (WP.mono (mulEK h₅) fun t₁₀ ⟨h₁₀, v₁₀, a₁₀⟩ => ?_)
+  have M₁₀ : wv t₁₀.mem B (slot w aM) w = wv t₂.mem B (slot w aM) w := by
+    rw [Arrays.wv_other a₁₀ (by decide) (by decide) hZ hn, M₅]
+  rw [X₅] at v₁₀
+  -- the product's `w / 2 + 1` words
+  have hdx : Spec.Rsa.os2ip dxb < 2 ^ (64 * (w / 2)) :=
+    Nat.lt_of_lt_of_le (os2ip_lt dxb) (by
+      rw [hdxl, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have prod : (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb < 2 ^ (64 * (w / 2 + 1)) := by
+    rw [Nat.mul_add, Nat.pow_add, Nat.mul_comm (2 ^ (64 * (w / 2)))]
+    exact Nat.mul_lt_mul'' (by omega_arith) hdx
+  have accw : wv t₁₀.mem B (slot w aAcc) w = (word s.mem B (8 * sEv)).toNat * Spec.Rsa.os2ip dxb := by
+    rw [wv_of_lt _ _ _ (show w ≤ w + 2 by omega_arith) (by
+      rw [v₁₀]; exact Nat.lt_of_lt_of_le prod (Nat.pow_le_pow_right (by decide) (by omega_arith))), v₁₀]
+  have mk₁₀ : word t₁₀.mem B (8 * sMask) = mask (b && decide (Spec.Rsa.os2ip dxb < wv t₂.mem B (slot w aM) w) &&
+      decide (Y = Spec.Rsa.os2ip dxb)) := by
+    rw [Arrays.mask_eq a₁₀ hn hZ, m₅]
+  refine WP.mono (remOneK h₁₀ r mk₁₀ (top := some 1) (fun k e => by obtain rfl := Option.some.inj e; omega_arith)
+    (by rw [accw]; exact prod)) fun t₁₂ ⟨h₁₂, R2, eR2, m₁₂⟩ => ⟨h₁₂, wv t₂.mem B (slot w aM) w, Y, R2,
+    fun hx => by have := v₂ hx; omega_arith, hY, fun _ hb hlt _ => ?_, m₁₂⟩
+  rw [M₁₀] at eR2
+  rw [eR2 hb hlt, accw]
+
+/-- `wordQInv`: `qInv < p` and `q qInv mod p = 1`, the remainder right when
+`p` has `w / 2` words, its top bit set, and `q` fits in `w / 2` words. -/
+theorem wordQInvK (h : KCtx s t B Z w minv N) (r : WRoom s B Z w) {b : Bool}
+    (hm : word t.mem B (8 * sMask) = mask b)
+    {pp pq pqi : Addr} {pb qb qib : List Byte} (hpp : word s.mem B (8 * sP) = pp)
+    (hpl : word s.mem B (8 * sPlen) = BitVec.ofNat 64 pb.length) (hpq : word s.mem B (8 * sQ) = pq)
+    (hql : word s.mem B (8 * sQlen) = BitVec.ofNat 64 qb.length) (hpqi : word s.mem B (8 * sQI) = pqi)
+    (srP : Src s B Z pp pb) (srQ : Src s B Z pq qb) (srQI : Src s B Z pqi qib) (hqil : qib.length = pb.length)
+    (hp1 : 1 ≤ pb.length) (hpk : pb.length ≤ 8 * w) (hq1 : 1 ≤ qb.length) (hqk : qb.length ≤ 8 * w) :
+    WP isa (seqs wordQInv) t fun t' =>
+      KCtx s t' B Z w minv N ∧ ∃ R : Nat,
+        (2 ^ (64 * (w / 2) - 1) ≤ Spec.Rsa.os2ip pb → Spec.Rsa.os2ip pb < 2 ^ (64 * (w / 2)) →
+          Spec.Rsa.os2ip qb < 2 ^ (64 * (w / 2)) → Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb →
+          R = Spec.Rsa.os2ip qib * Spec.Rsa.os2ip qb % Spec.Rsa.os2ip pb) ∧
+        word t'.mem B (8 * sMask) =
+          mask (b && decide (Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb) && decide (R = 1)) := by
+  have hn := h.good.scr.nowrap
+  have hZ := h.hZ
+  have := h.w2
+  simp only [wordQInv, List.append_assoc]
+  refine wsa (by simp [loadNum]) (by simp [loadNum]) (WP.mono (loadK h (j := aM) (by decide) (by decide)
+    (by decide) (show sP < 32 by decide) (show sPlen < 32 by decide) (by decide) (by decide) hpp hpl srP hp1 hpk)
+    fun t₁ ⟨h₁, v₁, a₁⟩ => ?_)
+  refine wsa (by simp [loadNum]) (by simp [ltMask]) (WP.mono (loadK h₁ (j := aX) (by decide) (by decide)
+    (by decide) (show sQI < 32 by decide) (show sPlen < 32 by decide) (by decide) (by decide) hpqi
+    (by rw [hqil]; exact hpl) srQI (by omega_arith) (by omega_arith)) fun t₂ ⟨h₂, v₂, a₂⟩ => ?_)
+  rw [← Arrays.wv_other a₂ (by decide) (by decide) hZ hn] at v₁
+  refine wsa (by simp [ltMask]) (by simp [loadNum]) (WP.mono (ltK h₂ (a := aX) (b := aM) (by decide) (by decide))
+    fun t₃ ⟨h₃, m₃, o₃⟩ => ?_)
+  rw [v₁, v₂, Arrays.mask_eq a₂ hn hZ, Arrays.mask_eq a₁ hn hZ, hm, mask_and'] at m₃
+  rw [← Outside.wv_arr o₃ (by decide) hZ hn (by omega_arith)] at v₁ v₂
+  refine wsa (by simp [loadNum]) (by simp [mulPQ]) (WP.mono (loadK h₃ (j := aR) (by decide) (by decide)
+    (by decide) (show sQ < 32 by decide) (show sQlen < 32 by decide) (by decide) (by decide) hpq hql srQ hq1 hqk)
+    fun t₄ ⟨h₄, v₄, a₄⟩ => ?_)
+  rw [← Arrays.wv_other a₄ (by decide) (by decide) hZ hn] at v₁ v₂
+  -- `qInv` and `q` are their low `⌈len / 8⌉` words.
+  have low : ∀ {bs : List Byte} {j L : Nat}, wv t₄.mem B (slot w j) w = Spec.Rsa.os2ip bs → bs.length = L →
+      L ≤ 8 * w → wv t₄.mem B (slot w j) ((L + 7) / 8) = Spec.Rsa.os2ip bs := fun {bs j L} v hL hk => by
+    rw [wv_low_of_lt (v := (L + 7) / 8) (w := w) (by omega) (by
+      rw [v]; exact Nat.lt_of_lt_of_le (os2ip_lt bs) (by
+        rw [hL, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))), v]
+  refine wsa (by simp [mulPQ]) (by simp [remOne]) (WP.mono (mulPQK h₄ hpl hql hp1 hq1 hpk hqk)
+    fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
+  rw [← Arrays.wv_other a₅ (by decide) (by decide) hZ hn] at v₁
+  rw [low v₂ hqil hpk, low v₄ rfl hqk] at v₅
+  have mk₅ : word t₅.mem B (8 * sMask) = mask (b && decide (Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb)) := by
+    rw [Arrays.mask_eq a₅ hn hZ, Arrays.mask_eq a₄ hn hZ, m₃]
+  refine WP.mono (remOneK h₅ r mk₅ (top := none) (fun _ e => nomatch e) (wv_lt _ _ _ _))
+    fun t' ⟨h', R, eR, m'⟩ => ⟨h', R, fun hb hlt hq hqi => ?_, m'⟩
   have prod : Spec.Rsa.os2ip qib * Spec.Rsa.os2ip qb < 2 ^ (64 * w) := by
     have e : 2 ^ (64 * w) = 2 ^ (64 * (w / 2)) * 2 ^ (64 * (w / 2)) * 2 ^ (64 * (w % 2)) := by
       rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_arith
     rw [e]
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' (Nat.lt_trans hqi hlt) hq)
       (Nat.le_mul_of_pos_right _ (Nat.two_pow_pos _))
-  have d₆ : wv t₇.mem B (slot w 5) w = Spec.Rsa.os2ip qib * Spec.Rsa.os2ip qb := by
-    rw [D₇, v₆, wv_of_lt _ _ _ (show w ≤ 2 * w + 2 by omega_arith) (by rw [v₅]; exact prod), v₅]
-  simp only [Impl.Rsa.X86_64.WordDivide.aR, Impl.Rsa.X86_64.WordDivide.aD, Impl.Rsa.X86_64.WordDivide.aM] at q
-  rw [d₆, d₇] at q
-  have pos : 0 < Spec.Rsa.os2ip pb := Nat.lt_of_le_of_lt (Nat.zero_le _) hqi
-  have lt : Spec.Rsa.os2ip qib * Spec.Rsa.os2ip qb % Spec.Rsa.os2ip pb < 2 ^ (64 * w) :=
-    Nat.lt_of_lt_of_le (Nat.mod_lt _ pos)
-      (Nat.le_trans (Nat.le_of_lt hlt) (Nat.pow_le_pow_right (by decide) (by omega_arith)))
-  rw [wv_of_lt _ _ _ (Nat.le_succ w) (by rw [q]; exact lt), q]
+  have accw : wv t₅.mem B (slot w aAcc) w = Spec.Rsa.os2ip qib * Spec.Rsa.os2ip qb := by
+    rw [wv_of_lt _ _ _ (show w ≤ 2 * w + 2 by omega_arith) (by rw [v₅]; exact prod), v₅]
+  rw [← v₁] at hb hlt
+  rw [eR hb hlt, accw, v₁]
 
 /-- `guard`: `ZF` set iff the public shape is the one `WordDivide` serves. -/
 theorem guardK (h : KCtx s t B Z w minv N) {k pl ql : Nat} {np : Addr} {nb : List Byte}
@@ -501,14 +526,27 @@ theorem keyValid_word {k n e d p q dP dQ qInv b : Nat} (hm : Spec.Rsa.modulusVal
     (hbal : p * q = n → (2 ^ (b - 1) ≤ p - 1 ∧ p < 2 ^ b) ∧ (2 ^ (b - 1) ≤ q - 1 ∧ q < 2 ^ b))
     (hYp : 2 ^ (b - 1) ≤ Mp → Mp < 2 ^ b → Yp = d % Mp)
     (hYq : 2 ^ (b - 1) ≤ Mq → Mq < 2 ^ b → Yq = d % Mq)
-    (hR2 : 0 < p → dP < Mp → Rp2 = e * dP % Mp) (hR4 : 0 < q → dQ < Mq → Rq2 = e * dQ % Mq)
+    (hR2 : 0 < p → 2 ^ (b - 1) ≤ Mp → Mp < 2 ^ b → dP < Mp → Rp2 = e * dP % Mp)
+    (hR4 : 0 < q → 2 ^ (b - 1) ≤ Mq → Mq < 2 ^ b → dQ < Mq → Rq2 = e * dQ % Mq)
     (hR : 2 ^ (b - 1) ≤ p → p < 2 ^ b → q < 2 ^ b → qInv < p → R = qInv * q % p) :
     Spec.Rsa.keyValid k n e d p q dP dQ qInv = (true && decide (d < n) && decide (p * q = n) &&
       decide (dP < Mp) && decide (Yp = dP) && decide (Rp2 = 1) &&
       decide (dQ < Mq) && decide (Yq = dQ) && decide (Rq2 = 1) &&
       decide (qInv < p) && decide (R = 1)) := by
+  -- `Rp2` and `Rq2` where the divisors have `b` bits, else the remainders themselves: the same
+  -- where `p q = n`, the only case they decide.
+  let Rp2' := if 2 ^ (b - 1) ≤ Mp ∧ Mp < 2 ^ b then Rp2 else e * dP % Mp
+  let Rq2' := if 2 ^ (b - 1) ≤ Mq ∧ Mq < 2 ^ b then Rq2 else e * dQ % Mq
+  have hR2' : 0 < p → dP < Mp → Rp2' = e * dP % Mp := fun h0 hlt => by
+    simp only [Rp2']; split
+    · next hb => exact hR2 h0 hb.1 hb.2 hlt
+    · rfl
+  have hR4' : 0 < q → dQ < Mq → Rq2' = e * dQ % Mq := fun h0 hlt => by
+    simp only [Rq2']; split
+    · next hb => exact hR4 h0 hb.1 hb.2 hlt
+    · rfl
   rw [Proof.Rsa.keyValid_bounded_parts hm he hp hq (Rp1 := e * d % Mp) (Rq1 := e * d % Mq)
-    (Rpq := qInv * q % p) hMp hMq (fun _ _ _ => rfl) hR2 (fun _ _ _ => rfl) hR4 (fun _ _ => rfl)]
+    (Rpq := qInv * q % p) hMp hMq (fun _ _ _ => rfl) hR2' (fun _ _ _ => rfl) hR4' (fun _ _ => rfl)]
   unfold Proof.Rsa.keyBits
   by_cases hd : d < n
   · by_cases hpq : p * q = n
@@ -516,10 +554,14 @@ theorem keyValid_word {k n e d p q dP dQ qInv b : Nat} (hm : Spec.Rsa.modulusVal
       have pos := Nat.one_le_two_pow (n := b - 1)
       have eMp := hMp (by omega_arith)
       have eMq := hMq (by omega_arith)
+      have ep : Rp2' = Rp2 := ite_eq_left ⟨by omega_arith, by omega_arith⟩
+      have eq : Rq2' = Rq2 := ite_eq_left ⟨by omega_arith, by omega_arith⟩
+      rw [ep, eq]
       rw [Bool.eq_iff_iff]
       simp only [Bool.and_eq_true, decide_eq_true_eq, and_assoc, true_and]
-      rw [part_iff (fun h => hR2 (by omega_arith) h) (hYp (by omega_arith) (by omega_arith)),
-        part_iff (T := qInv < p ∧ qInv * q % p = 1) (fun h => hR4 (by omega_arith) h)
+      rw [part_iff (fun h => hR2 (by omega_arith) (by omega_arith) (by omega_arith) h)
+          (hYp (by omega_arith) (by omega_arith)),
+        part_iff (T := qInv < p ∧ qInv * q % p = 1) (fun h => hR4 (by omega_arith) (by omega_arith) (by omega_arith) h)
           (hYq (by omega_arith) (by omega_arith))]
       constructor
       · rintro ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10⟩
