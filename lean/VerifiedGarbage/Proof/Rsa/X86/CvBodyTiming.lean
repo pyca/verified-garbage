@@ -26,14 +26,15 @@ theorem body_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths
     (apart : ∀ r ∈ g.writes, Region.Disjoint ⟨sp.setWidth 64, 68⟩ r) :
     RelCT isa (fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 0 = inputBytes g t.mem 0)
       body (fun _ _ => True) := by
-  let r := fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ s.zf = t.zf
+  let r := fun s t => ((Pair g s t ∧ s.gpr .esp = sp) ∧ s.zf = t.zf) ∧ inputBytes g s.mem 0 = inputBytes g t.mem 0
   have branch : RelCT isa r (.ite .e sized VG.Impl.Rsa.X86.CrtValues.failure) (fun _ _ => True) := by
     apply VG.RelCT.ite (M := isa) (c := .e) (P := r)
-    · exact fun _ _ h => h.2
+    · exact fun _ _ h => h.1.2
     · exact (sizedNarrow_relCT g len sp).mono
-        (fun _ _ h => ⟨⟨h.1.1.1.left, h.1.1.2, fit, apart⟩, ⟨h.1.1.1.right, h.1.1.1.sp.symm.trans h.1.1.2, fit, apart⟩⟩)
+        (fun _ _ h => ⟨⟨⟨h.1.1.1.1.left, h.1.1.1.2, fit, apart⟩,
+          ⟨h.1.1.1.1.right, h.1.1.1.1.sp.symm.trans h.1.1.1.2, fit, apart⟩⟩, h.1.2⟩)
         (fun _ _ h => h)
-    · exact (failure_relCT g).mono (fun _ _ h => h.1.1.1) (fun _ _ h => h)
+    · exact (failure_relCT g).mono (fun _ _ h => h.1.1.1.1) (fun _ _ h => h)
   apply VG.RelCT.assoc
   intro s t tr ur sf tf ⟨⟨h, esp⟩, modulus⟩ es et
   cases es with
@@ -45,7 +46,8 @@ theorem body_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths
       obtain ⟨zt, mt, kt⟩ := wp_result (modulus_ok h.right len) f1
       have next := h.keepMem ks kt (by decide) (by decide) ms mt
       have flags : u.zf = v.zf := by rw [zs, zt, modulus]
-      have eq2 := (branch _ _ _ _ _ _ ⟨⟨next, (ks.1 _ (by decide)).trans esp⟩, flags⟩ e2 f2).1
+      have eq2 := (branch _ _ _ _ _ _ ⟨⟨⟨next, (ks.1 _ (by decide)).trans esp⟩, flags⟩,
+        by rw [ms, mt]; exact modulus⟩ e2 f2).1
       exact ⟨by rw [eq1, eq2], trivial⟩
 
 end VG.Proof.Rsa.X86.CrtValues

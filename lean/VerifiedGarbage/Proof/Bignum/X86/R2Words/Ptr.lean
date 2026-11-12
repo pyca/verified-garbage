@@ -25,10 +25,10 @@ theorem wp_le_nw {len : Nat} : 4 * wp len ≤ wb len := by
   simp only [wp, wb, Spec.Rsa.modulusWords]; omega
 
 /-- `width4 r`: `r = 4 W'`. -/
-theorem width4_ok {s : State} {is : List Instr} {Q : State → Prop} {len : Nat} {r : Reg}
-    (hr : readSrc s (.mem (argAt 0 1)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024)
+theorem width4_ok {s : State} {is : List Instr} {Q : State → Prop} {len : Nat} {r : Reg} {op : MemOp}
+    (hr : readSrc s (.mem op) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024)
     (kk : ∀ t, Keeps [r] s t → t.mem = s.mem → t.gpr r = BitVec.ofNat 32 (4 * wp len) → WP isa (.block is) t Q) :
-    WP isa (.block (width4 r ++ is)) s Q := by
+    WP isa (.block (width4 r op ++ is)) s Q := by
   simp only [width4, List.cons_append, List.nil_append]
   refine wp_movS hr fun s₁ u₁ _ => wp_addS rfl fun s₂ u₂ _ => VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun s₃ u₃ => ?_
   refine wp_addS rfl fun s₄ u₄ _ => wp_addS rfl fun s₅ u₅ _ => ?_

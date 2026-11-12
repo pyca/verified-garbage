@@ -114,24 +114,38 @@ theorem loaded_values (g : CallGeometry) (m : Mem) :
       aN, aE, aD, aP, aQ, aDP, aDQ, aQI]
   all_goals repeat' first | split | rfl | omega
 
-/-- `q`'s length argument bounds `q`. -/
-theorem qLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) :
-    ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ (numbers g m).q < 2 ^ (8 * a) ∧
-      VG.Proof.Bignum.X86.CallArgument t g.base g.size (qLenArg g.full) (BitVec.ofNat 32 a) := by
-  have qi : 2 * (if g.full then 4 else 3) < scratchArg g.full := by cases g.full <;> decide
-  have qa : 2 * (if g.full then 4 else 3) + 1 = qLenArg g.full := by cases g.full <;> rfl
-  have pos := h.inputPositive _ qi
-  have bound := h.inputBound _ qi
+/-- An input's length argument bounds it. -/
+theorem argLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) {i a : Nat}
+    (hi : 2 * i < scratchArg g.full) (ha : 2 * i + 1 = a) (ha' : a < scratchArg g.full + 2) :
+    ∃ b, 1 ≤ b ∧ b ≤ 1024 ∧ Spec.Rsa.os2ip (inputBytes g m i) < 2 ^ (8 * b) ∧
+      VG.Proof.Bignum.X86.CallArgument t g.base g.size a (BitVec.ofNat 32 b) := by
+  have pos := h.inputPositive _ hi
+  have bound := h.inputBound _ hi
   have up := h.upper
-  simp only [CallGeometry.buffer, qa] at pos bound
-  refine ⟨(g.args (qLenArg g.full)).toNat, pos, by omega, ?_, ?_⟩
-  · have lt := VG.Proof.Bignum.os2ip_lt (inputBytes g m (if g.full then 4 else 3))
-    have ln : (inputBytes g m (if g.full then 4 else 3)).length = (g.args (qLenArg g.full)).toNat := by
-      rw [inputBytes, VG.Proof.Bignum.bytesAt_length]; simp only [CallGeometry.buffer, qa]
+  simp only [CallGeometry.buffer, ha] at pos bound
+  refine ⟨(g.args a).toNat, pos, by omega, ?_, ?_⟩
+  · have lt := VG.Proof.Bignum.os2ip_lt (inputBytes g m i)
+    have ln : (inputBytes g m i).length = (g.args a).toNat := by
+      rw [inputBytes, VG.Proof.Bignum.bytesAt_length]; simp only [CallGeometry.buffer, ha]
     rw [ln, VG.Proof.Bignum.pow256_eq] at lt
     exact lt
   · rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    exact h.arguments _ (by cases g.full <;> decide)
+    exact h.arguments _ ha'
+
+/-- `q`'s length argument bounds `q`. -/
+theorem qLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) :
+    ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ (numbers g m).q < 2 ^ (8 * a) ∧
+      VG.Proof.Bignum.X86.CallArgument t g.base g.size (qLenArg g.full) (BitVec.ofNat 32 a) :=
+  argLen_ok h m (i := if g.full then 4 else 3) (by cases g.full <;> decide) (by cases g.full <;> rfl)
+    (by cases g.full <;> decide)
+
+/-- `p`'s length argument bounds `p`. -/
+theorem pLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) :
+    ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ (numbers g m).p < 2 ^ (8 * a) ∧
+      VG.Proof.Bignum.X86.CallArgument t g.base g.size (VG.Impl.Rsa.X86.KeyCheckRt.pLenArg g.full)
+        (BitVec.ofNat 32 a) :=
+  argLen_ok h m (i := if g.full then 3 else 2) (by cases g.full <;> decide) (by cases g.full <;> rfl)
+    (by cases g.full <;> decide)
 
 theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa (VG.Impl.Rsa.X86.KeyCheckRt.loads g.full) s fun t => Inputs g t ∧
@@ -166,7 +180,7 @@ theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
     fun t ⟨ht, kt, vt, tt, rt⟩ => ?_
   rw [loadValues_frame h Oz _ _ (fun p hp => (inputs_fit _ p hp).1), loaded_values] at vt
   have kt' : Keep g.base (2 * g.n) (List.range nArr) [] z.mem t.mem := by rw [← kwEq]; exact kt
-  exact ⟨ht, ⟨inputsRt ht len, vt, tt, qLen_ok ht s.mem⟩,
+  exact ⟨ht, ⟨inputsRt ht len, vt, tt, qLen_ok ht s.mem, pLen_ok ht s.mem⟩,
     Bz.trans (hz.keepBody kt' (fun j hj => List.mem_range.mp hj) (by simp)),
     (kz.mono (by decide)).trans rt⟩
 end VG.Proof.Rsa.X86.KeyCheck
