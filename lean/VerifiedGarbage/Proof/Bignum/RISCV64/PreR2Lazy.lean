@@ -237,8 +237,8 @@ words, and room for a word more) at `dV` (`a2`), and `P = 2^z`,
 `d'ₗ`, `(d', d'ₗ) = ⌊n P / 2^(64 (w - 2))⌋`, in the temporary at `dT`
 (`a6`), zero in `a4`, for a `mid` that sets `t6` to `2 C` or `2 C + 1`,
 keeping memory and the registers the step reads after it:
-`V := t 2^63 + C` for some `t < 2 n` congruent to `V` modulo `n`, changing only
-`V`'s `w + 1` words. -/
+`V := t 2^63 + C` for `t = V - q̂ n < 2 n`, the digit `q̂` left in `s1`,
+changing only `V`'s `w + 1` words. -/
 theorem step_ok {mid : List Instr} {midRegs : List Reg} {C : Nat} {Pm : State → Prop} {s : State} {B : Addr}
     {Z dV dN dT w z : Nat} (hs : Scr s B Z)
     (h2 : s.gpr .a2 = off B dV) (h6 : s.gpr .a6 = off B dT) (h7 : s.gpr .a7 = off B dN)
@@ -258,7 +258,9 @@ theorem step_ok {mid : List Instr} {midRegs : List Reg} {C : Nat} {Pm : State �
     (hmidR : ∀ r ∈ [Reg.a2, .a7, .t0, .s1], r ∉ midRegs)
     (hPm : ∀ u u', Pm u → Keep stepRegs u u' → Outside B dV (8 * (w + 1)) u.mem u'.mem → Pm u') :
     WP isa (step mid) s fun t =>
-      (∃ T, T < 2 * wordsVal s.mem B dN w ∧ T % wordsVal s.mem B dN w = wordsVal s.mem B dV (w + 1) % wordsVal s.mem B dN w ∧
+      (∃ T, T + (t.gpr .s1).toNat * wordsVal s.mem B dN w = wordsVal s.mem B dV (w + 1) ∧
+        T < 2 * wordsVal s.mem B dN w ∧
+        T % wordsVal s.mem B dN w = wordsVal s.mem B dV (w + 1) % wordsVal s.mem B dN w ∧
         wordsVal t.mem B dV (w + 1) = T * 2 ^ 63 + C ∧ Outside B dV (8 * (w + 1)) s.mem t.mem) ∧
       Keep (stepRegs ++ midRegs) s t ∧ Pm t := by
   have hnw := hs.nowrap
@@ -346,8 +348,11 @@ theorem step_ok {mid : List Instr} {midRegs : List Reg} {C : Nat} {Pm : State �
     rcases Nat.eq_zero_or_pos N with h | h
     · rw [h, Nat.zero_mul] at hV; omega
     · exact h
-  obtain ⟨_, hT2, hTm⟩ := WordStep.lazy_step hN0 hq3.1 hq3.2 hT hb e1
-  refine ⟨⟨T, hT2, hTm, ?_, o⟩, ?_, hPm _ _ p4 ((k5.trans k).mono (by decide)) (by rw [m4]; exact o)⟩
+  obtain ⟨hTe, hT2, hTm⟩ := WordStep.lazy_step hN0 hq3.1 hq3.2 hT hb e1
+  have ts1 : t.gpr .s1 = s₃.gpr .s1 := by
+    rw [k.gpr (by decide), k5.gpr (by decide), g4 .s1 (by decide)]
+  refine ⟨⟨T, by rw [ts1]; exact hTe, hT2, hTm, ?_, o⟩, ?_,
+    hPm _ _ p4 ((k5.trans k).mono (by decide)) (by rw [m4]; exact o)⟩
   · rw [e2, Nat.mod_eq_of_lt]
     have hN' : N < 2 ^ (64 * w) := hN ▸ wordsVal_lt _ _ _ _
     have hC : C < 2 ^ 63 := by rw [← c4]; have := (s₄.gpr .t6).isLt; omega
@@ -527,7 +532,8 @@ theorem finWord2_ok {u : State} {B : Addr} {Z dV dN w g : Nat} (hs : Scr u B Z) 
 
 /-- `finish`, `V` (`w + 1` words) at `dV` (`a2`), `n` (`w` words) at `dN`
 (`a7`), `a4` zero, for `R = ⌊V / 2^63⌋ < 2 n`: `x := R mod n` in `V`'s first
-`w` words, its word `w` zero, changing only `V`'s `w + 1` words. -/
+`w` words, its word `w` zero, changing only `V`'s `w + 1` words, and the
+mask `0 - [R ≥ n]` in `s1`. -/
 theorem finish_ok {s : State} {B : Addr} {Z dV dN w : Nat} (hs : Scr s B Z)
     (h2 : s.gpr .a2 = off B dV) (h7 : s.gpr .a7 = off B dN) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
     (h4 : s.gpr .a4 = 0) (hV8 : dV % 8 = 0) (hN8 : dN % 8 = 0) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
@@ -535,7 +541,10 @@ theorem finish_ok {s : State} {B : Addr} {Z dV dN w : Nat} (hs : Scr s B Z)
     (hR : wordsVal s.mem B dV (w + 1) / 2 ^ 63 < 2 * wordsVal s.mem B dN w) :
     WP isa finish s fun t =>
       (wordsVal t.mem B dV w = wordsVal s.mem B dV (w + 1) / 2 ^ 63 % wordsVal s.mem B dN w ∧
-        Mont.word t.mem B (dV + 8 * w) = 0 ∧ Outside B dV (8 * (w + 1)) s.mem t.mem) ∧ Keep finRegs s t := by
+        Mont.word t.mem B (dV + 8 * w) = 0 ∧ Outside B dV (8 * (w + 1)) s.mem t.mem ∧
+        t.gpr .s1 = 0 - BitVec.ofNat 64
+          (if wordsVal s.mem B dN w ≤ wordsVal s.mem B dV (w + 1) / 2 ^ 63 then 1 else 0)) ∧
+      Keep finRegs s t := by
   have hnw := hs.nowrap
   generalize hVv : wordsVal s.mem B dV (w + 1) = V at hR
   generalize hN : wordsVal s.mem B dN w = N at hR
@@ -583,7 +592,7 @@ theorem finish_ok {s : State} {B : Addr} {Z dV dN w : Nat} (hs : Scr s B Z)
       Nat.div_div_eq_div_mul, Nat.mul_comm]
   have hRs : V / 2 ^ 63 = V / 2 ^ 63 % 2 ^ (64 * w) + 2 ^ (64 * w) * rw.toNat := by
     rw [hrw, Nat.mod_add_div]
-  generalize V / 2 ^ 63 = R at hR jv jd hrw hRs
+  generalize hRdef : V / 2 ^ 63 = R at hR jv jd hrw hRs
   have hN0 : 0 < N := by omega
   have hNlt : N < 2 ^ (64 * w) := hN ▸ wordsVal_lt _ _ _ _
   generalize hRlo : R % 2 ^ (64 * w) = Rlo at jv jd hRs
@@ -623,7 +632,7 @@ theorem finish_ok {s : State} {B : Addr} {Z dV dN w : Nat} (hs : Scr s B Z)
     Outside.refl _ _ _ _, by rw [ub]; simp [wordsVal], Keep.refl _ _⟩
   refine WP.seq (WP.mono (wp_countdown (cnt := .t5) (N := w) (by omega) (by omega) (GInv u B dV dN gn)
     (fun i hi t hI _ => finWord2_ok hsu hV8 hN8 hVZ hNZ dNV hgn hm hi hI) I1 u5)
-    fun t₂ ⟨l3, _, _, lb, lout, lv, lk⟩ => ?_)
+    fun t₂ ⟨l3, _, l1, lb, lout, lv, lk⟩ => ?_)
   rw [hu0, huN] at lv
   have hst := hsu.congr lk.2.2
   have wT : Mont.word t₂.mem B (dV + 8 * w) = rw :=
@@ -676,7 +685,7 @@ theorem finish_ok {s : State} {B : Addr} {Z dV dN w : Nat} (hs : Scr s B Z)
       have : 2 ^ (64 * w) ≤ 2 ^ (64 * w) * xw := Nat.le_mul_of_pos_right _ e
       omega
   rw [hxw0, Nat.mul_zero, Nat.add_zero] at key
-  refine ⟨⟨?_, ?_, ?_⟩, (k2.trans ((lk.trans tk).mono (rs' := finRegs) (by decide))).mono (by decide)⟩
+  refine ⟨⟨?_, ?_, ?_, ?_⟩, (k2.trans ((lk.trans tk).mono (rs' := finRegs) (by decide))).mono (by decide)⟩
   · rw [hlo]
     rw [← hgN] at key hRg
     split at key
@@ -685,14 +694,169 @@ theorem finish_ok {s : State} {B : Addr} {Z dV dN w : Nat} (hs : Scr s B Z)
   · rw [htop]; exact BitVec.eq_of_toNat_eq (by rw [hxw, hxw0]; rfl)
   · exact (((jout.mono (Nat.le_refl _) (by omega)).trans (o2.mono (by omega) (by omega))).trans
       (lout.mono (Nat.le_refl _) (by omega))).trans (o3.mono (by omega) (by omega))
+  · rw [tk.gpr (by decide), l1, hm]
 
 /-! ## The steps -/
 
-/-- `S` steps of `step mid`, counted by `a1`, dividing `X` by `n` (`w`
-words at `dN`, the temporary at `dT` as `step_ok` needs it) 63 bits a step:
-from `V = ⌊X / 2^(63 (S - 1))⌋`, with `⌊X / 2^(63 S)⌋ < 2 n`, each `mid` (in
-step `j`) setting `t6` to the next chunk, `⌊X / 2^(63 (S - 2 - j))⌋ mod 2^63`
-shifted up a bit, and keeping `Q`: `V = r 2^63 + c` for `c < 2^63` and some
+/-- Two regions changed: `m'` agrees with `m` but on the bytes at offsets
+`[dV, dV + nV)` and `[dD, dD + nD)` of `B`. -/
+def Out2 (B : Addr) (dV nV dD nD : Nat) (m m' : Mem) : Prop :=
+  ∀ x, (Mont.ofs B x < dV ∨ dV + nV ≤ Mont.ofs B x) → (Mont.ofs B x < dD ∨ dD + nD ≤ Mont.ofs B x) → m' x = m x
+
+theorem Out2.refl (B : Addr) (dV nV dD nD : Nat) (m : Mem) : Out2 B dV nV dD nD m m := fun _ _ _ => rfl
+
+theorem Out2.outV {B : Addr} {dV nV dD nD : Nat} {m₁ m₂ m₃ : Mem} (h : Out2 B dV nV dD nD m₁ m₂)
+    (o : Outside B dV nV m₂ m₃) : Out2 B dV nV dD nD m₁ m₃ := fun x h1 h2 => (o x h1).trans (h x h1 h2)
+
+theorem Out2.outD {B : Addr} {dV nV dD nD : Nat} {m₁ m₂ m₃ : Mem} (h : Out2 B dV nV dD nD m₁ m₂)
+    (o : Outside B dD nD m₂ m₃) : Out2 B dV nV dD nD m₁ m₃ := fun x h1 h2 => (o x h2).trans (h x h1 h2)
+
+theorem Out2.word {B : Addr} {dV nV dD nD : Nat} {m m' : Mem} (h : Out2 B dV nV dD nD m m') {d : Nat}
+    (hV : d + 8 ≤ dV ∨ dV + nV ≤ d) (hD : d + 8 ≤ dD ∨ dD + nD ≤ d) (hd : d + 8 ≤ 2 ^ 64) :
+    Mont.word m' B d = Mont.word m B d :=
+  (Mem.readW_congr fun i hi => (h _ (by rw [Mont.ofs_off B (by omega)]; omega)
+    (by rw [Mont.ofs_off B (by omega)]; omega)).symm).symm
+
+theorem Out2.wordsVal {B : Addr} {dV nV dD nD : Nat} {m m' : Mem} (h : Out2 B dV nV dD nD m m')
+    {d k : Nat} (hV : d + 8 * k ≤ dV ∨ dV + nV ≤ d) (hD : d + 8 * k ≤ dD ∨ dD + nD ≤ d) (hd : d + 8 * k ≤ 2 ^ 64) :
+    wordsVal m' B d k = wordsVal m B d k := by
+  induction k generalizing d with
+  | zero => rfl
+  | succ k ih =>
+    simp only [Mont.wordsVal]
+    rw [h.word (by omega) (by omega) (by omega), ih (by omega) (by omega) (by omega)]
+
+theorem Out2.zero {B : Addr} {dV nV dD : Nat} {m m' : Mem} (h : Out2 B dV nV dD 0 m m') :
+    Outside B dV nV m m' := fun x hx => h x hx (by omega)
+
+/-- `S` steps of `step mid`, each followed by `post`, counted by `a1`,
+dividing `X` by `n` (`w` words at `dN`, the temporary at `dT` as `step_ok`
+needs it) 63 bits a step: from `V = ⌊X / 2^(63 (S - 1))⌋`, with
+`⌊X / 2^(63 S)⌋ < 2 n`, each `mid` (in step `j`) setting `t6` to the next
+chunk, `⌊X / 2^(63 (S - 2 - j))⌋ mod 2^63` shifted up a bit and making `Q'`
+of `Q`, and each `post`, given the step's digit `q̂` in `s1` and changing
+only `[dD, dD + nD)`, making `Q` of the quotient so far, `qa 2^63 + q̂`:
+`V = r 2^63 + c` for `c < 2^63` and `X = qa n + r`, `r < 2 n`, changing only
+`V`'s `w + 1` words and `[dD, dD + nD)`. -/
+theorem stepsQ_ok {mid post : List Instr} {midRegs postRegs : List Reg} {Q Q' : Nat → Nat → State → Prop}
+    {s : State} {B : Addr} {Z dV dN dT dD nD w z X S : Nat} (hs : Scr s B Z)
+    (h2 : s.gpr .a2 = off B dV) (h6 : s.gpr .a6 = off B dT) (h7 : s.gpr .a7 = off B dN)
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (h4 : s.gpr .a4 = 0) (h1 : s.gpr .a1 = BitVec.ofNat 64 S)
+    (hS : 1 ≤ S) (hS' : S < 2 ^ 31) (hw : 4 ≤ w) (hw' : w < 2 ^ 31) (hV8 : dV % 8 = 0) (hN8 : dN % 8 = 0)
+    (hT8 : dT % 8 = 0) (hVZ : dV + 8 * (w + 2) ≤ Z) (hNZ : dN + 8 * w ≤ Z) (hTZ : dT + 32 ≤ Z)
+    (dNV : dN + 8 * w ≤ dV ∨ dV + 8 * (w + 1) ≤ dN) (dTV : dT + 32 ≤ dV ∨ dV + 8 * (w + 1) ≤ dT)
+    (dND : dN + 8 * w ≤ dD ∨ dD + nD ≤ dN) (dTD : dT + 32 ≤ dD ∨ dD + nD ≤ dT)
+    (dVD : dV + 8 * (w + 1) ≤ dD ∨ dD + nD ≤ dV)
+    (hP : (Mont.word s.mem B dT).toNat = 2 ^ z) (hz : z ≤ 63)
+    (hd63 : 2 ^ 63 ≤ wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 1)))
+    (hd : (Mont.word s.mem B (dT + 8)).toNat = wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 1)))
+    (hv : (Mont.word s.mem B (dT + 16)).toNat = (2 ^ 128 - 1) / (Mont.word s.mem B (dT + 8)).toNat - 2 ^ 64)
+    (hdl : (Mont.word s.mem B (dT + 8)).toNat * 2 ^ 64 + (Mont.word s.mem B (dT + 24)).toNat =
+      wordsVal s.mem B dN w * 2 ^ z / 2 ^ (64 * (w - 2)))
+    (hV0 : wordsVal s.mem B dV (w + 1) = X / 2 ^ (63 * (S - 1)))
+    (hX0 : X / 2 ^ (63 * S) < 2 * wordsVal s.mem B dN w)
+    (hQ0 : Q 0 0 s)
+    (hQ : ∀ j qa u u', Q j qa u → Keep (.a1 :: stepRegs) u u' → Outside B dV (8 * (w + 1)) u.mem u'.mem →
+      Q j qa u')
+    (hQ' : ∀ j qa u u', Q' j qa u → Keep stepRegs u u' → Outside B dV (8 * (w + 1)) u.mem u'.mem →
+      Q' j qa u')
+    (hmid : ∀ j < S, ∀ qa u, Q j qa u → WP isa (.block mid) u fun u' =>
+      (u'.gpr .t6).toNat / 2 = X / 2 ^ (63 * (S - 2 - j)) % 2 ^ 63 ∧ u'.mem = u.mem ∧ Keep midRegs u u' ∧
+        Q' j qa u')
+    (hpost : ∀ j < S, ∀ qa u, Q' j qa u → WP isa (.block post) u fun u' =>
+      Q (j + 1) (qa * 2 ^ 63 + (u.gpr .s1).toNat) u' ∧ Keep postRegs u u' ∧ Outside B dD nD u.mem u'.mem)
+    (hmidR : ∀ r ∈ [Reg.a2, .a7, .t0, .s1, .a1, .a6, .a4], r ∉ midRegs)
+    (hpostR : ∀ r ∈ [Reg.a2, .a7, .t0, .a1, .a6, .a4], r ∉ postRegs) :
+    WP isa (.loop (.seq (step mid) (.block (post ++ ([.addi .a1 .a1 (-1)] : List Instr)))) (.nonzero .a1)) s fun t =>
+      (∃ r qa, r < 2 * wordsVal s.mem B dN w ∧ X = qa * wordsVal s.mem B dN w + r ∧
+        wordsVal t.mem B dV (w + 1) / 2 ^ 63 = r ∧ Out2 B dV (8 * (w + 1)) dD nD s.mem t.mem ∧ Q S qa t) ∧
+      Keep (.a1 :: (stepRegs ++ midRegs ++ postRegs)) s t := by
+  have hnw := hs.nowrap
+  generalize hN : wordsVal s.mem B dN w = N at hd hd63 hdl hX0 ⊢
+  let Inv : Nat → State → Prop := fun j t =>
+    (∃ r qa, r < 2 * N ∧ X / 2 ^ (63 * (S - j)) = qa * N + r ∧
+      wordsVal t.mem B dV (w + 1) = r * 2 ^ 63 + X / 2 ^ (63 * (S - 1 - j)) % 2 ^ 63 ∧ Q j qa t) ∧
+    Out2 B dV (8 * (w + 1)) dD nD s.mem t.mem ∧ Keep (.a1 :: (stepRegs ++ midRegs ++ postRegs)) s t
+  have I0 : Inv 0 s := by
+    refine ⟨⟨X / 2 ^ (63 * S), 0, hX0, by rw [Nat.sub_zero, Nat.zero_mul, Nat.zero_add], ?_, hQ0⟩,
+      Out2.refl _ _ _ _ _ _, Keep.refl _ _⟩
+    rw [hV0, Nat.sub_zero]
+    have e := WordStep.wordDiv_digits X 63 (S - 1)
+    rwa [show S - 1 + 1 = S by omega] at e
+  refine WP.mono (wp_countdown (N := S) (by omega) (by omega) Inv
+    (fun j hj t ⟨⟨r, qa, hr, hrq, hVt, tq⟩, to, tk⟩ _ => ?_)
+    I0 h1) fun t ⟨⟨r, qa, hr, hrq, hVt, tq⟩, to, tk⟩ => ⟨⟨r, qa, hr, ?_, ?_, to, tq⟩, tk⟩
+  rotate_left
+  · rw [← hrq, Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.div_one]
+  · rw [hVt]
+    have : X / 2 ^ (63 * (S - 1 - S)) % 2 ^ 63 < 2 ^ 63 := Nat.mod_lt _ (by decide)
+    rw [Nat.mul_comm, Nat.mul_add_div (by decide), Nat.div_eq_of_lt this, Nat.add_zero]
+  -- A step.
+  have nk : ∀ q ∈ [Reg.a2, .a6, .a7, .t0, .a4], q ∉ (.a1 :: (stepRegs ++ midRegs ++ postRegs)) := by
+    intro q hq h
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    simp only [stepRegs, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at h
+    rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp only [reduceCtorEq, false_or] at h
+    · exact h.elim (hmidR .a2 (by decide)) (hpostR .a2 (by decide))
+    · exact h.elim (hmidR .a6 (by decide)) (hpostR .a6 (by decide))
+    · exact h.elim (hmidR .a7 (by decide)) (hpostR .a7 (by decide))
+    · exact h.elim (hmidR .t0 (by decide)) (hpostR .t0 (by decide))
+    · exact h.elim (hmidR .a4 (by decide)) (hpostR .a4 (by decide))
+  have g : ∀ q ∈ [Reg.a2, .a6, .a7, .t0, .a4], t.gpr q = s.gpr q := fun q hq => tk.gpr (nk q hq)
+  have n0 : wordsVal t.mem B dN w = N := by rw [Out2.wordsVal to (by omega) (by omega) (by omega), hN]
+  have wT : ∀ k, k < 4 → Mont.word t.mem B (dT + 8 * k) = Mont.word s.mem B (dT + 8 * k) := fun k hk =>
+    Out2.word to (by omega) (by omega) (by omega)
+  have w0 := wT 0 (by decide); have w1 := wT 1 (by decide); have w2 := wT 2 (by decide); have w3 := wT 3 (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one] at w0 w1 w2 w3
+  rw [show 8 * 2 = 16 from rfl] at w2; rw [show 8 * 3 = 24 from rfl] at w3
+  have hc : X / 2 ^ (63 * (S - 1 - j)) % 2 ^ 63 < 2 ^ 63 := Nat.mod_lt _ (by decide)
+  have hVN : wordsVal t.mem B dV (w + 1) < wordsVal t.mem B dN w * 2 ^ 64 := by
+    rw [hVt, n0]
+    have := Nat.mul_le_mul_right (2 ^ 63) (show r + 1 ≤ 2 * N by omega)
+    rw [Nat.add_mul, Nat.one_mul, Nat.mul_assoc] at this
+    rw [show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl, Nat.mul_left_comm]
+    omega
+  have hsub : ∀ q ∈ [Reg.a2, .a7, .t0, .s1], q ∈ [Reg.a2, .a7, .t0, .s1, .a1, .a6, .a4] := by decide
+  refine WP.seq (WP.mono (step_ok (Pm := Q' j qa) (C := X / 2 ^ (63 * (S - 2 - j)) % 2 ^ 63)
+    (hs.congr tk.2.2) ((g .a2 (by decide)).trans h2) ((g .a6 (by decide)).trans h6)
+    ((g .a7 (by decide)).trans h7) ((g .t0 (by decide)).trans ht0) ((g .a4 (by decide)).trans h4) hw hw'
+    hV8 hN8 hT8 hVZ hNZ hTZ dNV (by rw [w0]; exact hP) hz (by rw [n0]; exact hd63) (by rw [w1, n0]; exact hd)
+    (by rw [w2, w1]; exact hv) (by rw [w1, w3, n0]; exact hdl) hVN
+    (fun u ku mu => hmid j hj qa u (hQ j qa t u tq (ku.mono (by decide)) (by rw [mu]; exact Outside.refl _ _ _ _)))
+    (fun q hq => hmidR q (hsub q hq))
+    (fun u u' pu ku ou => hQ' j qa u u' pu ku ou))
+    fun t₁ ⟨⟨T, hTq, hT, _, hV1, o1⟩, k1, q1⟩ => ?_)
+  rw [WP.block_append_iff]
+  refine WP.mono (hpost j hj qa t₁ q1) fun t₂ ⟨q2, k2, o2⟩ => ?_
+  refine WP.mono (dec_ok t₂ .a1) fun t₃ e3 => ?_
+  subst e3
+  have ka : t₂.gpr .a1 = t.gpr .a1 := by
+    rw [k2.gpr (hpostR .a1 (by decide)), k1.gpr (by
+      simp only [stepRegs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, reduceCtorEq, false_or]
+      exact hmidR .a1 (by decide))]
+  have hV2 : wordsVal t₂.mem B dV (w + 1) = wordsVal t₁.mem B dV (w + 1) := Outside.wordsVal o2 dVD (by omega)
+  rw [n0] at hT hTq
+  refine ⟨⟨⟨T, qa * 2 ^ 63 + (t₁.gpr .s1).toNat, hT, ?_, ?_, ?_⟩, ?_, ?_⟩, by rw [gpr_write_self, ka]⟩
+  · -- `⌊X / 2^(63 (S - j - 1))⌋ = ⌊X / 2^(63 (S - j))⌋ 2^63 + c = (qa 2^63 + q) n + T`.
+    rw [show S - (j + 1) = S - 1 - j by omega]
+    have e : X / 2 ^ (63 * (S - 1 - j)) = X / 2 ^ (63 * (S - j)) * 2 ^ 63 + X / 2 ^ (63 * (S - 1 - j)) % 2 ^ 63 := by
+      have h := Nat.div_add_mod (X / 2 ^ (63 * (S - 1 - j))) (2 ^ 63)
+      rw [Nat.div_div_eq_div_mul, ← Nat.pow_add, show 63 * (S - 1 - j) + 63 = 63 * (S - j) by omega] at h
+      rw [Nat.mul_comm] at h; exact h.symm
+    rw [e, hrq]
+    rw [hVt] at hTq
+    generalize X / 2 ^ (63 * (S - 1 - j)) % 2 ^ 63 = c at hTq ⊢
+    generalize (t₁.gpr .s1).toNat = q at hTq ⊢
+    rw [Nat.add_mul, Nat.add_mul, Nat.mul_right_comm qa N]
+    omega
+  · rw [mem_write, hV2, hV1, show S - 1 - (j + 1) = S - 2 - j by omega]
+  · exact hQ (j + 1) _ t₂ _ q2 ((Keep.write _ _ _).mono (by decide)) (by rw [mem_write]; exact Outside.refl _ _ _ _)
+  · rw [mem_write]; exact (to.outV o1).outD o2
+  · exact (((tk.trans k1).trans k2).trans (Keep.write _ _ _)).mono fun q hq => by
+      simp only [List.mem_append, List.mem_cons] at hq ⊢
+      rcases hq with (((h | h) | h) | h) | h <;> simp_all
+
+/-- `stepsQ_ok` without the quotient: `V = r 2^63 + c` for `c < 2^63` and some
 `r < 2 n` congruent to `X` modulo `n`, changing only `V`'s `w + 1` words. -/
 theorem steps_ok {mid : List Instr} {midRegs : List Reg} {Q : Nat → State → Prop} {s : State} {B : Addr}
     {Z dV dN dT w z X S : Nat} (hs : Scr s B Z)
@@ -719,77 +883,16 @@ theorem steps_ok {mid : List Instr} {midRegs : List Reg} {Q : Nat → State → 
       (∃ r, r < 2 * wordsVal s.mem B dN w ∧ r % wordsVal s.mem B dN w = X % wordsVal s.mem B dN w ∧
         wordsVal t.mem B dV (w + 1) / 2 ^ 63 = r ∧ Outside B dV (8 * (w + 1)) s.mem t.mem) ∧
       Keep (.a1 :: (stepRegs ++ midRegs)) s t ∧ Q S t := by
-  have hnw := hs.nowrap
-  generalize hN : wordsVal s.mem B dN w = N at hd hd63 hdl hX0 ⊢
-  let Inv : Nat → State → Prop := fun j t =>
-    (∃ r, r < 2 * N ∧ r % N = X / 2 ^ (63 * (S - j)) % N ∧
-      wordsVal t.mem B dV (w + 1) = r * 2 ^ 63 + X / 2 ^ (63 * (S - 1 - j)) % 2 ^ 63) ∧
-    Outside B dV (8 * (w + 1)) s.mem t.mem ∧ Keep (.a1 :: (stepRegs ++ midRegs)) s t ∧ Q j t
-  have I0 : Inv 0 s := by
-    refine ⟨⟨X / 2 ^ (63 * S), hX0, by rw [Nat.sub_zero], ?_⟩, Outside.refl _ _ _ _, Keep.refl _ _, hQ0⟩
-    rw [hV0, Nat.sub_zero]
-    have e := WordStep.wordDiv_digits X 63 (S - 1)
-    rwa [show S - 1 + 1 = S by omega] at e
-  refine WP.mono (wp_countdown (N := S) (by omega) (by omega) Inv (fun j hj t ⟨⟨r, hr, hrm, hVt⟩, to, tk, tq⟩ _ => ?_)
-    I0 h1) fun t ⟨⟨r, hr, hrm, hVt⟩, to, tk, tq⟩ => ⟨⟨r, hr, ?_, ?_, to⟩, tk, tq⟩
-  rotate_left
-  · rw [hrm, Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.div_one]
-  · rw [hVt]
-    have : X / 2 ^ (63 * (S - 1 - S)) % 2 ^ 63 < 2 ^ 63 := Nat.mod_lt _ (by decide)
-    rw [Nat.mul_comm, Nat.mul_add_div (by decide), Nat.div_eq_of_lt this, Nat.add_zero]
-  -- A step.
-  have nk : ∀ q ∈ [Reg.a2, .a6, .a7, .t0, .a4], q ∉ (.a1 :: (stepRegs ++ midRegs)) := by
-    intro q hq h
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    simp only [stepRegs, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at h
-    rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp only [reduceCtorEq, false_or] at h
-    · exact hmidR .a2 (by decide) h
-    · exact hmidR .a6 (by decide) h
-    · exact hmidR .a7 (by decide) h
-    · exact hmidR .t0 (by decide) h
-    · exact hmidR .a4 (by decide) h
-  have g : ∀ q ∈ [Reg.a2, .a6, .a7, .t0, .a4], t.gpr q = s.gpr q := fun q hq => tk.gpr (nk q hq)
-  have n0 : wordsVal t.mem B dN w = N := by rw [Outside.wordsVal to (by omega) (by omega), hN]
-  have wT : ∀ k, k < 4 → Mont.word t.mem B (dT + 8 * k) = Mont.word s.mem B (dT + 8 * k) := fun k hk =>
-    Outside.word to (by omega) (by omega)
-  have w0 := wT 0 (by decide); have w1 := wT 1 (by decide); have w2 := wT 2 (by decide); have w3 := wT 3 (by decide)
-  simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one] at w0 w1 w2 w3
-  rw [show 8 * 2 = 16 from rfl] at w2; rw [show 8 * 3 = 24 from rfl] at w3
-  have hc : X / 2 ^ (63 * (S - 1 - j)) % 2 ^ 63 < 2 ^ 63 := Nat.mod_lt _ (by decide)
-  have hVN : wordsVal t.mem B dV (w + 1) < wordsVal t.mem B dN w * 2 ^ 64 := by
-    rw [hVt, n0]
-    have := Nat.mul_le_mul_right (2 ^ 63) (show r + 1 ≤ 2 * N by omega)
-    rw [Nat.add_mul, Nat.one_mul, Nat.mul_assoc] at this
-    rw [show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl, Nat.mul_left_comm]
-    omega
-  have hsub : ∀ q ∈ [Reg.a2, .a7, .t0, .s1], q ∈ [Reg.a2, .a7, .t0, .s1, .a1, .a6, .a4] := by decide
-  refine WP.seq (WP.mono (step_ok (Pm := Q (j + 1)) (C := X / 2 ^ (63 * (S - 2 - j)) % 2 ^ 63)
-    (hs.congr tk.2.2) ((g .a2 (by decide)).trans h2) ((g .a6 (by decide)).trans h6)
-    ((g .a7 (by decide)).trans h7) ((g .t0 (by decide)).trans ht0) ((g .a4 (by decide)).trans h4) hw hw'
-    hV8 hN8 hT8 hVZ hNZ hTZ dNV (by rw [w0]; exact hP) hz (by rw [n0]; exact hd63) (by rw [w1, n0]; exact hd)
-    (by rw [w2, w1]; exact hv) (by rw [w1, w3, n0]; exact hdl) hVN
-    (fun u ku mu => hmid j hj u (hQ j t u tq (ku.mono (by decide)) (by rw [mu]; exact Outside.refl _ _ _ _)))
-    (fun q hq => hmidR q (hsub q hq))
-    (fun u u' pu ku ou => hQ (j + 1) u u' pu (ku.mono (by decide)) ou))
-    fun t₁ ⟨⟨T, hT, hTm, hV1, o1⟩, k1, q1⟩ => ?_)
-  refine WP.mono (dec_ok t₁ .a1) fun t₂ e2 => ?_
-  subst e2
-  have ka : t₁.gpr .a1 = t.gpr .a1 := k1.gpr (by
-    simp only [stepRegs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, reduceCtorEq, false_or]
-    exact hmidR .a1 (by decide))
-  rw [n0] at hT hTm
-  refine ⟨⟨⟨T, hT, ?_, ?_⟩, ?_, ?_, ?_⟩, by rw [gpr_write_self, ka]⟩
-  · rw [hTm, hVt, show S - (j + 1) = S - 1 - j by omega]
-    have e := WordStep.wordDiv_step' (X := X) (m := N) (W := 63) (n := S - 1 - j) (r := r % N)
-      (u := X / 2 ^ (63 * (S - 1 - j)) % 2 ^ 63) (by rw [hrm, show S - 1 - j + 1 = S - j by omega]) rfl
-    rw [← e, Nat.add_mod, Nat.mul_mod, Nat.add_mod (r % N * _), Nat.mul_mod (r % N), Nat.mod_mod, Nat.mod_mod,
-      Nat.mul_mod_mod]
-  · rw [mem_write, hV1, show S - 1 - (j + 1) = S - 2 - j by omega]
-  · rw [mem_write]; exact to.trans o1
-  · exact ((tk.trans k1).trans (Keep.write _ _ _)).mono fun q hq => by
-      simp only [List.mem_append, List.mem_cons] at hq ⊢
-      rcases hq with ((h | h) | h) | h <;> simp_all
-  · exact hQ (j + 1) t₁ _ q1 ((Keep.write _ _ _).mono (by decide)) (by rw [mem_write]; exact Outside.refl _ _ _ _)
+  have e : ([.addi .a1 .a1 (-1)] : List Instr) = [] ++ [.addi .a1 .a1 (-1)] := rfl
+  rw [e]
+  exact WP.mono (stepsQ_ok (Q := fun j _ => Q j) (Q' := fun j _ => Q (j + 1)) (post := []) (postRegs := [])
+    (dD := 0) (nD := 0) hs h2 h6 h7 ht0 h4 h1 hS hS' hw hw' hV8 hN8 hT8 hVZ hNZ hTZ dNV dTV (by omega) (by omega)
+    (by omega) hP hz hd63 hd hv hdl hV0 hX0 hQ0 (fun j _ u u' => hQ j u u')
+    (fun j _ u u' hu ku ou => hQ (j + 1) u u' hu ((ku.mono (by decide))) ou)
+    (fun j hj _ u hu => hmid j hj u hu)
+    (fun j _ _ u hu => WP.block_nil_iff.mpr ⟨hu, Keep.refl _ _, Outside.refl _ _ _ _⟩) hmidR (by decide))
+    fun t ⟨⟨r, qa, hr, hX, hV, o, q⟩, k⟩ => ⟨⟨r, hr, by rw [hX, Nat.mul_comm, Nat.mul_add_mod], hV, o.zero⟩,
+      k.mono (by simp), q⟩
 
 /-! ## `R² mod n` -/
 
@@ -1038,7 +1141,7 @@ theorem r2Words_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   refine WP.mono (finish_ok (dV := slot w 1) (dN := slot w 0) (hs.congr k14.2.2)
     ((k14.gpr (by decide)).trans h2) ((k14.gpr (by decide)).trans h7) ((k14.gpr (by decide)).trans ht0)
     ((k4.gpr (by decide)).trans a43) (al 1) (al 0) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by rw [hV4, n4]; exact hr)) fun t ⟨⟨tx, _, to⟩, tk⟩ => ⟨⟨?_, ?_⟩, ?_⟩
+    (by rw [hV4, n4]; exact hr)) fun t ⟨⟨tx, _, to, _⟩, tk⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · rw [tx, hV4, n4, hrm]
   · exact Outside.trans O3 (Outside.trans (Outside.mono o4 (Nat.le_refl _) (by omega))
       (Outside.mono to (Nat.le_refl _) (by omega)))
