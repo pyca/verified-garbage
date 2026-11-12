@@ -40,13 +40,13 @@ variable {L : Lay} {B : Addr} {Z len N : Nat}
 /-! ## The window, and `md`, `me` -/
 
 /-- The window's thirty word divsteps from `f`, `g`'s low words. -/
-theorem windowF_ok {s : State} (h : Bx L s B Z len N) {i : Nat} (hi : i + 8 ≤ fgSz) {d f g : Int}
+theorem windowF_ok {s : State} {n : Nat} (h : Bx L s B Z len N n) {i : Nat} (hi : i + 8 ≤ fgSz) {d f g : Int}
     (hd : s.mem.readW (off B win) 32 = BitVec.ofInt 32 d)
     (hf : ((s.mem.readW (off B (fg0 len + i)) 32).toNat : Int) % 2 ^ 32 = f % 2 ^ 32)
     (hg : ((s.mem.readW (off B (fg0 len + (i + 4))) 32).toNat : Int) % 2 ^ 32 = g % 2 ^ 32)
     (hdb : |d| + 64 < 2 ^ 30) (hfo : f % 2 = 1) :
     WP isa (.seq (.block (startF L i)) (VG.Impl.Weierstrass.X86.Inv.wordSteps win 30)) s fun z =>
-      Bx L z B Z len N ∧ MatrixAt B (Divstep.msteps 30 (Divstep.MSt.init d f g)) z ∧
+      Bx L z B Z len N n ∧ MatrixAt B (Divstep.msteps 30 (Divstep.MSt.init d f g)) z ∧
       Keeps wordClob s z ∧ Outside B win 28 s.mem z.mem := by
   have hn := h.nowrap
   have hZ := h.halfZ

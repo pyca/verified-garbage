@@ -50,6 +50,8 @@ theorem operandsF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m 
       .seq (.block (VG.Impl.Rsa.X86.GcdBatch.evenMask (VG.Impl.Rsa.X86.InvBatchRt.offset 0 0))) <|
       .seq (selIn L (a 12) (a 2) (nBytes .edi 0)) <|
       .seq (VG.Impl.Rsa.X86.InvBatchRt.chain L .adc (a 7) (a 7) (a 12) (nBytes .edx 1)) rest) s Q := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hn := h.nowrap
   have hZ := h.halfZ
   have hf16 := h.fits16
@@ -103,7 +105,7 @@ theorem operandsF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m 
     rw [← hx, hj, val32]
     omega
   refine WP.seq (WP.mono (selIn_ok H₈ (o := a 12) (a := a 2) (e := 0) (k := decide (x % 2 = 0))
-    (by rw [C₈, even]; by_cases he : w32 s.mem B (rv (kw len) (a 0)) % 2 = 0 <;> simp [he, cmask])
+    (by rw [C₈, even]; by_cases he : w32 s.mem B (rv (kw len) (a 0)) % 2 = 0 <;> simp [cmask])
     (by decide) (by omega) (by omega) (by omega)) fun s₉ ⟨H₉, O₉, V₉, K₉⟩ => ?_)
   simp only [Nat.add_zero] at O₉ V₉
   rw [m₈, O₇.val32 (d := rv (kw len) (a 2)) (by omega) (by omega), O₆.val32 (by omega) (by omega),
@@ -134,7 +136,7 @@ theorem operandsF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m 
   have Gu : val32 u.mem B (rv (kw len) (a 7)) (nw len + 1) = oddInput (virtualMod m) x := by
     unfold oddInput
     cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at Vu <;>
-      omega
+      (simp only [nw] at *; omega)
   refine k u Hu ?_ Gu ?_ ?_
   · rw [Ou.val32 (by omega) (by omega), O₉.val32 (by omega) (by omega), m₈, O₇.val32 (by omega) (by omega),
       O₆.val32 (by omega) (by omega), O₅.val32 (by omega) (by omega), P₃]
@@ -154,6 +156,8 @@ theorem operandsF_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m 
 theorem winOne_ok {s : State} (h : Bx L s B Z len N) :
     WP isa (.block [.mov .eax (.imm 1), .store (sc win) .eax]) s fun t =>
       Bx L t B Z len N ∧ t.mem = s.mem.writeW (off B win) (1 : BitVec 32) ∧ Keeps [.eax] s t := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hZ := h.halfZ
   have e16 : win = 16 := rfl; have e96 : halfSlot = 96 := rfl
   refine wp_movS rfl fun u₁ V₁ _ => ?_
@@ -171,6 +175,8 @@ theorem invF_ok {s : State} (h : Bx L s B Z len N) (odd : w32 s.mem B (rv (kw le
       ([.store (sc (win + 28)) .eax] : List Instr))) s fun t => ∃ V : BitVec 32,
       Bx L t B Z len N ∧ t.mem = s.mem.writeW (off B (win + 28)) V ∧
       (w32 s.mem B (rv (kw len) (a 2)) * V.toNat + 1) % 2 ^ 32 = 0 ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hn := h.nowrap
   have hZ := h.halfZ
   have hf16 := h.fits16
@@ -242,6 +248,8 @@ theorem initF_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2
       (virtualMod m * iv + 1) % 2 ^ 32 = 0 ∧ VG.Proof.Mont.w32 z.mem B 100 = (3 * nw len + 2) / 2 ∧
       val32 z.mem B (rv (kw len) (a 2)) (nw len + 1) = virtualMod m ∧
       Keeps wordClob s z ∧ Unch B (bodyWrites len) s.mem z.mem := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hn := h.ws.workspace.nowrap
   have hw := kw_bound h.lenLe
   have ke := kw_eq len
@@ -362,7 +370,7 @@ theorem initF_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2
   · show sval z.mem B _ fgSz (nw len) = (virtualMod m : Int)
     rw [((Same.row_slot R₂ (by decide) (by decide) (.inl (by decide)) (by omega) fitF).trans
       ((Same.apart O₃ (by decide) (.inr (by omega)) fitF).trans (tailF (by decide)))).sval_eq]
-    exact sval_nat V₁ (by omega)
+    exact sval_nat V₁ (by simp only [nw] at *; omega)
   · show sval z.mem B _ fgSz (nw len) = (oddInput (virtualMod m) x : Int)
     rw [((Same.apart O₃ (by decide) (.inr (by omega)) fitF).trans (tailF (by decide))).sval_eq]
     exact sval_nat V₂ ox

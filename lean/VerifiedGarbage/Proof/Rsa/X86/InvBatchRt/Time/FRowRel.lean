@@ -188,7 +188,7 @@ theorem rowStart_fr {s : State} (H : RowHyp len Z arr sz o ts signed ms)
   have wsu := ws.of_keeps K₁
   have diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
   have hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * nw len) := by
-    rw [m₁, h.slots.halfW]; congr 1; have := kw_eq len; omega
+    rw [m₁, h.slots.halfW]
   simp only [← List.append_assoc]
   refine WP.mono (rowSetup_ok (wide := wide) wsu diu p₁ hh H.hsz (by omega) (by omega)
     (by omega)) fun v ⟨_, _, _, F₀, E₀, _, K₀⟩ => ?_

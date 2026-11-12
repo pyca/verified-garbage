@@ -1193,7 +1193,7 @@ theorem rowSetup_ok {u : State} {W : Addr} {bytes e n : Nat} (ws : Ws u W bytes)
 
 /-! ## A row -/
 
-variable {L : Lay} {B : Addr} {Z len N : Nat}
+variable {L : Lay} {B : Addr} {Z len N n : Nat}
 
 /-- What a row's terms need, before the row. -/
 def TermsOk (m : Mem) (B : Addr) (A0 sz o : Nat) (ts : List Term) : Prop :=
@@ -1206,23 +1206,23 @@ def RowWr (B : Addr) (A0 sz o n : Nat) (m m' : Mem) : Prop :=
   ∀ x, (∀ j < n + 2, ofs B x < A0 + o + sz * j ∨ A0 + o + sz * j + 4 ≤ ofs B x) →
     (ofs B x < sP ∨ sP + 8 ≤ ofs B x) → m' x = m x
 
-theorem row_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : nw len % 2 = 0)
+theorem row_ok {s : State} (h : Bx L s B Z len N n) (hn2 : 2 ≤ n) (he : n % 2 = 0)
     {arr sz o : Nat} {ts signed : List Term} {wide : Bool} (hsz : sz = 16 ∨ sz = 20) (ho : o + 4 ≤ sz)
-    (hfit : rv (kw len) { arr := arr } + sz * (nw len + 2) < Z) (harr : sP + 8 ≤ rv (kw len) { arr := arr })
-    (hts : TermsOk s.mem B (rv (kw len) { arr := arr }) sz o ts) (hsg : ∀ t ∈ signed, t ∈ ts)
+    (hfit : rv (kw len) { arr := arr } n + sz * (n + 2) < Z) (harr : sP + 8 ≤ rv (kw len) { arr := arr } n)
+    (hts : TermsOk s.mem B (rv (kw len) { arr := arr } n) sz o ts) (hsg : ∀ t ∈ signed, t ∈ ts)
     (bound : cB s.mem B ts * 2 ^ 32 ≤ if wide then 2 ^ 94 else 2 ^ 62) :
     WP isa (row L wide arr sz o ts signed) s fun t =>
-      Bx L t B Z len N ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
-      RowWr B (rv (kw len) { arr := arr }) sz o (nw len) s.mem t.mem ∧
-      sv t.mem B (rv (kw len) { arr := arr } + o + sz) sz (nw len + 1) =
-        ((rowT s.mem B (rv (kw len) { arr := arr }) sz (nw len) ts signed / 2 ^ 30) % 2 ^ (32 * (nw len + 1))).toNat := by
+      Bx L t B Z len N n ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
+      RowWr B (rv (kw len) { arr := arr } n) sz o (n) s.mem t.mem ∧
+      sv t.mem B (rv (kw len) { arr := arr } n + o + sz) sz (n + 1) =
+        ((rowT s.mem B (rv (kw len) { arr := arr } n) sz (n) ts signed / 2 ^ 30) % 2 ^ (32 * (n + 1))).toNat := by
   have hn := h.nowrap
   have hw := kw_bound h.ws.lenLe
   have ke := kw_eq len
   have hZ := h.halfZ
   have eE : sE = 180 := rfl; have eP : sP = 176 := rfl; have eH : halfSlot = 96 := rfl
-  generalize hA : rv (kw len) { arr := arr } = A0 at *
-  have hA' : rv (kw len) { arr := arr, byte := sz } = A0 + sz := by
+  generalize hA : rv (kw len) { arr := arr } n = A0 at *
+  have hA' : rv (kw len) { arr := arr, byte := sz } n = A0 + sz := by
     rw [← hA]; simp only [rv]; omega
   have scr := h.ws.ws.workspace
   have ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
@@ -1230,13 +1230,13 @@ theorem row_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : nw 
   unfold row
   simp only [rowStart, List.append_assoc]
   refine WP.seq (ptr_ok h.ws h.slots hZ (r := .esi) (t := .edx) (x := { arr := arr, byte := sz }) (by decide)
-    (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [hA']; have := mul_step (sz := sz) (show 0 < nw len + 2 by omega); omega) fun u K₁ m₁ p₁ => ?_)
-  have mfit := mul_step (sz := sz) (show nw len < nw len + 2 by omega)
+    (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [hA']; have := mul_step (sz := sz) (show 0 < n + 2 by omega); omega) fun u K₁ m₁ p₁ => ?_)
+  have mfit := mul_step (sz := sz) (show n < n + 2 by omega)
   rw [hA'] at p₁
   have wsu := ws.of_keeps K₁
   have diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
-  have hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * nw len) := by
-    rw [m₁, h.slots.halfW]; congr 1; omega
+  have hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * n) := by
+    rw [m₁, h.slots.halfW]
   simp only [← List.append_assoc]
   refine WP.mono (rowSetup_ok (wide := wide) wsu diu p₁ hh hsz (by omega) (by omega)
     (by omega)) fun s₀ ⟨b₀, c₀, p₀, F₀, E₀, P₀, K₀⟩ => ?_
@@ -1246,7 +1246,7 @@ theorem row_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : nw 
   -- The row's requirements at its start.
   have hdr : ∀ d, (d + 4 ≤ sP ∨ sP + 8 ≤ d) → d + 4 ≤ Z → s₀.mem.readW (off B d) 32 = s.mem.readW (off B d) 32 :=
     fun d hd hdz => F₀.readW hd (by omega)
-  have R : RowOk s₀ B Z A0 sz o (nw len) ts wide := by
+  have R : RowOk s₀ B Z A0 sz o (n) ts wide := by
     refine ⟨ws.of_keeps K, by rw [PtrAt, K.1 _ (by decide)]; exact di, ho, hfit, fun _ => by omega,
       fun t ht => ?_, ?_⟩
     · obtain ⟨hc, hm, hx, hxo, hcp, hmp, hmask⟩ := hts t ht
@@ -1271,11 +1271,11 @@ theorem row_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : nw 
     fun v ⟨Iv, sv'⟩ => ?_)
   refine rowEnd_ok R Iv sv' hsg fun w D => ?_
   -- `edi` again, and the result.
-  have hfr : ∀ x, (∀ j < nw len + 2, ofs B x < A0 + o + sz * j ∨ A0 + o + sz * j + 4 ≤ ofs B x) →
+  have hfr : ∀ x, (∀ j < n + 2, ofs B x < A0 + o + sz * j ∨ A0 + o + sz * j + 4 ≤ ofs B x) →
       (ofs B x < sP ∨ sP + 8 ≤ ofs B x) → w.mem x = s.mem x := fun x h1 h2 =>
     (D.frame x h1 fun _ => by omega).trans (F₀ x h2)
   have O0 : Outside B 0 Z s.mem w.mem := fun x hx => hfr x (fun j hj => by
-    have := mul_step (sz := sz) (show j < nw len + 2 by omega); omega) (by omega)
+    have := mul_step (sz := sz) (show j < n + 2 by omega); omega) (by omega)
   have KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s w := K.trans D.keep
   unfold restoreEdi
   refine wp_movS (h.ws.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
@@ -1284,15 +1284,15 @@ theorem row_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : nw 
       ((KK.mono (by decide)).trans (U.keeps.mono (by decide))) (U.gpr.trans (RtWs.edi_eq h.ws).symm)
   have O160 : Outside B 160 (Z - 160) s.mem t₁.mem := fun x hx => by
     rw [U.mem]; exact hfr x (fun j hj => by
-      have := mul_step (sz := sz) (show j < nw len + 2 by omega); unfold sP at harr; omega)
+      have := mul_step (sz := sz) (show j < n + 2 by omega); unfold sP at harr; omega)
       (by unfold sP at *; omega)
   refine ⟨h.keep K' (by decide) (by decide) O160 (Nat.le_refl _) (by omega), K', fun x h1 h2 => by
     rw [U.mem]; exact hfr x h1 h2, ?_⟩
   rw [U.mem]
-  have dec := sv_cons w.mem B (A0 + o) sz (nw len + 1)
+  have dec := sv_cons w.mem B (A0 + o) sz (n + 1)
   rw [D.out] at dec
   have hlt := (w.mem.readW (off B (A0 + o)) 32).isLt
-  have e1 : sv w.mem B (A0 + o + sz) sz (nw len + 1) = outOf (rowT s₀.mem B A0 sz (nw len) ts signed) (nw len + 2) / 2 ^ 32 := by
+  have e1 : sv w.mem B (A0 + o + sz) sz (n + 1) = outOf (rowT s₀.mem B A0 sz (n) ts signed) (n + 2) / 2 ^ 32 := by
     rw [dec]; simp only [VG.Proof.Mont.w32]; omega
   rw [e1, outOf_div, rowT_hdr (m := s.mem) F₀ hsg (by omega) (by omega) fun t ht => by
     obtain ⟨hc, -, hx, -, hcp, -⟩ := hts t ht

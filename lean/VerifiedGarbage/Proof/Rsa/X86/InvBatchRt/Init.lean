@@ -112,7 +112,7 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m x
     rw [← hx, hj, val32]
     omega_arith
   refine WP.seq (WP.mono (selIn_ok H₈ (o := a 12) (a := a 2) (e := 0) (k := decide (x % 2 = 0))
-    (by rw [C₈, even]; by_cases he : w32 s.mem B (rv (kw len) (a 0)) % 2 = 0 <;> simp [he, cmask])
+    (by rw [C₈, even]; by_cases he : w32 s.mem B (rv (kw len) (a 0)) % 2 = 0 <;> simp [cmask])
     (by decide) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₉ ⟨H₉, O₉, V₉, K₉⟩ => ?_)
   simp only [Nat.add_zero] at O₉ V₉
   rw [m₈, O₇.val32 (d := rv (kw len) (a 2)) (by omega_arith) (by omega_arith), O₆.val32 (by omega_arith) (by omega_arith),
@@ -143,7 +143,7 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m x
   have Gu : val32 u.mem B (rv (kw len) (a 5)) (nw len + 1) = oddInput (virtualMod m) x := by
     unfold oddInput
     cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at Vu <;>
-      omega_arith
+      (simp only [nw] at *; omega_arith)
   refine k u Hu ?_ ?_ Gu ?_ ?_
   · rw [Ou.val32 (by omega_arith) (by omega_arith), O₉.val32 (by omega_arith) (by omega_arith), m₈, O₇.val32 (by omega_arith) (by omega_arith),
       O₆.val32 (by omega_arith) (by omega_arith), O₅.val32 (by omega_arith) (by omega_arith), O₄.val32 (by omega_arith) (by omega_arith),

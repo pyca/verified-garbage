@@ -30,7 +30,7 @@ open VG.Proof.Rsa.X86.InvBatchRt (rv Bx kw_eq rv_arr)
 open VG.Impl.Rsa.X86.Keys (seqs)
 open VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass.X86.Inv VG.Proof.Bignum.X86.R2Words
 
-variable {L : Lay} {B : Addr} {Z len N : Nat}
+variable {L : Lay} {B : Addr} {Z len N n : Nat}
 
 /-- The start of a fused batch's code. -/
 def startF (L : Lay) (i : Nat) : List Instr :=
@@ -41,9 +41,9 @@ def startF (L : Lay) (i : Nat) : List Instr :=
 /-- The byte of element 0 of the interleaved `f, g`. -/
 abbrev fg0 (len : Nat) : Nat := rv (kw len) { arr := fgArr, byte := fgSz }
 
-theorem startF_ok {s : State} (h : Bx L s B Z len N) {i : Nat} (hi : i + 8 ≤ fgSz) :
+theorem startF_ok {s : State} (h : Bx L s B Z len N n) {i : Nat} (hi : i + 8 ≤ fgSz) :
     WP isa (.block (startF L i)) s fun u =>
-      Bx L u B Z len N ∧
+      Bx L u B Z len N n ∧
       wordState u.mem B win =
         ⟨s.mem.readW (off B win) 32, s.mem.readW (off B (fg0 len + i)) 32,
           s.mem.readW (off B (fg0 len + (i + 4))) 32, 1, 0, 0, 1⟩ ∧
@@ -58,10 +58,10 @@ theorem startF_ok {s : State} (h : Bx L s B Z len N) {i : Nat} (hi : i + 8 ≤ f
   unfold startF
   simp only [List.append_assoc]
   refine ptr_ok h.ws h.slots hZ (r := .ebx) (t := .edx) (by decide) (by decide) (by decide) (by decide)
-    (by intro e; cases e) (by rw [← fg0, r4]; omega) fun s₁ K₁ m₁ p₁ => ?_
-  rw [← fg0] at p₁
+    (by intro e; cases e) (by rw [rv_h0 rfl n (kw len / 2), ← fg0, r4]; omega) fun s₁ K₁ m₁ p₁ => ?_
+  rw [rv_h0 rfl n (kw len / 2), ← fg0] at p₁
   simp only [List.cons_append, List.nil_append]
-  have H₁ : Bx L s₁ B Z len N := h.keep K₁ (by decide) (by decide) (o := 160) (c := 0)
+  have H₁ : Bx L s₁ B Z len N n := h.keep K₁ (by decide) (by decide) (o := 160) (c := 0)
     (by rw [m₁]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega)
   refine wp_movS (readSrc_ptr H₁.ws.rt p₁ (d := i) (by omega)) fun s₂ U₂ _ => ?_
   have hs₂ := H₁.ws.ws.workspace.of_keeps U₂.keeps (by decide)
@@ -70,7 +70,7 @@ theorem startF_ok {s : State} (h : Bx L s B Z len N) {i : Nat} (hi : i + 8 ≤ f
     ((K₁.mono (by decide)).trans (U₂.keeps.mono (by decide))).trans (U₃.keeps _)
   have O₃ : Outside B (win + 4) 4 s.mem s₃.mem := by
     rw [U₃.mem, U₂.mem, m₁]; exact writeW32_outside _ _ _ (by omega)
-  have H₃ : Bx L s₃ B Z len N := h.keepLow K₃ (by decide) (by decide) O₃ (by decide)
+  have H₃ : Bx L s₃ B Z len N n := h.keepLow K₃ (by decide) (by decide) O₃ (by decide)
   have F₃ : w32 s₃.mem B (win + 4) = w32 s.mem B (fg0 len + i) := by
     rw [U₃.mem, w32_write_self, U₂.gpr, m₁]
   have p₃ : PtrAt s₃ B .ebx (fg0 len) := by
@@ -81,13 +81,13 @@ theorem startF_ok {s : State} (h : Bx L s B Z len N) {i : Nat} (hi : i + 8 ≤ f
   have K₆ : Keeps [.eax, .ebx, .edx] s₃ s₆ := (U₅.keeps.mono (by decide)).trans (U₆.keeps _)
   have O₆ : Outside B (win + 8) 4 s₃.mem s₆.mem := by
     rw [U₆.mem, U₅.mem]; exact writeW32_outside _ _ _ (by omega)
-  have H₆ : Bx L s₆ B Z len N := H₃.keepLow K₆ (by decide) (by decide) O₆ (by decide)
+  have H₆ : Bx L s₆ B Z len N n := H₃.keepLow K₆ (by decide) (by decide) O₆ (by decide)
   have G₆ : w32 s₆.mem B (win + 8) = w32 s.mem B (fg0 len + (i + 4)) := by
     rw [U₆.mem, w32_write_self, U₅.gpr, ← O₃.w32 (d := fg0 len + (i + 4)) (by omega) (by omega)]
   -- The identity matrix.
   refine WP.mono (VG.Proof.Weierstrass.X86.Inv.setMatrix_ok H₆.ws.ws.workspace (dst := win + 12) (by omega))
     fun u ⟨U, V, Q, R, K₇, O₇⟩ => ?_
-  have H₇ : Bx L u B Z len N := H₆.keepLow K₇ (by decide) (by decide) O₇ (by decide)
+  have H₇ : Bx L u B Z len N n := H₆.keepLow K₇ (by decide) (by decide) O₇ (by decide)
   refine ⟨H₇, ?_, ((K₃.trans K₆).trans (K₇.mono (by decide))).mono (by decide), ?_⟩
   · have D : w32 u.mem B win = w32 s.mem B win := by
       rw [O₇.w32 (by omega) (by omega), O₆.w32 (by omega) (by omega), O₃.w32 (by omega) (by omega)]
@@ -134,9 +134,9 @@ theorem maskStep_ok {s : State} {W : Addr} {bytes src dst : Nat} (ws : Ws s W by
   xrun [signEax, sc, hdi, aS, rS, aD, wD, List.cons_append, List.nil_append]
   rw [signMask]
 
-theorem coefMasks_ok {s : State} (h : Bx L s B Z len N) :
+theorem coefMasks_ok {s : State} (h : Bx L s B Z len N n) :
     WP isa (.block coefMasks) s fun u =>
-      Bx L u B Z len N ∧ (∀ j < 4, u.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s.mem.readW (off B (win + 12 + 4 * j)) 32)) ∧
+      Bx L u B Z len N n ∧ (∀ j < 4, u.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s.mem.readW (off B (win + 12 + 4 * j)) 32)) ∧
       Outside B sMu 16 s.mem u.mem ∧ Keeps [.eax] s u := by
   have hn := h.nowrap
   have hf16 := h.fits16
@@ -328,7 +328,7 @@ theorem mdme_ok {s : State} (h : Bx L s B Z len N) {dx : Nat} (hdx : dx + 8 ≤ 
   have wsu := ws.of_keeps K₁
   have diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
   have hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * nw len) := by
-    rw [m₁, h.slots.halfW]; congr 1; omega
+    rw [m₁, h.slots.halfW]
   rw [WP.block_append_iff]
   refine WP.mono (loadsDE_ok (n := nw len) wsu diu p₁ hh (by omega) (by omega)) fun u₂ ⟨b₂, c₂, p₂, m₂, K₂⟩ => ?_
   have ws₂ := wsu.of_keeps K₂

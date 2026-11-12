@@ -174,14 +174,15 @@ theorem RowWr.w32_apart {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A
 /-! ## The state between batches -/
 
 /-- `f, g` and `d, e` at byte `i` of the interleaved elements, `p` at byte 16 of the second's. -/
-structure FAt (len : Nat) (B : Addr) (p iv : Nat) (dl f g d e : Int) (i : Nat) (s : State) : Prop where
+structure FAt (len : Nat) (B : Addr) (p iv : Nat) (dl f g d e : Int) (i : Nat) (s : State) (n : Nat := kw len / 2) :
+    Prop where
   dl : s.mem.readW (off B win) 32 = BitVec.ofInt 32 dl
   inverse : VG.Proof.Mont.w32 s.mem B (win + 28) = iv
-  f : sval s.mem B (rv (kw len) { arr := fgArr } + fgSz + i) fgSz (nw len) = f
-  g : sval s.mem B (rv (kw len) { arr := fgArr } + fgSz + (i + 4)) fgSz (nw len) = g
-  d : sval s.mem B (rv (kw len) { arr := deArr } + deSz + i) deSz (nw len) = d
-  e : sval s.mem B (rv (kw len) { arr := deArr } + deSz + (i + 4)) deSz (nw len) = e
-  p : sv s.mem B (rv (kw len) { arr := deArr } + deSz + 16) deSz (nw len + 1) = p
+  f : sval s.mem B (rv (kw len) { arr := fgArr } n + fgSz + i) fgSz (n) = f
+  g : sval s.mem B (rv (kw len) { arr := fgArr } n + fgSz + (i + 4)) fgSz (n) = g
+  d : sval s.mem B (rv (kw len) { arr := deArr } n + deSz + i) deSz (n) = d
+  e : sval s.mem B (rv (kw len) { arr := deArr } n + deSz + (i + 4)) deSz (n) = e
+  p : sv s.mem B (rv (kw len) { arr := deArr } n + deSz + 16) deSz (n + 1) = p
 
 /-! ## Words that stay -/
 
@@ -274,29 +275,29 @@ theorem hdr_out {B : Addr} {o c : Nat} {m m' : Mem} (h : Outside B o c m m') {d 
 
 /-! ## The batch's rows -/
 
-variable {L : Lay} {B : Addr} {Z len N : Nat}
+variable {L : Lay} {B : Addr} {Z len N n : Nat}
 
 theorem ofInt_toInt {c : Int} (h : |c| ≤ 2 ^ 31 - 1) : (BitVec.ofInt 32 c).toInt = c := by
   rw [abs_le] at h
   exact BitVec.toInt_ofInt_eq_self (by decide) (by omega) (by omega)
 
 /-- A row of two signed terms with coefficients `U`, `V`: `(U x₁ + V x₂) / 2^30`. -/
-theorem rowTwo_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : nw len % 2 = 0)
+theorem rowTwo_ok {s : State} (h : Bx L s B Z len N n) (hn2 : 2 ≤ n) (he : n % 2 = 0)
     {arr sz o : Nat} {t₁ t₂ : Term} (hsz : sz = 16 ∨ sz = 20) (ho : o + 4 ≤ sz)
-    (hfit : rv (kw len) { arr := arr } + sz * (nw len + 2) < Z) (harr : sP + 8 ≤ rv (kw len) { arr := arr })
-    (hts : TermsOk s.mem B (rv (kw len) { arr := arr }) sz o [t₁, t₂]) {U V : Int}
+    (hfit : rv (kw len) { arr := arr } n + sz * (n + 2) < Z) (harr : sP + 8 ≤ rv (kw len) { arr := arr } n)
+    (hts : TermsOk s.mem B (rv (kw len) { arr := arr } n) sz o [t₁, t₂]) {U V : Int}
     (hU : s.mem.readW (off B t₁.c) 32 = BitVec.ofInt 32 U) (hV : s.mem.readW (off B t₂.c) 32 = BitVec.ofInt 32 V)
     (huv : |U| + |V| ≤ 2 ^ 30)
-    (hr : -(2 ^ (32 * nw len) * 2 ^ 31) ≤ (U * sval s.mem B (rv (kw len) { arr := arr } + sz + t₁.x) sz (nw len) +
-        V * sval s.mem B (rv (kw len) { arr := arr } + sz + t₂.x) sz (nw len)) / 2 ^ 30 ∧
-      (U * sval s.mem B (rv (kw len) { arr := arr } + sz + t₁.x) sz (nw len) +
-        V * sval s.mem B (rv (kw len) { arr := arr } + sz + t₂.x) sz (nw len)) / 2 ^ 30 < 2 ^ (32 * nw len) * 2 ^ 31) :
+    (hr : -(2 ^ (32 * n) * 2 ^ 31) ≤ (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
+        V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n)) / 2 ^ 30 ∧
+      (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
+        V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n)) / 2 ^ 30 < 2 ^ (32 * n) * 2 ^ 31) :
     WP isa (row L false arr sz o [t₁, t₂] [t₁, t₂]) s fun t =>
-      Bx L t B Z len N ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
-      RowWr B (rv (kw len) { arr := arr }) sz o (nw len) s.mem t.mem ∧
-      sval t.mem B (rv (kw len) { arr := arr } + sz + o) sz (nw len) =
-        (U * sval s.mem B (rv (kw len) { arr := arr } + sz + t₁.x) sz (nw len) +
-          V * sval s.mem B (rv (kw len) { arr := arr } + sz + t₂.x) sz (nw len)) / 2 ^ 30 := by
+      Bx L t B Z len N n ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
+      RowWr B (rv (kw len) { arr := arr } n) sz o (n) s.mem t.mem ∧
+      sval t.mem B (rv (kw len) { arr := arr } n + sz + o) sz (n) =
+        (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
+          V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n)) / 2 ^ 30 := by
   have hu : |U| ≤ 2 ^ 31 - 1 := by have := abs_nonneg V; omega
   have hv : |V| ≤ 2 ^ 31 - 1 := by have := abs_nonneg U; omega
   have bound : cB s.mem B [t₁, t₂] * 2 ^ 32 ≤ if false = true then 2 ^ 94 else 2 ^ 62 := by
@@ -307,30 +308,30 @@ theorem rowTwo_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : 
   refine WP.mono (row_ok h hn2 he hsz ho hfit harr hts (fun t ht => ht) bound) fun t ⟨Ht, Kt, Ft, Vt⟩ =>
     ⟨Ht, Kt, Ft, ?_⟩
   rw [rowT_two, hU, hV, ofInt_toInt hu, ofInt_toInt hv] at Vt
-  rw [show rv (kw len) { arr := arr } + sz + o = rv (kw len) { arr := arr } + o + sz by omega]
+  rw [show rv (kw len) { arr := arr } n + sz + o = rv (kw len) { arr := arr } n + o + sz by omega]
   exact sval_of_mod Vt hr.1 hr.2
 
 /-- A row of two signed terms and `md p`: `(U x₁ + V x₂ + M y) / 2^30`. -/
-theorem rowThree_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he : nw len % 2 = 0)
+theorem rowThree_ok {s : State} (h : Bx L s B Z len N n) (hn2 : 2 ≤ n) (he : n % 2 = 0)
     {arr sz o : Nat} {t₁ t₂ t₃ : Term} (hsz : sz = 16 ∨ sz = 20) (ho : o + 4 ≤ sz)
-    (hfit : rv (kw len) { arr := arr } + sz * (nw len + 2) < Z) (harr : sP + 8 ≤ rv (kw len) { arr := arr })
-    (hts : TermsOk s.mem B (rv (kw len) { arr := arr }) sz o [t₁, t₂, t₃]) {U V M : Int}
+    (hfit : rv (kw len) { arr := arr } n + sz * (n + 2) < Z) (harr : sP + 8 ≤ rv (kw len) { arr := arr } n)
+    (hts : TermsOk s.mem B (rv (kw len) { arr := arr } n) sz o [t₁, t₂, t₃]) {U V M : Int}
     (hU : s.mem.readW (off B t₁.c) 32 = BitVec.ofInt 32 U) (hV : s.mem.readW (off B t₂.c) 32 = BitVec.ofInt 32 V)
     (hM : (s.mem.readW (off B t₃.c) 32).toInt = M) (huv : |U| + |V| ≤ 2 ^ 30) (hm : |M| ≤ 2 ^ 31)
-    (hr : -(2 ^ (32 * nw len) * 2 ^ 31) ≤ (U * sval s.mem B (rv (kw len) { arr := arr } + sz + t₁.x) sz (nw len) +
-        V * sval s.mem B (rv (kw len) { arr := arr } + sz + t₂.x) sz (nw len) +
-        M * (sv s.mem B (rv (kw len) { arr := arr } + sz + t₃.x) sz (nw len + 1) : Int)) / 2 ^ 30 ∧
-      (U * sval s.mem B (rv (kw len) { arr := arr } + sz + t₁.x) sz (nw len) +
-        V * sval s.mem B (rv (kw len) { arr := arr } + sz + t₂.x) sz (nw len) +
-        M * (sv s.mem B (rv (kw len) { arr := arr } + sz + t₃.x) sz (nw len + 1) : Int)) / 2 ^ 30 <
-        2 ^ (32 * nw len) * 2 ^ 31) :
+    (hr : -(2 ^ (32 * n) * 2 ^ 31) ≤ (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
+        V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n) +
+        M * (sv s.mem B (rv (kw len) { arr := arr } n + sz + t₃.x) sz (n + 1) : Int)) / 2 ^ 30 ∧
+      (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
+        V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n) +
+        M * (sv s.mem B (rv (kw len) { arr := arr } n + sz + t₃.x) sz (n + 1) : Int)) / 2 ^ 30 <
+        2 ^ (32 * n) * 2 ^ 31) :
     WP isa (row L true arr sz o [t₁, t₂, t₃] [t₁, t₂]) s fun t =>
-      Bx L t B Z len N ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
-      RowWr B (rv (kw len) { arr := arr }) sz o (nw len) s.mem t.mem ∧
-      sval t.mem B (rv (kw len) { arr := arr } + sz + o) sz (nw len) =
-        (U * sval s.mem B (rv (kw len) { arr := arr } + sz + t₁.x) sz (nw len) +
-          V * sval s.mem B (rv (kw len) { arr := arr } + sz + t₂.x) sz (nw len) +
-          M * (sv s.mem B (rv (kw len) { arr := arr } + sz + t₃.x) sz (nw len + 1) : Int)) / 2 ^ 30 := by
+      Bx L t B Z len N n ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
+      RowWr B (rv (kw len) { arr := arr } n) sz o (n) s.mem t.mem ∧
+      sval t.mem B (rv (kw len) { arr := arr } n + sz + o) sz (n) =
+        (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
+          V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n) +
+          M * (sv s.mem B (rv (kw len) { arr := arr } n + sz + t₃.x) sz (n + 1) : Int)) / 2 ^ 30 := by
   have hu : |U| ≤ 2 ^ 31 - 1 := by have := abs_nonneg V; omega
   have hv : |V| ≤ 2 ^ 31 - 1 := by have := abs_nonneg U; omega
   have bound : cB s.mem B [t₁, t₂, t₃] * 2 ^ 32 ≤ if true = true then 2 ^ 94 else 2 ^ 62 := by
@@ -343,7 +344,7 @@ theorem rowThree_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ht ⊢; rcases ht with h | h <;> simp [h]) bound)
     fun t ⟨Ht, Kt, Ft, Vt⟩ => ⟨Ht, Kt, Ft, ?_⟩
   rw [rowT_three, hU, hV, hM, ofInt_toInt hu, ofInt_toInt hv] at Vt
-  rw [show rv (kw len) { arr := arr } + sz + o = rv (kw len) { arr := arr } + o + sz by omega]
+  rw [show rv (kw len) { arr := arr } n + sz + o = rv (kw len) { arr := arr } n + o + sz by omega]
   exact sval_of_mod Vt hr.1 hr.2
 
 end VG.Proof.Rsa.X86.InvBatchRt.F

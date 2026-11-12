@@ -185,7 +185,7 @@ theorem finishTail_ok {s : State} (h : Bx L s B Z len N) {a₀ : Nat} {f : Int}
   have ke := kw_eq len
   have r1 := rv_a len 1; have r3 := rv_a len 3; have r4 := rv_a len 14; have r6 := rv_a len 7
   have h41 := rv_half1' len 14
-  have WS : CountSpec (wBytes .ecx) .ecx B Z (kw len) (kw len) := wBytes_spec hZ (by omega)
+  have WS : CountSpec (wBytes .ecx) .ecx B Z (kw len) (kw len) := wBytes_spec hZ (by omega) (by omega)
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
   -- `[1] = 0`, then `-[4]`.
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.InvBatchRt.zeros_ok h (o := a 1) WS hpos (by omega))

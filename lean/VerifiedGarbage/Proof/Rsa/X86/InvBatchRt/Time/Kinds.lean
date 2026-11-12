@@ -81,7 +81,7 @@ theorem countN {s : State} (hb : Bx L s B Z len N) : CountSpec (nBytes .ecx 1) .
 
 /-- `wBytes .ecx` counts `w` words. -/
 theorem countW {s : State} (hb : Bx L s B Z len N) : CountSpec (wBytes .ecx) .ecx B Z (kw len) (kw len) :=
-  wBytes_spec hb.halfZ (by have := kw_bound hb.ws.lenLe; omega)
+  wBytes_spec hb.halfZ (by have := kw_bound hb.ws.lenLe; omega) (by have := kw_eq len; omega)
 
 theorem relZeroWord {x : Ref} (hG : Stable [.eax, .ebx, .edx] G) (hxz : rv (kw len) x + 4 ≤ Z)
     {hc : VG.Taint.Hint VG.X86.Taint.T}
@@ -215,7 +215,7 @@ theorem relMaskOfSel {c : Nat} {acc tmp : Ref} (hG : Stable [.eax, .ebx, .ecx, .
     (rv_ge _ acc) haz
   refine WP.mono (selIn_ok H₂ (o := { acc with byte := acc.byte + 4 }) (a := tmp) (e := 0)
     (k := decide (2 ^ 31 ≤ w32 s.mem B c)) (by rw [M₂]; simp [cmask]) (by decide)
-    (by rw [e4]; omega) (by simpa using htz) (by rw [e4]; omega)) fun u ⟨H, O, _, K⟩ => ?_
+    (by rw [e4]; have := kw_eq len; omega) (by simpa using htz) (by rw [e4]; have := kw_eq len; omega)) fun u ⟨H, O, _, K⟩ => ?_
   rw [e4] at O
   simp only [Nat.add_zero] at O
   exact ⟨H, (K₂.mono (by decide)).trans (K.mono (by decide)), by rw [m₂] at O; exact O.unch, trivial⟩

@@ -182,13 +182,14 @@ theorem sv_val32 {m m' : Mem} {W : Addr} {b sz c : Nat} :
 open VG.Proof.Rsa.X86.KeyRt
 open VG.Proof.Rsa.X86.InvBatchRt (rv Bx kw_eq)
 
-variable {L : Lay} {B : Addr} {Z len N : Nat}
+variable {L : Lay} {B : Addr} {Z len N n : Nat}
 
 /-- The setup of `scatter` and `gather`: `esi` at element 0, `ebp` at `src`, `ecx = n + 1`. -/
-theorem scatterSetup_ok {s : State} (h : Bx L s B Z len N) {arr sz : Nat} {src : Ref}
-    (ha : rv (kw len) { arr := arr, byte := sz } < 2 ^ 32) (hs : rv (kw len) src < 2 ^ 32) {Q : State → Prop}
-    (k : ∀ u, Keeps [.ecx, .edx, .ebp, .esi] s u → u.mem = s.mem → PtrAt u B .esi (rv (kw len) { arr := arr } + sz) →
-      PtrAt u B .ebp (rv (kw len) src) → (u.gpr .ecx).toNat = nw len + 1 → Q u) :
+theorem scatterSetup_ok {s : State} (h : Bx L s B Z len N n) {arr sz : Nat} {src : Ref}
+    (ha : rv (kw len) { arr := arr, byte := sz } n < 2 ^ 32) (hs : rv (kw len) src n < 2 ^ 32)
+    (hnb : 4 * n + 16 < 2 ^ 32) {Q : State → Prop}
+    (k : ∀ u, Keeps [.ecx, .edx, .ebp, .esi] s u → u.mem = s.mem → PtrAt u B .esi (rv (kw len) { arr := arr } n + sz) →
+      PtrAt u B .ebp (rv (kw len) src n) → (u.gpr .ecx).toNat = n + 1 → Q u) :
     WP isa (.block (ptr L .esi { arr := arr, byte := sz } .edx ++ ptr L .ebp src .edx ++ nBytes .ecx 1 ++
       [.shift .shr .ecx 2])) s Q := by
   have hZ := h.halfZ
@@ -197,71 +198,73 @@ theorem scatterSetup_ok {s : State} (h : Bx L s B Z len N) {arr sz : Nat} {src :
   simp only [List.append_assoc]
   refine ptr_ok h.ws h.slots hZ (r := .esi) (t := .edx) (by decide) (by decide) (by decide) (by decide)
     (by intro e; cases e) ha fun u₁ K₁ m₁ p₁ => ?_
-  have H₁ : Bx L u₁ B Z len N := h.keep K₁ (by decide) (by decide) (o := 160) (c := 0)
+  have H₁ : Bx L u₁ B Z len N n := h.keep K₁ (by decide) (by decide) (o := 160) (c := 0)
     (by rw [m₁]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by have := h.fits16; omega)
   refine ptr_ok H₁.ws H₁.slots hZ (r := .ebp) (t := .edx) (by decide) (by decide) (by decide) (by decide)
     (by intro e; cases e) hs fun u₂ K₂ m₂ p₂ => ?_
   have m₁₂ : u₂.mem = s.mem := m₂.trans m₁
   have hs₂ : Scr u₂ B Z := H₁.ws.ws.workspace.of_keeps K₂ (by decide) (by decide)
-  have sl₂ : Slots u₂.mem B (kw len) := by rw [m₁₂]; exact h.slots
-  refine nBytes_ok hs₂ sl₂ hZ (by omega) (by decide) fun u₃ K₃ m₃ c₃ => ?_
-  refine WP.mono (WP.keeps [.ecx] (Q := fun v => (v.gpr .ecx).toNat = nw len + 1 ∧ v.mem = u₃.mem) ?_ rfl)
+  have sl₂ : Slots u₂.mem B (kw len) n := by rw [m₁₂]; exact h.slots
+  refine nBytes_ok hs₂ sl₂ hZ hnb (by decide) fun u₃ K₃ m₃ c₃ => ?_
+  refine WP.mono (WP.keeps [.ecx] (Q := fun v => (v.gpr .ecx).toNat = n + 1 ∧ v.mem = u₃.mem) ?_ rfl)
     fun v ⟨⟨cv, mv⟩, kv⟩ => k v (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans
       ((K₃.mono (by decide)).trans (kv.mono (by decide)))) (by rw [mv, m₃, m₁₂]) ?_ ?_ cv
   · xrun []
     simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, c₃]
     omega
   · rw [PtrAt, kv.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]
-    rw [show rv (kw len) { arr := arr } + sz = rv (kw len) { arr := arr, byte := sz } by simp only [rv]; omega]
+    rw [show rv (kw len) { arr := arr } n + sz = rv (kw len) { arr := arr, byte := sz } n by simp only [rv]; omega]
     exact p₁
   · rw [PtrAt, kv.1 _ (by decide), K₃.1 _ (by decide)]; exact p₂
 
-theorem scatter_ok {s : State} (h : Bx L s B Z len N) {arr sz x : Nat} {src : Ref} (hx : x + 4 ≤ sz)
-    (hfit : rv (kw len) { arr := arr } + sz * (nw len + 2) < Z) (hA : sP + 8 ≤ rv (kw len) { arr := arr })
-    (hsrc : rv (kw len) src + 4 * (nw len + 1) ≤ Z)
-    (sep : rv (kw len) src + 4 * (nw len + 1) ≤ rv (kw len) { arr := arr } + sz ∨
-      rv (kw len) { arr := arr } + sz + sz * (nw len + 1) ≤ rv (kw len) src) :
+theorem scatter_ok {s : State} (h : Bx L s B Z len N n) {arr sz x : Nat} {src : Ref} (hx : x + 4 ≤ sz)
+    (hfit : rv (kw len) { arr := arr } n + sz * (n + 2) < Z) (hA : sP + 8 ≤ rv (kw len) { arr := arr } n)
+    (hsrc : rv (kw len) src n + 4 * (n + 1) ≤ Z)
+    (sep : rv (kw len) src n + 4 * (n + 1) ≤ rv (kw len) { arr := arr } n + sz ∨
+      rv (kw len) { arr := arr } n + sz + sz * (n + 1) ≤ rv (kw len) src n) :
     WP isa (scatter L arr sz x src) s fun t =>
-      Bx L t B Z len N ∧ RowWr B (rv (kw len) { arr := arr }) sz x (nw len) s.mem t.mem ∧
-      sv t.mem B (rv (kw len) { arr := arr } + sz + x) sz (nw len + 1) = val32 s.mem B (rv (kw len) src) (nw len + 1) ∧
+      Bx L t B Z len N n ∧ RowWr B (rv (kw len) { arr := arr } n) sz x (n) s.mem t.mem ∧
+      sv t.mem B (rv (kw len) { arr := arr } n + sz + x) sz (n + 1) = val32 s.mem B (rv (kw len) src n) (n + 1) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .esi] s t := by
   have hn := h.nowrap
-  have m1 := mul_step (sz := sz) (show nw len + 1 < nw len + 2 by omega)
+  have m1 := mul_step (sz := sz) (show n + 1 < n + 2 by omega)
   unfold scatter
   refine WP.seq (scatterSetup_ok h (arr := arr) (sz := sz) (src := src)
-    (by rw [show rv (kw len) { arr := arr, byte := sz } = rv (kw len) { arr := arr } + sz by simp only [rv]; omega]; omega)
-    (by omega) fun u K m pe pb pc => ?_)
+    (by rw [show rv (kw len) { arr := arr, byte := sz } n = rv (kw len) { arr := arr } n + sz by simp only [rv]; omega]; omega)
+    (by omega) (by have := Nat.mul_le_mul_right (n + 2) (show 4 ≤ sz by omega); have := VG.Proof.Rsa.X86.InvBatchRt.rv_ge (kw len) { arr := arr } n; omega)
+    fun u K m pe pb pc => ?_)
   have scr := h.ws.ws.workspace
   have ws : Ws u B Z := ⟨K.2.2 ▸ scr.wr, scr.nowrap⟩
   refine WP.mono (scatterLoop_ok ws (by omega) hx (by omega) hsrc (by omega) pb pe pc) fun t ⟨F, V, Kt⟩ => ?_
   rw [m] at F V
   have KK : Keeps [.eax, .ecx, .edx, .ebp, .esi] s t := (K.mono (by decide)).trans (Kt.mono (by decide))
-  have R : RowWr B (rv (kw len) { arr := arr }) sz x (nw len) s.mem t.mem := F.row
+  have R : RowWr B (rv (kw len) { arr := arr } n) sz x (n) s.mem t.mem := F.row
   refine ⟨h.keep KK (by decide) (by decide) (o := 160) (c := Z - 160) (fun y hy => R y (fun j hj => by
     have := mul_step (sz := sz) hj; unfold sP at hA; omega) (by unfold sP at *; omega)) (Nat.le_refl _) (by unfold sP at hA; omega), R, ?_, KK⟩
   exact sv_val32 fun w hw => V w hw
 
-theorem gather_ok {s : State} (h : Bx L s B Z len N) {arr sz x : Nat} {dst : Ref} (hx : x + 4 ≤ sz)
-    (hfit : rv (kw len) { arr := arr } + sz * (nw len + 2) < Z)
-    (hdst : rv (kw len) dst + 4 * (nw len + 1) ≤ Z)
-    (sep : rv (kw len) dst + 4 * (nw len + 1) ≤ rv (kw len) { arr := arr } + sz ∨
-      rv (kw len) { arr := arr } + sz + sz * (nw len + 1) ≤ rv (kw len) dst) :
+theorem gather_ok {s : State} (h : Bx L s B Z len N n) {arr sz x : Nat} {dst : Ref} (hx : x + 4 ≤ sz)
+    (hfit : rv (kw len) { arr := arr } n + sz * (n + 2) < Z)
+    (hdst : rv (kw len) dst n + 4 * (n + 1) ≤ Z)
+    (sep : rv (kw len) dst n + 4 * (n + 1) ≤ rv (kw len) { arr := arr } n + sz ∨
+      rv (kw len) { arr := arr } n + sz + sz * (n + 1) ≤ rv (kw len) dst n) :
     WP isa (gather L arr sz x dst) s fun t =>
-      Bx L t B Z len N ∧ Outside B (rv (kw len) dst) (4 * (nw len + 1)) s.mem t.mem ∧
-      val32 t.mem B (rv (kw len) dst) (nw len + 1) = sv s.mem B (rv (kw len) { arr := arr } + sz + x) sz (nw len + 1) ∧
+      Bx L t B Z len N n ∧ Outside B (rv (kw len) dst n) (4 * (n + 1)) s.mem t.mem ∧
+      val32 t.mem B (rv (kw len) dst n) (n + 1) = sv s.mem B (rv (kw len) { arr := arr } n + sz + x) sz (n + 1) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .esi] s t := by
   have hn := h.nowrap
-  have m1 := mul_step (sz := sz) (show nw len + 1 < nw len + 2 by omega)
+  have m1 := mul_step (sz := sz) (show n + 1 < n + 2 by omega)
   unfold gather
   refine WP.seq (scatterSetup_ok h (arr := arr) (sz := sz) (src := dst)
-    (by rw [show rv (kw len) { arr := arr, byte := sz } = rv (kw len) { arr := arr } + sz by simp only [rv]; omega]; omega)
-    (by omega) fun u K m pe pb pc => ?_)
+    (by rw [show rv (kw len) { arr := arr, byte := sz } n = rv (kw len) { arr := arr } n + sz by simp only [rv]; omega]; omega)
+    (by omega) (by have := Nat.mul_le_mul_right (n + 2) (show 4 ≤ sz by omega); have := VG.Proof.Rsa.X86.InvBatchRt.rv_ge (kw len) { arr := arr } n; omega)
+    fun u K m pe pb pc => ?_)
   have scr := h.ws.ws.workspace
   have ws : Ws u B Z := ⟨K.2.2 ▸ scr.wr, scr.nowrap⟩
   refine WP.mono (gatherLoop_ok ws (by omega) hx (by omega) hdst (by omega) pb pe pc) fun t ⟨O, V, Kt⟩ => ?_
   rw [m] at O V
   have KK : Keeps [.eax, .ecx, .edx, .ebp, .esi] s t := (K.mono (by decide)).trans (Kt.mono (by decide))
-  refine ⟨h.keep KK (by decide) (by decide) O (VG.Proof.Rsa.X86.InvBatchRt.rv_ge _ _) hdst, O, ?_, KK⟩
+  refine ⟨h.keep KK (by decide) (by decide) O (VG.Proof.Rsa.X86.InvBatchRt.rv_ge _ _ n) hdst, O, ?_, KK⟩
   exact (sv_val32 fun w hw => (V w hw).symm).symm
 
 theorem val32_sv (m : Mem) (W : Addr) (b K : Nat) : val32 m W b K = sv m W b 4 K :=
@@ -327,7 +330,7 @@ theorem countF_ok {s : State} (h : Bx L s B Z len N) :
     have : nw len ≤ 1026 := by omega
     generalize nw len = q at *
     simp only [Nat.reducePow, Nat.mul_zero, Nat.add_zero]
-    have e1 : 2 * (2 * q) / 4 = q := by omega
+    have e1 : 4 * (2 * q / 2) / 4 = q := by omega
     rw [e1, Nat.mod_eq_of_lt (a := q + q) (by omega), Nat.mod_eq_of_lt (a := q + q + q) (by omega),
       Nat.mod_eq_of_lt (a := q + q + q + 2) (by omega), Nat.mod_eq_of_lt (a := (3 * q + 2) / 2) (by omega)]
     omega

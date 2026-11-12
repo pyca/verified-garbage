@@ -29,14 +29,14 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
 variable {L : Lay} {B : Addr} {Z len N : Nat}
 
 /-- Writes to the header below the slots keep the context. -/
-theorem Bx.keepLow {s t : State} (h : Bx L s B Z len N) {rs : List Reg} (K : Keeps rs s t)
+theorem Bx.keepLow {s t : State} {n : Nat} (h : Bx L s B Z len N n) {rs : List Reg} (K : Keeps rs s t)
     (edi : .edi ∉ rs) (esp : .esp ∉ rs) {o c : Nat} (O : Outside B o c s.mem t.mem)
-    (hc : o + c ≤ slotBase) : Bx L t B Z len N := by
+    (hc : o + c ≤ slotBase) : Bx L t B Z len N n := by
   have nw := h.nowrap
   have hZ := h.halfZ
   have e96 : halfSlot = 96 := rfl
   have e52 : slotBase = 52 := rfl
-  refine ⟨h.ws.keep K edi esp (O.mono (Nat.zero_le _) (by omega)), ⟨fun j d hd => ?_, ?_, h.slots.small⟩, h.room⟩
+  refine ⟨h.ws.keep K edi esp (O.mono (Nat.zero_le _) (by omega)), ⟨fun j d hd => ?_, ?_, h.slots.small, h.slots.pos⟩, h.room⟩
   · have := slot_le hd
     rw [O.w32 (.inr (by omega)) (by omega)]
     exact h.slots.addr j d hd
@@ -48,7 +48,7 @@ theorem Bx.keepHigh {s t : State} (h : Bx L s B Z len N) {rs : List Reg} (K : Ke
     (edi : .edi ∉ rs) (esp : .esp ∉ rs) {o c : Nat} (O : Outside B o c s.mem t.mem)
     (ho : halfSlot + 4 ≤ o) (hc : o + c ≤ Z) : Bx L t B Z len N := by
   have nw := h.nowrap
-  refine ⟨h.ws.keep K edi esp (O.mono (Nat.zero_le _) (by omega)), ⟨fun j d hd => ?_, ?_, h.slots.small⟩, h.room⟩
+  refine ⟨h.ws.keep K edi esp (O.mono (Nat.zero_le _) (by omega)), ⟨fun j d hd => ?_, ?_, h.slots.small, h.slots.pos⟩, h.room⟩
   · have := slot_le hd
     rw [O.w32 (.inl (by omega)) (by omega)]
     exact h.slots.addr j d hd
@@ -117,7 +117,7 @@ theorem borrowMask_ok {s : State} (h : Bx L s B Z len N) {src : Ref} (hsh : src.
   have ke := kw_eq len
   have rs := rv_ge (kw len) src
   have r1 : rv (kw len) { src with half := 1 } = rv (kw len) src + 4 * nw len := by
-    rw [rv_half1 _ _ hsh]; omega
+    rw [rv_half1 _ _ hsh]
   simp only [borrowMask, List.append_assoc]
   refine ptr_ok h.ws h.slots hZ (r := .ebx) (t := .edx) (x := { src with half := 1 }) (by decide)
     (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [r1]; omega) fun s₂ K₂ m₂ p₂ => ?_
@@ -165,7 +165,7 @@ theorem csub_ok {s : State} (h : Bx L s B Z len N) {src o : Ref} (hsh : src.half
   have rs := rv_ge (kw len) src
   have rt := rv_ge (kw len) tmp
   have r1 : rv (kw len) { src with half := 1 } = rv (kw len) src + 4 * nw len := by
-    rw [rv_half1 _ _ hsh]; omega
+    rw [rv_half1 _ _ hsh]
   unfold VG.Impl.Rsa.X86.InvBatchRt.csub
   -- The difference, `n` words.
   refine WP.seq (WP.mono (chainSub_ok h (o := tmp) (a := src) (b := mo) (e := 0) (by decide) rfl
