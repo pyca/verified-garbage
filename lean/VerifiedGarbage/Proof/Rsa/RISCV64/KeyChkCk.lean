@@ -681,8 +681,9 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     have hw8 : 8 ≤ g.w := by omega
     have hw2 : g.w % 2 = 0 := by omega
     rw [kc_seqs_append (l₁ := crtChecksW) (by simp [crtChecksW, mulQ]) (by simp [dChecksW, ltA])]
-    refine WP.mono (crtChecksW_ok g11 hw8 hw2) fun t12 ⟨Xq, X₁, X₂, hXq, hX₁, hX₂, g12⟩ => ?_
-    refine WP.mono (dChecksW_ok g12 hw8 hw2) fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
+    have hwl : g.w ≤ 128 := by show ((s0.gpr .a1).toNat + 7) / 8 ≤ 128; omega
+    refine WP.mono (crtChecksW_ok g11 hw8 hwl hw2) fun t12 ⟨Xq, X₁, X₂, hXq, hX₁, hX₂, g12⟩ => ?_
+    refine WP.mono (dChecksW_ok g12 hw8 hwl hw2) fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
     have b32 : ∀ {x l : Nat}, x < 2 ^ (8 * l) → l = 4 * g.w → x < 2 ^ (32 * g.w) := fun hx hl => by
       rw [hl, ← Nat.mul_assoc] at hx; exact hx
     have hqIv : v.qI < 2 ^ (8 * (s0.gpr .a7).toNat) := by

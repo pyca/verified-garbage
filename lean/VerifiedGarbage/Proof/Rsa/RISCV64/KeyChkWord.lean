@@ -36,7 +36,7 @@ abbrev liveFin : List Nat := [aZ, aN, aD, aDP, aDQ, aM1, aM2]
 [d] < 2^(64 v)`; `aVR` then tracked, `aVD` and `aVT` written. -/
 theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live) (hz : aZ ∈ live) (hA0 : A aZ = 0)
-    (hfree : ∀ j ∈ live, j ∉ [aVR, aVD, aVT]) (hw : 8 ≤ g.w) (hw2 : g.w % 2 = 0) :
+    (hfree : ∀ j ∈ live, j ∉ [aVR, aVD, aVT]) (hw : 8 ≤ g.w) (hwl : g.w ≤ 128) (hw2 : g.w % 2 = 0) :
     WP isa (seqs (divWA a d)) s fun t => ∃ X,
       (2 ^ (64 * (g.w / 2 - 1)) ≤ A d → A d < 2 ^ (64 * (g.w / 2)) → X = A a % A d) ∧
       Stg g s0 (upd A aVR X) (aVR :: live) c t := by
@@ -62,12 +62,12 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   rw [show seqs [VG.Impl.Rsa.RISCV64.WordDiv.divW a aVR aVD aVT] = VG.Impl.Rsa.RISCV64.WordDiv.divW a aVR aVD aVT
     from rfl]
   have fitR := h.ws.fit64 (j := aVR) (by decide)
-  have r0 : wordsVal t3.mem g.B (arr g.w aVR) (g.w / 2) = 0 := by
+  have r0 : wordsVal t3.mem g.B (arr g.w aVR) (g.w / 2 + 1) = 0 := by
     rw [f3.words (fun k hk => by simp at hk; subst hk; have := arr_disj (w := g.w) (j := aVD) (k := aVR) (by decide); omega)
       (by simp) (by omega)]
-    exact wordsVal_zero_part (d := arr g.w aVR) (a := 0) (c := g.w / 2) nR (by omega) |>.symm ▸ by simp
+    exact wordsVal_zero_part (d := arr g.w aVR) (a := 0) (c := g.w / 2 + 1) nR (by omega) |>.symm ▸ by simp
   refine WP.mono (divW_ok w3 (a := a) (r := aVR) (m := aVD) (t := aVT) (by decide) (h.live_lt a ha) (by decide)
-    (by decide) (by decide) (Ne.symm aR) (by decide) (by decide) (by decide) aT (by omega) hw2 r0 p3)
+    (by decide) (by decide) (Ne.symm aR) (by decide) (by decide) (by decide) aT (by omega) (by omega) hw2 r0 p3)
     fun t ⟨w4, f4, k4, x4, top4, hi4⟩ => ?_
   -- `[a]` in `t3`, and `[aVR]`'s `w` words.
   have na : num t3.mem g.B g.w a = A a := by
@@ -141,13 +141,13 @@ theorem Stg.mulEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
 for `2^(64 (v - 1)) ≤ [d] < 2^(64 v)`. -/
 theorem Stg.divEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a d b : Nat} (ha : a ∈ live) (hd : d ∈ live) (hb : b ∈ live) (hz : aZ ∈ live)
-    (hA0 : A aZ = 0) (hf : ∀ j ∈ live, j ∉ [aVR, aVD, aVT]) (hw : 8 ≤ g.w) (hw2 : g.w % 2 = 0) :
+    (hA0 : A aZ = 0) (hf : ∀ j ∈ live, j ∉ [aVR, aVD, aVT]) (hw : 8 ≤ g.w) (hwl : g.w ≤ 128) (hw2 : g.w % 2 = 0) :
     WP isa (seqs (divWA a d ++ eqA aVR b)) s fun t => ∃ Y,
       (2 ^ (64 * (g.w / 2 - 1)) ≤ A d → A d < 2 ^ (64 * (g.w / 2)) → Y = A a % A d) ∧
       Stg g s0 A live (c && decide (Y = A b)) t := by
   have bR : b ≠ aVR := fun e => hf b hb (by simp [e])
   rw [kc_seqs_append (by simp [divWA]) (by simp [eqA])]
-  refine WP.mono (h.divWA_ok ha hd hz hA0 hf hw hw2) fun t1 ⟨Y, hY, h1⟩ => ?_
+  refine WP.mono (h.divWA_ok ha hd hz hA0 hf hw hwl hw2) fun t1 ⟨Y, hY, h1⟩ => ?_
   refine WP.mono (h1.eqA_ok (a := aVR) (b := b) (by simp) (by simp [hb])) fun t h2 => ⟨Y, hY, ?_⟩
   rw [upd_self, upd_ne _ _ bR] at h2
   refine (h2.sub (live' := live) (fun j hj => by simp [hj])).congr' fun j hj => ?_
@@ -158,7 +158,7 @@ theorem Stg.divEq_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
 2^(64 w)) mod [d]` for `2^(64 (v - 1)) ≤ [d] < 2^(64 v)`. -/
 theorem Stg.mulModOne_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {y x d : Nat} (hy : y ∈ live) (hx : x ∈ live) (hd : d ∈ live) (hz : aZ ∈ live)
-    (hA0 : A aZ = 0) (ho : aOne ∈ live) (hA1 : A aOne = 1) (hf : Free live) (hw : 8 ≤ g.w) (hw2 : g.w % 2 = 0) :
+    (hA0 : A aZ = 0) (ho : aOne ∈ live) (hA1 : A aOne = 1) (hf : Free live) (hw : 8 ≤ g.w) (hwl : g.w ≤ 128) (hw2 : g.w % 2 = 0) :
     WP isa (seqs (mulModOne y x d)) s fun t => ∃ X,
       (2 ^ (64 * (g.w / 2 - 1)) ≤ A d → A d < 2 ^ (64 * (g.w / 2)) → X = A y * A x % 2 ^ (64 * g.w) % A d) ∧
       Stg g s0 A live (c && decide (X = 1)) t := by
@@ -178,7 +178,7 @@ theorem Stg.mulModOne_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
     · have := hf j hj; simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
       exact ⟨this.2.1, this.2.2.1, this.2.2.2.1⟩
   refine WP.mono (h2.divEq_ok (a := aVQ) (d := d) (b := aOne) (by simp) (by simp [hd]) (by simp [ho]) (by simp [hz])
-    (by rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), hA0]) hf2 hw hw2) fun t ⟨X, hX, h3⟩ => ⟨X, ?_, ?_⟩
+    (by rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), hA0]) hf2 hw hwl hw2) fun t ⟨X, hX, h3⟩ => ⟨X, ?_, ?_⟩
   · intro hlo hhi
     simp only [upd_self, upd_ne _ _ dQ, upd_ne _ _ yQ, upd_ne _ _ xQ] at hX
     exact hX hlo hhi
@@ -197,7 +197,7 @@ def crtBitsW (n p q dP dQ qI L Xq X₁ X₂ : Nat) : Bool :=
 
 /-- The checks of `vg_rsa_check_crt_key`, by words. -/
 theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
-    (h : Stg g s0 (aStart v) live0 (decide (v.p % 2 = 1)) s) (hw : 8 ≤ g.w) (hw2 : g.w % 2 = 0) :
+    (h : Stg g s0 (aStart v) live0 (decide (v.p % 2 = 1)) s) (hw : 8 ≤ g.w) (hwl : g.w ≤ 128) (hw2 : g.w % 2 = 0) :
     WP isa (seqs crtChecksW) s fun t => ∃ Xq X₁ X₂ : Nat,
       (InW g.w v.p → Xq = v.q * v.qI % 2 ^ (64 * g.w) % v.p) ∧
       (InW g.w (2 * (v.p / 2)) → X₁ = v.e * v.dP % 2 ^ (64 * g.w) % (2 * (v.p / 2))) ∧
@@ -214,7 +214,7 @@ theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
   refine WP.mono (h1.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t2 h2 => ?_
   rw [kc_seqs_append (by simp [mulModOne, mulQ]) (by simp)]
   refine WP.mono (h2.mulModOne_ok (y := aQ) (x := aQI) (d := aP) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) rfl f0 hw hw2) fun t3 ⟨Xq, hXq, h3⟩ => ?_
+    (by decide) rfl f0 hw hwl hw2) fun t3 ⟨Xq, hXq, h3⟩ => ?_
   simp only [List.cons_append, List.nil_append]
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (h3.copy_ok (o := aM1) (a := aP) (by decide) (by decide) (by decide)) fun t4 h4 => ?_
@@ -230,12 +230,12 @@ theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
   refine WP.mono (h7.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun t8 h8 => ?_
   rw [kc_seqs_append (by simp [mulModOne, mulQ]) (by simp [ltA])]
   refine WP.mono (h8.mulModOne_ok (y := aE) (x := aDP) (d := aM1) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) rfl f7 hw hw2) fun t9 ⟨X₁, hX₁, h9⟩ => ?_
+    (by decide) rfl f7 hw hwl hw2) fun t9 ⟨X₁, hX₁, h9⟩ => ?_
   -- `dQ`.
   rw [kc_seqs_append (by simp [ltA]) (by simp [mulModOne, mulQ])]
   refine WP.mono (h9.ltA_ok (a := aDQ) (b := aM2) (by decide) (by decide) (by decide)) fun t10 h10 => ?_
   refine WP.mono (h10.mulModOne_ok (y := aE) (x := aDQ) (d := aM2) (by decide) (by decide) (by decide) (by decide)
-    rfl (by decide) rfl f7 hw hw2) fun t h11 => ?_
+    rfl (by decide) rfl f7 hw hwl hw2) fun t h11 => ?_
   obtain ⟨X₂, hX₂, h11⟩ := h11
   refine ⟨Xq, X₁, X₂, fun hi => hXq hi.1 hi.2, fun hi => hX₁ hi.1 hi.2, fun hi => hX₂ hi.1 hi.2,
     (h11.sub (live' := liveFin) (by decide)).congr' fun j hj => ?_⟩
@@ -244,7 +244,7 @@ theorem crtChecksW_ok {g : Geo} {s0 s : State} {v : Vals}
 
 /-- The checks of `d`, by words. -/
 theorem dChecksW_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (aFin v) liveFin c s)
-    (hw : 8 ≤ g.w) (hw2 : g.w % 2 = 0) :
+    (hw : 8 ≤ g.w) (hwl : g.w ≤ 128) (hw2 : g.w % 2 = 0) :
     WP isa (seqs dChecksW) s fun t => ∃ Y₁ Y₂,
       (InW g.w (2 * (v.p / 2)) → Y₁ = v.d % (2 * (v.p / 2))) ∧ (InW g.w (2 * (v.q / 2)) → Y₂ = v.d % (2 * (v.q / 2))) ∧
       ∃ A live, Stg g s0 A live (c && decide (v.d < v.n) && decide (Y₁ = v.dP) && decide (Y₂ = v.dQ)) t := by
@@ -255,9 +255,9 @@ theorem dChecksW_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0
   refine WP.mono (h.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t1 h1 => ?_
   rw [← List.append_assoc, kc_seqs_append (by simp [divWA]) (by simp [divWA])]
   refine WP.mono (h1.divEq_ok (a := aD) (d := aM1) (b := aDP) (by decide) (by decide) (by decide) (by decide) rfl ff
-    hw hw2) fun t2 ⟨Y₁, hY₁, h2⟩ => ?_
+    hw hwl hw2) fun t2 ⟨Y₁, hY₁, h2⟩ => ?_
   refine WP.mono (h2.divEq_ok (a := aD) (d := aM2) (b := aDQ) (by decide) (by decide) (by decide) (by decide) rfl ff
-    hw hw2) fun t ⟨Y₂, hY₂, h3⟩ => ⟨Y₁, Y₂, fun hi => hY₁ hi.1 hi.2, fun hi => hY₂ hi.1 hi.2, _, _, h3⟩
+    hw hwl hw2) fun t ⟨Y₂, hY₂, h3⟩ => ⟨Y₁, Y₂, fun hi => hY₁ hi.1 hi.2, fun hi => hY₂ hi.1 hi.2, _, _, h3⟩
 
 
 theorem kc_exec_li32 {s : State} {d : Reg} : exec (.li d 32) s = some (s.write d 32#64) := by

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
-import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Words
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Lazy
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
-meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Words
+meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2Lazy
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Inline
@@ -246,7 +246,7 @@ theorem TA {d : PD} {s : State} (h : C6 d s) :
   have hZ := hb.hZ
   rw [← hwd] at hf
   refine WP.seq (WP.mono (r2Words_ok hb.scr hb.a2 hb.a6 hb.a7 hb.t0
-    (by rw [hz, topW_eq (by omega), hv]) (by omega) hw' (by omega)
+    (by rw [hz, topW_eq (by omega), hv]) (by omega) (by have := hb.k1024; omega) (by omega)
     (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, k₃⟩ => ?_)
   have g : ∀ r ∈ [Reg.s5, .a7, .a2, .t0, .s6], s₃.gpr r = s.gpr r := fun r hr =>
     k₃.gpr (by revert r hr; decide)
