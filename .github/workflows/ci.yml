@@ -696,11 +696,15 @@ jobs:
           source ci/rust_test_timing.sh
           cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | vg_hide_zero_times
       # That the tests ran T32: the symbol of Thumb code has an odd address
-      # (AAELF32 §5.5.3, "Symbol Values").
+      # (AAELF32 §5.5.3, "Symbol Values"). The test executables are those
+      # Cargo reports, as ci/export_rust_coverage.py lists them, not a
+      # directory of its build layout, which Rust 1.100's Cargo moved.
       - name: Check the verified functions are Thumb code
         if: ${{ env.TESTS == 'true' }}
+        shell: bash
         run: |
-          find "target/$CARGO_BUILD_TARGET/debug/deps" -maxdepth 1 -type f -executable -exec readelf -sW {} + |
+          python3 -c 'import sys; sys.path.insert(0, "ci"); from export_rust_coverage import test_binaries; print(*test_binaries([]), sep="\n")' |
+            xargs -r -d '\n' readelf -sW |
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
                  END { print n " verified function symbols"; exit (n == 0 || bad > 0) }'
 
