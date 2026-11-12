@@ -117,4 +117,13 @@ def mulXR : List (Prog isa) := [
     [mov .x13 .x12, movi .x7 0]),
   Crt.mulRows]
 
+/-- `[aA] := [aX] [aR]` for `[aX] < 256^p_len` and `[aR] < 256^q_len`: `⌈p_len / 8⌉` rows of
+`⌈q_len / 8⌉` words. -/
+def mulPQ : List (Prog isa) := [
+  zeroA aA,
+  .block (ws ++ base aX .x5 ++ base aR .x9 ++ base aA .x8 ++ [mov .x11 .x5, ldh .x12 sQlen,
+    .addImm .x .x12 .x12 7, .lsr .x .x12 .x12 3, ldh .x13 sPlen, .addImm .x .x13 .x13 7, .lsr .x .x13 .x13 3,
+    movi .x7 0]),
+  Crt.mulRows]
+
 end VG.Impl.Rsa.AArch64.CheckKey

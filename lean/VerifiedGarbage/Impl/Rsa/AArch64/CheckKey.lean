@@ -53,7 +53,7 @@ def main : Prog isa := seqs (
   -- `d < n`
   loadA aX sD sDlen ++ ltA aX 0 ++
   -- `p q = n`
-  loadA aX sP sPlen ++ loadA aR sQ sQlen ++ mulXR ++ eqA aA 0 ++ [.block andZero] ++
+  loadA aX sP sPlen ++ loadA aR sQ sQlen ++ mulPQ ++ eqA aA 0 ++ [.block andZero] ++
   -- modulo `p - 1` and `q - 1`
   modChecks sP sPlen sDP sQlen ++ modChecks sQ sQlen sDQ sPlen ++
   -- `qInv < p` and `q qInv ≡ 1 (mod p)`

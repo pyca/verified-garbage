@@ -80,14 +80,14 @@ theorem ldWide_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen 
 /-! ## The phases -/
 
 theorem ckPQ_ct : RelCT isa (Two GK) (seqs (loadA aX sP sPlen ++ (loadA aR sQ sQlen ++
-    (mulXR ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa))))))) (Two GK) := by
+    (mulPQ ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa))))))) (Two GK) := by
   refine ofGK (ct_app (by simp [loadA]) (by simp [loadA]) (ld_ct (by decide) (by decide) (by decide) CkP.pP CkP.pl
     (by simp) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, L.pcap⟩)
-    (by taint_decide) (by taint_decide) (by taint_decide)) (ct_app (by simp [loadA]) (by simp [mulXR])
+    (by taint_decide) (by taint_decide) (by taint_decide)) (ct_app (by simp [loadA]) (by simp [mulPQ])
     (ld_ct (by decide) (by decide) (by decide) CkP.pQ CkP.ql (by decide)
       (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, L.qcap⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))
-    (ct_app (by simp [mulXR]) (by simp [eqA]) (mulXR_ckct (by taint_decide) (by taint_decide) |>.mono
+    (ct_app (by simp [mulPQ]) (by simp [eqA]) (mulPQ_ckct (by taint_decide) |>.mono
       (fun _ _ h => two_mono (fun _ _ h => h.mono (by simp)) h) fun _ _ h => h)
       (ct_app (by simp [eqA]) (by simp) (eqA_ckct (by decide) (by decide) (by taint_decide))
         (ct_one andZero_ckct)))))
