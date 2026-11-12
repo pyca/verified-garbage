@@ -25,7 +25,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::dispatch::rsa_oaep::{
-    vg_rsa_oaep_decrypt_auto, vg_rsa_oaep_encrypt_precomputed_auto,
+    vg_rsa_oaep_decrypt_precomputed_auto, vg_rsa_oaep_encrypt_precomputed_auto,
 };
 use crate::rsa::{PrivateKey, PublicKey};
 use crate::zeroize::zeroize;
@@ -258,8 +258,8 @@ impl PrivateKey {
     }
 }
 
-/// `vg_rsa_oaep_decrypt` with the label's hash function `hash` and MGF1's
-/// `mgf1`.
+/// `vg_rsa_oaep_decrypt_precomputed` with the label's hash function `hash`
+/// and MGF1's `mgf1`, given the key's precomputed values.
 fn decrypt_with(
     dit: crate::dit::Dit<'_>,
     key: &PrivateKey,
@@ -281,12 +281,13 @@ fn decrypt_with(
     // check above give `64 ≤ n_len ≤ 1024`, `out_len = ct_len = n_len`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len`, `dq_len = q_len` and
-    // `scratch_len = 16 n_len + 1056`; `hash` and `mgf1` are the words of
-    // tables of the crate's of `Hash`; and the dispatchers, the function's
-    // and the tables' (`table::table`), call only implementations the CPU
-    // has the features of.
+    // `scratch_len = 16 n_len + 1056`; `pre`, of `pre_len` words, is the
+    // key's precomputed values (`PrivateKey::precompute`); `hash` and `mgf1`
+    // are the words of tables of the crate's of `Hash`; and the dispatchers,
+    // the function's and the tables' (`table::table`), call only
+    // implementations the CPU has the features of.
     let r = unsafe {
-        vg_rsa_oaep_decrypt_auto(
+        vg_rsa_oaep_decrypt_precomputed_auto(
             dit,
             out.as_mut_ptr(),
             k,
@@ -313,6 +314,8 @@ fn decrypt_with(
             scratch.len(),
             hash,
             mgf1,
+            key.pre.as_ptr(),
+            key.pre.len(),
         )
     };
     match r {

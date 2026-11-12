@@ -141,4 +141,66 @@ theorem keyValid_bits {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = tr
   · simp only [Bool.not_eq_true] at hc
     simp only [hc, Bool.false_and]
 
+/-! ## `p q = n` by the product
+
+For an implementation that checks `p q = n` by multiplying, and computes the
+products and remainders only where `p q = n` makes them known. -/
+
+/-- The checks of `crtKeyValid` in the order the code computes them, `p q = n` by the product. -/
+def crtBitsP (n p q dP dQ qInv R₁ R₂ R₃ : Nat) : Bool :=
+  decide (p % 2 = 1) && decide (p * q = n) && decide (dP < 2 * (p / 2)) &&
+    decide (R₁ = 1) && decide (dQ < 2 * (q / 2)) && decide (R₂ = 1) && decide (qInv < p) &&
+    decide (R₃ = 1)
+
+/-- Then those of `d`. -/
+def keyBitsP (n d p q dP dQ qInv R₁ R₂ R₃ Y₁ Y₂ : Nat) : Bool :=
+  crtBitsP n p q dP dQ qInv R₁ R₂ R₃ && decide (d < n) && decide (Y₁ = dP) && decide (Y₂ = dQ)
+
+theorem crtBitsP_div {n p q dP dQ qInv R₁ R₂ R₃ : Nat} (hn : n % 2 = 1) :
+    crtBitsP n p q dP dQ qInv R₁ R₂ R₃ = crtBits p q dP dQ qInv (n / p) (n % p) R₁ R₂ R₃ := by
+  rw [Bool.eq_iff_iff]
+  simp only [crtBitsP, crtBits, Bool.and_eq_true, decide_eq_true_eq, and_assoc]
+  have key : p % 2 = 1 → (p * q = n ↔ n / p = q ∧ n % p = 0) := fun hp => by
+    constructor
+    · rintro rfl
+      exact ⟨Nat.mul_div_cancel_left _ (by omega), Nat.mul_mod_right _ _⟩
+    · rintro ⟨h1, h2⟩; exact mul_of_div h1 h2
+  constructor
+  · rintro ⟨hp, hpq, rest⟩; exact ⟨hp, (key hp).1 hpq |>.1, (key hp).1 hpq |>.2, rest⟩
+  · rintro ⟨hp, h1, h2, rest⟩; exact ⟨hp, (key hp).2 ⟨h1, h2⟩, rest⟩
+
+theorem crtKeyValid_bitsP {k n e p q dP dQ qInv : Nat} (hm : modulusValid n k = true)
+    (he : exponentValid e = true) (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) {R₁ R₂ R₃ : Nat}
+    (hR₁ : p * q = n → dP < 2 * (p / 2) → R₁ = e * dP % (2 * (p / 2)))
+    (hR₂ : p * q = n → dQ < 2 * (q / 2) → R₂ = e * dQ % (2 * (q / 2)))
+    (hR₃ : p * q = n → qInv < p → R₃ = q * qInv % p) :
+    crtKeyValid k n e p q dP dQ qInv = crtBitsP n p q dP dQ qInv R₁ R₂ R₃ := by
+  by_cases hpq : p * q = n
+  · rw [crtBitsP_div (modulusValid_facts hm).1]
+    exact crtKeyValid_bits hm he hp hq (fun _ => ⟨rfl, rfl⟩) (hR₁ hpq) (hR₂ hpq) (hR₃ hpq)
+  · have l : crtKeyValid k n e p q dP dQ qInv = false := by
+      simp [crtKeyValid, hpq]
+    have r : crtBitsP n p q dP dQ qInv R₁ R₂ R₃ = false := by simp [crtBitsP, hpq]
+    rw [l, r]
+
+theorem keyValid_bitsP {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = true)
+    (he : exponentValid e = true) (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1))
+    {R₁ R₂ R₃ Y₁ Y₂ : Nat}
+    (hR₁ : p * q = n → dP < 2 * (p / 2) → R₁ = e * dP % (2 * (p / 2)))
+    (hR₂ : p * q = n → dQ < 2 * (q / 2) → R₂ = e * dQ % (2 * (q / 2)))
+    (hR₃ : p * q = n → qInv < p → R₃ = q * qInv % p)
+    (hY : p * q = n → 0 < 2 * (p / 2) → 0 < 2 * (q / 2) → Y₁ = d % (2 * (p / 2)) ∧ Y₂ = d % (2 * (q / 2))) :
+    keyValid k n e d p q dP dQ qInv = keyBitsP n d p q dP dQ qInv R₁ R₂ R₃ Y₁ Y₂ := by
+  rw [keyValid_crt hm hp hq, crtKeyValid_bitsP hm he hp hq hR₁ hR₂ hR₃, keyBitsP]
+  by_cases hpq : p * q = n
+  · have hodd := (modulusValid_facts hm).1
+    have hn := (modulusValid_facts hm).2
+    have p2 := factor_ge_two hpq hq hn
+    have q2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
+    have podd := odd_factor hpq hodd
+    have qodd := odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
+    obtain ⟨e1, e2⟩ := hY hpq (by omega) (by omega)
+    rw [e1, e2, show 2 * (p / 2) = p - 1 by omega, show 2 * (q / 2) = q - 1 by omega]
+  · simp [crtBitsP, hpq]
+
 end VG.Proof.Rsa

@@ -63,7 +63,7 @@ theorem fb_sub8' {s : State} (hp : SPre tsH tsG s) : (fb s - 8).toNat = (fb s).t
 
 /-- A stack argument of a function called from the frame is a word of it. -/
 theorem stackArg_call {s t : State} (hp : SPre tsH tsG s) (hsp : t.gpr .rsp = fb s) (rd wr : List Region) {i : Nat}
-    (hi : i < 14) : stackArg (t.callEntry.withRegions rd wr) i = word t.mem (fb s) (8 * i) := by
+    (hi : i < 16) : stackArg (t.callEntry.withRegions rd wr) i = word t.mem (fb s) (8 * i) := by
   have hF := fb_toNat hp
   have := hp.sp1; have := hp.sp2
   have hsep := Offset.sep (fb s - 8) (d := 8 * (i + 1)) (n := 8) (e := 0) (k := 8) (by omega_using []) (by omega_using [hi])
@@ -84,13 +84,19 @@ theorem stackArgAddr_call {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List 
   simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hsp]
   exact BitVec.sub_add_cancel _ _
 
+theorem stackArgAddr_callj {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) (j : Nat) :
+    stackArgAddr (t.callEntry.withRegions rd wr) j = off (fb s) (8 * j) := by
+  simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hsp, off]
+  rw [show 8 * (j + 1) = 8 + 8 * j by omega, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
+    show BitVec.ofNat 64 8 = 8 from rfl, BitVec.sub_add_cancel]
+
 theorem priv_pre {s t : State} (hp : SPre tsH tsG s) (hsp : t.gpr .rsp = fb s)
     (hargs : ∀ i < 14, word t.mem (fb s) (8 * i) = pArg s i) (hdi : t.gpr .rdi = s.gpr .rdi)
     (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
     (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
     chkContract.pre (t.callEntry.withRegions (pRd s) (pWr s)) := by
   have hE : ∀ i < 14, stackArg (t.callEntry.withRegions (pRd s) (pWr s)) i = pArg s i :=
-    fun i hi => (stackArg_call hp hsp _ _ hi).trans (hargs i hi)
+    fun i hi => (stackArg_call hp hsp _ _ (by omega)).trans (hargs i hi)
   simp only [chkContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.callEntry_rsp,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
@@ -174,14 +180,14 @@ theorem priv_covers {s t : State} (hp : SPre tsH tsG s) (hrd : t.rd = s.rd) (hwr
   have hin : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [hrd]; exact hx)
   simp only [pRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
   · exact ⟨_, List.mem_append_right _ hscr, oEm, rfl, by dsimp only; omega_using [hsl, c1]⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
 
 /-- Bytes apart from a frame's regions. -/
@@ -204,14 +210,20 @@ theorem in_apart {s : State} {R : Region} (hK : (stkR s).Disjoint R) (hO : (outR
   · exact hO.symm
   · exact hS
 
-theorem priv_call {privN : String} {privC : Prog isa}
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
+/-- The call of a function that writes what `vg_rsa_private_checked` does
+(`hk`), under its contract `k`, which the call meets (`hpre`, `hc`, `hw`)
+with the regions `rds` read. -/
+theorem privWith_call {privN : String} {privC : Prog isa} {k : Contract isa}
+    (hk : ∀ a b, k.post a b → chkContract.post a b)
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hsp : SpSafe privC) (hd : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
-    {s t : State} (hp : SPre tsH tsG s) (hst : t.gpr .rsp = fb s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr)
+    {s t : State} (hp : SPre tsH tsG s) (hst : t.gpr .rsp = fb s)
     (hM : Frame (wrR s) s.mem t.mem)
     (hargs : ∀ i < 14, word t.mem (fb s) (8 * i) = pArg s i) (hdi : t.gpr .rdi = s.gpr .rdi)
-    (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
-    (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
+    (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
+    (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) {rds : List Region}
+    (hpre : k.pre (t.callEntry.withRegions rds (pWr s))) (hc : Covers (rds ++ pWr s) (t.rd ++ t.wr))
+    (hw : Covers (pWr s) t.wr) :
     WP isa (.call privN privC) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
       Frame (wrR s) s.mem t'.mem ∧
@@ -225,10 +237,10 @@ theorem priv_call {privN : String} {privC : Prog isa}
           (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
           (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
           (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)) := by
-  obtain ⟨hc, hw⟩ := priv_covers hp hrd hwr
   have hsb : Rsa.X86_64.stackBytes = 3256 := rfl
-  refine X86_64.WP.callF hv hsp (by omega_using [hd, hsb]) (priv_pre hp hst hargs hdi hsi hdx hcx h8 h9) hc hw ?_
+  refine X86_64.WP.callF hv hsp (by omega_using [hd, hsb]) hpre hc hw ?_
   intro t' hrd' hwr' hcs hf ⟨s₂, hm₂, hg₂, hpost⟩ hmx
+  replace hpost := hk _ _ hpost
   have hF := fb_toNat hp
   have := hp.sp1; have := hp.sp2
   have hk1 := hp.k1; have hk2 := hp.k2; have hsl := hp.hsl; have wS := hp.wS
@@ -264,8 +276,8 @@ theorem priv_call {privN : String} {privC : Prog isa}
     · exact (Offset.base_disjoint (stackArg s 14) (e := oRsa) (n := (stackArg s 15 - 1024#64).toNat * 8)
         (k := oRsa) (le_refl _) (by rw [hsc]; omega_using [wS, c2])) x hx hc
     · exact ((hp.dKs.sub_left sBel).symm.sub_left (Region.sub_prefix (by omega_using [hsl, c2]))) x hx hc
-  · have hE : ∀ i < 14, stackArg (t.callEntry.withRegions (pRd s) (pWr s)) i = pArg s i :=
-      fun i hi => (stackArg_call hp hst _ _ hi).trans (hargs i hi)
+  · have hE : ∀ i < 14, stackArg (t.callEntry.withRegions rds (pWr s)) i = pArg s i :=
+      fun i hi => (stackArg_call hp hst _ _ (by omega)).trans (hargs i hi)
     have fE : Frame [below (fb s) 8] t.mem t.callEntry.mem := by
       rw [State.callEntry_mem, hst]
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
@@ -299,6 +311,31 @@ theorem priv_call {privN : String} {privC : Prog isa}
         (by rw [← hp.hqil]; exact hp.dqis) (by have := hp.wQi; have := hp.hqil; dsimp only; omega_using [])] at hpost
     exact hpost
 
+theorem priv_call {privN : String} {privC : Prog isa}
+    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
+    (hsp : SpSafe privC) (hd : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
+    {s t : State} (hp : SPre tsH tsG s) (hst : t.gpr .rsp = fb s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr)
+    (hM : Frame (wrR s) s.mem t.mem)
+    (hargs : ∀ i < 14, word t.mem (fb s) (8 * i) = pArg s i) (hdi : t.gpr .rdi = s.gpr .rdi)
+    (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
+    (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
+    WP isa (.call privN privC) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
+      Frame (wrR s) s.mem t'.mem ∧
+      (∀ x, ((frR s).Contains x 1 ∨ (⟨stackArg s 14, oRsa⟩ : Region).Contains x 1) → t'.mem x = t.mem x) ∧
+      Spec.Rsa.writtenOutcome t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
+        (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+          (Spec.Rsa.bytesAt t.mem (off (stackArg s 14) oEm) (s.gpr .rcx).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)) :=
+  let ⟨hc, hw⟩ := priv_covers hp hrd hwr
+  privWith_call (k := chkContract) (fun _ _ h => h) hv hsp hd hp hst hM hargs hdi hdx hcx h8 h9
+    (priv_pre hp hst hargs hdi hsi hdx hcx h8 h9) hc hw
+
 /-! ## The stack arguments -/
 
 /-- Stack argument `j` (of ours) to word `j + 2` of the frame. -/
@@ -331,10 +368,7 @@ theorem cpyArg_ok {s : State} (hp : SPre tsH tsG s) {u : State} {S : Addr} (L : 
   have hF := fb_toNat hp
   have := hp.sp2
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
-    rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
-    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
+    rw [argAddr]; exact hp.argIn hrd (by omega_using [hj])
   refine WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) (16 + 8 * j)) (stackArg s j)) ?_ rfl
     |> WP.mono <| fun u' ⟨hm, k⟩ => ⟨k, hm⟩
   have hv : u.mem.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by

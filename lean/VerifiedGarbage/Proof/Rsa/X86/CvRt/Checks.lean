@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.InvChoose
 public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
+import VerifiedGarbage.Proof.Rsa.X86.WordRt.Eq
 import VerifiedGarbage.Proof.Framework.Mem
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
@@ -52,6 +53,9 @@ def Geometry.M (g : Geometry) : Nat := 2 * (g.P / 2) + 1
 
 def zeroC : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 22, 23]
 
+/-- The arrays still zero after the product `p q`. -/
+def zeroCk : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
 structure StC (g : Geometry) (len : Nat) (s : State) : Prop where
   ws : RtWs lay s g.base g.size len nArr
   podd : slot s.mem g.base sPodd = g.P % 2
@@ -59,17 +63,16 @@ structure StC (g : Geometry) (len : Nat) (s : State) : Prop where
   q : num s.mem g.base (kw len) aQ = g.Q
   d : num s.mem g.base (kw len) aD = g.D
   ddTop : w32 s.mem g.base (arr (kw len) aDD + 4 * (kw len)) = 0
-  division : 0 < g.P → num s.mem g.base (kw len) aDQ = g.N / g.P ∧ num s.mem g.base (kw len) aDR = g.N % g.P
-  zeros : ∀ j ∈ zeroC, num s.mem g.base (kw len) j = 0
+  n : num s.mem g.base (kw len) aDQ = g.N
+  prod : val32 s.mem g.base (arr (kw len) aDR2) (2 * kw len) = g.P * g.Q
+  zeros : ∀ j ∈ zeroCk, num s.mem g.base (kw len) j = 0
 
-def checksA : List (Prog isa) :=
-  [VG.Impl.Rsa.X86.KeyRt.eqS lay sE1 aDQ aQ aT1, VG.Impl.Rsa.X86.KeyRt.eqS lay sE2 aDR aZero aT1] ++ invSetup
+def checksA : List (Prog isa) := [VG.Impl.Rsa.X86.WordModRt.eqWide lay sE1 aDR2 aDQ] ++ invSetup
 
-structure StI (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop where
+structure StI (g : Geometry) (len : Nat) (s : State) : Prop where
   ws : RtWs lay s g.base g.size len nArr
   podd : slot s.mem g.base sPodd = g.P % 2
-  e1 : slot s.mem g.base sE1 = if X₁ = g.Q then 1 else 0
-  e2 : slot s.mem g.base sE2 = if X₂ = 0 then 1 else 0
+  e1 : slot s.mem g.base sE1 = if g.P * g.Q = g.N then 1 else 0
   p : num s.mem g.base (kw len) aP = g.P
   q : num s.mem g.base (kw len) aQ = g.Q
   d : num s.mem g.base (kw len) aD = g.D
@@ -85,19 +88,19 @@ structure StI (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
 
 theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
     WP isa (seqs (checksA)) s fun t =>
-      StI g len (num s.mem g.base (kw len) aDQ) (num s.mem g.base (kw len) aDR) t ∧
+      StI g len t ∧
       Keep g.base (kw len) [aT1, 0, aM, 1, 2, aOne, aNM] [sT, sE1, sE2] s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
   have h1 := h.ws
   unfold checksA invSetup
   simp only [List.cons_append, List.nil_append]
   have fit := fun j (hj : j < nArr) => h1.ws.fit64 (j := j) hj
+  have h2 := h1
+  have k2 : Keep g.base (kw len) [] [] s.mem s.mem := Keep.refl _ _ _ _ _
+  have r2 : Keeps [] s s := Keeps.refl _ _
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (eqS_ok h1 (d := sE1) (a := aDQ) (b := aQ) (t := aT1) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) fun t2 ⟨h2, k2, e2, r2⟩ => ?_
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (eqS_ok h2 (d := sE2) (a := aDR) (b := aZero) (t := aT1) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) fun t3 ⟨h3, k3, e3, r3⟩ => ?_
+  refine WP.mono (VG.Proof.Rsa.X86.WordRt.eqWide_ok h2 (sl := sE1) (o := aDR2) (n := aDQ) (by decide) (by decide)
+    (by decide)) fun t3 ⟨h3, k3, e3, r3⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok h3 (o := 0) (a := aQ) (by decide) (by decide) (by decide))
     fun t4 ⟨h4, k4, e4, r4, _⟩ => ?_
@@ -120,7 +123,7 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
     (r2.mono (by decide)).trans ((r3.mono (by decide)).trans ((r4.mono (by decide)).trans ((r5.mono (by decide)).trans
       ((r6.mono (by decide)).trans ((r7.mono (by decide)).trans ((r8'.mono (by decide)).trans
         ((r8.mono (by decide)).trans (r9.mono (by decide)))))))))
-  have z0 : ∀ j ∈ zeroC, num s.mem g.base (kw len) j = 0 := fun j hj => h.zeros j hj
+  have z0 : ∀ j ∈ zeroCk, num s.mem g.base (kw len) j = 0 := fun j hj => h.zeros j hj
   have K1 : ∀ j, j < nArr → j ∉ [aT1, 0, aM, 1, 2, aOne, aNM] →
       num t.mem g.base (kw len) j = num s.mem g.base (kw len) j := fun j hj hn => by
     rw [K.num (fun k hk e => hn (by subst e; exact hk)) (by decide) (fit j hj)]
@@ -139,15 +142,11 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
       k3.num (by decide) (by decide) (fit _ (by decide)), k2.num (by decide) (by decide) (fit _ (by decide)),
       z0 _ (by decide)]
   refine ⟨?_, K, R⟩
-  refine ⟨ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [K.slot (by decide) (by decide), h.podd]
   · rw [k9.slot (by decide) (by simp), k8.slot (by decide) (by simp), k8'.slot (by decide) (by simp),
       k7.slot (by decide) (by simp), k6.slot (by decide) (by simp), k5.slot (by decide) (by simp),
-      k4.slot (by decide) (by simp), k3.slot (by decide) (by decide), e2, h.q]
-  · rw [k9.slot (by decide) (by simp), k8.slot (by decide) (by simp), k8'.slot (by decide) (by simp),
-      k7.slot (by decide) (by simp), k6.slot (by decide) (by simp), k5.slot (by decide) (by simp),
-      k4.slot (by decide) (by simp), e3, k2.num (j := aDR) (by decide) (by decide) (fit _ (by decide)),
-      k2.num (j := aZero) (by decide) (by decide) (fit _ (by decide)), z0 aZero (by decide)]
+      k4.slot (by decide) (by simp), e3, h.prod, h.n]
   · rw [K1 _ (by decide) (by decide), h.p]
   · rw [K1 _ (by decide) (by decide), h.q]
   · rw [K1 _ (by decide) (by decide), h.d]
@@ -179,30 +178,30 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
 
 
 def checksB : List (Prog isa) := [inverseChoice, VG.Impl.Rsa.X86.KeyRt.eqS lay sE3 1 aOne aT1,
-  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE3),
   VG.Impl.Rsa.X86.KeyRt.copy lay aDQ aD, VG.Impl.Rsa.X86.KeyRt.copy lay aDD aP, .block (VG.Impl.Rsa.X86.KeyRt.clrLow lay aDD)]
 
-/-- The mask of the checks, from the quotient `X₁` and remainder `X₂` of `n / p` and the gcd `V`. -/
-abbrev maskOf := VG.Proof.Rsa.CrtValues.maskOf
+/-- The mask of the checks, from `p`, `q`, `n` and the gcd `V`. -/
+abbrev maskOf := VG.Proof.Rsa.CrtValues.maskOfP
 
-def InverseResult (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (m : Mem) : Prop :=
-  ∃ V, slot m g.base sMask = (if maskOf g.P g.Q X₁ X₂ V then 1 else 0) ∧
+def InverseResult (g : Geometry) (len : Nat) (m : Mem) : Prop :=
+  ∃ V, slot m g.base sMask = (if maskOf g.P g.Q g.N V then 1 else 0) ∧
     (1 < g.M → V = Nat.gcd g.Q g.M ∧
       (g.M : Int) ∣ (num m g.base (kw len) 3 : Int) * g.Q - V ∧ num m g.base (kw len) 3 < g.M)
 
 /-- Before the division of `d` by `p - 1`. -/
-structure StD (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop where
+structure StD (g : Geometry) (len : Nat) (s : State) : Prop where
   ws : RtWs lay s g.base g.size len nArr
   q : num s.mem g.base (kw len) aQ = g.Q
   d : num s.mem g.base (kw len) aD = g.D
   ddTop : w32 s.mem g.base (arr (kw len) aDD + 4 * (kw len)) = 0
   dq : num s.mem g.base (kw len) aDQ = g.D
   dd : num s.mem g.base (kw len) aDD = 2 * (g.P / 2)
-  mask : InverseResult g len X₁ X₂ s.mem
+  mask : InverseResult g len s.mem
 
-theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StI g len X₁ X₂ s) {args : Nat → BitVec 32}
+theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : State} (h : StI g len s) {args : Nat → BitVec 32}
     (gate : InvGate args g.base g.size g.P g.Q s) :
-    WP isa (seqs (checksB)) s fun t => StD g len X₁ X₂ t ∧
+    WP isa (seqs (checksB)) s fun t => StD g len t ∧
       VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS g.base (s.gpr .esp)
         (VG.Proof.Rsa.X86.Keys.ranges (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask])) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
@@ -238,10 +237,10 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
   refine WP.mono (andS_ok h2 (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide)
     (by rw [sl _ (by decide) (by decide) (by decide) (by decide), h.podd]; omega_arith) (by rw [sl _ (by decide) (by decide) (by decide) (by decide), h.e1]; split <;> omega_arith)
     ) fun t3a ⟨h3a, k3a, m3a, r3a⟩ => ?_
-  refine WP.block_append ?_
-  refine WP.mono (andS_ok h3a (d := sMask) (a := sMask) (b := sE2) (by decide) (by decide) (by decide)
-    (by rw [m3a]; split <;> omega_arith) (by rw [k3a.slot (by decide) (by decide), sl _ (by decide) (by decide) (by decide) (by decide), h.e2]; split <;> omega_arith)
-    ) fun t3b ⟨h3b, k3b, m3b, r3b⟩ => ?_
+  have h3b := h3a
+  have k3b : Keep g.base (kw len) [] [sMask] t3a.mem t3a.mem := Keep.refl _ _ _ _ _
+  have r3b : Keeps [] t3a t3a := Keeps.refl _ _
+  have m3b := m3a
   refine WP.mono (andS_ok h3b (d := sMask) (a := sMask) (b := sE3) (by decide) (by decide) (by decide)
     (by rw [m3b]; split <;> omega_arith)
     (by rw [k3b.slot (by decide) (by decide), k3a.slot (by decide) (by decide), e2]; split <;> omega_arith)
@@ -288,12 +287,11 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
         K3.num (by simp) (by decide) (fit _ (by decide)), k2.num (by decide) (by decide) (fit _ (by decide))]
     refine ⟨num t1.mem g.base (kw len) 1, ?_, fun hM => by rw [x3]; exact I hM⟩
     rw [k6.slot (by decide) (by simp), k5.slot (by decide) (by simp),
-      k4.slot (by decide) (by simp), m3, m3b, k3b.slot (e := sE3) (by decide) (by decide), m3a,
-      k3a.slot (e := sE2) (by decide) (by decide), k3a.slot (e := sE3) (by decide) (by decide), e2,
+      k4.slot (by decide) (by simp), m3, m3b, k3a.slot (e := sE3) (by decide) (by decide), e2,
       sl sPodd (by decide) (by decide) (by decide) (by decide), sl sE1 (by decide) (by decide) (by decide) (by decide),
-      sl sE2 (by decide) (by decide) (by decide) (by decide), h.podd, h.e1, h.e2]
-    simp only [maskOf, VG.Proof.Rsa.CrtValues.maskOf]
-    by_cases a : g.P % 2 = 1 <;> by_cases b : X₁ = g.Q <;> by_cases c : X₂ = 0 <;>
-      by_cases d : num t1.mem g.base (kw len) 1 = 1 <;> simp [a, b, c, d]
+      h.podd, h.e1]
+    simp only [maskOf, VG.Proof.Rsa.CrtValues.maskOfP]
+    by_cases a : g.P % 2 = 1 <;> by_cases b : g.P * g.Q = g.N <;>
+      by_cases d : num t1.mem g.base (kw len) 1 = 1 <;> simp [a, b, d]
 
 end VG.Proof.Rsa.X86.CrtValuesRt

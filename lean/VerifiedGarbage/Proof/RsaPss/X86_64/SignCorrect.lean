@@ -167,7 +167,7 @@ theorem n0_ok {s t : State} (hp : SPre tsH tsG s) (L : Lay t (fb s) (stackArg s 
       (i := 0) (by dsimp only; omega_arith)
     simpa using this
   have hin : InRegions (t.rd ++ t.wr) (s.gpr .rdx) 1 :=
-    ⟨⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), by
+    ⟨⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, hp.rdIn hrd (by simp), by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩
   refine WP.mono (WP.keep [.rsi, .rax] (Q := fun t' => t'.mem = t.mem ∧
       t'.gpr .rax = BitVec.ofNat 64 (s.mem (s.gpr .rdx)).toNat ∧

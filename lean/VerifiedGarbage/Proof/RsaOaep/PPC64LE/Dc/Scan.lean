@@ -89,7 +89,7 @@ theorem scan_step {f : Nat → Byte} {c₀ : BitVec 64} {b : Addr} {i : Nat} {u 
   · rw [h24, m1, I.r24, I.r7]; rfl
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- `acc := EM[0] ∨ ⋁ (lHash'[i] ⊕ lHash[i])`, `lHash'` at `1 + D`, `lHash` at

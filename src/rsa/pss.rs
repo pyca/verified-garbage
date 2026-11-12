@@ -26,11 +26,9 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-#[cfg(not(target_arch = "powerpc64"))]
-use crate::arch::dispatch::rsa_pss::vg_rsa_pss_sign_auto;
-#[cfg(target_arch = "powerpc64")]
-use crate::arch::dispatch::rsa_pss::vg_rsa_pss_sign_precomputed_auto;
-use crate::arch::dispatch::rsa_pss::vg_rsa_pss_verify_precomputed_auto;
+use crate::arch::dispatch::rsa_pss::{
+    vg_rsa_pss_sign_precomputed_auto, vg_rsa_pss_verify_precomputed_auto,
+};
 use crate::error::InvalidSignature;
 use crate::rsa::{PrivateKey, PublicKey};
 use crate::zeroize::zeroize;
@@ -177,7 +175,7 @@ fn sign_with(
     // distinct Rust allocations; `PrivateKey::from_crt` gives
     // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
     // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`,
-    // and on PPC64 `pre`, of `pre_len` words, the key's precomputed values
+    // and `pre`, of `pre_len` words, the key's precomputed values
     // (`PrivateKey::precompute`); `out_len = n_len` and
     // `scratch_len = 16 n_len + 1056`; `hash` is the
     // words of a table of the crate's of `MdHash` and `mgf1` of one of
@@ -186,47 +184,35 @@ fn sign_with(
     // the length); and the dispatchers, the function's and the tables'
     // (`table::md_table`, `table::table`), call only implementations the
     // CPU has the features of.
-    // The arguments of `vg_rsa_pss_sign`, then `extra`.
-    macro_rules! sign {
-        ($f:ident $(, $extra:expr)*) => {
-            $f(
-                dit,
-                out.as_mut_ptr(),
-                k,
-                key.n.as_ptr(),
-                k,
-                key.e.as_ptr(),
-                key.e.len(),
-                key.p.as_ptr(),
-                key.p.len(),
-                key.q.as_ptr(),
-                key.q.len(),
-                key.dp.as_ptr(),
-                key.dp.len(),
-                key.dq.as_ptr(),
-                key.dq.len(),
-                key.qinv.as_ptr(),
-                key.qinv.len(),
-                digest.as_ptr(),
-                digest.len(),
-                salt.as_ptr(),
-                salt.len(),
-                scratch.as_mut_ptr(),
-                scratch.len(),
-                h,
-                m,
-                $($extra),*
-            )
-        };
-    }
-    #[cfg(not(target_arch = "powerpc64"))]
-    let r = unsafe { sign!(vg_rsa_pss_sign_auto) };
-    #[cfg(target_arch = "powerpc64")]
     let r = unsafe {
-        sign!(
-            vg_rsa_pss_sign_precomputed_auto,
+        vg_rsa_pss_sign_precomputed_auto(
+            dit,
+            out.as_mut_ptr(),
+            k,
+            key.n.as_ptr(),
+            k,
+            key.e.as_ptr(),
+            key.e.len(),
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            digest.as_ptr(),
+            digest.len(),
+            salt.as_ptr(),
+            salt.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+            h,
+            m,
             key.pre.as_ptr(),
-            key.pre.len()
+            key.pre.len(),
         )
     };
     // `PrivateKey::from_crt` checked the key, so a refusal means the encoding

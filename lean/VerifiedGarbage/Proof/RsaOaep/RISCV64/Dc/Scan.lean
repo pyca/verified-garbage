@@ -90,7 +90,7 @@ theorem scan_step {f : Nat → Byte} {c₀ : BitVec 64} {b : Addr} {i : Nat} {u 
   · rw [h24, m1, I.s5, I.a4]; rfl
 
 section
-variable {s : State} (P : PreD s) {m : Mem} {rc : Nat}
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} {rc : Nat}
 include P
 
 /-- The scan of `T` (`k - 2 D - 1` bytes at `1 + 2 D`), then `acc ∨= looking`. -/

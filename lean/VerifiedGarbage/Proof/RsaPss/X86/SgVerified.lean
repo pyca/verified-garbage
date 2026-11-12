@@ -104,7 +104,8 @@ theorem idx_vp (P : EP) {ix : Nat} (hix : ∀ σ, P.TH σ → σ.mem.readW (VG.X
 
 /-- The tail for an index is that for the sizes of its hash function. -/
 theorem tail_eq {i : Nat} {f : MdFns} {fG : Fns} {pn : String} {pc : Prog isa}
-    (hs : sizes h.H = sizesOf i) : signTail f (ofIdx i) fG pn pc = signTail f h.H fG pn pc := by
+    (hs : sizes h.H = sizesOf i) (pa : List Instr := privArgs) :
+    signTail f (ofIdx i) fG pn pc pa = signTail f h.H fG pn pc pa := by
   rw [show ofIdx i = ofSizes (sizes h.H) by rw [hs]; rfl]
   rfl
 

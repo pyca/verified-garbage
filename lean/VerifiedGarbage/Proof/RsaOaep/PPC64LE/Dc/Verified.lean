@@ -47,12 +47,12 @@ theorem code_constantTime {vs : List MVar} (hc : Coh vs) :
   have P₁ := preD_of h₁
   have P₂ := preD_of h₂
   exact code_ct w₁.l.ok w₁.l.ct w.l.ok w.l.ct w₁.l.hash w₁.l.len w₁.l.valid w.l.hash w.l.len w.l.valid
-    w₁.l.lens_mem _ _ _ _ _ _
-    ⟨s₁, ⟨⟨P₁, tabS_entryD hc P₁ q₁ hw hh₁, tabS_entryDL hc P₁ q₁ hw₁ hhL₁⟩, pubD_refl s₁, ⟨rfl, rfl, rfl⟩,
-        ⟨rfl, rfl, rfl⟩⟩,
-      ⟨P₂, tabS_entryD hc P₂ q₂ hw hh₂, tabS_entryDL hc P₂ q₂ hw₁ hhL₂⟩, p,
-      ⟨(hsy _ hn.1).symm, (hsy _ hn.2.1).symm, (hsy _ hn.2.2.1).symm⟩,
-      ⟨(hsy _ hnL.1).symm, (hsy _ hnL.2.1).symm, (hsy _ hnL.2.2.1).symm⟩⟩ e₁ e₂
+    false w₁.l.lens_mem _ _ _ _ _ _
+    ⟨s₁, ⟨⟨P₁, tabS_entryD hc P₁ q₁ hw hh₁, tabS_entryDL hc P₁ q₁ hw₁ hhL₁⟩, ⟨pubD_refl s₁, ⟨rfl, rfl, rfl⟩,
+        ⟨rfl, rfl, rfl⟩⟩, nofun⟩,
+      ⟨⟨P₂, tabS_entryD hc P₂ q₂ hw hh₂, tabS_entryDL hc P₂ q₂ hw₁ hhL₂⟩, ⟨p,
+        ⟨(hsy _ hn.1).symm, (hsy _ hn.2.1).symm, (hsy _ hn.2.2.1).symm⟩,
+        ⟨(hsy _ hnL.1).symm, (hsy _ hnL.2.1).symm, (hsy _ hnL.2.2.1).symm⟩⟩, nofun⟩⟩ e₁ e₂
 
 /-- `vg_rsa_oaep_decrypt` against its contract, for the tables of `vs`,
 given a state meeting it. -/
@@ -132,9 +132,9 @@ theorem dec_sat (hw : w ∈ vs) (hl : (Proof.MdHashTable.PPC64LE.names vs).lengt
     dsat_args (vs := vs) (w := w)
   have e : stackArgAddr (Proof.MdHashTable.PPC64LE.withTable decSatState vs w) 0 = 0x10060 :=
     show stackArgAddr decSatState 0 = _ by decide
-  have e3776 : stackBytes = 3775 + 1 := rfl
+  have e3792 : stackBytes = 3791 + 1 := rfl
   unfold decSpec
-  rw [e3776]
+  rw [e3792]
   sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, stackArgs_seventeen, List.append_eq, List.range, List.range.loop]

@@ -122,6 +122,128 @@ jne 219b
     )
 }
 
+/// The CPU features `vg_rsa_pss_sign_precomputed_crt_ifma512` requires (`Artifact.features`).
+pub const VG_RSA_PSS_SIGN_PRECOMPUTED_CRT_IFMA512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `digest_len` must be the digest length of the hash function `hash` names.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx512ifma`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sign_precomputed_crt_ifma512(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJlCSQAAAASImMJIgAAABMiYQkmAAAAEyJjCSgAAAASIuEJOABAABIiYQkKAEAAEiLhCTwAQAASImEJDgBAABIi4Qk+AEAAEiJhCRAAQAASIuEJAACAABIiYQkqAAAAEiLhCQIAgAASImEJLAAAABIi7QkkAAAAA+2BkiFwEyLnCQQAgAATYtbKEyJnCR4AQAA"
+je 20f
+.base64 "SIuUJIgAAABIweIDSIPqAUiD+AJIg9oASIP4BEiD2gBIg/gISIPaAEiD+BBIg9oASIP4IEiD2gBIg/hASIPaAEg9gAAAAEiD2gBIiZQk2AAAAEiJ0EiDwAdIwegDSImEJOAAAABMi4QkiAAAAEkpwEyJhCTQAAAASIu8JKgAAABIgccACgAAuAAAAACIB0gDvCTQAAAASIu0JOAAAABIi5QkKAEAAEiLjCQ4AQAATIuEJEABAABMi4wk2AAAAEiLhCSoAAAASAUAEAAASIkEJEiLhCSwAAAASC0AAgAASIlEJAhIi4QkEAIAAEiJRCQQSIuEJBgCAABIiUQkGEyLnCR4AQAASYP7AA=="
+je 22f
+.base64 "SYP7AQ=="
+je 24f
+.base64 "SYP7Ag=="
+je 26f
+.base64 "SYP7Aw=="
+je 28f
+.base64 "SYP7BA=="
+je 210f
+.base64 "SYP7BQ=="
+je 212f
+.base64 "SYP7Bg=="
+je 214f
+call {vg_rsa_pss_sha512_256_encode}
+jmp 215f
+214:
+call {vg_rsa_pss_sha512_224_encode}
+215:
+jmp 213f
+212:
+call {vg_rsa_pss_sha512_encode}
+213:
+jmp 211f
+210:
+call {vg_rsa_pss_sha384_encode}
+211:
+jmp 29f
+28:
+call {vg_rsa_pss_sha256_encode}
+29:
+jmp 27f
+26:
+call {vg_rsa_pss_sha224_encode}
+27:
+jmp 25f
+24:
+call {vg_rsa_pss_sha1_encode}
+25:
+jmp 23f
+22:
+call {vg_rsa_pss_md5_encode}
+23:
+.base64 "hcA="
+je 216f
+.base64 "SIuEJJABAABIiUQkEEiLhCSYAQAASIlEJBhIi4QkoAEAAEiJRCQgSIuEJKgBAABIiUQkKEiLhCSwAQAASIlEJDBIi4QkuAEAAEiJRCQ4SIuEJMABAABIiUQkQEiLhCTIAQAASIlEJEhIi4Qk0AEAAEiJRCRQSIuEJNgBAABIiUQkWEiLhCSoAAAASAUACgAASIkEJEiLhCSIAAAASIlEJAhIi4QkqAAAAEgFACAAAEiJRCRgSIuEJLAAAABILQAEAABIiUQkaEiLvCSAAAAASIu0JIgAAABIi5QkkAAAAEiLjCSIAAAATIuEJJgAAABMi4wkoAAAAEiLhCQgAgAASIlEJHBIi4QkKAIAAEiJRCR4"
+call {vg_rsa_private_checked_precomputed_ifma512}
+jmp 217f
+216:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+218:
+.base64 "QogEB0mDwAFNOdA="
+jne 218b
+217:
+jmp 21f
+20:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+219:
+.base64 "QogEB0mDwAFNOdA="
+jne 219b
+21:
+.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9iof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7/9FMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQSI2kJLjx///F/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJEgOAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+        vg_rsa_pss_sha512_256_encode = sym super::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
+        vg_rsa_pss_sha512_224_encode = sym super::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
+        vg_rsa_pss_sha512_encode = sym super::rsa_pss::vg_rsa_pss_sha512_encode::vg_rsa_pss_sha512_encode,
+        vg_rsa_pss_sha384_encode = sym super::rsa_pss::vg_rsa_pss_sha384_encode::vg_rsa_pss_sha384_encode,
+        vg_rsa_pss_sha256_encode = sym super::rsa_pss::vg_rsa_pss_sha256_encode::vg_rsa_pss_sha256_encode,
+        vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
+        vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
+        vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
+        vg_rsa_private_checked_precomputed_ifma512 = sym super::rsa::vg_rsa_private_checked_precomputed_ifma512::vg_rsa_private_checked_precomputed_ifma512,
+    )
+}
+
 /// The CPU features `vg_rsa_pss_sign_crt_ifma` requires (`Artifact.features`).
 pub const VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
@@ -238,6 +360,128 @@ jne 219b
         vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
         vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
         vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
+    )
+}
+
+/// The CPU features `vg_rsa_pss_sign_precomputed_crt_ifma` requires (`Artifact.features`).
+pub const VG_RSA_PSS_SIGN_PRECOMPUTED_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `digest_len` must be the digest length of the hash function `hash` names.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * The CPU must support the `avx`, `avx512f`, `avx512vl`, `avx512ifma`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sign_precomputed_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJlCSQAAAASImMJIgAAABMiYQkmAAAAEyJjCSgAAAASIuEJOABAABIiYQkKAEAAEiLhCTwAQAASImEJDgBAABIi4Qk+AEAAEiJhCRAAQAASIuEJAACAABIiYQkqAAAAEiLhCQIAgAASImEJLAAAABIi7QkkAAAAA+2BkiFwEyLnCQQAgAATYtbKEyJnCR4AQAA"
+je 20f
+.base64 "SIuUJIgAAABIweIDSIPqAUiD+AJIg9oASIP4BEiD2gBIg/gISIPaAEiD+BBIg9oASIP4IEiD2gBIg/hASIPaAEg9gAAAAEiD2gBIiZQk2AAAAEiJ0EiDwAdIwegDSImEJOAAAABMi4QkiAAAAEkpwEyJhCTQAAAASIu8JKgAAABIgccACgAAuAAAAACIB0gDvCTQAAAASIu0JOAAAABIi5QkKAEAAEiLjCQ4AQAATIuEJEABAABMi4wk2AAAAEiLhCSoAAAASAUAEAAASIkEJEiLhCSwAAAASC0AAgAASIlEJAhIi4QkEAIAAEiJRCQQSIuEJBgCAABIiUQkGEyLnCR4AQAASYP7AA=="
+je 22f
+.base64 "SYP7AQ=="
+je 24f
+.base64 "SYP7Ag=="
+je 26f
+.base64 "SYP7Aw=="
+je 28f
+.base64 "SYP7BA=="
+je 210f
+.base64 "SYP7BQ=="
+je 212f
+.base64 "SYP7Bg=="
+je 214f
+call {vg_rsa_pss_sha512_256_encode}
+jmp 215f
+214:
+call {vg_rsa_pss_sha512_224_encode}
+215:
+jmp 213f
+212:
+call {vg_rsa_pss_sha512_encode}
+213:
+jmp 211f
+210:
+call {vg_rsa_pss_sha384_encode}
+211:
+jmp 29f
+28:
+call {vg_rsa_pss_sha256_encode}
+29:
+jmp 27f
+26:
+call {vg_rsa_pss_sha224_encode}
+27:
+jmp 25f
+24:
+call {vg_rsa_pss_sha1_encode}
+25:
+jmp 23f
+22:
+call {vg_rsa_pss_md5_encode}
+23:
+.base64 "hcA="
+je 216f
+.base64 "SIuEJJABAABIiUQkEEiLhCSYAQAASIlEJBhIi4QkoAEAAEiJRCQgSIuEJKgBAABIiUQkKEiLhCSwAQAASIlEJDBIi4QkuAEAAEiJRCQ4SIuEJMABAABIiUQkQEiLhCTIAQAASIlEJEhIi4Qk0AEAAEiJRCRQSIuEJNgBAABIiUQkWEiLhCSoAAAASAUACgAASIkEJEiLhCSIAAAASIlEJAhIi4QkqAAAAEgFACAAAEiJRCRgSIuEJLAAAABILQAEAABIiUQkaEiLvCSAAAAASIu0JIgAAABIi5QkkAAAAEiLjCSIAAAATIuEJJgAAABMi4wkoAAAAEiLhCQgAgAASIlEJHBIi4QkKAIAAEiJRCR4"
+call {vg_rsa_private_checked_precomputed_ifma}
+jmp 217f
+216:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+218:
+.base64 "QogEB0mDwAFNOdA="
+jne 218b
+217:
+jmp 21f
+20:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+219:
+.base64 "QogEB0mDwAFNOdA="
+jne 219b
+21:
+.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9iof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7/9FMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQSI2kJLjx///F/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJEgOAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+        vg_rsa_pss_sha512_256_encode = sym super::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
+        vg_rsa_pss_sha512_224_encode = sym super::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
+        vg_rsa_pss_sha512_encode = sym super::rsa_pss::vg_rsa_pss_sha512_encode::vg_rsa_pss_sha512_encode,
+        vg_rsa_pss_sha384_encode = sym super::rsa_pss::vg_rsa_pss_sha384_encode::vg_rsa_pss_sha384_encode,
+        vg_rsa_pss_sha256_encode = sym super::rsa_pss::vg_rsa_pss_sha256_encode::vg_rsa_pss_sha256_encode,
+        vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
+        vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
+        vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
+        vg_rsa_private_checked_precomputed_ifma = sym super::rsa::vg_rsa_private_checked_precomputed_ifma::vg_rsa_private_checked_precomputed_ifma,
     )
 }
 
@@ -360,6 +604,128 @@ jne 219b
     )
 }
 
+/// The CPU features `vg_rsa_pss_sign_precomputed_crt_adx` requires (`Artifact.features`).
+pub const VG_RSA_PSS_SIGN_PRECOMPUTED_CRT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `digest_len` must be the digest length of the hash function `hash` names.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sign_precomputed_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJlCSQAAAASImMJIgAAABMiYQkmAAAAEyJjCSgAAAASIuEJOABAABIiYQkKAEAAEiLhCTwAQAASImEJDgBAABIi4Qk+AEAAEiJhCRAAQAASIuEJAACAABIiYQkqAAAAEiLhCQIAgAASImEJLAAAABIi7QkkAAAAA+2BkiFwEyLnCQQAgAATYtbKEyJnCR4AQAA"
+je 20f
+.base64 "SIuUJIgAAABIweIDSIPqAUiD+AJIg9oASIP4BEiD2gBIg/gISIPaAEiD+BBIg9oASIP4IEiD2gBIg/hASIPaAEg9gAAAAEiD2gBIiZQk2AAAAEiJ0EiDwAdIwegDSImEJOAAAABMi4QkiAAAAEkpwEyJhCTQAAAASIu8JKgAAABIgccACgAAuAAAAACIB0gDvCTQAAAASIu0JOAAAABIi5QkKAEAAEiLjCQ4AQAATIuEJEABAABMi4wk2AAAAEiLhCSoAAAASAUAEAAASIkEJEiLhCSwAAAASC0AAgAASIlEJAhIi4QkEAIAAEiJRCQQSIuEJBgCAABIiUQkGEyLnCR4AQAASYP7AA=="
+je 22f
+.base64 "SYP7AQ=="
+je 24f
+.base64 "SYP7Ag=="
+je 26f
+.base64 "SYP7Aw=="
+je 28f
+.base64 "SYP7BA=="
+je 210f
+.base64 "SYP7BQ=="
+je 212f
+.base64 "SYP7Bg=="
+je 214f
+call {vg_rsa_pss_sha512_256_encode}
+jmp 215f
+214:
+call {vg_rsa_pss_sha512_224_encode}
+215:
+jmp 213f
+212:
+call {vg_rsa_pss_sha512_encode}
+213:
+jmp 211f
+210:
+call {vg_rsa_pss_sha384_encode}
+211:
+jmp 29f
+28:
+call {vg_rsa_pss_sha256_encode}
+29:
+jmp 27f
+26:
+call {vg_rsa_pss_sha224_encode}
+27:
+jmp 25f
+24:
+call {vg_rsa_pss_sha1_encode}
+25:
+jmp 23f
+22:
+call {vg_rsa_pss_md5_encode}
+23:
+.base64 "hcA="
+je 216f
+.base64 "SIuEJJABAABIiUQkEEiLhCSYAQAASIlEJBhIi4QkoAEAAEiJRCQgSIuEJKgBAABIiUQkKEiLhCSwAQAASIlEJDBIi4QkuAEAAEiJRCQ4SIuEJMABAABIiUQkQEiLhCTIAQAASIlEJEhIi4Qk0AEAAEiJRCRQSIuEJNgBAABIiUQkWEiLhCSoAAAASAUACgAASIkEJEiLhCSIAAAASIlEJAhIi4QkqAAAAEgFACAAAEiJRCRgSIuEJLAAAABILQAEAABIiUQkaEiLvCSAAAAASIu0JIgAAABIi5QkkAAAAEiLjCSIAAAATIuEJJgAAABMi4wkoAAAAEiLhCQgAgAASIlEJHBIi4QkKAIAAEiJRCR4"
+call {vg_rsa_private_checked_precomputed_adx}
+jmp 217f
+216:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+218:
+.base64 "QogEB0mDwAFNOdA="
+jne 218b
+217:
+jmp 21f
+20:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+219:
+.base64 "QogEB0mDwAFNOdA="
+jne 219b
+21:
+.base64 "SIucJEgBAABIi6wkUAEAAEyLpCRYAQAASI2kJIgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkuPH//8X+f4QkKA4AAMX+f4QkCA4AAMX+f4Qk6A0AAMX+f4QkyA0AAMX+f4QkqA0AAMX+f4QkiA0AAMX+f4QkaA0AAMX+f4QkSA0AAMX+f4QkKA0AAMX+f4QkCA0AAMX+f4Qk6AwAAMX+f4QkyAwAAMX+f4QkqAwAAMX+f4QkiAwAAMX+f4QkaAwAAMX+f4QkSAwAAMX+f4QkKAwAAMX+f4QkCAwAAMX+f4Qk6AsAAMX+f4QkyAsAAMX+f4QkqAsAAMX+f4QkiAsAAMX+f4QkaAsAAMX+f4QkSAsAAMX+f4QkKAsAAMX+f4QkCAsAAMX+f4Qk6AoAAMX+f4QkyAoAAMX+f4QkqAoAAMX+f4QkiAoAAMX+f4QkaAoAAMX+f4QkSAoAAMX+f4QkKAoAAMX+f4QkCAoAAMX+f4Qk6AkAAMX+f4QkyAkAAMX+f4QkqAkAAMX+f4QkiAkAAMX+f4QkaAkAAMX+f4QkSAkAAMX+f4QkKAkAAMX+f4QkCAkAAMX+f4Qk6AgAAMX+f4QkyAgAAMX+f4QkqAgAAMX+f4QkiAgAAMX+f4QkaAgAAMX+f4QkSAgAAMX+f4QkKAgAAMX+f4QkCAgAAMX+f4Qk6AcAAMX+f4QkyAcAAMX+f4QkqAcAAMX+f4QkiAcAAMX+f4QkaAcAAMX+f4QkSAcAAMX+f4QkKAcAAMX+f4QkCAcAAMX+f4Qk6AYAAMX+f4QkyAYAAMX+f4QkqAYAAMX+f4QkiAYAAMX+f4QkaAYAAMX+f4QkSAYAAMX+f4QkKAYAAMX+f4QkCAYAAMX+f4Qk6AUAAMX+f4QkyAUAAMX+f4QkqAUAAMX+f4QkiAUAAMX+f4QkaAUAAMX+f4QkSAUAAMX+f4QkKAUAAMX+f4QkCAUAAMX+f4Qk6AQAAMX+f4QkyAQAAMX+f4QkqAQAAMX+f4QkiAQAAMX+f4QkaAQAAMX+f4QkSAQAAMX+f4QkKAQAAMX+f4QkCAQAAMX+f4Qk6AMAAMX+f4QkyAMAAMX+f4QkqAMAAMX+f4QkiAMAAMX+f4QkaAMAAMX+f4QkSAMAAMX+f4QkKAMAAMX+f4QkCAMAAMX+f4Qk6AIAAMX+f4QkyAIAAMX+f4QkqAIAAMX+f4QkiAIAAMX+f4QkaAIAAMX+f4QkSAIAAMX+f4QkKAIAAMX+f4QkCAIAAMX+f4Qk6AEAAMX+f4QkyAEAAMX+f4QkqAEAAMX+f4QkiAEAAMX+f4QkaAEAAMX+f4QkSAEAAMX+f4QkKAEAAMX+f4QkCAEAAMX+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkSA4AAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.p2align 6"#,
+        vg_rsa_pss_sha512_256_encode = sym super::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
+        vg_rsa_pss_sha512_224_encode = sym super::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
+        vg_rsa_pss_sha512_encode = sym super::rsa_pss::vg_rsa_pss_sha512_encode::vg_rsa_pss_sha512_encode,
+        vg_rsa_pss_sha384_encode = sym super::rsa_pss::vg_rsa_pss_sha384_encode::vg_rsa_pss_sha384_encode,
+        vg_rsa_pss_sha256_encode = sym super::rsa_pss::vg_rsa_pss_sha256_encode::vg_rsa_pss_sha256_encode,
+        vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
+        vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
+        vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
+        vg_rsa_private_checked_precomputed_adx = sym super::rsa::vg_rsa_private_checked_precomputed_adx::vg_rsa_private_checked_precomputed_adx,
+    )
+}
+
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a digest of the former, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the `digest_len`-byte digest `digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - digest_len - 2`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
@@ -472,6 +838,124 @@ jne 219b
         vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
         vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+    )
+}
+
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `digest_len` must be the digest length of the hash function `hash` names.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj+//9IiZwkSAEAAEiJrCRQAQAATImkJFgBAABIibwkgAAAAEiJlCSQAAAASImMJIgAAABMiYQkmAAAAEyJjCSgAAAASIuEJOABAABIiYQkKAEAAEiLhCTwAQAASImEJDgBAABIi4Qk+AEAAEiJhCRAAQAASIuEJAACAABIiYQkqAAAAEiLhCQIAgAASImEJLAAAABIi7QkkAAAAA+2BkiFwEyLnCQQAgAATYtbKEyJnCR4AQAA"
+je 20f
+.base64 "SIuUJIgAAABIweIDSIPqAUiD+AJIg9oASIP4BEiD2gBIg/gISIPaAEiD+BBIg9oASIP4IEiD2gBIg/hASIPaAEg9gAAAAEiD2gBIiZQk2AAAAEiJ0EiDwAdIwegDSImEJOAAAABMi4QkiAAAAEkpwEyJhCTQAAAASIu8JKgAAABIgccACgAAuAAAAACIB0gDvCTQAAAASIu0JOAAAABIi5QkKAEAAEiLjCQ4AQAATIuEJEABAABMi4wk2AAAAEiLhCSoAAAASAUAEAAASIkEJEiLhCSwAAAASC0AAgAASIlEJAhIi4QkEAIAAEiJRCQQSIuEJBgCAABIiUQkGEyLnCR4AQAASYP7AA=="
+je 22f
+.base64 "SYP7AQ=="
+je 24f
+.base64 "SYP7Ag=="
+je 26f
+.base64 "SYP7Aw=="
+je 28f
+.base64 "SYP7BA=="
+je 210f
+.base64 "SYP7BQ=="
+je 212f
+.base64 "SYP7Bg=="
+je 214f
+call {vg_rsa_pss_sha512_256_encode}
+jmp 215f
+214:
+call {vg_rsa_pss_sha512_224_encode}
+215:
+jmp 213f
+212:
+call {vg_rsa_pss_sha512_encode}
+213:
+jmp 211f
+210:
+call {vg_rsa_pss_sha384_encode}
+211:
+jmp 29f
+28:
+call {vg_rsa_pss_sha256_encode}
+29:
+jmp 27f
+26:
+call {vg_rsa_pss_sha224_encode}
+27:
+jmp 25f
+24:
+call {vg_rsa_pss_sha1_encode}
+25:
+jmp 23f
+22:
+call {vg_rsa_pss_md5_encode}
+23:
+.base64 "hcA="
+je 216f
+.base64 "SIuEJJABAABIiUQkEEiLhCSYAQAASIlEJBhIi4QkoAEAAEiJRCQgSIuEJKgBAABIiUQkKEiLhCSwAQAASIlEJDBIi4QkuAEAAEiJRCQ4SIuEJMABAABIiUQkQEiLhCTIAQAASIlEJEhIi4Qk0AEAAEiJRCRQSIuEJNgBAABIiUQkWEiLhCSoAAAASAUACgAASIkEJEiLhCSIAAAASIlEJAhIi4QkqAAAAEgFACAAAEiJRCRgSIuEJLAAAABILQAEAABIiUQkaEiLvCSAAAAASIu0JIgAAABIi5QkkAAAAEiLjCSIAAAATIuEJJgAAABMi4wkoAAAAEiLhCQgAgAASIlEJHBIi4QkKAIAAEiJRCR4"
+call {vg_rsa_private_checked_precomputed}
+jmp 217f
+216:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+218:
+.base64 "QogEB0mDwAFNOdA="
+jne 218b
+217:
+jmp 21f
+20:
+.base64 "SIu8JIAAAABMi5QkiAAAALgAAAAAQbgAAAAA"
+219:
+.base64 "QogEB0mDwAFNOdA="
+jne 219b
+21:
+.base64 "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"
+.p2align 6"#,
+        vg_rsa_pss_sha512_256_encode = sym super::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
+        vg_rsa_pss_sha512_224_encode = sym super::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
+        vg_rsa_pss_sha512_encode = sym super::rsa_pss::vg_rsa_pss_sha512_encode::vg_rsa_pss_sha512_encode,
+        vg_rsa_pss_sha384_encode = sym super::rsa_pss::vg_rsa_pss_sha384_encode::vg_rsa_pss_sha384_encode,
+        vg_rsa_pss_sha256_encode = sym super::rsa_pss::vg_rsa_pss_sha256_encode::vg_rsa_pss_sha256_encode,
+        vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
+        vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
+        vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }
 

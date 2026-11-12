@@ -113,4 +113,36 @@ theorem crtKey_masked {nb pb qb db : List Byte} (hv : modulusValid (os2ip nb) nb
       exact hpq ((pq_iff hodd).mp ⟨podd, by omega, by omega⟩)
     rw [hm]; rfl
 
+/-- The mask from `n / p` is the mask from the product. -/
+theorem maskOf_div {P Q N V : Nat} : maskOf P Q (N / P) (N % P) V = maskOfP P Q N V := by
+  simp only [maskOf, maskOfP, decide_eq_decide]
+  constructor
+  · rintro ⟨hp, hq, hr, hv⟩
+    have := Nat.div_add_mod N P
+    rw [hq, hr, Nat.add_zero] at this
+    exact ⟨hp, this, hv⟩
+  · rintro ⟨hp, h, hv⟩
+    have hP0 : 0 < P := by omega
+    exact ⟨hp, by rw [← h, Nat.mul_div_cancel_left _ hP0], by rw [← h, Nat.mul_mod_right], hv⟩
+
+/-- `crtKey_masked`, with `p q = n` checked by the product, and the remainders known only where
+`p q = n`. -/
+theorem crtKey_maskedP {nb pb qb db : List Byte} (hv : modulusValid (os2ip nb) nb.length = true)
+    (hp : pb.length < nb.length) (hq : qb.length < nb.length) {V R₂ R₃ X : Nat}
+    (h₂ : 1 < 2 * (os2ip pb / 2) + 1 → V = Nat.gcd (os2ip qb) (2 * (os2ip pb / 2) + 1) ∧
+      ((2 * (os2ip pb / 2) + 1 : Nat) : Int) ∣ (X : Int) * os2ip qb - V ∧ X < 2 * (os2ip pb / 2) + 1)
+    (h₃ : os2ip pb * os2ip qb = os2ip nb → 0 < 2 * (os2ip pb / 2) → R₂ = os2ip db % (2 * (os2ip pb / 2)))
+    (h₄ : os2ip pb * os2ip qb = os2ip nb → 0 < 2 * (os2ip qb / 2) → R₃ = os2ip db % (2 * (os2ip qb / 2))) :
+    crtKey nb pb qb db = if maskOfP (os2ip pb) (os2ip qb) (os2ip nb) V then
+      some (i2osp (R₂ % 2 ^ (8 * pb.length)) pb.length, i2osp (R₃ % 2 ^ (8 * qb.length)) qb.length,
+        i2osp (X % 2 ^ (8 * pb.length)) pb.length) else none := by
+  by_cases hpq : os2ip pb * os2ip qb = os2ip nb
+  · rw [crtKey_masked hv hp hq (X₁ := os2ip nb / os2ip pb) (X₂ := os2ip nb % os2ip pb) (fun _ => ⟨rfl, rfl⟩) h₂
+      (h₃ hpq) (h₄ hpq), maskOf_div]
+  · have m : maskOfP (os2ip pb) (os2ip qb) (os2ip nb) V = false := by simp [maskOfP, hpq]
+    rw [crtKey_masked hv hp hq (X₁ := os2ip nb / os2ip pb) (X₂ := os2ip nb % os2ip pb)
+      (R₂ := os2ip db % (2 * (os2ip pb / 2))) (R₃ := os2ip db % (2 * (os2ip qb / 2))) (fun _ => ⟨rfl, rfl⟩) h₂
+      (fun _ => rfl) (fun _ => rfl), maskOf_div, m]
+    simp
+
 end VG.Proof.Rsa.CrtValues

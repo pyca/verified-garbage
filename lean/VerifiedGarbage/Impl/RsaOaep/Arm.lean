@@ -494,6 +494,26 @@ with the label's hash function the table that is its argument 23 (`hash`)
 and MGF1's the table that is its argument 24 (`mgf1`). -/
 def decrypt : Prog isa := wrap frameBytes (decBody f privN privC)
 
+/-- The arguments of `vg_rsa_private_checked_precomputed`: those of
+`vg_rsa_private_checked`, then `pre` and `pre_len` (our arguments 25 and 26)
+as its stack arguments 16 and 17, the slots `sS` and `sSrc`, which nothing
+reads before `fixScr`. -/
+def privArgsP : List Instr := privArgs ++ [sp0, ld .r4 (arg 25), st .r4 64, ld .r4 (arg 26), st .r4 68]
+
+/-- `scratch` back to its slot after the call (through `r4`, keeping the
+result in `r0`). -/
+def fixScr : List Instr := [sp0, ld .r4 (arg 21), st .r4 sS]
+
+/-- `decBody`, calling `vg_rsa_private_checked_precomputed` with `pre`. -/
+def decBodyP : Prog isa :=
+  seqs [.block decStart, .block privArgsP, .call privN privC, .block fixScr, .block (lenLoad 23),
+    byLen (fun d => decTail (ofLen d) f) lens]
+
+/-- `vg_rsa_oaep_decrypt_precomputed`: `decrypt`, with the key's precomputed
+values `pre` and `pre_len` (after `mgf1`), which it passes to
+`vg_rsa_private_checked_precomputed`. -/
+def decryptP : Prog isa := wrap frameBytes (decBodyP f privN privC)
+
 end Dec
 
 end VG.Impl.RsaOaep.Arm

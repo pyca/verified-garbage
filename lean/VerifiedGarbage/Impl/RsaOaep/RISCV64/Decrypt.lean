@@ -79,11 +79,16 @@ def prologue : List Instr := [argBase, .load .d .s0 .t6 104, mov .s1 .a4, mov .s
 /-! ## The private operation -/
 
 /-- The frame from which `vg_rsa_private_checked` is called: its twelve
-stack arguments, at its `sp`. -/
-def privBytes : Nat := 96
+stack arguments, at its `sp`; with `pc`, the fourteen of
+`vg_rsa_private_checked_precomputed`. -/
+def privBytes : Bool → Nat
+  | false => 96
+  | true => 112
 
-/-- `vg_rsa_private_checked`. -/
-def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.RISCV64.Priv.code
+/-- `vg_rsa_private_checked`, or with `pc` `vg_rsa_private_checked_precomputed`. -/
+def privCall : Bool → Prog isa
+  | false => .call "vg_rsa_private_checked" Impl.Rsa.RISCV64.Priv.code
+  | true => .call "vg_rsa_private_checked_precomputed" Impl.Rsa.RISCV64.Priv.codeP
 
 /-- Our stack argument `j` (`p_len` … `qinv_len`) to its stack argument
 `j + 1`. -/
@@ -93,16 +98,25 @@ def copyArg (j : Nat) : List Instr := [.load .d .t1 .t6 (8 * j), .store .d .t1 .
 the stack `p` (`a7`) and our stack arguments 0 to 8, then the rest of
 `scratch` from `oRsa` and `scratch_len - 1024`; in the registers `EM`'s
 place (`k` bytes), `n`, `e` and the ciphertext (`k` bytes). -/
-def privArgs : List Instr :=
-  [.addSp .t0 0, .addSp .t6 (privBytes + frameBytes), .store .d .a7 .t0 0] ++ (List.range 9).flatMap copyArg ++
+def privArgsM (pc : Bool) : List Instr :=
+  [.addSp .t0 0, .addSp .t6 (privBytes pc + frameBytes), .store .d .a7 .t0 0] ++ (List.range 9).flatMap copyArg ++
     [.li .t1 1024, .shift .sll .d .t1 .t1 3, .add .t1 .s0 .t1, .store .d .t1 .t0 80, .load .d .t1 .t6 112,
       .addi .t1 .t1 (-1024), .store .d .t1 .t0 88, mov .a2 .a3, mov .a3 .s1, mov .a4 .a5, mov .a5 .a6,
       .load .d .a6 .t6 88, mov .a7 .s1, .addi .a0 .s0 oEm, mov .a1 .s1]
 
+/-- With `pc`, `pre` and `pre_len` (our stack arguments 17 and 18) to its
+stack arguments 12 and 13. -/
+def privTail : Bool → List Instr
+  | false => []
+  | true => [.load .d .t1 .t6 136, .store .d .t1 .t0 96, .load .d .t1 .t6 144, .store .d .t1 .t0 104]
+
+/-- Its arguments. -/
+def privArgs (pc : Bool) : List Instr := privArgsM pc ++ privTail pc
+
 /-- The private operation, from its frame; its result into `s4`,
 zero-extended. -/
-def priv : Prog isa :=
-  .seq (.frame (.alloc privBytes) (.seq (.block privArgs) privCall) (.free privBytes))
+def priv (pc : Bool) : Prog isa :=
+  .seq (.frame (.alloc (privBytes pc)) (.seq (.block (privArgs pc)) (privCall pc)) (.free (privBytes pc)))
     (.block [.shift .sll .d .s4 .a0 32, .shift .srl .d .s4 .s4 32])
 
 /-! ## Failing -/
@@ -220,12 +234,20 @@ def decTail : Prog isa := .seq (.block (chkK H)) (.ite (.nonzero .a0) decFail (d
 
 /-- The frame's body: the private operation, the digest length of the table
 `hash` (our stack argument 15) to `a0`, then the tail for that length. -/
-def body : Prog isa :=
-  .seq (.block (save ++ prologue)) (.seq priv (.seq (.block (lenLoad 15))
+def body (pc : Bool) : Prog isa :=
+  .seq (.block (save ++ prologue)) (.seq (priv pc) (.seq (.block (lenLoad 15))
     (.seq (byLen (fun d => decTail (ofLen d) f) lens) (.block restore))))
 
-/-- `vg_rsa_oaep_<H>_mgf1_decrypt`, with MGF1's hash function the table that
-is its stack argument 15 (`mgf1`). -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (body f) (.free frameBytes)
+/-- `vg_rsa_oaep_decrypt`, or with `pc` `vg_rsa_oaep_decrypt_precomputed`. -/
+def decryptG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body f pc) (.free frameBytes)
+
+/-- `vg_rsa_oaep_decrypt`. -/
+abbrev decrypt : Prog isa := decryptG f false
+
+/-- `vg_rsa_oaep_decrypt_precomputed`: as `vg_rsa_oaep_decrypt`, but calling
+`vg_rsa_private_checked_precomputed` with the key's precomputed values `pre`
+and `pre_len` (our stack arguments 17 and 18) as its stack arguments 12 and
+13, from a frame 16 bytes larger. -/
+abbrev decryptP : Prog isa := decryptG f true
 
 end VG.Impl.RsaOaep.RISCV64.Dec
