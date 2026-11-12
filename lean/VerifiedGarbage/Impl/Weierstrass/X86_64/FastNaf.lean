@@ -59,8 +59,10 @@ def prepN16 (n src dst : Nat) : Prog isa :=
 /-! ### Without branches on the scalar's bits (BMI2)
 
 `stepN` takes a branch on each bit that is not skipped and on each digit's sign, which the processor
-mispredicts about half the time. `stepB` does the same to the scalar and to the table with neither,
-for the widths five and nine. -/
+cannot predict for a scalar it has not seen. `stepB` does the same to the scalar and to the table
+with neither, for the widths five and nine. On an Intel Xeon (Emerald Rapids),
+`vg_ecdsa_p256_verify_ifma` with it took 1.4% less time over different signatures in turn, and 0.7%
+more over one signature again and again, whose branches the processor learns. -/
 
 /-- The scalar's registers shifted right by the count in `rdx`, which is from 1 to 63, with 64 less
 that count in `rcx`, through `rax`. -/
