@@ -408,24 +408,25 @@ theorem R2W.narrow {σ s : State} (h : R2W P pre L σ s) :
     R2 P (narrowS P σ) (narrowS P s) ∧ Covers (P.ro ++ P.wrB) (s.rd ++ s.wr) ∧ Covers P.wrB s.wr := by
   obtain ⟨⟨hin, st⟩, out⟩ := h
   have ok := hin.ok
-  have wrS : s.wr = (P.layP pre L).FR :: (P.layP pre L).SAVE :: ((P.layP pre L).rw ++ [(P.layP pre L).ARGS]) := by
-    rw [st.wr, ok.wr]
-  have rdS : s.rd = (P.layP pre L).ro := by rw [st.rd, ok.rd]
+  have mW : ∀ r ∈ (P.layP pre L).FR :: (P.layP pre L).SAVE :: (P.layP pre L).rw, r ∈ s.wr := fun r hr => by
+    rw [st.wr]; exact ok.wr r hr
+  obtain ⟨k, hk, hA⟩ := ok.argsW
+  have mA : (⟨(P.layP pre L).fr ((P.layP pre L).F + 20), k⟩ : Region) ∈ s.wr := by rw [st.wr]; exact hA
   have wB : Covers P.wrB s.wr := by
-    rw [wrS]
     refine Covers.of_sub fun r hr => ?_
     simp only [EP.wrB, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩
-    · exact ⟨P.OUT, by simp, 0, by simp, by simp⟩
-    · exact ⟨P.ML, by simp, 0, by simp, by simp⟩
-    · exact ⟨P.SCR, by simp, 0, by simp, by simp⟩
-    · exact ⟨(P.layP pre L).ARGS, by simp, 0, by simp, by simp [Lay.A, EP.argvP]⟩
+    · exact ⟨_, mW _ List.mem_cons_self, 0, by simp, by simp⟩
+    · exact ⟨_, mW _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp, by simp⟩
+    · exact ⟨P.OUT, mW _ (by simp), 0, by simp, by simp⟩
+    · exact ⟨P.ML, mW _ (by simp), 0, by simp, by simp⟩
+    · exact ⟨P.SCR, mW _ (by simp), 0, by simp, by simp⟩
+    · exact ⟨_, mA, 0, by simp, Nat.le_trans (by simp [Lay.A, EP.argvP]) hk⟩
   refine ⟨⟨⟨hin.base, ⟨hin.base.ok, st.sp, rfl, rfl, st.frame⟩⟩, out⟩,
     Covers.append_left ?_ wB.right, wB⟩
-  rw [rdS]
   exact Covers.left (Covers.of_mem fun r hr => by
+    rw [st.rd]
+    apply ok.rd
     simp only [EP.ro, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp)
 
