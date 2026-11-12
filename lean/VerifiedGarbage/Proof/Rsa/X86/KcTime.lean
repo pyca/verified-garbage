@@ -163,20 +163,14 @@ theorem fm_mulShort {G : Geo} {u t : State} (h : Fm G u t) {o a b : Nat} (hw2 : 
   WP.mono (VG.Proof.Rsa.X86.WordRt.mulShort_ok h.ws hw2 ho ha hb hao hao1 hbo hbo1) fun _ ⟨h1, k1, _, r1⟩ =>
     h.next h1 k1 (by simp; omega) (by decide) r1 wordRegs_body (h.mask_keep k1 (by decide))
 
-theorem fm_mulWide {G : Geo} {u t : State} (h : Fm G u t) {o a b : Nat} (ho : o + 1 < nArr)
-    (ha : a < nArr) (hb : b < nArr) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o) (hbo1 : b ≠ o + 1) :
-    WP isa (VG.Impl.Rsa.X86.WordModRt.mulWide G.L o a b) t (Fm G u) :=
-  WP.mono (VG.Proof.Rsa.X86.WordRt.mulWide_ok h.ws ho ha hb hao hao1 hbo hbo1) fun _ ⟨h1, k1, _, r1⟩ =>
-    h.next h1 k1 (by simp; omega) (by decide) r1 wordRegs_body (h.mask_keep k1 (by decide))
-
-theorem fm_wordMod {G : Geo} {u t : State} (h : Fm G u t) {x r m a : Nat} {wide : Bool}
+theorem fm_wordMod {G : Geo} {u t : State} (h : Fm G u t) {x r m a : Nat} {top : Option Nat}
     (hm : MLen t G.B G.Z (pLenArg G.full) a) (h4 : 4 ≤ wq a) (hw : wq a ≤ G.w)
-    (hx : x + wide.toNat < nArr) (hr : r < nArr) (hmN : m < nArr)
-    (hrT : r ≠ aT) (hmT : m ≠ aT) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : aT ≠ x) (hxm : m ≠ x)
-    (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → aT ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1) :
-    WP isa (wordMod G.full x r m wide) t (Fm G u) :=
-  WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_ok h.ws hm hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm hxr1 hxt1 hxm1
-    h4 hw) fun _ ⟨h1, k1, _, _, _, r1⟩ =>
+    (htop : ∀ k, top = some k → wq a + k ≤ G.w)
+    (hx : x < nArr) (hr : r < nArr) (hmN : m < nArr)
+    (hrT : r ≠ aT) (hmT : m ≠ aT) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : aT ≠ x) (hxm : m ≠ x) :
+    WP isa (wordMod G.full x r m top) t (Fm G u) :=
+  WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_ok h.ws hm hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm
+    h4 hw htop) fun _ ⟨h1, k1, _, _, _, r1⟩ =>
     h.next h1 k1 (by
       intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl
@@ -234,35 +228,42 @@ theorem wMulShort {g : CallGeometry} {sp : BitVec 32} {a : Nat} {o x b : Nat} (c
     ho hx hb hxo hxo1 hbo hbo1 ck.c₀ ck.c₁ ck.c₂
     _ _ _ _ _ _ ⟨⟨h₁.2.1.ws, h₁.run⟩, ⟨h₂.2.1.ws, h₂.run⟩⟩ e₁ e₂
 
-theorem wMulWide {g : CallGeometry} {sp : BitVec 32} {a : Nat} {o x b : Nat} (ck : RowsCk g.full o x b none)
+theorem fm_mulHalf {G : Geo} {u t : State} (h : Fm G u t) {o a b : Nat} (ho : o + 1 < nArr)
+    (ha : a < nArr) (hb : b < nArr) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o) (hbo1 : b ≠ o + 1) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.mulHalf G.L o a b) t (Fm G u) :=
+  WP.mono (VG.Proof.Rsa.X86.WordRt.mulHalf_ok h.ws ho ha hb hao hao1 hbo hbo1) fun _ ⟨h1, k1, _, r1⟩ =>
+    h.next h1 k1 (by simp; omega) (by decide) r1 wordRegs_body (h.mask_keep k1 (by decide))
+
+theorem wMulHalf {g : CallGeometry} {sp : BitVec 32} {a : Nat} {o x b : Nat} (ck : HalfCk g.full o x b)
     (ho : o + 1 < nArr) (hx : x < nArr) (hb : b < nArr) (hxo : x ≠ o) (hxo1 : x ≠ o + 1) (hbo : b ≠ o)
     (hbo1 : b ≠ o + 1) :
-    RelCT isa (WR g sp a) (VG.Impl.Rsa.X86.WordModRt.mulWide (lay g.full) o x b) (WR g sp a) := by
+    RelCT isa (WR g sp a) (VG.Impl.Rsa.X86.WordModRt.mulHalf (lay g.full) o x b) (WR g sp a) := by
   refine relLift (Rel := fun _ _ => True) (P := WIn g sp a) ?_ fun u t h =>
-    WP.mono (fm_mulWide h.2.1 ho hx hb hxo hxo1 hbo hbo1) fun t' f => ⟨h.1, f, h.2.2⟩
+    WP.mono (fm_mulHalf h.2.1 ho hx hb hxo hxo1 hbo hbo1) fun t' f => ⟨h.1, f, h.2.2⟩
   refine fun t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂ => ?_
   obtain ⟨_, _, _, h₁, h₂⟩ := hp
-  exact VG.Proof.Rsa.X86.WordRt.mulRows_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
+  exact VG.Proof.Rsa.X86.WordRt.mulHalf_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
     (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O) (τV_regs g.full)
-    (rows := none) (by show 1 ≤ VG.Proof.Rsa.X86.KeyRt.kw _; exact h₁.2.1.ws.kw_pos) (Nat.le_refl _)
-    (fun k hk => by cases hk) ho hx hb hxo hxo1 hbo hbo1 ck.c₀ ck.c₁ ck.c₂
+    (by show 1 ≤ VG.Proof.Rsa.X86.KeyRt.kw _; exact h₁.2.1.ws.kw_pos)
+    ho hx hb hxo hxo1 hbo hbo1 ck.c₀ ck.c₁ ck.c₂
     _ _ _ _ _ _ ⟨⟨h₁.2.1.ws, h₁.run⟩, ⟨h₂.2.1.ws, h₂.run⟩⟩ e₁ e₂
 
-theorem wWordMod {g : CallGeometry} {sp : BitVec 32} {a : Nat} {x r m : Nat} {wide : Bool}
-    (ck : ModCk g.full x r m wide)
-    (hx : x + wide.toNat < nArr) (hr : r < nArr) (hmN : m < nArr)
-    (hrT : r ≠ aT) (hmT : m ≠ aT) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : aT ≠ x) (hxm : m ≠ x)
-    (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → aT ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1) :
-    RelCT isa (WR g sp a) (wordMod g.full x r m wide) (WR g sp a) := by
+theorem wWordMod {g : CallGeometry} {sp : BitVec 32} {a : Nat} {x r m : Nat} {top : Option Nat}
+    (ck : ModCk g.full x r m top) (htop : ∀ k ∈ top, k ≤ 2)
+    (hx : x < nArr) (hr : r < nArr) (hmN : m < nArr)
+    (hrT : r ≠ aT) (hmT : m ≠ aT) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : aT ≠ x) (hxm : m ≠ x) :
+    RelCT isa (WR g sp a) (wordMod g.full x r m top) (WR g sp a) := by
+  have ht : ∀ {u t : State}, WIn g sp a u t → ∀ k, top = some k → wq a + k ≤ (geometry g).w :=
+    fun h k e => by have := htop k (by rw [e]; rfl); have := h.2.2.2.2; omega
   refine relLift (Rel := fun _ _ => True) (P := WIn g sp a) ?_ fun u t h =>
-    WP.mono (fm_wordMod h.2.1 h.mlen h.2.2.2.1 (by have := h.2.2.2.2; simp only [Geo.w] at this ⊢; omega) hx hr hmN hrT hmT hrm hxr hxt hxm
-      hxr1 hxt1 hxm1) fun t' f => ⟨h.1, f, h.2.2⟩
+    WP.mono (fm_wordMod h.2.1 h.mlen h.2.2.2.1 (by have := h.2.2.2.2; simp only [Geo.w] at this ⊢; omega) (ht h)
+      hx hr hmN hrT hmT hrm hxr hxt hxm) fun t' f => ⟨h.1, f, h.2.2⟩
   refine fun t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂ => ?_
   obtain ⟨_, _, _, h₁, h₂⟩ := hp
   exact VG.Proof.Rsa.X86.WordRt.wordMod_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
     (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O) (τV_regs g.full)
-    hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm hxr1 hxt1 hxm1 h₁.2.2.2.1
-    (by have := h₁.2.2.2.2; simp only [geometry, Geo.w] at this ⊢; omega)
+    hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm h₁.2.2.2.1
+    (by have := h₁.2.2.2.2; simp only [geometry, Geo.w] at this ⊢; omega) (ht h₁)
     ck.c₀ ck.c₁ ck.c₂ _ _ _ _ _ _ ⟨⟨h₁.2.1.ws, h₁.run, h₁.mlen⟩, ⟨h₂.2.1.ws, h₂.run, h₂.mlen⟩⟩ e₁ e₂
 
 /-! ## The word branch -/
@@ -270,7 +271,7 @@ theorem wWordMod {g : CallGeometry} {sp : BitVec 32} {a : Nat} {x r m : Nat} {wi
 theorem wEWord {g : CallGeometry} {sp : BitVec 32} {a x m : Nat}
     (hl : ∃ hint, (VG.Taint.check sseTaint (τV g.full) (seqs (ltA g.full x m)) hint).isSome = true)
     (he : ∃ hint, (VG.Taint.check sseTaint (τV g.full) (seqs (eqA g.full aA aOne)) hint).isSome = true)
-    (rk : RowsCk g.full aY x aE (some 2)) (mk : ModCk g.full aY aA m false)
+    (rk : RowsCk g.full aY x aE (some 2)) (mk : ModCk g.full aY aA m (some 2))
     (hx : x < nArr) (hm : m < nArr) (hxY : x ≠ aY) (hxX : x ≠ aY + 1) (hmT : m ≠ aT) (hmA : m ≠ aA)
     (hmY : m ≠ aY) :
     RelCT isa (WR g sp a) (seqs (eWord g.full x m)) (WR g sp a) := by
@@ -278,8 +279,8 @@ theorem wEWord {g : CallGeometry} {sp : BitVec 32} {a x m : Nat}
   refine RelCT.seqs_append (by simp [ltA]) (by simp [eqA]) (VG.RelCT.seq
     (RelCT.seqs_append (by simp [ltA]) (by simp) (VG.RelCT.seq (wTaint hl fun _ _ h => fm_ltA h hx hm)
       (RelCT.seqs_cons (by simp) (wMulShort rk (by decide) hx (by decide) hxY hxX (by decide) (by decide))
-        (wWordMod mk (by decide) (by decide) hm (by decide) hmT (fun e => hmA e.symm) (by decide) (by decide) hmY
-          (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))))))
+        (wWordMod mk (by simp) (by decide) (by decide) hm (by decide) hmT (fun e => hmA e.symm) (by decide) (by decide)
+          hmY))))
     (wTaint he fun _ _ h => fm_eqA h (by decide) (by decide) (by decide) (by decide)))
 
 theorem wQInv {g : CallGeometry} {sp : BitVec 32} {a : Nat} (ck : WCk g.full) :
@@ -287,10 +288,10 @@ theorem wQInv {g : CallGeometry} {sp : BitVec 32} {a : Nat} (ck : WCk g.full) :
   unfold qInvWord
   refine RelCT.seqs_append (by simp [ltA]) (by simp [eqA]) (VG.RelCT.seq
     (RelCT.seqs_append (by simp [ltA]) (by simp) (VG.RelCT.seq (wTaint ck.ltQI fun _ _ h => fm_ltA h (by decide) (by decide))
-      (RelCT.seqs_cons (by simp) (wMulWide ck.rQI (by decide) (by decide) (by decide) (by decide) (by decide)
+      (RelCT.seqs_cons (by simp) (wMulHalf ck.rQI (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide))
-        (wWordMod ck.mP (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide) (by decide) (fun _ => by decide) (fun _ => by decide) (fun _ => by decide)))))
+        (wWordMod ck.mP (by simp) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+          (by decide) (by decide)))))
     (wTaint ck.eqOne fun _ _ h => fm_eqA h (by decide) (by decide) (by decide) (by decide)))
 
 theorem wProducts {g : CallGeometry} {sp : BitVec 32} {a : Nat} (ck : WCk g.full) :
@@ -307,11 +308,11 @@ theorem wProducts {g : CallGeometry} {sp : BitVec 32} {a : Nat} (ck : WCk g.full
 theorem wDWords {g : CallGeometry} {sp : BitVec 32} {a : Nat} (ck : WCk g.full) :
     RelCT isa (WR g sp a) (dWords g.full) (WR g sp a) := by
   have m₁ : RelCT isa (WR g sp a) (wordMod g.full aD aVR aM1) (WR g sp a) :=
-    wWordMod ck.dM1 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
+    wWordMod ck.dM1 (by simp) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide)
   have m₂ : RelCT isa (WR g sp a) (wordMod g.full aD aVR aM2) (WR g sp a) :=
-    wWordMod ck.dM2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (fun e => absurd e (by decide)) (fun e => absurd e (by decide)) (fun e => absurd e (by decide))
+    wWordMod ck.dM2 (by simp) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide)
   have e₁ := wTaint (sp := sp) (a := a) ck.eqDP fun _ _ h => fm_eqA h (by decide) (by decide) (by decide) (by decide)
   have e₂ := wTaint (sp := sp) (a := a) ck.eqDQ fun _ _ h => fm_eqA h (by decide) (by decide) (by decide) (by decide)
   have l := wTaint (sp := sp) (a := a) ck.ltD fun _ _ h => fm_ltA h (by decide) (by decide)

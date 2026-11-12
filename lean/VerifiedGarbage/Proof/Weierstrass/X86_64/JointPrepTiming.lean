@@ -12,9 +12,15 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont
 
-/-- The timing checks of the generator's recoder, of its width (`Joint.Cfg.gw`). -/
+/-- The timing checks of the generator's recoder: of its width (`Joint.Cfg.gw`), or of the one
+without branches on the scalar's bits (`Joint.Cfg.recodeB`). -/
 def JointPrepGChecks (c : Joint.Cfg) (u : Nat) : Prop :=
+  if c.recodeB then FastPrepChecksB16 c.K.M.n u c.gBits else
   if c.gw=9 then FastPrepChecks16 c.K.M.n u c.gBits else FastPrepChecks c.K.M.n u c.gBits 7
+
+/-- The timing checks of the peer's recoder. -/
+def JointPrepQChecks (c : Joint.Cfg) (v : Nat) : Prop :=
+  if c.recodeB then FastPrepChecksB c.K.M.n v c.K.bits else FastPrepChecks c.K.M.n v c.K.bits 5
 
 /-- The generator's recoder and then the peer's, of each one's timing, and of what the first keeps. -/
 theorem jointPrepOf_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} {pG pQ : Prog isa}
@@ -44,25 +50,50 @@ theorem jointPrepOf_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} {pG pQ 
     (fun _ _ ⟨_,_,_,hp,ps,pt⟩ => ⟨ps.1,pt.1,ps.2.trans (hp.2.2.2.trans pt.2.symm)⟩))
   exact peer
 
-theorem jointPrep_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9)
+/-- The timing of `Joint.prepB`, the recoders without branches on the scalars' bits. -/
+theorem jointPrepB_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat}
+    (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9) (h9 : c.gw=9)
     (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size) (hg : c.gBits+jointGSpan c≤size)
     (hq : c.K.bits+64*c.K.M.n+8≤size)
     (hvs : v+8*c.K.M.n≤c.gBits ∨ c.gBits+jointGSpan c≤v)
-    (hcG : JointPrepGChecks c u) (hcQ : FastPrepChecks c.K.M.n v c.K.bits 5) :
+    (hcG : FastPrepChecksB16 c.K.M.n u c.gBits) (hcQ : FastPrepChecksB c.K.M.n v c.K.bits) :
+    RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧
+      wordsVal s.mem base u c.K.M.n=wordsVal t.mem base u c.K.M.n ∧
+      wordsVal s.mem base v c.K.M.n=wordsVal t.mem base v c.K.M.n)
+      (Joint.prepB c u v) (fun _ _ => True) := by
+  simp only [jointGSpan,h9,ite_true] at hg hvs
+  exact jointPrepOf_relCT (fastPrepB16_relCT (base:=base) hn hu hg hcG)
+    (fun a sa => WP.mono (fastPrepDigitsB16_ok hn sa hu hg) (fun _ ⟨_,hk,ho⟩ =>
+      ⟨sa.of_keepRegs hk (notin_clobN (by decide) (by decide)),
+        ho.wordsVal hvs (by have := sa.nowrap; omega)⟩))
+    (fastPrepB_relCT hn hv hq hcQ)
+
+theorem jointPrep_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9)
+    (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size) (hg : c.gBits+jointGSpan c≤size)
+    (hq : c.K.bits+64*c.K.M.n+8≤size)
+    (hvs : v+8*c.K.M.n≤c.gBits ∨ c.gBits+jointGSpan c≤v) (hB : c.recodeB=true → c.gw=9)
+    (hcG : JointPrepGChecks c u) (hcQ : JointPrepQChecks c v) :
     RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧
       wordsVal s.mem base u c.K.M.n=wordsVal t.mem base u c.K.M.n ∧
       wordsVal s.mem base v c.K.M.n=wordsVal t.mem base v c.K.M.n)
       (Joint.prep c u v) (fun _ _ => True) := by
+  rw [Joint.prep]
+  by_cases hr : c.recodeB=true
+  · simp only [JointPrepGChecks,JointPrepQChecks,hr,ite_true] at hcG hcQ
+    simp only [hr,ite_true]
+    exact jointPrepB_relCT hn (hB hr) hu hv hg hq hvs hcG hcQ
+  simp only [JointPrepGChecks,JointPrepQChecks,hr,Bool.false_eq_true,ite_false] at hcG hcQ
+  simp only [hr,Bool.false_eq_true,ite_false]
   have gen : RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧
       wordsVal s.mem base u c.K.M.n=wordsVal t.mem base u c.K.M.n)
       (if c.gw=9 then Impl.Weierstrass.X86_64.FastNaf.prepN16 c.K.M.n u c.gBits else
         Impl.Weierstrass.X86_64.FastNaf.prepN c.K.M.n u c.gBits 7) (fun _ _ => True) := by
     by_cases h9 : c.gw=9
     · simp only [jointGSpan,h9,ite_true] at hg
-      simp only [JointPrepGChecks,h9,ite_true] at hcG
+      simp only [h9,ite_true] at hcG
       simpa only [h9,ite_true] using fastPrep16_relCT (base:=base) hn hu hg hcG
     · simp only [jointGSpan,h9,ite_false] at hg
-      simp only [JointPrepGChecks,h9,ite_false] at hcG
+      simp only [h9,ite_false] at hcG
       simpa only [h9,ite_false] using fastPrep_relCT (base:=base) hn (Or.inr rfl) hu hg hcG
   have hgs := hg
   have stage (a : State) (sa : Scr a base size) :
@@ -81,23 +112,5 @@ theorem jointPrep_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} (hn : c.K
           ⟨sa.of_keepRegs hk (notin_clobN (by decide) (by decide)),
             ho.wordsVal hvs (by have := sa.nowrap; omega)⟩)
   exact jointPrepOf_relCT gen stage (fastPrep_relCT hn (Or.inl rfl) hv hq hcQ)
-
-/-- `jointPrep_relCT` for the recoders without branches on the scalars' bits. -/
-theorem jointPrepB_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat}
-    (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9) (h9 : c.gw=9)
-    (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size) (hg : c.gBits+jointGSpan c≤size)
-    (hq : c.K.bits+64*c.K.M.n+8≤size)
-    (hvs : v+8*c.K.M.n≤c.gBits ∨ c.gBits+jointGSpan c≤v)
-    (hcG : FastPrepChecksB16 c.K.M.n u c.gBits) (hcQ : FastPrepChecksB c.K.M.n v c.K.bits) :
-    RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧
-      wordsVal s.mem base u c.K.M.n=wordsVal t.mem base u c.K.M.n ∧
-      wordsVal s.mem base v c.K.M.n=wordsVal t.mem base v c.K.M.n)
-      (Joint.prepB c u v) (fun _ _ => True) := by
-  simp only [jointGSpan,h9,ite_true] at hg hvs
-  exact jointPrepOf_relCT (fastPrepB16_relCT (base:=base) hn hu hg hcG)
-    (fun a sa => WP.mono (fastPrepDigitsB16_ok hn sa hu hg) (fun _ ⟨_,hk,ho⟩ =>
-      ⟨sa.of_keepRegs hk (notin_clobN (by decide) (by decide)),
-        ho.wordsVal hvs (by have := sa.nowrap; omega)⟩))
-    (fastPrepB_relCT hn hv hq hcQ)
 
 end VG.Proof.Weierstrass.X86_64

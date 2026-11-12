@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyWord
+public import VerifiedGarbage.Proof.Rsa.X86_64.WordInitCT
 
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyWord
+meta import VerifiedGarbage.Proof.Rsa.X86_64.WordInitCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTReduce
@@ -79,13 +81,19 @@ theorem copyAK_ct {o a : Nat} (ho : o = 5 ∨ o = 9) (ha : a < 8) (hoa : o ≠ a
             rcases ho with rfl | rfl <;> simp only [slot_eq] at hZ ⊢ <;> omega_arith)
         (k.mono (by decide))
 
-/-- `WordDivide`'s normalization and division. -/
+/-- `WordDivide`'s normalization and division, of the dividend's words `top` gives. -/
+theorem fastAtK_ct {top : Option Nat} (ck : WordDivide.SeedCk top) (hk : ∀ k, top = some k → k ≤ 3) :
+    RelCT isa (Two KK) (.seq (.block Impl.Rsa.X86_64.WordDivide.normalize)
+      (Impl.Rsa.X86_64.WordDivide.code top)) (Two KK) :=
+  two_post (two_map (fun p : KPub => (⟨p.B, p.Z, p.w, 0⟩ : WordDivide.Pub)) (fun _ _ h => ⟨h.ws, h.z17, h.w4⟩)
+    (WordDivide.fastAt_ct ck fun _ k hw e => by have := hk k e; omega_arith)) fun p s h =>
+    WP.mono (WordDivide.fastAt_ok h.ws h.z17 h.w4 (fun k e => by have := hk k e; have := h.w4; omega_arith))
+      fun _ ⟨_, f, k⟩ =>
+      h.frm f (norm_away (by have := h.w4; omega_arith)) (norm_bound (by have := h.w4; omega_arith) h.z17) k
+
 theorem fastK_ct : RelCT isa (Two KK) (.seq (.block Impl.Rsa.X86_64.WordDivide.normalize)
     Impl.Rsa.X86_64.WordDivide.code) (Two KK) :=
-  two_post (two_map (fun p : KPub => (⟨p.B, p.Z, p.w, 0⟩ : WordDivide.Pub)) (fun _ _ h => ⟨h.ws, h.z17, h.w4⟩)
-    WordDivide.fast_ct) fun p s h =>
-    WP.mono (WordDivide.fast_ok h.ws h.z17 h.w4) fun _ ⟨_, f, k⟩ =>
-      h.frm f (norm_away (by have := h.w4; omega_arith)) (norm_bound (by have := h.w4; omega_arith) h.z17) k
+  fastAtK_ct WordDivide.seedCk_none fun _ e => nomatch e
 
 theorem eqAK_ct {a b : Nat} (ha : a < 16) (hb : b < 16) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (Impl.Rsa.X86_64.Keys.base a .rbx ++
@@ -160,53 +168,41 @@ theorem wordRem_ct : RelCT isa (Two KK) (seqs wordRem) (Two KK) := by
   exact loadNumK_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (·.pd) (·.dl)
     (fun _ _ h => ⟨h.hD, h.hDl, h.srD, h.dl1, h.dl2⟩) (by taint_decide) (by taint_decide)
 
-/-- `wordMod`, for the factor `X` (length `fl`). -/
-theorem wordMod_ct {sX sXlen sDX : Nat} (hsXl : sXlen < 32) (nXl : sXlen ≠ sMask) (fl : KPub → Nat)
-    (hX : ∀ p s, KS p s → word s.mem p.B (8 * sXlen) = BitVec.ofNat 64 (fl p) ∧ 1 ≤ fl p ∧ fl p ≤ 8 * p.w)
+theorem remOne_ct {top : Option Nat} (ck : WordDivide.SeedCk top) (hk : ∀ k, top = some k → k ≤ 3) :
+    RelCT isa (Two KK) (seqs (remOne top)) (Two KK) := by
+  simp only [remOne, List.append_assoc]
+  exact kk_app (by simp) (by simp) (copyAK_ct (.inl rfl) (by decide) (by decide) (by taint_decide))
+    (kk_app (by simp) (by simp) (copyAK_ct (.inr rfl) (by decide) (by decide) (by taint_decide))
+      (kk_app (by simp) (by simp [Impl.Rsa.X86_64.Keys.eqA]) (fastAtK_ct ck hk)
+        (kk_app (by simp [Impl.Rsa.X86_64.Keys.eqA]) (by simp)
+          (eqAK_ct (by decide) (by decide) (by taint_decide)) andZeroK_ct)))
+
+/-- `wordMod`, for the factor `X`. -/
+theorem wordMod_ct {sX sXlen sDX : Nat}
     (hM : RelCT isa (Two KK) (seqs (loadNum aM sX sXlen)) (Two KK))
-    (hDX : RelCT isa (Two KK) (seqs (loadNum aX sDX sXlen)) (Two KK))
-    {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (Impl.Rsa.X86_64.CheckCrtKey.lenWords sXlen ++
-      Impl.Rsa.X86_64.CheckCrtKey.topE ++
-      ([.mov .rax (.reg .r13), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-        .alu .add .rax (.reg .rax), .mov .rsi (.mem (hdr (sArr aAcc))), .alu .add .rsi (.reg .rax),
-        .mov .rbx (.mem (hdr (sArr aR)))] : List Instr))) hc₁).isSome = true) :
+    (hDX : RelCT isa (Two KK) (seqs (loadNum aX sDX sXlen)) (Two KK)) :
     RelCT isa (Two KK) (seqs (wordMod sX sXlen sDX)) (Two KK) := by
-  have hR : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sXlen
-      Impl.Rsa.X86_64.CheckCrtKey.topE)) (Two KK) :=
-    reduceTopK_ct fl (fun _ => 1) hsXl nXl hX (fun p s h => by have := (hX p s h).2.2; omega_arith)
-      (fun _ t _ => topE_ok t)
-      (fun p s h => by
-        obtain ⟨s₀, minv, N, c, hs⟩ := h
-        obtain ⟨a, c1, c2⟩ := hX p s₀ hs
-        have := c.w2
-        exact WP.mono (reduceTopK c (Nx := p.w + 2) hsXl nXl a c1 c2 (fun t _ _ => topE_ok t) (Nat.le_refl _)
-          (by omega_arith) (by omega_arith)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hT
   simp only [wordMod, List.append_assoc]
   exact kk_app (by simp [loadNum]) (by simp [decM]) hM (kk_app (by simp [decM]) (by simp [loadNum]) decMK_ct
     (kk_app (by simp [loadNum]) (by simp [ltMask]) hDX (kk_app (by simp [ltMask]) (by simp [wordRem]) ltXM
       (kk_app (by simp [wordRem]) (by simp [mulE]) wordRem_ct (kk_app (by simp [mulE])
-        (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) mulEK_ct
-        (kk_app (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop]) (by simp [eqOne]) hR eqOneK_ct))))))
+        (by simp [remOne]) mulEK_ct
+        (remOne_ct WordDivide.seedCk_one fun k e => by obtain rfl := Option.some.inj e; decide))))))
 
 theorem wordQInv_ct : RelCT isa (Two KK) (seqs wordQInv) (Two KK) := by
   simp only [wordQInv, List.append_assoc]
   exact kk_app (by simp [loadNum]) (by simp [loadNum]) ld_PM (kk_app (by simp [loadNum]) (by simp [ltMask]) ld_QI
-    (kk_app (by simp [ltMask]) (by simp [loadNum]) ltXM (kk_app (by simp [loadNum]) (by simp [mulXR]) ld_QR
-      (kk_app (by simp [mulXR]) (by simp) mulXRK_ct
-        (kk_app (by simp) (by simp) (copyAK_ct (.inl rfl) (by decide) (by decide) (by taint_decide))
-          (kk_app (by simp) (by simp) (copyAK_ct (.inr rfl) (by decide) (by decide) (by taint_decide))
-            (kk_app (by simp) (by simp [Impl.Rsa.X86_64.Keys.eqA]) fastK_ct
-              (kk_app (by simp [Impl.Rsa.X86_64.Keys.eqA]) (by simp)
-                (eqAK_ct (by decide) (by decide) (by taint_decide)) andZeroK_ct))))))))
+    (kk_app (by simp [ltMask]) (by simp [loadNum]) ltXM (kk_app (by simp [loadNum]) (by simp [mulPQ]) ld_QR
+      (kk_app (by simp [mulPQ]) (by simp [remOne]) mulPQK_ct
+        (remOne_ct WordDivide.seedCk_none fun _ e => nomatch e)))))
 
 theorem wordChecks_ct : RelCT isa (Two KK) (seqs wordChecks) (Two KK) := by
   unfold wordChecks
   simp only [List.append_assoc]
   exact kk_app (by simp [wordMod, loadNum]) (by simp [wordMod, loadNum])
-    (wordMod_ct (by decide) (by decide) (·.pl) (fun _ _ h => ⟨h.hPl, h.pl1, h.pl2⟩) ld_PM ld_DP (by taint_decide))
+    (wordMod_ct ld_PM ld_DP)
     (kk_app (by simp [wordMod, loadNum]) (by simp [wordQInv, loadNum])
-      (wordMod_ct (by decide) (by decide) (·.ql) (fun _ _ h => ⟨h.hQl, h.ql1, h.ql2⟩) ld_QM ld_DQ (by taint_decide))
+      (wordMod_ct ld_QM ld_DQ)
       wordQInv_ct)
 
 end VG.Proof.Rsa.X86_64.Key

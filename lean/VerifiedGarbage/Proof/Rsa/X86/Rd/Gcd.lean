@@ -57,8 +57,10 @@ theorem gcdDet_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geo} {s0 s : State} {A AW V :
   have aNkeep : num t.mem g.B g.w aN = num s.mem g.B g.w aN := by
     have fit := h.ws.arr_fit (j := aN) (by decide)
     have nw' := h.ws.workspace.nowrap
-    have r0 := InvBatchRt.rv_a (16 * g.n + 24) 0
-    have r11 := InvBatchRt.rv_a (16 * g.n + 24) 11
+    have r0 : rv (kw (16 * g.n + 24)) (VG.Impl.Rsa.X86.InvBatchRt.a 0) (nw (16 * g.n + 24)) =
+        160 + 0 * (8 * nw (16 * g.n + 24) + 8) := InvBatchRt.rv_a (16 * g.n + 24) 0
+    have r11 : rv (kw (16 * g.n + 24)) (VG.Impl.Rsa.X86.InvBatchRt.a 11) (nw (16 * g.n + 24)) =
+        160 + 11 * (8 * nw (16 * g.n + 24) + 8) := InvBatchRt.rv_a (16 * g.n + 24) 11
     rw [en] at r0 r11
     exact Outs.val32 U (by
       intro w hw

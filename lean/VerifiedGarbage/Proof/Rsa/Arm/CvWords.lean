@@ -117,8 +117,8 @@ structure SA (s0 s : State) : Prop where
   zeros : ∀ j ∈ [0, 2, 3, aZero, aOne], num s.mem (cvB s0) (cvW s0) j = 0
 
 theorem SA.mulPre {s0 s : State} (h : SA s0 s) (hB : BalCv s0) :
-    VG.Proof.Rsa.Arm.KeyDiv.MulPre (cvB s0) (cvZ s0) (cvW s0) nArr aP s :=
-  ⟨h.ws, slot16 h.base.pre h.count, by rw [h.p]; exact hB.p_lt, h.zeros 0 (by decide)⟩
+    VG.Proof.Rsa.Arm.KeyDiv.MulPre (cvB s0) (cvZ s0) (cvW s0) nArr aQ s :=
+  ⟨h.ws, slot16 h.base.pre h.count, by rw [h.q]; exact hB.q_lt, h.zeros 0 (by decide)⟩
 
 /-- `ctx`, and `p` odd. -/
 theorem oddW_ok {s0 s : State} (h : StA s0 s) : WP isa (.block (ctx ++ bitOf sPodd aP)) s (SA s0) := by
@@ -154,8 +154,8 @@ theorem mulW_ok {s0 s : State} (h : SA s0 s) (hB : BalCv s0) :
   have w16 := pre.w16
   have fit := fun j (hj : j < nArr) => h.ws.fit64 (j := j) hj
   refine WP.mono (VG.Proof.Rsa.Arm.KeyDiv.mulLo_ok h.ws (o := aDR) (x := aP) (y := aQ) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (slot16 pre h.count) hB.2.2 (by omega) h.p hB.p_lt
-    h.q (h.zeros 0 (by decide))) fun t ⟨ht, e, k, r⟩ => ⟨?_, e⟩
+    (by decide) (by decide) (by decide) (by decide) (by decide) (slot16 pre h.count) hB.2.2 (by omega) (n := none)
+    h.p h.q hB.q_lt (h.zeros 0 (by decide))) fun t ⟨ht, e, k, r⟩ => ⟨?_, by rw [e, Nat.mod_eq_of_lt hB.p_lt]⟩
   have K1 : ∀ j, j < nArr → j ≠ aDR → num t.mem (cvB s0) (cvW s0) j = num s.mem (cvB s0) (cvW s0) j :=
     fun j hj hn => k.num (by simpa using Ne.symm hn) (by decide) (fit j hj)
   refine ⟨h.base.keep k (by decide) (by decide) (by decide) r.sp r.rd r.wr, ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -241,7 +241,7 @@ theorem SW.divPre {s0 s : State} {X₁ : Nat} (h : SW s0 X₁ s) {M : Nat}
   have l := VG.Proof.Rsa.fixT_lt (k := cvW s0 / 2) (by omega) hMl
   refine ⟨h.ws, slot16 h.base.pre h.count, by rw [hM]; exact l,
     VG.Proof.Rsa.Arm.KeyCheck.top_word_pos (k := cvW s0 / 2 - 1) (n := cvW s0) (by omega) hM
-      (by rw [show cvW s0 / 2 - 1 + 1 = cvW s0 / 2 by omega]; exact l) VG.Proof.Rsa.fixT_ge, h.zero⟩
+      (by rw [show cvW s0 / 2 - 1 + 1 = cvW s0 / 2 by omega]; exact l) VG.Proof.Rsa.fixT_ge, h.zero, trivial⟩
 
 /-- `[aDD] := fixT [d']` cleared of its low bit. -/
 theorem setW_ok {s0 s : State} {X₁ : Nat} (h : SW s0 X₁ s) {d' : Nat} (hd : d' ∈ [aP, aQ])
@@ -275,7 +275,7 @@ theorem remW_ok {s0 s : State} {X₁ : Nat} (h : SW s0 X₁ s) {r : Nat} (hr : r
   have fit := fun j (hj : j < nArr) => h.ws.fit64 (j := j) hj
   have hr' : r < nArr ∧ r ≠ aD ∧ r ≠ aDD ∧ r ≠ aDQ ∧ r ≠ aT1 ∧ r ≠ aDT ∧ r ≠ 0 ∧ r ≠ aQ ∧ r ≠ 3 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> decide
-  obtain ⟨W, c, ML, T0, z⟩ := h.divPre hM hMl
+  obtain ⟨W, c, ML, T0, z, -⟩ := h.divPre hM hMl
   refine WP.mono (VG.Proof.Rsa.Arm.KeyDiv.divW_ok W (a := aD) (r := r) (m := aDD) (t := aDQ) (nm := aDT)
     (u := aT1) (by decide) hr'.1 (by decide) (by decide) (by decide) (by decide) (by decide) hr'.2.1
     hr'.2.2.2.1 hr'.2.2.2.2.1 (by decide) (Ne.symm hr'.2.2.1) (by decide) (by decide)

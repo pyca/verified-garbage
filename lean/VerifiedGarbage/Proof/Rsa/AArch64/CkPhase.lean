@@ -319,7 +319,7 @@ theorem phQIC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     (hPg : I.Gd → I.P * I.Q = I.N →
       2 ^ (64 * (wk I.k / 2) - 1) ≤ I.P - 1 ∧ I.P < 2 ^ (64 * (wk I.k / 2))) :
     WP isa (seqs (loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++ (loadA aR sQ sQlen ++
-      (mulXR ++ wmodOne CheckCrtKey.topQ lenQ)))))) s fun t => ∃ g : Bool, KS I m₀ (g && c) t ∧
+      (mulPQ ++ wmodOne CheckCrtKey.topQ lenQ)))))) s fun t => ∃ g : Bool, KS I m₀ (g && c) t ∧
       (0 < I.P → I.P * I.Q = I.N → g = (decide (I.QI < I.P) && decide (I.Q * I.QI % I.P = 1))) := by
   obtain ⟨hs, hm, hN, hE, hO⟩ := h
   have eW : wW I.cap = 2 * wk I.k + 2 := by rw [L.capk]
@@ -333,12 +333,12 @@ theorem phQIC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
   refine wp_seqs_append (by simp [ltA]) (by simp [loadA]) (WP.mono (ckLt_ok h₂ (a := aX) (b := aM) (by decide)
     (by decide) (m₂.trans (m₁.trans hm))) fun s₃ ⟨h₃, m₃, o₃⟩ => ?_)
   rw [v₂, M₂] at m₃
-  refine wp_seqs_append (by simp [loadA]) (by simp [mulXR]) (WP.mono (ckLoad_ok h₃ (j := aR) (by decide) (by decide)
+  refine wp_seqs_append (by simp [loadA]) (by simp [mulPQ]) (WP.mono (ckLoad_ok h₃ (j := aR) (by decide) (by decide)
     (by decide) h₃.args.q h₃.args.ql h₃.q L.qbl L.ql1 (Nat.le_of_lt L.ql2)) fun s₄ ⟨h₄, m₄, v₄, o₄⟩ => ?_)
   have X₄ : I.av s₄.mem aX = I.QI := by rw [o₄ aX (by decide) (by decide), o₃ aX (by decide), v₂]
-  refine wp_seqs_append (by simp [mulXR]) (by simp [wmodOne]) (WP.mono (ckMulXR_ok h₄ L
-    (by rw [X₄]; exact lt_w (by rw [L.qibl]; exact L.pcap))
-    (by rw [v₄]; exact lt_w (by rw [L.qbl]; exact L.qcap))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
+  refine wp_seqs_append (by simp [mulPQ]) (by simp [wmodOne]) (WP.mono (ckMulPQ_ok h₄ L
+    (by rw [X₄]; have := os2ip_lt I.qib; rw [L.qibl] at this; exact this)
+    (by rw [v₄]; have := os2ip_lt I.qb; rw [L.qbl] at this; exact this)) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
   rw [X₄, v₄] at v₅
   have O₅ : I.av s₅.mem aOne = 1 := by
     rw [o₅ aOne (by decide) (by decide), o₄ aOne (by decide) (by decide), o₃ aOne (by decide),

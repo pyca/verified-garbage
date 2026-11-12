@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyDiv
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyDiv
 import VerifiedGarbage.Proof.Rsa.PPC64LE.IbOps
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcBase
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.MulMod
@@ -279,9 +279,11 @@ theorem Stg.divCopy_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     (hr : r < nArr) (hm : m < nArr) (ht : t < nArr) (hsv : sv < nArr)
     (hfree : ∀ j ∈ live, j ∉ [r, m, t, sv]) (hrm : r ≠ m) (hrt : r ≠ t) (hrsv : r ≠ sv) (hmt : m ≠ t)
     (hmsv : m ≠ sv) (htsv : t ≠ sv) (hrV : r ≠ aVD) (htV : t ≠ aVD) (hsvV : sv ≠ aVD)
-    (hw : g.w = 4 * (g.w / 4)) (hw16 : 16 ≤ g.w) (hlt : A d < 2 ^ (64 * (g.w / 4))) :
+    (hw : g.w = 4 * (g.w / 4)) (hw16 : 16 ≤ g.w) (hlt : A d < 2 ^ (64 * (g.w / 4)))
+    {top : Option Nat} (hk : ∀ k, top = some k → k ≤ g.w / 4)
+    (hXa : A a < 2 ^ (64 * VG.Proof.Rsa.PPC64LE.KeyDiv.xw (g.w / 4) top)) :
     WP isa (seqs [copy m d, .block (VG.Impl.Rsa.PPC64LE.KeyDiv.fixTop m),
-      VG.Impl.Rsa.PPC64LE.KeyDiv.divW a r m t sv]) s fun u => ∃ Xr,
+      VG.Impl.Rsa.PPC64LE.KeyDiv.divW a r m t sv top]) s fun u => ∃ Xr,
       (2 ^ (64 * (g.w / 4 - 1)) ≤ A d → Xr = A a % A d) ∧ Stg g s0 (upd A r Xr) (r :: live) c u := by
   have aR : a ≠ r := fun e => hfree a ha (by simp [e])
   have aM : a ≠ m := fun e => hfree a ha (by simp [e])
@@ -315,9 +317,13 @@ theorem Stg.divCopy_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     rw [kD.num (fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact Ne.symm aM)
       (by simp) (h.ws.fit64 (h.live_lt a ha)), h2.arrs.get (by simp [ha]), upd_ne _ _ aM]
   rw [show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
-  refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divW_ok w3 (h.live_lt a ha) hr hm ht hsv aR aT aS hrm hrt hrsv
-    hmt hmsv htsv (by decide) hw (by omega) hT) fun u ⟨tr, hu, ku, mu⟩ =>
-      ⟨num u.mem g.B g.w r, fun hb => by rw [tr, ha3, hfix (by rw [hdv]; exact hb), hdv], ?_⟩
+  have hX3 : wordsVal s3.mem g.B (arr g.w a) (2 * (g.w / 4)) < 2 ^ (64 * VG.Proof.Rsa.PPC64LE.KeyDiv.xw (g.w / 4) top) := by
+    rw [wordsVal_eq_val32, show 2 * (2 * (g.w / 4)) = g.w by omega]
+    show num s3.mem g.B g.w a < _
+    rw [ha3]; exact hXa
+  refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divWAt_ok w3 (h.live_lt a ha) hr hm ht hsv aR aT aS hrm hrt hrsv
+    hmt hmsv htsv (by decide) hw (by omega) hk hT) fun u ⟨tr, hu, ku, mu⟩ =>
+      ⟨num u.mem g.B g.w r, fun hb => by rw [tr hX3, ha3, hfix (by rw [hdv]; exact hb), hdv], ?_⟩
   have k : KeyWorkspace.Keep g.B g.w [m, r, t, sv] [] s2.mem u.mem :=
     (kD.mono (by simp) (by simp)).trans (mu.mono (by simp) (by simp))
   refine h2.next hu k (by simp; omega) (by simp) (k3.trans ku) (by decide) ?_ ?_ ?_ (h2.mask_keep k (by simp))
@@ -473,13 +479,14 @@ theorem Stg.qInv_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun hz => ?_)
   · -- By words: `q qInv` exactly, modulo `p`.
     obtain ⟨p8, hpw, hpq, p32⟩ := z1.1 (by simpa using hz)
-    rw [show [VG.Impl.Rsa.PPC64LE.MontKey.mulLo aX aQ aQI .r21, copy aY aP, Code.block (VG.Impl.Rsa.PPC64LE.KeyDiv.fixTop aY),
+    rw [show [VG.Impl.Rsa.PPC64LE.MontKey.mulHalf aX aQ aQI .r19, copy aY aP, Code.block (VG.Impl.Rsa.PPC64LE.KeyDiv.fixTop aY),
         VG.Impl.Rsa.PPC64LE.KeyDiv.divW aX aA aY aVT aW, copy aY aOne] =
-      [VG.Impl.Rsa.PPC64LE.MontKey.mulLo aX aQ aQI .r21] ++ ([copy aY aP, Code.block (VG.Impl.Rsa.PPC64LE.KeyDiv.fixTop aY),
+      [VG.Impl.Rsa.PPC64LE.MontKey.mulHalf aX aQ aQI .r19] ++ ([copy aY aP, Code.block (VG.Impl.Rsa.PPC64LE.KeyDiv.fixTop aY),
         VG.Impl.Rsa.PPC64LE.KeyDiv.divW aX aA aY aVT aW] ++ [copy aY aOne]) from rfl,
       wp_seqs_append (by simp) (by simp), show ∀ x : Prog isa, seqs [x] = x from fun _ => rfl]
-    refine WP.mono (h1.mulLoR_ok (o := aX) (x := aQ) (y := aQI) (by decide) hQ hQI
-      (fun j hj e => nf aX (by simp) (e ▸ hj)) (by decide) (by decide) (by decide) (r21 h1) qa1 (by omega) qlt) fun s2 g2 => ?_
+    refine WP.mono (h1.mulHalf_ok (o := aX) (x := aQ) (y := aQI) (by decide) hQ hQI
+      (fun j hj e => nf aX (by simp) (e ▸ hj)) (by decide) (r19 h1) pa1 (by omega)
+      (by rw [hpq]; exact qlt) ilt) fun s2 g2 => ?_
     rw [wp_seqs_append (by simp) (by simp)]
     have hX : upd A aX (A aQ * A aQI % 2 ^ (32 * g.w)) aX = A aQ * A aQI := by
       rw [upd_self, Nat.mod_eq_of_lt]
@@ -495,7 +502,11 @@ theorem Stg.qInv_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
             rcases hm with e | e | e | e <;> simp [e]))
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by omega) (by omega)
-      (by rw [upd_ne _ _ (by decide), show 64 * (g.w / 4) = 8 * pa by omega]; exact plt))
+      (by rw [upd_ne _ _ (by decide), show 64 * (g.w / 4) = 8 * pa by omega]; exact plt) (top := none)
+      (fun _ e => nomatch e)
+      (by rw [hX]; simp only [VG.Proof.Rsa.PPC64LE.KeyDiv.xw]
+          calc A aQ * A aQI < 2 ^ (8 * qa) * 2 ^ (8 * pa) := Nat.mul_lt_mul'' qlt ilt
+            _ = 2 ^ (64 * (2 * (g.w / 4))) := by rw [← Nat.pow_add]; congr 1; omega))
       fun s3 ⟨Xr, hX3, g3⟩ => ?_
     refine WP.mono (g3.copy_ok (o := aY) (a := aOne) (by decide) (by simp [hO]) (by decide)) fun t g4 =>
       ⟨Xr, 1, fun _ _ p2 ht => ?_, ?_⟩
@@ -609,7 +620,12 @@ theorem Stg.eMod_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
             rcases hm' with e | e | e | e <;> simp [e]))
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by omega) (by omega)
-      (by rw [upd_ne _ _ mX, show 64 * (g.w / 4) = 8 * pa by omega]; exact hma))
+      (by rw [upd_ne _ _ mX, show 64 * (g.w / 4) = 8 * pa by omega]; exact hma) (top := some 1)
+      (fun k e => by obtain rfl := Option.some.inj e; omega)
+      (by rw [hX]; simp only [VG.Proof.Rsa.PPC64LE.KeyDiv.xw]
+          calc A aE * A x < 2 ^ 33 * 2 ^ (8 * pa) := Nat.mul_lt_mul'' he hxa
+            _ = 2 ^ (33 + 8 * pa) := by rw [← Nat.pow_add]
+            _ ≤ 2 ^ (64 * (g.w / 4 + 1)) := Nat.pow_le_pow_right (by decide) (by omega)))
       fun t ⟨Xr, hX3, gt⟩ => ⟨Xr, fun _ _ ht => ?_, ?_⟩
     · have hb : 2 ^ (64 * (g.w / 4 - 1)) ≤ upd A aX (A aE * A x % 2 ^ (32 * g.w)) m := by
         rw [upd_ne _ _ mX]; exact ht hS
@@ -742,7 +758,11 @@ theorem Stg.divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     refine WP.mono (h1.divCopy_ok (r := aVR) (m := aVD) (t := aVT) (sv := aVQ) ha hd (by decide) (by decide)
       (by decide) (by decide) (fun j hj => by have := hfree j hj; simp_all) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega) (by omega)
-      (by rw [hLp] at hlt; rw [show 64 * (g.w / 4) = 8 * pL by omega]; exact hlt)) fun u ⟨Xr, hX, hu⟩ =>
+      (by rw [hLp] at hlt; rw [show 64 * (g.w / 4) = 8 * pL by omega]; exact hlt) (top := none) (fun _ e => nomatch e)
+      (by
+        simp only [VG.Proof.Rsa.PPC64LE.KeyDiv.xw]
+        rw [show 64 * (2 * (g.w / 4)) = 32 * g.w by omega, ← h.arrs.get ha]
+        exact val32_lt _ _ _ _)) fun u ⟨Xr, hX, hu⟩ =>
         ⟨num u.mem g.B g.w aVQ, Xr, fun _ hb => hX (hb ⟨p8, hpw, hpq, p32⟩), ?_⟩
     refine ((hu.addLive (j := aVQ) (by decide)).sub (live' := aVR :: aVQ :: live) ?_).congr' ?_
     · intro j hj; simp only [List.mem_cons] at hj ⊢; rcases hj with e | e | e <;> simp [e]

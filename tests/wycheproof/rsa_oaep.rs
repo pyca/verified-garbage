@@ -79,8 +79,8 @@ fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
         BigUint::from_be_bytes(&k.exponent1.0),
         BigUint::from_be_bytes(&k.exponent2.0),
         BigUint::from_be_bytes(&k.coefficient.0),
-    )
-    .unwrap_or_else(|e| panic!("{name}: {e}"));
+    );
+    let key = key.unwrap_or_else(|e| panic!("{name}: {e}"));
     (
         key,
         PublicKey::new(
