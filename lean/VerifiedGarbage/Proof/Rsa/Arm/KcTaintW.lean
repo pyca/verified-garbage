@@ -93,17 +93,14 @@ theorem mulDQ_taint : MulTaint aA aE aDQ (some 2) :=
 
 theorem divA_taint : DivTaint aA aVR aVD aVT aY aX (some 2) :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 theorem divT_taint : DivTaint aT aVR aVD aVT aY aX :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 theorem divD_taint : DivTaint aD aVR aVD aVT aY aX :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 end VG.Proof.Rsa.Arm.KeyCheck

@@ -1,7 +1,8 @@
 module
 -- separate module: the proof of Appendix C.2's body is split in a chain of modules, so that a change rebuilds only the modules after it
-public import VerifiedGarbage.Proof.Rsa.Arm.RdDiv
+public import VerifiedGarbage.Proof.Rsa.Arm.RdSqrtL
 
+import VerifiedGarbage.Proof.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Ops2
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Slots
@@ -12,9 +13,9 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-! # `vg_rsa_recover_primes_det` on ARMv7: `b² - 4 n`, its square root and the factors
 
 `square_vp`: `b = q + 1` and `b²` (`product_vp`); `minus4n_vp`: `4 n`,
-`b² - 4 n` and whether it is positive; `sqrt_vp`: its square root two bits
-at a time, whose step is any `h` with the formula of Appendix C.2's model
-(`sqrtStep`); `factors_vp`: the factors and the mask of every check.
+`b² - 4 n` and whether it is positive; `sqrt_vp`: its integer square root
+(`isqrt`) by words, and whether it is exact (`RdSqrtW.lean` to
+`RdSqrtL.lean`); `factors_vp`: the factors and the mask of every check.
 -/
 
 @[expose] public section
@@ -77,19 +78,15 @@ theorem squarePre_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State 
   refine ⟨by rcases hj with rfl | rfl | rfl | rfl <;> decide, ?_⟩
   rcases hj with rfl | rfl | rfl | rfl <;> simp only [AWSQ, ASQ] <;> rd_up
 
-theorem pcfgB : PCfg aBy wB wA wT1 wT2 wZ LSQ LWSQ LSB := by
-  constructor <;> decide
-
 /-- `b²`. -/
 abbrev sqV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
   (pr g (bV P f g σ) (bV P f g σ) (32 * P.w)).2.2
 
-theorem square_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} (hg : ProdF P g) {E : State → Prop} :
+theorem square_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
     VP (Dk P E (fun σ => upd (AB P) aD (qV P f g σ)) [aD, aN, aZN, aOneN] (fun _ => AWB P) LWB (VB P f g) LSB
-      P.w nArr) square (fun σ s => E σ ∧ PI P g aBy wB wA (ASQ P f g) LSQ (AWSQ P f g) LWSQ (VB P f g) LSB
-        (32 * P.w) σ s) :=
-  squarePre_vp.seq (product_vp pcfgB hg (fun σ _ => by simp only [AWSQ, AWB]; rd_up) productPreA_taint
-    productStepB_taint)
+      P.w nArr) square (fun σ s => E σ ∧ RI P aB wB wA (ASQ P f g) LSQ (AWSQ P f g) LWSQ (VB P f g) LSB σ s) :=
+  squarePre_vp.seq (rowProd_vp (Y := 2) (by constructor <;> decide) (by decide) (by decide)
+    (fun σ _ => by simp only [AWSQ, AWB]; rd_up) copyA_taint pRowA_taint pRowBB_taint)
 
 /-! ## `b² - 4 n` -/
 
@@ -108,11 +105,16 @@ abbrev LM4 : List Nat := [aB, aN, aZN, aOneN]
 abbrev LWM : List Nat := [wR, wOne, wZ]
 abbrev LSM : List Nat := [sOk4, sExact, sLt, sOkDE]
 
-theorem minus4n_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
-    VP (fun σ s => E σ ∧ PI P g aBy wB wA (ASQ P f g) LSQ (AWSQ P f g) LWSQ (VB P f g) LSB (32 * P.w) σ s)
+theorem minus4n_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} (hg : ProdF P g) {E : State → Prop} :
+    VP (fun σ s => E σ ∧ RI P aB wB wA (ASQ P f g) LSQ (AWSQ P f g) LWSQ (VB P f g) LSB σ s)
       minus4n (Dk P E (AM4 P f g) LM4 (AWM P f g) LWM (VM4 P f g) LSM P.w nArr) := by
   refine VP.dctx minus4n_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hv⟩ => ?_
   have sz := h.sizes
+  have sq : sqV P f g σ = bV P f g σ % 2 ^ (32 * P.w) * bV P f g σ % 2 ^ (32 * P.W) := by
+    have := h.lt_W (j := wB) (by decide)
+    rw [upd_ne _ _ (by decide)] at this
+    simp only [AWSQ] at this; rw [upd_self] at this
+    exact pr_rows hg this _
   simp only [minus4n, seqs]
   refine WP.seq (h.toW hv fun s1 h1 hv1 _ => h1.clr11 hv1 fun s2 h2 hv2 z2 => WP.block_nil ?_)
   refine WP.seq (WP.mono (h2.shl_W hv2 (j := wN) (by decide) (by omega) (by decide))
@@ -138,263 +140,161 @@ theorem minus4n_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State �
     rcases hj with rfl | rfl | rfl | rfl <;> simp only [AM4, ASQ, AB] <;> rd_ev
   · simp only [LWM, List.mem_cons, List.not_mem_nil, or_false] at hj
     refine ⟨by rcases hj with rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl | rfl <;> simp only [AWM, AWSQ, AWB, ASQ, AB, xRV, fourV, sqV] <;> rd_ev
+    rcases hj with rfl | rfl | rfl <;> simp only [AWM, AWSQ, AWB, ASQ, AB, xRV, fourV, sq] <;> rd_ev
   · simp only [LSM, List.mem_cons, List.not_mem_nil, or_false] at hd
     refine ⟨by rcases hd with rfl | rfl | rfl | rfl <;> decide, ?_⟩
     rcases hd with rfl | rfl | rfl | rfl
-    · rd_up; rw [c6, c8, b2n_nor]; simp only [VM4, ok4v, xRV, fourV, sqV, AWSQ, AWB, ASQ, AB]; rd_ev
+    · rd_up; rw [c6, c8, b2n_nor]; simp only [VM4, ok4v, xRV, fourV, sq, AWSQ, AWB, ASQ, AB]; rd_ev
     all_goals simp only [VM4]; rd_up
 
 /-! ## The square root -/
 
-/-- A bit shifted in at the bottom of an even number. -/
-theorem shl_mod {v c k : Nat} (hc : c ≤ 1) (hk : 1 ≤ k) : (2 * v + c) % 2 ^ k = 2 * v % 2 ^ k + c := by
-  obtain ⟨M, hM⟩ : ∃ M, 2 ^ k = 2 * M := ⟨2 ^ (k - 1), by rw [← Nat.pow_succ']; congr 1; omega⟩
-  have hM0 : 0 < M := by have := Nat.two_pow_pos k; omega
-  have hv := Nat.div_add_mod v M
-  have hr := Nat.mod_lt v hM0
-  have e1 : 2 * v + c = (2 * (v % M) + c) + 2 * M * (v / M) := by rw [Nat.mul_assoc]; omega
-  rw [hM, e1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega), Nat.mul_mod_mul_left]
+section
+open VG.Spec.Rsa (isqrt)
+open VG.Proof.Rsa.RecoverDet (isqrt_sq_le)
+open VG.Impl.Rsa.Arm.KeyDiv (sD sD1 sV)
 
 theorem sub32_le {w a b : Nat} (ha : a < 2 ^ (32 * w)) (hb : b ≤ a) : sub32 w a b = a - b := by
   unfold sub32
   rw [show a + 2 ^ (32 * w) - b = (a - b) + 2 ^ (32 * w) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
 
-/-- The step of the square root. -/
-abbrev SqrtF (P : RP) (h : Nat × Nat × Nat → Nat × Nat × Nat) : Prop :=
-  ∀ x r y, h (x, r, y) =
-    if 2 * (2 * r % 2 ^ (32 * P.w) + 2 * x / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w) +
-        2 * (2 * x % 2 ^ (32 * P.W)) / 2 ^ (32 * P.W) < 2 * (2 * y % 2 ^ (32 * P.w)) % 2 ^ (32 * P.w) + 1
-    then (2 * (2 * x % 2 ^ (32 * P.W)) % 2 ^ (32 * P.W),
-      2 * (2 * r % 2 ^ (32 * P.w) + 2 * x / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w) +
-        2 * (2 * x % 2 ^ (32 * P.W)) / 2 ^ (32 * P.W), 2 * y % 2 ^ (32 * P.w))
-    else (2 * (2 * x % 2 ^ (32 * P.W)) % 2 ^ (32 * P.W),
-      2 * (2 * r % 2 ^ (32 * P.w) + 2 * x / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w) +
-        2 * (2 * x % 2 ^ (32 * P.W)) / 2 ^ (32 * P.W) - (2 * (2 * y % 2 ^ (32 * P.w)) % 2 ^ (32 * P.w) + 1),
-      2 * y % 2 ^ (32 * P.w) + 1)
+/-- The root, to `w` words, and the remainder. -/
+abbrev yV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
+  isqrt (xRV P f g σ) % 2 ^ (32 * P.w)
+abbrev rmV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
+  xRV P f g σ - isqrt (xRV P f g σ) * isqrt (xRV P f g σ)
 
-/-- `(x, r, y)` after `k` steps of the square root. -/
-abbrev rs (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) (k : Nat) : Nat × Nat × Nat :=
-  h^[k] (xRV P f g σ, 0, 0)
-
-def AS (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) (k : Nat) : Nat → Nat :=
-  upd (upd (AM4 P f g σ) aRm (rs P f g h σ k).2.1) aY (rs P f g h σ k).2.2
-def AWS (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) (k : Nat) : Nat → Nat :=
-  upd (AWM P f g σ) wR (rs P f g h σ k).1
-def VS (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) (k : Nat) : Nat → Nat :=
-  upd (VM4 P f g σ) sK (16 * P.W - k)
-abbrev LS5 : List Nat := [aRm, aY, aB, aN, aZN, aOneN]
-abbrev LSS5 : List Nat := [sK, sOk4, sExact, sLt, sOkDE]
-
-/-- After `k` steps of the square root. -/
-def SI (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (k : Nat) (σ s : State) : Prop :=
-  KS P σ (AS P f g h σ k) LS5 (AWS P f g h σ k) LWM (VS P f g σ k) LSS5 s ∧ Ws s P.B P.Z P.w nArr
-
-theorem sqrtPre_vp {f g h : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
-    VP (Dk P E (AM4 P f g) LM4 (AWM P f g) LWM (VM4 P f g) LSM P.w nArr) sqrtPre
-      (fun σ s => E σ ∧ SI P f g h 0 σ s) := by
-  refine VP.dctx sqrtPre_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h0, hv⟩ => ?_
-  have sz := h0.sizes
-  simp only [sqrtPre, seqs]
-  refine WP.seq (WP.mono (h0.copy_w hv (o := aRm) (a := aZN) (by decide) (by decide) (by decide) (by decide))
-    fun s1 ⟨h1, hv1, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h1.copy_w hv1 (o := aY) (a := aZN) (by decide) (by decide) (by decide) (by decide))
-    fun s2 ⟨h2, hv2, _, _⟩ => ?_)
-  rw [List.append_assoc]
-  refine h2.toW hv2 fun s3 h3 hv3 _ => ?_
-  refine h3.cntInit hv3 (e := 4) (by decide) (by have := sz.Wle; omega) fun s4 h4 hv4 => ?_
-  refine h4.toN hv4 fun t ht hvt _ => WP.block_nil ⟨e, ?_, hvt⟩
-  refine ht.mono (fun j hj => ?_) (fun j hj => ?_) (fun d hd => ?_)
-  · simp only [LS5, List.mem_cons, List.not_mem_nil, or_false] at hj
-    refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [AS, AM4, AB, rs, Function.iterate_zero, id] <;>
-      rd_ev
-  · simp only [LWM, List.mem_cons, List.not_mem_nil, or_false] at hj
-    refine ⟨by rcases hj with rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl | rfl <;> simp only [AWS, AWM, rs, Function.iterate_zero, id] <;> rd_ev
-  · simp only [LSS5, List.mem_cons, List.not_mem_nil, or_false] at hd
-    refine ⟨by rcases hd with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp only [VS] <;> rd_up <;> simp
-
-theorem carry_le {x N : Nat} (hx : x < N) : (2 * x + 0) / N ≤ 1 := by
-  have := Nat.div_lt_of_lt_mul (show 2 * x + 0 < N * 2 by omega); omega
-
-theorem rs_succ (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) (k : Nat) :
-    rs P f g h σ (k + 1) = h (rs P f g h σ k) := by
-  simp only [rs]; rw [Function.iterate_succ_apply']
-
-theorem sqrtBody_ok {f g h : Nat × Nat × Nat → Nat × Nat × Nat} (hh : SqrtF P h) {σ s : State} {k : Nat}
-    (hS : SI P f g h k σ s) (hk : k < 16 * P.W) :
-    WP isa sqrtBody s fun t => SI P f g h (k + 1) σ t ∧ t.z = decide (16 * P.W - (k + 1) = 0) := by
-  obtain ⟨h0, hv⟩ := hS
-  have sz := h0.sizes
-  have Wl := sz.Wle
-  have wpos : 1 ≤ 32 * P.w := by show 1 ≤ 32 * (2 * P.w6 + 2); omega
-  have xl := h0.lt_W (j := wR) (by decide)
-  have rl := h0.lt_w (j := aRm) (by decide)
-  have yl := h0.lt_w (j := aY) (by decide)
-  generalize ex : (rs P f g h σ k).1 = x at *
-  generalize er : (rs P f g h σ k).2.1 = r at *
-  generalize ey : (rs P f g h σ k).2.2 = y at *
-  have wR' : AWS P f g h σ k wR = x := by simp only [AWS]; rd_up; exact ex
-  have aR' : AS P f g h σ k aRm = r := by simp only [AS]; rd_up; exact er
-  have aY' : AS P f g h σ k aY = y := by simp only [AS]; rd_up; exact ey
-  rw [wR'] at xl; rw [aR'] at rl; rw [aY'] at yl
-  simp only [sqrtBody, seqs]
-  -- The top two bits into the remainder.
-  refine WP.seq (h0.toW hv fun s1 h1 hv1 _ => h1.clr11 hv1 fun s2 h2 hv2 z2 => WP.block_nil ?_)
-  refine WP.seq (WP.mono (h2.shl_W hv2 (j := wR) (by decide) (by omega) (by decide))
-    fun s3 ⟨h3, hv3, c3, _⟩ => ?_)
-  rw [z2, wR'] at h3 c3
-  refine WP.seq (h3.toN hv3 fun s4 h4 hv4 r4 => WP.block_nil ?_)
-  have c4 : (s4.gpr .r11).toNat = (2 * x + 0) / 2 ^ (32 * P.W) := by rw [r4.gpr _ (by decide)]; exact c3
-  refine WP.seq (WP.mono (h4.shl_w hv4 (j := aRm) (by decide) (by rw [c4]; exact carry_le xl) (by decide))
-    fun s5 ⟨h5, hv5, _, _⟩ => ?_)
-  rw [c4, aR'] at h5
-  refine WP.seq (h5.toW hv5 fun s6 h6 hv6 _ => h6.clr11 hv6 fun s7 h7 hv7 z7 => WP.block_nil ?_)
-  have x1l : (2 * x + 0) % 2 ^ (32 * P.W) < 2 ^ (32 * P.W) := Nat.mod_lt _ (Nat.two_pow_pos _)
-  refine WP.seq (WP.mono (h7.shl_W hv7 (j := wR) (by decide) (by omega) (by decide))
-    fun s8 ⟨h8, hv8, c8, _⟩ => ?_)
-  rw [z7] at h8 c8
-  rw [upd_self] at h8 c8
-  refine WP.seq (h8.toN hv8 fun s9 h9 hv9 r9 => WP.block_nil ?_)
-  have c9 : (s9.gpr .r11).toNat = (2 * ((2 * x + 0) % 2 ^ (32 * P.W)) + 0) / 2 ^ (32 * P.W) := by
-    rw [r9.gpr _ (by decide)]; exact c8
-  refine WP.seq (WP.mono (h9.shl_w hv9 (j := aRm) (by decide) (by rw [c9]; exact carry_le x1l) (by decide))
-    fun s10 ⟨h10, hv10, _, _⟩ => ?_)
-  rw [c9, upd_self] at h10
-  -- `4 y + 1`.
-  refine WP.seq (WP.mono (h10.copy_w hv10 (o := aTy) (a := aY) (by decide) (by decide) (by decide)
-    (by decide)) fun s11 ⟨h11, hv11, _, _⟩ => ?_)
-  refine WP.seq (h11.clr11 hv11 fun s12 h12 hv12 z12 => WP.block_nil ?_)
-  refine WP.seq (WP.mono (h12.shl_w hv12 (j := aTy) (by decide) (by omega) (by decide))
-    fun s13 ⟨h13, hv13, _, _⟩ => ?_)
-  rw [z12] at h13
-  refine WP.seq (wp_mov (op2_imm (by decide)) fun s14 u14 => WP.block_nil ?_)
-  obtain ⟨h14, hv14⟩ := h13.reg hv13 (u14.rest (ws := [.r11]) (by simp)) u14.mem
-  have z14 : (s14.gpr .r11).toNat = 1 := by rw [u14.gpr]; rfl
-  refine WP.seq (WP.mono (h14.shl_w hv14 (j := aTy) (by decide) (by omega) (by decide))
-    fun s15 ⟨h15, hv15, _, _⟩ => ?_)
-  rw [z14, upd_self] at h15
-  -- The comparison and the selection.
-  have h15' := h15.mono (A' := upd (upd (AS P f g h σ k) aRm
-      ((2 * ((2 * r + (2 * x + 0) / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w)) +
-        (2 * ((2 * x + 0) % 2 ^ (32 * P.W)) + 0) / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w)))
-      aTy ((2 * ((2 * y + 0) % 2 ^ (32 * P.w)) + 1) % 2 ^ (32 * P.w))) (live' := aTy :: LS5)
-    (AW' := upd (AWS P f g h σ k) wR ((2 * ((2 * x + 0) % 2 ^ (32 * P.W)) + 0) % 2 ^ (32 * P.W)))
-    (liveW' := LWM) (V' := VS P f g σ k) (ls' := LSS5)
-    (fun j hj => by
-      simp only [LS5, List.mem_cons, List.not_mem_nil, or_false] at hj
-      refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-      rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rd_up <;> simp only [aY'])
-    (fun j hj => by
-      simp only [LWM, List.mem_cons, List.not_mem_nil, or_false] at hj
-      refine ⟨by rcases hj with rfl | rfl | rfl <;> decide, ?_⟩
-      rcases hj with rfl | rfl | rfl <;> rd_up)
-    (fun d hd => ⟨hd, rfl⟩)
-  generalize eR2 : (2 * ((2 * r + (2 * x + 0) / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w)) +
-    (2 * ((2 * x + 0) % 2 ^ (32 * P.W)) + 0) / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w) = R2 at h15'
-  generalize eT2 : (2 * ((2 * y + 0) % 2 ^ (32 * P.w)) + 1) % 2 ^ (32 * P.w) = T2 at h15'
-  generalize eX2 : (2 * ((2 * x + 0) % 2 ^ (32 * P.W)) + 0) % 2 ^ (32 * P.W) = X2 at h15'
-  refine WP.seq (WP.mono (h15'.sub_w hv15 (o := aDf) (a := aRm) (b := aTy) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) fun s16 ⟨h16, hv16, _, c16⟩ => ?_)
-  refine WP.seq (h16.brw hv16 (d := sBb) (by decide) fun s17 h17 hv17 _ => WP.block_nil ?_)
-  rw [c16] at h17
-  refine WP.seq (WP.mono (h17.copy_w hv17 (o := aT1) (a := aRm) (by decide) (by decide) (by decide)
-    (by decide)) fun s18 ⟨h18, hv18, _, _⟩ => ?_)
-  refine WP.seq (WP.mono (h18.sel_w hv18 (o := aRm) (a := aDf) (b := aT1) (sl := sBb) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by rw [upd_self]; exact b2n_lt_one _) (by decide))
-    fun s19 ⟨h19, hv19, _⟩ => ?_)
-  have vR : upd (upd (AS P f g h σ k) aRm R2) aTy T2 aRm = R2 := by rd_up
-  have vT : upd (upd (AS P f g h σ k) aRm R2) aTy T2 aTy = T2 := by rd_up
-  rw [vR, vT] at h19
-  generalize eB : b2n (decide (R2 < T2)) = Bb at h19
-  have bl : Bb ≤ 1 := eB ▸ b2n_lt_one _
-  -- The root's bit.
-  refine WP.seq (h19.ldrSlot hv19 (d := sBb) (r := .r11) (by decide) (by decide) fun s20 h20 hv20 u20 => ?_)
-  refine wp_dp (op2_imm (by decide)) fun s21 u21 => WP.block_nil ?_
-  obtain ⟨h21, hv21⟩ := h20.reg hv20 (u21.rest (ws := [.r11]) (by simp)) u21.mem
-  have z21 : (s21.gpr .r11).toNat = 1 - Bb := by
-    rw [u21.gpr, dpVal, u20.gpr, upd_self,
-      VG.Proof.Rsa.KeyBits32.bv_xor_bits (by rw [BitVec.toNat_ofNat]; omega) (by decide), BitVec.toNat_ofNat]
-    simp only [show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
-  refine WP.seq (WP.mono (h21.shl_w hv21 (j := aY) (by decide) (by rw [z21]; omega) (by decide))
-    fun s22 ⟨h22, hv22, _, _⟩ => ?_)
-  rw [z21] at h22
-  have vK : VS P f g σ k sK = 16 * P.W - k := by simp only [VS]; rd_up
-  refine WP.mono (h22.cntNext hv22 (by decide) (by rd_up; rw [vK]; omega) (by rd_up; rw [vK]; omega))
-    fun t ⟨ht, hvt, zt⟩ => ⟨⟨?_, hvt⟩, by rw [zt]; rd_up; rw [vK, Nat.sub_sub]⟩
-  -- The step.
-  have hs := rs_succ P f g h σ k
-  rw [show rs P f g h σ k = (x, r, y) from Prod.ext ex (Prod.ext er ey), hh] at hs
-  have hi := carry_le xl
-  have lo := carry_le x1l
-  have eR1 : (2 * r + (2 * x + 0) / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w) =
-      2 * r % 2 ^ (32 * P.w) + 2 * x / 2 ^ (32 * P.W) := by rw [shl_mod (by simpa using hi) wpos]; simp
-  have eR2' : R2 = 2 * (2 * r % 2 ^ (32 * P.w) + 2 * x / 2 ^ (32 * P.W)) % 2 ^ (32 * P.w) +
-      2 * (2 * x % 2 ^ (32 * P.W)) / 2 ^ (32 * P.W) := by
-    rw [← eR2, eR1, shl_mod (by simpa using lo) wpos]; simp
-  have eT2' : T2 = 2 * (2 * y % 2 ^ (32 * P.w)) % 2 ^ (32 * P.w) + 1 := by
-    rw [← eT2, shl_mod (by omega) wpos]; simp
-  have eX2' : X2 = 2 * (2 * x % 2 ^ (32 * P.W)) % 2 ^ (32 * P.W) := by rw [← eX2]; simp
-  have R2l : R2 < 2 ^ (32 * P.w) := eR2 ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
-  rw [← eR2', ← eT2', ← eX2'] at hs
-  refine ht.mono (fun j hj => ?_) (fun j hj => ?_) (fun d hd => ?_)
-  · simp only [LS5, List.mem_cons, List.not_mem_nil, or_false] at hj
-    refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> rd_up <;> simp only [AS, hs, ey] <;> rd_up
-    · by_cases c : R2 < T2
-      · have : Bb = 1 := by rw [← eB]; simp [c, b2n]
-        simp [c, this]
-      · have : Bb = 0 := by rw [← eB]; simp [c, b2n]
-        simp [c, this, sub32_le R2l (Nat.le_of_not_lt c)]
-    · by_cases c : R2 < T2
-      · have : Bb = 1 := by rw [← eB]; simp [c, b2n]
-        simp [c, this]
-      · have : Bb = 0 := by rw [← eB]; simp [c, b2n]
-        simp [c, this, shl_mod (v := y) (c := 1) (by omega) wpos]
-  · simp only [LWM, List.mem_cons, List.not_mem_nil, or_false] at hj
-    refine ⟨by rcases hj with rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl | rfl <;> rd_up <;> simp only [AWS, hs] <;> rd_up <;> split <;> rfl
-  · simp only [LSS5, List.mem_cons, List.not_mem_nil, or_false] at hd
-    refine ⟨by rcases hd with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-    rcases hd with rfl | rfl | rfl | rfl | rfl <;> rd_up <;> simp only [VS] <;> rd_up <;> omega
-
-/-- The root and the remainder. -/
-abbrev yV (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat := (rs P f g h σ (16 * P.W)).2.2
-abbrev rmV (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat := (rs P f g h σ (16 * P.W)).2.1
-
-def AR (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
-  upd (upd (AB P) aB (bV P f g σ)) aY (yV P f g h σ)
-def VR (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
-  upd (VM4 P f g σ) sOk5 (if rmV P f g h σ = 0 then 1 else 0)
+def AR (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
+  upd (upd (AB P) aB (bV P f g σ)) aY (yV P f g σ)
+def VR (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
+  upd (VM4 P f g σ) sOk5 (if rmV P f g σ = 0 then 1 else 0)
 abbrev LR : List Nat := [aY, aB, aN, aZN, aOneN]
 abbrev LSR : List Nat := [sOk5, sOk4, sExact, sLt, sOkDE]
 
-theorem sqrt_vp {f g h : Nat × Nat × Nat → Nat × Nat × Nat} (hh : SqrtF P h) {E : State → Prop} :
+/-- The normalized root, shifted down, is `X`'s (0 where `X` was 0, and 1 replaced it). -/
+theorem root_norm (P : RP) (X : Nat) :
+    (if (if X = 0 then 1 else 0) = 0 then isqrt (nX P X) / 2 ^ (lzX P X / 2) else 0) = isqrt X := by
+  by_cases h : X = 0
+  · subst h; simp only [↓reduceIte, Nat.one_ne_zero]; exact isqrt_zero.symm
+  · simp only [h, ↓reduceIte, nX, xz]
+    rw [Nat.mul_comm]; exact VG.Proof.Bignum.SqrtRem.norm_sqrt _ _
+
+theorem isqrt_one : isqrt 1 = 1 := by
+  have h1 := VG.Proof.Rsa.Arm.RecoverDet.le_isqrt (s := 1) (x := 1) (by decide)
+  have h2 := isqrt_sq_le 1
+  have : isqrt 1 ≤ 1 := by
+    refine Nat.le_of_not_lt fun c => ?_
+    have := Nat.mul_le_mul (show 2 ≤ isqrt 1 by omega) (show 2 ≤ isqrt 1 by omega)
+    omega
+  omega
+
+/-- The normalized `X` is a square exactly where `X` is. -/
+theorem square_norm (P : RP) (X : Nat) :
+    nX P X - isqrt (nX P X) * isqrt (nX P X) = 0 ↔ X - isqrt X * isqrt X = 0 := by
+  have e : ∀ x, x - isqrt x * isqrt x = 0 ↔ isqrt x * isqrt x = x := fun x => by
+    have := isqrt_sq_le x; omega
+  rw [e, e]
+  simp only [nX]
+  rw [Nat.mul_comm (xz X), VG.Proof.Bignum.SqrtRem.norm_square]
+  by_cases h : X = 0
+  · subst h; simp only [xz, ↓reduceIte, isqrt_one, isqrt_zero]
+  · simp only [xz, h, ↓reduceIte]
+
+theorem topA_last (P : RP) (x : Nat) : topA P.W x (P.w + 1) = x := by
+  simp only [topA, show P.W - 2 * (P.w + 1) = 0 by simp only [RP.W]; omega, Nat.mul_zero, Nat.pow_zero,
+    Nat.div_one]
+
+/-- The wide arrays of the digits. -/
+abbrev LWQ : List Nat := [wE, wD, wR, wOne, wZ]
+/-- The slots of the digits. -/
+abbrev LSQ' : List Nat := [sCm, sD1, sLn, sK, sMo, sPo, sV, sD, sLz, sZ, sOk4, sExact, sLt, sOkDE]
+
+/-- The square root of `b² - 4 n`, by words: `X` normalized, its top two words' root, a digit per two
+words, the root shifted back and its low `w` words into `[aY]`, and whether the remainder is 0. -/
+theorem sqrt_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
     VP (Dk P E (AM4 P f g) LM4 (AWM P f g) LWM (VM4 P f g) LSM P.w nArr) sqrt
-      (Dk P E (AR P f g h) LR (fun _ => upd (upd (fun _ => 0) wZ 0) wOne 1) [wOne, wZ] (VR P f g h) LSR
+      (Dk P E (AR P f g) LR (fun _ => upd (upd (fun _ => 0) wZ 0) wOne 1) [wOne, wZ] (VR P f g) LSR
         P.w nArr) := by
+  refine VP.of_imp (p := 1 ≤ P.w ∧ P.W ≤ 518) (fun σ s h => ⟨by have := h.2.1.sizes.w6a; simp only [RP.w]; omega,
+    h.2.1.sizes.Wle⟩) fun ⟨w1, Wl⟩ => ?_
+  have hW : P.W = 2 * P.w + 2 := rfl
+  have xl : ∀ σ, AWM P f g σ wR < 2 ^ (32 * P.W) := fun σ => by simp only [AWM]; rd_up; exact sub32_lt _ _ _
   simp only [sqrt, seqs]
-  refine (sqrtPre_vp (h := h)).seq (VP.seq (G := fun σ s => E σ ∧ SI P f g h (16 * P.W) σ s) ?_ ?_)
-  · refine VP.of_imp (p := 0 < 16 * P.W) (fun σ s ⟨_, h, _⟩ => by show 0 < 16 * (2 * (2 * P.w6 + 2) + 2); omega)
-      fun pos => ?_
-    exact VP.count (E := E) (I := SI P f g h) pos fun k hk => VP.dctx sqrtBody_taint (fun _ _ h => h.2.2)
-      fun σ s ⟨e, h0⟩ => WP.mono (sqrtBody_ok hh h0 hk) fun t ⟨ht, z⟩ => ⟨⟨e, ht⟩, z⟩
-  · refine VP.dctx eqOk5_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h0, hv⟩ => ?_
-    refine WP.mono (h0.eqS_w hv (d := sOk5) (a := aRm) (b := aZN) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide)) fun t ⟨ht, hvt, _⟩ => ⟨e, ?_, hvt⟩
-    refine ht.mono (fun j hj => ?_) (fun j hj => ?_) (fun d hd => ?_)
-    · simp only [LR, List.mem_cons, List.not_mem_nil, or_false] at hj
-      refine ⟨by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-      rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [AS, AR, AM4, AB] <;> rd_ev
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-      refine ⟨by rcases hj with rfl | rfl <;> decide, ?_⟩
-      rcases hj with rfl | rfl <;> simp only [AWS, AWM] <;> rd_ev
-    · simp only [LSR, List.mem_cons, List.not_mem_nil, or_false] at hd
-      refine ⟨by rcases hd with rfl | rfl | rfl | rfl | rfl <;> decide, ?_⟩
-      rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp only [VR, VS, AS, AM4, AB] <;> rd_ev
+  refine toW_vp.seq ?_
+  refine (normX_vp (by decide) (by decide) (fun σ _ => by simp only [AWM]; rd_up) (by decide) (by decide)
+    (by decide)).seq ?_
+  refine (firstDigit_vp (by decide) (by decide) (by decide) (by decide) (fun σ _ => by simp only [AWM]; rd_up)
+    (fun σ _ => by simp only [AWM]; rd_up)
+    (fun σ _ => by rd_up; exact (nX_bounds (xl σ)).1) (fun σ _ => by rd_up; exact (nX_bounds (xl σ)).2.1)
+    (by omega)).seq ?_
+  refine sqInit_vp.seq ?_
+  -- the digits
+  let AWb : State → Nat → Nat := fun σ => upd (AWM P f g σ) wR (nX P (AWM P f g σ wR))
+  let Vb : State → Nat → Nat := fun σ => upd (upd (VN (VM4 P f g σ) (AWM P f g σ wR)
+    (lzX P (AWM P f g σ wR))) sD (sJ P.W (nX P (AWM P f g σ wR)) 1)) sV
+    ((2 ^ 64 - 1) / sJ P.W (nX P (AWM P f g σ wR)) 1 - 2 ^ 32)
+  refine VP.seq (G := fun σ s => E σ ∧ Dk P E (AM4 P f g) LM4 (fun σ => DAW P.W (P.w + 1) (AWb σ)) LWQ
+      (fun σ => DV P.W P.w (P.w + 1) (sJ P.W (AWb σ wR) (P.w + 1)) (Vb σ)) LSQ' P.W 22 σ s)
+    (VP.mono (sqLoop_vp (K := P.w) (AW := AWb) (V := Vb) hW.symm w1 (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide)
+      (fun σ _ => by simp only [AWb]; rd_up; exact (nX_bounds (xl σ)).1)
+      (fun σ _ => by simp only [AWb]; rd_up; exact (nX_bounds (xl σ)).2.1)
+      (fun σ _ => by simp only [Vb, AWb]; rd_up) (fun σ _ => by simp only [Vb]; rd_up))
+      (fun σ s ⟨e, h, hv⟩ => ⟨e, e, h.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, ?_⟩), hv⟩)
+      (fun _ _ h => h)) ?_
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [Vb, DV, VN, AWb] <;> rd_up
+    · omega
+    · simp only [Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.mul_mod_left]
+    · omega
+    · omega
+  -- the root `D / 2`
+  refine VP.seq (VP.mono (sqEnd_vp (by decide) (by decide)) (fun σ s h => h.2) fun _ _ h => h) ?_
+  -- the finish
+  have hK0 : P.W / 2 - (P.w + 1) = 0 := by omega
+  refine VP.mono (sqFinish_vp (L := LM4) (LW := [wR, wS, wOne, wZ]) (LS := [sLz, sZ, sOk4, sExact, sLt, sOkDE])
+    (v := fun σ => isqrt (nX P (AWM P f g σ wR))) (lz := fun σ => lzX P (AWM P f g σ wR))
+    (z := fun σ => if AWM P f g σ wR = 0 then 1 else 0) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (fun σ _ => by simp only [DAW, AWb, AWM]; rd_up)
+    (fun σ _ => by
+      simp only [DAW, Dv, AWb, sJ]; rd_up
+      rw [topA_last, hK0, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_div_cancel_left _ (by decide)])
+    (fun σ _ => by simp only [DV, Vb, VN]; rd_up) (fun σ _ => by simp only [DV, Vb, VN]; rd_up)
+    (fun σ _ => by split <;> omega) (fun σ _ => (nX_bounds (xl σ)).2.2)
+    (fun σ _ => by
+      have b := (nX_bounds (xl σ)).2.1
+      have sq := isqrt_sq_le (nX P (AWM P f g σ wR))
+      have we : 32 * P.W = 32 * (P.W / 2) + 32 * (P.W / 2) := by omega
+      rw [we, Nat.pow_add] at b
+      exact Nat.lt_of_not_le fun h => Nat.lt_irrefl _ (Nat.lt_of_le_of_lt (Nat.le_trans (Nat.mul_le_mul h h) sq) b)))
+    (fun σ s ⟨e, h, hv⟩ => ⟨e, h.mono (fun j hj => ⟨hj, rfl⟩)
+      (fun j hj => ⟨(show [wR, wS, wOne, wZ] ⊆ wS :: LWQ by decide) hj, rfl⟩)
+      (fun d hd => ⟨(show [sLz, sZ, sOk4, sExact, sLt, sOkDE] ⊆ LSQ' by decide) hd, rfl⟩), hv⟩)
+    (fun σ s ⟨e, h, hv⟩ => ⟨e, h.mono (fun j hj => ⟨?_, ?_⟩) (fun j hj => ⟨?_, ?_⟩) (fun d hd => ⟨?_, ?_⟩), hv⟩)
+  · simp only [LR, List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide
+  · simp only [LR, List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp only [AR, AM4, AB] <;> rd_up
+    rw [root_norm]; simp only [AWM]; rd_up
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl <;> decide
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl <;> simp only [DAW, AWb, AWM] <;> rd_up
+  · simp only [LSR, List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl | rfl <;> decide
+  · simp only [LSR, List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp only [VR, DV, Vb, VN] <;> rd_up
+    simp only [Rv, AWb, rJ, sJ, rmV]; rd_up
+    rw [topA_last, show P.W - 2 * (P.w + 1) = 0 by omega, Nat.mul_zero, Nat.pow_zero, Nat.mod_one, Nat.zero_add,
+      Nat.one_mul]
+    by_cases c : xRV P f g σ - isqrt (xRV P f g σ) * isqrt (xRV P f g σ) = 0
+    · simp only [AWM] at *; rd_up; simp only [(square_norm P _).mpr c, c, ↓reduceIte]
+    · simp only [AWM] at *; rd_up
+      simp only [show ¬ (_ = 0) from fun h' => c ((square_norm P _).mp h'), c, ↓reduceIte]
+
+end
 
 /-! ## The factors -/
 
@@ -407,23 +307,23 @@ theorem ite_b2n (p : Prop) [Decidable p] : (if p then 1 else 0) = b2n (decide p)
   by_cases h : p <;> simp [h, b2n]
 
 /-- The factors and the mask. -/
-abbrev pV (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
-  (bV P f g σ + yV P f g h σ) % 2 ^ (32 * P.w) / 2
-abbrev qV' (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
-  sub32 P.w (bV P f g σ) (yV P f g h σ) / 2
-abbrev okV (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Bool :=
+abbrev pV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
+  (bV P f g σ + yV P f g σ) % 2 ^ (32 * P.w) / 2
+abbrev qV' (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat :=
+  sub32 P.w (bV P f g σ) (yV P f g σ) / 2
+abbrev okV (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Bool :=
   okDEv P σ && decide (aV P f g σ / P.n < P.n) && decide (remV P f g σ = 0) && ok4v P f g σ &&
-    decide (rmV P f g h σ = 0)
+    decide (rmV P f g σ = 0)
 
-def AFac (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
-  upd (upd (fun _ => 0) aP (pV P f g h σ)) aQ (qV' P f g h σ)
-def VFac (P : RP) (f g h : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
-  upd (fun _ => 0) sMask (b2n (okV P f g h σ))
+def AFac (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
+  upd (upd (fun _ => 0) aP (pV P f g σ)) aQ (qV' P f g σ)
+def VFac (P : RP) (f g : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) : Nat → Nat :=
+  upd (fun _ => 0) sMask (b2n (okV P f g σ))
 
-theorem factors_vp {f g h : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
-    VP (Dk P E (AR P f g h) LR (fun _ => upd (upd (fun _ => 0) wZ 0) wOne 1) [wOne, wZ] (VR P f g h) LSR
+theorem factors_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop} :
+    VP (Dk P E (AR P f g) LR (fun _ => upd (upd (fun _ => 0) wZ 0) wOne 1) [wOne, wZ] (VR P f g) LSR
       P.w nArr) factors
-      (Dk P E (AFac P f g h) [aQ, aP] (fun _ _ => 0) [] (VFac P f g h) [sMask] P.w nArr) := by
+      (Dk P E (AFac P f g) [aQ, aP] (fun _ _ => 0) [] (VFac P f g) [sMask] P.w nArr) := by
   refine VP.dctx factors_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h0, hv⟩ => ?_
   simp only [factors, seqs]
   refine WP.seq (WP.mono (h0.add_w hv (o := aP) (a := aB) (b := aY) (t := aT1) (z := aZN) (by decide) (by decide)
@@ -436,7 +336,7 @@ theorem factors_vp {f g h : Nat × Nat × Nat → Nat × Nat × Nat} {E : State 
   refine WP.seq (h4.clr11 hv4 fun s5 h5 hv5 z5 => WP.block_nil ?_)
   refine WP.seq (WP.mono (h5.half_w hv5 (j := aQ) (by decide) z5 (by decide)) fun s6 ⟨h6, hv6, _⟩ => ?_)
   simp only [List.append_assoc]
-  have bit : ∀ d ∈ LSR, VR P f g h σ d ≤ 1 := by
+  have bit : ∀ d ∈ LSR, VR P f g σ d ≤ 1 := by
     intro d hd
     simp only [LSR, List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl <;> simp only [VR, VM4, VB, VA, VG'] <;> rd_up <;>
@@ -453,7 +353,7 @@ theorem factors_vp {f g h : Nat × Nat × Nat → Nat × Nat × Nat} {E : State 
   refine ht.mono (fun j hj => ?_) (fun j hj => by simp at hj) (fun d hd => ?_)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     refine ⟨by rcases hj with rfl | rfl <;> decide, ?_⟩
-    rcases hj with rfl | rfl <;> simp only [AFac, AR, AB] <;> rd_ev
+    rcases hj with rfl | rfl <;> simp only [AFac, AR, AB] <;> rd_ev <;> simp only [pV, yV, Nat.add_mod_mod]
   · simp only [List.mem_singleton] at hd; subst hd
     refine ⟨by decide, ?_⟩
     simp only [upd_self, VFac]
