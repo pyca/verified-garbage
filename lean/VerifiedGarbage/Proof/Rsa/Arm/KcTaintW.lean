@@ -27,22 +27,32 @@ namespace VG.Proof.Rsa.Arm.KeyCheck
 open VG VG.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.KeyCheck
 open VG.Proof.Rsa.Arm.KeyDiv
 
-/-- The checks between the first product and the second. -/
-abbrev chunk1 : List (Prog isa) := eqA aVQ aN ++
-  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
-  ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
-  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++ ltA aQI aP
+/-- The checks between the first product and the next: `p q = n`, `p - 1`, `q - 1`, `dP < p - 1`. -/
+abbrev chunkA : List (Prog isa) := eqA aVQ aN ++
+  [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++ ltA aDP aM1
+/-- `e dP mod (p - 1) = 1`, `dQ < q - 1`. -/
+abbrev chunkB : List (Prog isa) := eqA aVR aOne ++ ltA aDQ aM2
+/-- `e dQ mod (q - 1) = 1`, `qInv < p`. -/
+abbrev chunkC : List (Prog isa) := eqA aVR aOne ++ ltA aQI aP
 
 /-- `shape`, from `n_len` in `r11` and the stack arguments. -/
-theorem shape_taint :
-    ∃ hc, (VG.Taint.check taint (argTaint [.r11] (4 * 14)) (.block (shape 12 20)) hc).isSome = true :=
+theorem shape_taint : ∃ hc, (VG.Taint.check taint (argTaint [.r11] (4 * 14))
+    (.block (VG.Impl.Rsa.Arm.KeyDiv.shape4 12 20 28 36)) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
 theorem startW_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r8, .r11]) startW hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem chunk1_taint :
-    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunk1) hc).isSome = true :=
+theorem chunkA_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkA) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkB_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkB) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem chunkC_taint :
+    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (seqs chunkC) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
 theorem divSetP_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9])
@@ -74,6 +84,17 @@ theorem mulVQ_taint : MulTaint aVQ aP aQ :=
 
 theorem mulT_taint : MulTaint aT aQ aQI :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulDP_taint : MulTaint aA aDP aE :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem mulDQ_taint : MulTaint aA aDQ aE :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+theorem divA_taint : DivTaint aA aVR aVD aVT aY aX :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 theorem divT_taint : DivTaint aT aVR aVD aVT aY aX :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,

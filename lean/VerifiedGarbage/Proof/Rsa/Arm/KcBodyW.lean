@@ -321,8 +321,6 @@ macro "ne_nil" : tactic => `(tactic| first
   | (unfold mulA; exact List.cons_ne_nil _ _)
   | (unfold divK; exact List.cons_ne_nil _ _))
 
-theorem mulIdx_qp : MulIdx nArr aZ aY aX aA aP aT := by decide
-
 /-- `keyBodyW`: for a balanced key, the mask is `cW` of what the checks compute. -/
 theorem keyBodyW_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hw : g.w % 2 = 0)
     (hp : v.p < 2 ^ (32 * (g.w / 2))) (hq : v.q < 2 ^ (32 * (g.w / 2))) (hdp : v.dP < 2 ^ (32 * (g.w / 2)))

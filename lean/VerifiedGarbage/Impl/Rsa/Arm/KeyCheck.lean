@@ -171,9 +171,6 @@ def keyBody : Prog isa := seqs [crtBody, dChecks1, Rsa.Arm.Div.code, .block ctxD
 
 /-! ## Balanced keys, by words -/
 
-/-- `KeyDiv.shape`: Z exactly for a balanced key. -/
-def shape (oP oQ : Nat) : List Instr := KeyDiv.shape oP oQ
-
 /-- `[aVR] := [a] mod [d]` by words (`KeyDiv.divW`): `[d]`, of `w / 2` words, copied
 to `aVD` with its top word made not zero (as it is for `p`, `p - 1`, `q` and `q - 1`
 when `p q = n`), through `aVT`, `aY` and `aX`. -/
@@ -184,7 +181,8 @@ def divK (a d : Nat) : List (Prog isa) :=
 def startW : Prog isa := .block (ctxK ++ setOne aOne ++ bitOf sMask aP)
 
 /-- `crtChecks` for a balanced key: `p q = n` by `p q mod 2^(32 w)` (`KeyDiv.mulLo`,
-exact there), and `q qInv mod p` by words. -/
+exact there), and `e dP mod (p - 1)`, `e dQ mod (q - 1)` (`dX e mod 2^(32 w)`, exact for a
+valid `e`) and `q qInv mod p` by words. -/
 def crtChecksW : List (Prog isa) := [KeyDiv.mulLo aVQ aP aQ] ++ eqA aVQ aN ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
   ltA aDP aM1 ++ [KeyDiv.mulLo aA aDP aE] ++ divK aA aM1 ++ eqA aVR aOne ++
@@ -197,8 +195,9 @@ def dChecksW : List (Prog isa) := ltA aD aN ++ divK aD aM1 ++ eqA aVR aDP ++ div
 /-- `keyBody` for a balanced key. -/
 def keyBodyW : Prog isa := seqs ([startW] ++ crtChecksW ++ dChecksW)
 
-/-- The checks of `vg_rsa_check_key`: by words for a balanced key (`shape`, with
-`p_len` and `q_len` at the stack offsets `oP` and `oQ`), else `keyBody`. -/
+/-- The checks of `vg_rsa_check_key`: by words for a balanced key (`KeyDiv.shape4`, with
+`p_len`, `q_len`, `dp_len` and `dq_len` at the stack offsets `oP`, `oQ`, `oDP` and `oDQ`), else
+`keyBody`. -/
 def keyBodyS (oP oQ oDP oDQ : Nat) : Prog isa :=
   .seq (.block (KeyDiv.shape4 oP oQ oDP oDQ)) (.ite .eq keyBodyW keyBody)
 

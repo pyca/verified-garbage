@@ -38,8 +38,9 @@ open VG.Proof.X25519.Arm
 /-- `w / 2` words. -/
 abbrev Bd (g : Geo) : Nat := 2 ^ (32 * (g.w / 2))
 
-/-- From the start: the zero array, `p` and `q` of `w / 2` words. -/
-def M0 (g : Geo) (A : Nat → Nat) : Prop := A aZ = 0 ∧ A aP < Bd g ∧ A aQ < Bd g
+/-- From the start: the zero array, `p`, `q`, `dP` and `dQ` of `w / 2` words. -/
+def M0 (g : Geo) (A : Nat → Nat) : Prop :=
+  A aZ = 0 ∧ A aP < Bd g ∧ A aQ < Bd g ∧ A aDP < Bd g ∧ A aDQ < Bd g
 /-- After the checks of `dP` and `dQ`: also `p - 1` and `q - 1`. -/
 def M1 (g : Geo) (A : Nat → Nat) : Prop := M0 g A ∧ A aM1 < Bd g ∧ A aM2 < Bd g
 /-- Before a division: also its divisor, with its top word not zero. -/
@@ -50,17 +51,20 @@ def StW (g : Geo) (σ : State) (L : List Nat) (M : (Nat → Nat) → Prop) (s : 
   ∃ A c, Stg g σ A L c s ∧ M A
 
 theorem M0_upd {g : Geo} {A : Nat → Nat} (h : M0 g A) {o : Nat} (z : Nat) (h1 : aZ ≠ o) (h2 : aP ≠ o)
-    (h3 : aQ ≠ o) : M0 g (upd A o z) := by
-  obtain ⟨a, b, c⟩ := h
-  refine ⟨?_, ?_, ?_⟩
+    (h3 : aQ ≠ o) (h4 : aDP ≠ o := by decide) (h5 : aDQ ≠ o := by decide) : M0 g (upd A o z) := by
+  obtain ⟨a, b, c, d, e⟩ := h
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [upd_ne _ _ h1]; exact a
   · rw [upd_ne _ _ h2]; exact b
   · rw [upd_ne _ _ h3]; exact c
+  · rw [upd_ne _ _ h4]; exact d
+  · rw [upd_ne _ _ h5]; exact e
 
 theorem M1_upd {g : Geo} {A : Nat → Nat} (h : M1 g A) {o : Nat} (z : Nat) (h1 : aZ ≠ o) (h2 : aP ≠ o)
-    (h3 : aQ ≠ o) (h4 : aM1 ≠ o) (h5 : aM2 ≠ o) : M1 g (upd A o z) := by
+    (h3 : aQ ≠ o) (h4 : aM1 ≠ o) (h5 : aM2 ≠ o) (h6 : aDP ≠ o := by decide) (h7 : aDQ ≠ o := by decide) :
+    M1 g (upd A o z) := by
   obtain ⟨m, d, e⟩ := h
-  refine ⟨M0_upd m z h1 h2 h3, ?_, ?_⟩
+  refine ⟨M0_upd m z h1 h2 h3 h6 h7, ?_, ?_⟩
   · rw [upd_ne _ _ h4]; exact d
   · rw [upd_ne _ _ h5]; exact e
 
@@ -99,9 +103,9 @@ theorem StW.divPre {g : Geo} {σ s : State} {L : List Nat} (h : StW g σ L (MD g
 
 /-! ## Each piece, for one run -/
 
-theorem stw_start {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hp : v.p < Bd g) (hq : v.q < Bd g) :
-    WP isa startW s (StW g s live0 (M0 g)) :=
-  WP.mono (first_ok h) fun _ ht => ⟨_, _, ht, rfl, hp, hq⟩
+theorem stw_start {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) (hp : v.p < Bd g) (hq : v.q < Bd g)
+    (hdp : v.dP < Bd g) (hdq : v.dQ < Bd g) : WP isa startW s (StW g s live0 (M0 g)) :=
+  WP.mono (first_ok h) fun _ ht => ⟨_, _, ht, rfl, hp, hq, hdp, hdq⟩
 
 theorem stw_mulLo {g : Geo} {σ s : State} {L : List Nat} {M : (Nat → Nat) → Prop} (h : StW g σ L M s)
     {o x y : Nat} (ho : o < nArr) (hx : x ∈ L) (hy : y ∈ L) (hz : aZ ∈ L) (hox : o ≠ x) (hoy : o ≠ y)
@@ -122,14 +126,14 @@ theorem stw_ltA {g : Geo} {σ s : State} {L : List Nat} {M : (Nat → Nat) → P
   obtain ⟨A, c, hs, hm⟩ := h
   exact WP.mono (hs.ltA_ok ha hb hW) fun _ ht => ⟨_, _, ht, hm⟩
 
-/-- The list of arrays after the checks of `dP`, `dQ` and `qInv < p`. -/
-abbrev L2 : List Nat := aA :: aA :: aM2 :: aM1 :: aVQ :: live0
+/-- The list of arrays after `p - 1` and `q - 1`. -/
+abbrev LA : List Nat := aM2 :: aM1 :: aVQ :: live0
 
-theorem stw_chunk1 {g : Geo} {σ s : State} (h : StW g σ (aVQ :: live0) (M0 g) s) :
-    WP isa (seqs chunk1) s (StW g σ L2 (M1 g)) := by
+theorem stw_chunkA {g : Geo} {σ s : State} (h : StW g σ (aVQ :: live0) (M0 g) s) :
+    WP isa (seqs chunkA) s (StW g σ LA (M1 g)) := by
   obtain ⟨A, c, h1, hm⟩ := h
-  obtain ⟨m0, mp, mq⟩ := hm
-  unfold chunk1
+  obtain ⟨m0, mp, mq, md, me⟩ := hm
+  unfold chunkA
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   rw [wp_seqs_append (by ne_nil) (by ne_nil)]
   refine WP.mono (h1.eqA_ok (a := aVQ) (b := aN) (by decide) (by decide) (by decide)) fun t2 h2 => ?_
@@ -150,31 +154,11 @@ theorem stw_chunk1 {g : Geo} {σ s : State} (h : StW g σ (aVQ :: live0) (M0 g) 
     simp only [M1, M0, upd, ↓reduceIte]
     simp (disch := decide) only [show aZ ≠ aM2 by decide, show aZ ≠ aM1 by decide, show aP ≠ aM2 by decide,
       show aP ≠ aM1 by decide, show aQ ≠ aM2 by decide, show aQ ≠ aM1 by decide, show aM1 ≠ aM2 by decide,
+      show aDP ≠ aM2 by decide, show aDP ≠ aM1 by decide, show aDQ ≠ aM2 by decide, show aDQ ≠ aM1 by decide,
       ↓reduceIte]
     omega
-  have M6 := hA0 _ rfl
-  -- `dP`.
-  rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h6.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun t7 h7 => ?_
-  rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h7.mulA_ok (y := aE) (x := aDP) (m := aM1) (k := 33) (by decide) (by decide) (by decide)
-    (by decide) (by rw [M6.1.1]) mulIdx_m1 (by decide) (by decide) (by decide) (by decide) fun u _ => cnt33_ok u)
-    fun t8 ⟨R₁, _, h8⟩ => ?_
-  have M8 := M1_upd M6 (o := aA) R₁ (by decide) (by decide) (by decide) (by decide) (by decide)
-  rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h8.eqA_ok (a := aA) (b := aOne) (by decide) (by decide) (by decide)) fun t9 h9 => ?_
-  -- `dQ`.
-  rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h9.ltA_ok (a := aDQ) (b := aM2) (by decide) (by decide) (by decide)) fun t10 h10 => ?_
-  rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h10.mulA_ok (y := aE) (x := aDQ) (m := aM2) (k := 33) (by decide) (by decide) (by decide)
-    (by decide) (by rw [M8.1.1]) mulIdx_m2 (by decide) (by decide) (by decide) (by decide) fun u _ => cnt33_ok u)
-    fun t11 ⟨R₂, _, h11⟩ => ?_
-  have M11 := M1_upd M8 (o := aA) R₂ (by decide) (by decide) (by decide) (by decide) (by decide)
-  rw [wp_seqs_append (by ne_nil) (by ne_nil)]
-  refine WP.mono (h11.eqA_ok (a := aA) (b := aOne) (by decide) (by decide) (by decide)) fun t12 h12 => ?_
-  exact WP.mono (h12.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun _ h13 =>
-    ⟨_, _, h13, M11⟩
+  exact WP.mono (h6.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun _ h7 =>
+    ⟨_, _, h7, hA0 _ rfl⟩
 
 /-- `[aVD] := fixT [d]`, the divisor of a division. -/
 theorem stw_divSet {g : Geo} {σ s : State} {L : List Nat} (h : StW g σ L (M1 g) s) {d : Nat} (hd : d ∈ L)
@@ -210,7 +194,11 @@ theorem stw_divW {g : Geo} {σ s : State} {L : List Nat} (h : StW g σ L (MD g) 
 
 /-- `keyBodyW`, in the pieces of its proof of constant time. -/
 abbrev partsW : List (List (Prog isa)) :=
-  [[startW], [VG.Impl.Rsa.Arm.KeyDiv.mulLo aVQ aP aQ], chunk1, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aT aQ aQI],
+  [[startW], [VG.Impl.Rsa.Arm.KeyDiv.mulLo aVQ aP aQ], chunkA, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aA aDP aE],
+    [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
+    [VG.Impl.Rsa.Arm.KeyDiv.divW aA aVR aVD aVT aY aX], chunkB, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aA aDQ aE],
+    [copy aVD aM2, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
+    [VG.Impl.Rsa.Arm.KeyDiv.divW aA aVR aVD aVT aY aX], chunkC, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aT aQ aQI],
     [copy aVD aP, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
     [VG.Impl.Rsa.Arm.KeyDiv.divW aT aVR aVD aVT aY aX], eqA aVR aOne ++ ltA aD aN,
     [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
@@ -219,8 +207,8 @@ abbrev partsW : List (List (Prog isa)) :=
     [VG.Impl.Rsa.Arm.KeyDiv.divW aD aVR aVD aVT aY aX], eqA aVR aDQ]
 
 theorem keyBodyW_parts : keyBodyW = seqs partsW.flatten := by
-  simp only [keyBodyW, crtChecksW, dChecksW, divK, partsW, chunk1, List.flatten_cons, List.flatten_nil,
-    List.append_assoc, List.cons_append, List.nil_append, List.append_nil]
+  simp only [keyBodyW, crtChecksW, dChecksW, divK, partsW, chunkA, chunkB, chunkC, List.flatten_cons,
+    List.flatten_nil, List.append_assoc, List.cons_append, List.nil_append, List.append_nil]
 
 /-! ## Both runs -/
 
@@ -297,7 +285,9 @@ theorem stw_eqLt {g : Geo} {σ s : State} {L : List Nat} {M : (Nat → Nat) → 
   rw [wp_seqs_append (by unfold eqA; exact List.cons_ne_nil _ _) (by unfold ltA; exact List.cons_ne_nil _ _)]
   exact WP.mono (stw_eqA h ha hb hW) fun _ h' => stw_ltA h' hc hd hW
 
-abbrev L4 : List Nat := aVR :: aVD :: aT :: L2
+abbrev LB : List Nat := aVR :: aVD :: aA :: LA
+abbrev LC : List Nat := aVR :: aVD :: aA :: LB
+abbrev L4 : List Nat := aVR :: aVD :: aT :: LC
 abbrev L5 : List Nat := aVR :: aVD :: L4
 abbrev L6 : List Nat := aVR :: aVD :: L5
 
@@ -308,12 +298,13 @@ include hg
 
 /-- `keyBodyW` is constant time, for a balanced key. -/
 theorem keyBodyW_ct : RelCT isa (LiftB Pub fun a σ v s => s = σ ∧ X a σ ∧ BodyIn (gf a) v s ∧
-      (gf a).w % 2 = 0 ∧ v.p < Bd (gf a) ∧ v.q < Bd (gf a)) keyBodyW
+      (gf a).w % 2 = 0 ∧ v.p < Bd (gf a) ∧ v.q < Bd (gf a) ∧ v.dP < Bd (gf a) ∧ v.dQ < Bd (gf a)) keyBodyW
     (LiftB Pub fun a σ _ t => X a σ ∧ ∃ A live c, Stg (gf a) σ A live c t) := by
   rw [keyBodyW_parts]
   refine RelCT.of_join (fun l hl => by
     simp only [partsW, List.mem_cons, List.not_mem_nil, or_false] at hl
-    rcases hl with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> ne_nil)
+    rcases hl with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl <;> ne_nil)
     (List.cons_ne_nil _ _) ?_
   simp only [partsW, List.map_cons, List.map_nil, seqs_single]
   refine RelCT.seq (R := LiftB Pub (FW (gf := gf) X live0 M0)) (pieceB [.r8, .r11] startW_taint
@@ -322,23 +313,45 @@ theorem keyBodyW_ct : RelCT isa (LiftB Pub fun a σ v s => s = σ ∧ X a σ ∧
       rintro r (rfl | rfl)
       · rw [h₁.2.2.1.r8, h₂.2.2.1.r8, hg _ _ p]
       · rw [h₁.2.2.1.r11, h₂.2.2.1.r11, hg _ _ p])
-    fun a σ v s ⟨e, x, h, hw, hp, hq⟩ => by
+    fun a σ v s ⟨e, x, h, hw, hp, hq, hdp, hdq⟩ => by
       subst e
       have kb := h.kb
-      exact WP.mono (stw_start h hp hq) fun t ht => ⟨⟨x, hw, by simp only [Geo.w]; omega⟩, ht⟩) ?_
+      exact WP.mono (stw_start h hp hq hdp hdq) fun t ht => ⟨⟨x, hw, by simp only [Geo.w]; omega⟩, ht⟩) ?_
   refine RelCT.seq (mulPieceB hg X VG.Proof.Rsa.Arm.KeyCheck.mulVQ_taint (L := live0) (M := M0) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun _ _ h => ⟨h.1, h.2.1⟩) fun _ _ z h => M0_upd h z (by decide) (by decide) (by decide)) ?_
-  refine RelCT.seq (wPieceB hg X chunk1_taint (L := aVQ :: live0) (M := M0) (L' := L2) (M' := M1)
-    fun _ _ _ _ _ h => stw_chunk1 h) ?_
-  refine RelCT.seq (mulPieceB hg X mulT_taint (L := L2) (M := M1) (by decide) (by decide) (by decide)
+  refine RelCT.seq (wPieceB hg X chunkA_taint (L := aVQ :: live0) (M := M0) (L' := LA) (M' := M1)
+    fun _ _ _ _ _ h => stw_chunkA h) ?_
+  -- `e dP mod (p - 1)`.
+  refine RelCT.seq (mulPieceB hg X mulDP_taint (L := LA) (M := M1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ h => ⟨h.1.1, h.1.2.2⟩)
+    (fun _ _ h => ⟨h.1.1, h.1.2.2.2.1⟩)
     fun _ _ z h => M1_upd h z (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
+  refine RelCT.seq (wPieceB hg X divSetM1_taint (L := aA :: LA) (M := M1) (L' := aVD :: aA :: LA) (M' := MD)
+    fun _ _ _ _ hw6 h => stw_divSet h (d := aM1) (by decide) (by decide) (fun _ h => h.2.1) (by omega)) ?_
+  refine RelCT.seq (divWPieceB hg X divA_taint (L := aVD :: aA :: LA) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)) ?_
+  refine RelCT.seq (wPieceB hg X chunkB_taint (L := LB) (M := M1) (L' := LB) (M' := M1)
+    fun _ _ _ _ _ h => stw_eqLt h (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
+  -- `e dQ mod (q - 1)`.
+  refine RelCT.seq (mulPieceB hg X mulDQ_taint (L := LB) (M := M1) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ h => ⟨h.1.1, h.1.2.2.2.2⟩)
+    fun _ _ z h => M1_upd h z (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
+  refine RelCT.seq (wPieceB hg X divSetM2_taint (L := aA :: LB) (M := M1) (L' := aVD :: aA :: LB) (M' := MD)
+    fun _ _ _ _ hw6 h => stw_divSet h (d := aM2) (by decide) (by decide) (fun _ h => h.2.2) (by omega)) ?_
+  refine RelCT.seq (divWPieceB hg X divA_taint (L := aVD :: aA :: LB) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide)) ?_
+  refine RelCT.seq (wPieceB hg X chunkC_taint (L := LC) (M := M1) (L' := LC) (M' := M1)
+    fun _ _ _ _ _ h => stw_eqLt h (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
   -- `q qInv mod p`.
-  refine RelCT.seq (wPieceB hg X divSetP_taint (L := aT :: L2) (M := M1) (L' := aVD :: aT :: L2) (M' := MD)
+  refine RelCT.seq (mulPieceB hg X mulT_taint (L := LC) (M := M1) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ h => ⟨h.1.1, h.1.2.2.1⟩)
+    fun _ _ z h => M1_upd h z (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
+  refine RelCT.seq (wPieceB hg X divSetP_taint (L := aT :: LC) (M := M1) (L' := aVD :: aT :: LC) (M' := MD)
     fun _ _ _ _ hw6 h => stw_divSet h (d := aP) (by decide) (by decide) (fun _ h => h.1.2.1) (by omega)) ?_
-  refine RelCT.seq (divWPieceB hg X divT_taint (L := aVD :: aT :: L2) (by decide) (by decide) (by decide)
+  refine RelCT.seq (divWPieceB hg X divT_taint (L := aVD :: aT :: LC) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) ?_
   refine RelCT.seq (wPieceB hg X chunk2_taint (L := L4) (M := M1) (L' := L4) (M' := M1)
     fun _ _ _ _ _ h => stw_eqLt h (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
@@ -382,20 +395,22 @@ def ShapeOut (a σ : State) (v : Vals) (t : State) : Prop :=
 
 theorem balanced_pub {a₁ a₂ : State} (p : PubF 14 a₁ a₂) : decide (Balanced 12 a₁) = decide (Balanced 12 a₂) := by
   simp only [Balanced]
-  rw [p.args 3 (by decide), p.args 5 (by decide), p.geo_eq (iS := 12) (by decide)]
+  rw [p.args 3 (by decide), p.args 5 (by decide), p.args 7 (by decide), p.args 9 (by decide),
+    p.geo_eq (iS := 12) (by decide)]
 
 /-- `p` of a balanced key has `w / 2` words, as `q`. -/
 theorem balanced_lt {a : State} (h : Balanced 12 a) :
-    (vK a).p < Bd (geo 12 a) ∧ (vK a).q < Bd (geo 12 a) := by
-  obtain ⟨lp, lq, he⟩ := h
-  exact ⟨bytesV_lt (k := (stackArg a 3).toNat) (by omega), bytesV_lt (k := (stackArg a 5).toNat) (by omega)⟩
+    (vK a).p < Bd (geo 12 a) ∧ (vK a).q < Bd (geo 12 a) ∧ (vK a).dP < Bd (geo 12 a) ∧ (vK a).dQ < Bd (geo 12 a) := by
+  obtain ⟨lp, lq, ld, le, he⟩ := h
+  exact ⟨bytesV_lt (k := (stackArg a 3).toNat) (by omega), bytesV_lt (k := (stackArg a 5).toNat) (by omega),
+    bytesV_lt (k := (stackArg a 7).toNat) (by omega), bytesV_lt (k := (stackArg a 9).toNat) (by omega)⟩
 
 /-- Where the checks started, before `shape`. -/
 abbrev XS (a t : State) : Prop := ∃ σ, FnBase 14 12 insK a σ ∧ Rest [.r0, .r1, .r2, .r3] σ t ∧ t.mem = σ.mem
 
 theorem ck_bodyS_ct : RelCT isa
     (LiftB (PubF 14) fun a σ v s => s = σ ∧ FnBase 14 12 insK a σ ∧ BodyIn (geo 12 a) v s ∧ v = vK a)
-    (keyBodyS 12 20)
+    (keyBodyS 12 20 28 36)
     (LiftB (PubF 14) fun a σ _ t => FnBase 14 12 insK a σ ∧ ∃ A live c, Stg (geo 12 a) σ A live c t) := by
   unfold keyBodyS
   refine RelCT.seq (R := LiftB (PubF 14) ShapeOut) (pieceFB (nA := 14) (iS := 12) (ins := insK) [.r11] shape_taint
@@ -422,8 +437,8 @@ theorem ck_bodyS_ct : RelCT isa
     have B₁ : Balanced 12 a₁ := of_decide_eq_true (z₁ ▸ hz')
     have B₂ : Balanced 12 a₂ := of_decide_eq_true (by rw [← balanced_pub p]; exact z₁ ▸ hz')
     subst ev₁ ev₂
-    exact ⟨a₁, s, _, a₂, t, _, p, ⟨rfl, ⟨σ₁, b₁, r₁, m₁⟩, bi₁.of_rest r₁ m₁, B₁.2.2, balanced_lt B₁⟩,
-      ⟨rfl, ⟨σ₂, b₂, r₂, m₂⟩, bi₂.of_rest r₂ m₂, B₂.2.2, balanced_lt B₂⟩⟩
+    exact ⟨a₁, s, _, a₂, t, _, p, ⟨rfl, ⟨σ₁, b₁, r₁, m₁⟩, bi₁.of_rest r₁ m₁, B₁.2.2.2.2, balanced_lt B₁⟩,
+      ⟨rfl, ⟨σ₂, b₂, r₂, m₂⟩, bi₂.of_rest r₂ m₂, B₂.2.2.2.2, balanced_lt B₂⟩⟩
   · refine (keyBody_ct (Pub := PubF 14) (gf := geo 12) (fun _ _ p => p.geo_eq (by decide)) XS).mono
       (fun s t ⟨⟨a₁, σ₁, v₁, a₂, σ₂, v₂, p, h₁, h₂⟩, _⟩ =>
         ⟨a₁, s, v₁, a₂, t, v₂, p, ⟨rfl, ⟨σ₁, h₁.1, h₁.2.2.2.1, h₁.2.2.2.2.1⟩,
