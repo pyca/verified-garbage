@@ -177,7 +177,7 @@ theorem shr2_ofNat {L : Nat} (hL : L + 3 < 2 ^ 64) :
 mod 2^(32 w)` over the `⌈L / 4⌉` low digits of `[x]`. -/
 theorem mulLo_ok {s : State} {B : Addr} {Z w N o x y L : Nat} (h : Ws s B Z w N) (hN : N ≤ 256) (ho : o < N)
     (hx : x < N) (hy : y < N) (hox : o ≠ x) (hoy : o ≠ y) {len : Reg} (hlen : s.gpr len = BitVec.ofNat 64 L)
-    (hL1 : 1 ≤ L) (hLw : L ≤ 4 * w) (hr : len ∉ mkRegs) (hl0 : len ≠ .r0) :
+    (hL1 : 1 ≤ L) (hLw : L ≤ 4 * w) (hr : len ∉ [.r5, .r8, .r10]) (hl0 : len ≠ .r0) :
     WP isa (mulLo o x y len) s fun t => Ws t B Z w N ∧ KeyWorkspace.Keep B w [o] [] s.mem t.mem ∧
       num t.mem B w o = val32 s.mem B (arr w x) ((L + 3) / 4) * num s.mem B w y % 2 ^ (32 * w) ∧
       Keep mkRegs s t := by
@@ -205,8 +205,12 @@ theorem mulLo_ok {s : State} {B : Addr} {Z w N o x y L : Nat} (h : Ws s B Z w N)
   -- `x`'s pointer and the counts.
   have l1 : len ∉ [.r5, .r8] := fun hm => hr (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hm ⊢; rcases hm with e | e <;> simp [e])
-  have l2 : len ∉ [.r0, .r5, .r8] := fun hm => hr (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hm ⊢; rcases hm with e | e | e <;> simp [e])
+  have l2 : len ∉ [.r0, .r5, .r8] := fun hm => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
+    rcases hm with e | e | e
+    · exact hl0 e
+    · exact hr (by simp [e])
+    · exact hr (by simp [e])
   have vl : v.gpr len = BitVec.ofNat 64 L := by
     rw [kv.gpr _ l1, ku.gpr _ l2]; exact hlen
   have hb2 : WP isa (.block (mulLoSet x len)) v fun u' => u'.gpr .r10 = off B (arr w x) ∧

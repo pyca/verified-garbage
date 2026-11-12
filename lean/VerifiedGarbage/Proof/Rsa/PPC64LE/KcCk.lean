@@ -166,7 +166,8 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
   rw [wp_seqs_append (by simp [crtChecks, eqA]) (by simp [dChecks, ltA])]
   have wl : (kK s0 + 3) / 4 ≤ 1024 := g8.ws.wle
   refine WP.mono (crtChecks_ok g8 p1 pw (lt_pow8_of_len _ (len_bytes _ _ _)) (lt_pow8_of_len _ (len_bytes _ _ _))
-    p19 q1 qw (by omega_arith) (lt_pow8_of_len _ (len_bytes _ _ _)) q21)
+    p19 q1 qw (by omega_arith) (lt_pow8_of_len _ (len_bytes _ _ _)) q21 he'
+    (lt_pow8_of_len _ (len_bytes _ _ _)) (lt_pow8_of_len _ (len_bytes _ _ _)))
     fun t9 ⟨R₁, R₂, A₁, A₂, hR₁, hR₂, hA, g9⟩ => ?_
   rw [wp_seqs_append (by simp [dChecks, ltA]) (by simp)]
   refine WP.mono (dChecks_ok g9 (pA := (s0.gpr .r10).toNat) (qA := (PPC64LE.stackArg s0 1).toNat) p1

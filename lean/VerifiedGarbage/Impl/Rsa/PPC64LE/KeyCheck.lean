@@ -187,12 +187,23 @@ def qInvMod : Prog isa :=
       copy aY aOne])
     (seqs [montPq aA aQ aQI, montPq aY aOne aOne])
 
+/-- `r4 := 8`: `e`'s two digits, as a length in bytes for `MontKey.mulLo`. -/
+def len8 : List Instr := [.li .r4 8]
+
+/-- `[aA] := e [x] mod [m]` (`e < 2^33` in `aE`): for a balanced key (`shape`),
+`e [x]` exactly (`MontKey.mulLo` over `e`'s two digits) by words modulo `[m]`;
+else bit-serially over `33` steps (`mulA`). -/
+def eMod (x m : Nat) : Prog isa :=
+  .ite (.zero .d .r0)
+    (seqs [.block len8, MontKey.mulLo aX aE x .r4, copy aY m, .block (KeyDiv.fixTop aY), KeyDiv.divW aX aA aY aVT aW])
+    (seqs (mulA aE x m cnt33))
+
 /-- Then: `p q ≡ n (mod 2^(32 w))`, `n ≡ 0 (mod p)`, `p - 1` and `q - 1`, and
 the checks of `dP`, `dQ` and `qInv`. -/
 def crtChecks : List (Prog isa) := eqA aVQ aN ++ eqA aVR aZ ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
-  ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
-  ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
+  ltA aDP aM1 ++ [.block shape, eMod aDP aM1] ++ eqA aA aOne ++
+  ltA aDQ aM2 ++ [.block shape, eMod aDQ aM2] ++ eqA aA aOne ++
   ltA aQI aP ++ [.block shape, qInvMod] ++ eqA aA aY
 
 /-- `[a] mod [d]` in `aVR`: for a balanced key (`shape`), by words

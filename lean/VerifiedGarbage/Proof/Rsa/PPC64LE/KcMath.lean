@@ -136,15 +136,15 @@ theorem shape_bound {w k pL qL n p q : Nat} (hs : Shape w pL qL) (hwk : w = (k +
 
 /-- The checks' bits but for the remainders, which matter only once `p` is
 odd, `L = n` and `M = 0`. -/
-theorem keyBitsM_congr {n d p q dP dQ qI L M R₁ R₂ A₁ A₂ Y₁ Y₂ Y₁' Y₂' : Nat}
-    (h : p % 2 = 1 → L = n → M = 0 → Y₁ = Y₁' ∧ Y₂ = Y₂') :
+theorem keyBitsM_congr {n d p q dP dQ qI L M R₁ R₂ R₁' R₂' A₁ A₂ Y₁ Y₂ Y₁' Y₂' : Nat}
+    (h : p % 2 = 1 → L = n → M = 0 → R₁ = R₁' ∧ R₂ = R₂' ∧ Y₁ = Y₁' ∧ Y₂ = Y₂') :
     VG.Proof.Rsa.keyBitsM n d p q dP dQ qI L M R₁ R₂ A₁ A₂ Y₁ Y₂ =
-      VG.Proof.Rsa.keyBitsM n d p q dP dQ qI L M R₁ R₂ A₁ A₂ Y₁' Y₂' := by
+      VG.Proof.Rsa.keyBitsM n d p q dP dQ qI L M R₁' R₂' A₁ A₂ Y₁' Y₂' := by
   unfold VG.Proof.Rsa.keyBitsM VG.Proof.Rsa.crtBitsM
   by_cases h1 : p % 2 = 1
   · by_cases h2 : L = n
     · by_cases h3 : M = 0
-      · obtain ⟨e1, e2⟩ := h h1 h2 h3; rw [e1, e2]
+      · obtain ⟨e1, e2, e3, e4⟩ := h h1 h2 h3; rw [e1, e2, e3, e4]
       · simp [h3]
     · simp [h2]
   · simp [h1]
@@ -163,8 +163,10 @@ theorem ck_bitsM' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) (
     (hk : 1 ≤ k) (hw : 256 ^ k ≤ 2 ^ (32 * w)) (hpL : p < 2 ^ (8 * pL)) (hqL : q < 2 ^ (8 * qL))
     {L M R₁ R₂ A₁ A₂ Y₁ Y₂ : Nat} (hL : L = p * q % 2 ^ (32 * w))
     (hM : p % 2 = 1 → 2 ≤ p → (M = 0 ↔ n % p = 0))
-    (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
-    (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
+    (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) →
+      (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2)) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
+    (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) →
+      (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (q / 2)) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
     (hA : qI < p → p % 2 = 1 → 2 ≤ p → (A₁ = A₂ ↔ q * qI % p = 1))
     (hY₁ : 0 < 2 * (p / 2) → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2)) →
       Y₁ = d % (2 * (p / 2)))
@@ -176,20 +178,32 @@ theorem ck_bitsM' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) (
   have hqj : q < 2 ^ (32 * w) := by omega
   have hnj : n < 2 ^ (32 * w) := by omega
   rw [keyBitsM_congr (Y₁' := if 0 < 2 * (p / 2) then d % (2 * (p / 2)) else Y₁)
-    (Y₂' := if 0 < 2 * (q / 2) then d % (2 * (q / 2)) else Y₂) fun h1 h2 h3 => ?_]
-  · exact ck_bitsM hm he hn hp hq hk hw hL hM hR₁ hR₂ hA (fun h => by rw [ite_eq_left h])
+    (Y₂' := if 0 < 2 * (q / 2) then d % (2 * (q / 2)) else Y₂)
+    (R₁' := if dP < 2 * (p / 2) ∧ 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) then e % 2 ^ 33 * dP % (2 * (p / 2)) else R₁)
+    (R₂' := if dQ < 2 * (q / 2) ∧ 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) then e % 2 ^ 33 * dQ % (2 * (q / 2)) else R₂)
+    fun h1 h2 h3 => ?_]
+  · exact ck_bitsM hm he hn hp hq hk hw hL hM (fun a b => by rw [ite_eq_left ⟨a, b⟩])
+      (fun a b => by rw [ite_eq_left ⟨a, b⟩]) hA (fun h => by rw [ite_eq_left h])
       (fun h => by rw [ite_eq_left h])
   · have pq := pq_of_bits hqj hnj hL hM h1 h2 h3
+    have bP : Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2) := fun hs => shape_bound hs hwk pq hnv hqL
+    have bQ : Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (q / 2) := fun hs => by
+      have hs' : Shape w qL pL := ⟨by have := hs.1; have := hs.2.2.1; omega, by have := hs.2.1; have := hs.2.2.1; omega,
+        hs.2.2.1.symm, by have := hs.2.2.2; have := hs.2.2.1; omega⟩
+      exact shape_bound hs' hwk (by rw [Nat.mul_comm]; exact pq) hnv hpL
+    refine ⟨?_, ?_, ?_⟩
+    · by_cases c : dP < 2 * (p / 2) ∧ 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w)
+      · rw [ite_eq_left c]; exact hR₁ c.1 c.2 bP
+      · rw [ite_eq_right c]
+    · by_cases c : dQ < 2 * (q / 2) ∧ 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w)
+      · rw [ite_eq_left c]; exact hR₂ c.1 c.2 bQ
+      · rw [ite_eq_right c]
     constructor
     · by_cases h0 : 0 < 2 * (p / 2)
-      · rw [ite_eq_left h0]; exact hY₁ h0 fun hs => shape_bound hs hwk pq hnv hqL
+      · rw [ite_eq_left h0]; exact hY₁ h0 bP
       · rw [ite_eq_right h0]
     · by_cases h0 : 0 < 2 * (q / 2)
-      · rw [ite_eq_left h0]
-        refine hY₂ h0 fun hs => ?_
-        have hs' : Shape w qL pL := ⟨by have := hs.1; have := hs.2.2.1; omega, by have := hs.2.1; have := hs.2.2.1; omega,
-          hs.2.2.1.symm, by have := hs.2.2.2; have := hs.2.2.1; omega⟩
-        exact shape_bound hs' hwk (by rw [Nat.mul_comm]; exact pq) hnv hpL
+      · rw [ite_eq_left h0]; exact hY₂ h0 bQ
       · rw [ite_eq_right h0]
 
 /-- For a balanced key with `p q ≡ n (mod 2^(32 w))`, `n`'s first byte not zero
@@ -240,8 +254,10 @@ theorem ck_bitsM'' {k n e d p q dP dQ qI w pL qL : Nat} (hwk : w = (k + 3) / 4) 
     {L M R₁ R₂ A₁ A₂ Y₁ Y₂ : Nat} (hL : L = p * q % 2 ^ (32 * w))
     (hM : p % 2 = 1 → 2 ≤ p → L = n → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p) →
       (M = 0 ↔ n % p = 0))
-    (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
-    (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
+    (hR₁ : dP < 2 * (p / 2) → 2 * (2 * (p / 2)) ≤ 2 ^ (32 * w) →
+      (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2)) → R₁ = e % 2 ^ 33 * dP % (2 * (p / 2)))
+    (hR₂ : dQ < 2 * (q / 2) → 2 * (2 * (q / 2)) ≤ 2 ^ (32 * w) →
+      (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (q / 2)) → R₂ = e % 2 ^ 33 * dQ % (2 * (q / 2)))
     (hA : qI < p → p % 2 = 1 → 2 ≤ p → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ p) →
       (A₁ = A₂ ↔ q * qI % p = 1))
     (hY₁ : 0 < 2 * (p / 2) → (Shape w pL qL → 2 ^ (64 * (w / 4 - 1)) ≤ 2 * (p / 2)) →

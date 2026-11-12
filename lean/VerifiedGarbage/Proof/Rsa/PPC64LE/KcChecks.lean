@@ -76,7 +76,7 @@ theorem Stg.mulLo_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
 /-- `mulLo o x y len`, the length of `[x]` in `len`. -/
 theorem Stg.mulLoR_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {o x y : Nat} (ho : o < nArr) (hx : x ∈ live) (hy : y ∈ live)
-    (hfree : ∀ j ∈ live, j ≠ o) (hoVD : o ≠ aVD) {len : Reg} (hr : len ∉ mkRegs) (hl0 : len ≠ .r0) {L : Nat}
+    (hfree : ∀ j ∈ live, j ≠ o) (hoVD : o ≠ aVD) {len : Reg} (hr : len ∉ [.r5, .r8, .r10]) (hl0 : len ≠ .r0) {L : Nat}
     (hl : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hLw : L ≤ 4 * g.w) (hxL : A x < 2 ^ (8 * L)) :
     WP isa (VG.Impl.Rsa.PPC64LE.MontKey.mulLo o x y len) s
       (Stg g s0 (upd A o (A x * A y % 2 ^ (32 * g.w))) (o :: live) c) := by
@@ -518,16 +518,101 @@ theorem Stg.qInv_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     · exact h15.sub (live' := aA :: aY :: live) (fun j hj => by
         simp only [List.mem_cons] at hj ⊢; rcases hj with e | e | e <;> simp [e])
 
+/-- `r4 := 8`. -/
+theorem len8_ok (u : State) :
+    WP isa (.block len8) u fun u' => (u'.gpr .r4 = BitVec.ofNat 64 8 ∧ u'.mem = u.mem) ∧ Keep [.r4] u u' := by
+  refine WP.keep _ ?_ (by decide)
+  prun [len8]
+
+/-- `shape` and `eMod x m`: `[aA] := e [x] mod [m]` (`e < 2^33` in `aE`), for
+`[x] < [m]` and, for a balanced key, `[m]`'s top word not zero; `[x]` and
+`[m]` of `xa` bytes, `p_len` for a balanced key. -/
+theorem Stg.eMod_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {x m : Nat} (hx : x ∈ live) (hm : m ∈ live) (hE : aE ∈ live) (hz : aZ ∈ live)
+    (hA0 : A aZ = 0) (hmi : MulIdx nArr aZ aY aX aA m aT) (hxY : x ≠ aY)
+    (hfree : ∀ j ∈ live, j ∉ [aA, aY, aX, aVT, aW] ∧ j ∉ mulArrs aY aX aA aT)
+    (he : A aE < 2 ^ 33) {pa qa xa : Nat} (p19 : s0.gpr .r19 = BitVec.ofNat 64 pa)
+    (q21 : s0.gpr .r21 = BitVec.ofNat 64 qa) (pa2 : pa < 2 ^ 32) (qa2 : qa < 2 ^ 32)
+    (hxa : A x < 2 ^ (8 * xa)) (hma : A m < 2 ^ (8 * xa)) (hxaS : Shape g.w pa qa → xa = pa) :
+    WP isa (seqs [.block shape, eMod x m]) s fun t => ∃ R,
+      (A x < A m → 2 * A m ≤ 2 ^ (32 * g.w) → (Shape g.w pa qa → 2 ^ (64 * (g.w / 4 - 1)) ≤ A m) →
+        R = A aE % 2 ^ 33 * A x % A m) ∧
+      Stg g s0 (upd A aA R) (aA :: live) c t := by
+  have := h.ws.wle
+  have mX : m ≠ aX := fun e => (hfree m hm).1 (by simp [e])
+  have xX : x ≠ aX := fun e => (hfree x hx).1 (by simp [e])
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (shape_ok h.ws.r29 ((h.regs.gpr _ (by decide)).trans p19)
+    ((h.regs.gpr _ (by decide)).trans q21) (by omega) pa2 qa2) fun s1 ⟨z1, m1, k1⟩ => ?_
+  have h1 : Stg g s0 A live c s1 :=
+    h.next (h.ws.of_keep k1) (js := []) (ds := []) (by rw [m1]; exact KeyWorkspace.Keep.refl _ _ _ _ _)
+      (by simp) (by simp) k1 (by decide) (by rw [m1]; exact h.arrs) h.live_lt (by rw [m1]; exact h.vdTop)
+      (by rw [m1]; exact h.mask)
+  rw [show ∀ y : Prog isa, seqs [y] = y from fun _ => rfl]
+  unfold eMod
+  refine WP.ite (s1.gpr .r0 == 0) (eval_zero s1 .r0) (fun hz => ?_) (fun _ => ?_)
+  · -- By words: `e [x]` exactly, modulo `[m]`.
+    have hS : Shape g.w pa qa := z1.1 (by simpa using hz)
+    obtain ⟨p8, hpw, hpq', p32⟩ := id hS
+    rw [hxaS hS] at hxa hma
+    rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+    refine WP.mono (len8_ok s1) fun s2 ⟨⟨c2, m2⟩, u2⟩ => ?_
+    have k2 : KeyWorkspace.Keep g.B g.w [] [] s1.mem s2.mem := by
+      rw [m2]; exact KeyWorkspace.Keep.refl _ _ _ _ _
+    have h2 := h1.next (h1.ws.of_keep u2) k2 (by simp) (by simp) u2 (by decide)
+      (h1.arrs_keep k2 (by simp) (by simp)) h1.live_lt (h1.vd_keep k2 (by simp) (by simp)) (h1.mask_keep k2 (by simp))
+    rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+    refine WP.mono (h2.mulLoR_ok (o := aX) (x := aE) (y := x) (by decide) hE hx
+      (fun j hj e => (hfree j hj).1 (by simp [e])) (by decide) (by decide) (by decide) c2 (by decide) (by omega)
+      (Nat.lt_trans he (by decide))) fun s3 g3 => ?_
+    have hX : upd A aX (A aE * A x % 2 ^ (32 * g.w)) aX = A aE * A x := by
+      rw [upd_self, Nat.mod_eq_of_lt]
+      calc A aE * A x < 2 ^ 33 * 2 ^ (8 * pa) := Nat.mul_lt_mul'' he hxa
+        _ = 2 ^ (33 + 8 * pa) := by rw [← Nat.pow_add]
+        _ ≤ 2 ^ (32 * g.w) := Nat.pow_le_pow_right (by decide) (by omega)
+    refine WP.mono (g3.divCopy_ok (a := aX) (d := m) (r := aA) (m := aY) (t := aVT) (sv := aW)
+      (by simp) (by simp [hm]) (by decide) (by decide) (by decide) (by decide)
+      (fun j hj => by
+        rcases List.mem_cons.mp hj with rfl | hj
+        · decide
+        · exact fun hm' => (hfree j hj).1 (by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hm' ⊢
+            rcases hm' with e | e | e | e <;> simp [e]))
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by omega) (by omega)
+      (by rw [upd_ne _ _ mX, show 64 * (g.w / 4) = 8 * pa by omega]; exact hma))
+      fun t ⟨Xr, hX3, gt⟩ => ⟨Xr, fun _ _ ht => ?_, ?_⟩
+    · have hb : 2 ^ (64 * (g.w / 4 - 1)) ≤ upd A aX (A aE * A x % 2 ^ (32 * g.w)) m := by
+        rw [upd_ne _ _ mX]; exact ht hS
+      rw [hX3 hb, hX, upd_ne _ _ mX, Nat.mod_eq_of_lt he]
+    · refine (gt.sub (live' := aA :: live) (fun j hj => by
+        simp only [List.mem_cons] at hj ⊢; rcases hj with e | e <;> simp [e])).congr' fun j hj => ?_
+      by_cases e2 : j = aA
+      · subst e2; rw [upd_self, upd_self]
+      · have hj' : j ∈ live := by
+          rcases List.mem_cons.mp hj with e | hj
+          · exact absurd e e2
+          exact hj
+        have e3 : j ≠ aX := fun e => (hfree j hj').1 (by simp [e])
+        rw [upd_ne _ _ e2, upd_ne _ _ e3, upd_ne _ _ e2]
+  · -- Bit-serially.
+    exact WP.mono (h1.mulA_ok (y := aE) (x := x) (m := m) (k := 33) hE hx hm hz hA0 hmi hxY
+      (fun j hj => .inr (hfree j hj).2) (by decide) (by decide) fun u _ _ => cnt33_ok u)
+      fun t ⟨R, hR, ht⟩ => ⟨R, fun a b _ => hR a b, ht⟩
+
 /-- The checks of `vg_rsa_check_crt_key`. -/
 theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
     (h : Stg g s0 (aStart v L M) liveS (decide (v.p % 2 = 1)) s)
     {pa qa : Nat} (pa1 : 1 ≤ pa) (paw : pa ≤ 4 * g.w) (plt : v.p < 2 ^ (8 * pa)) (qlt : v.qI < 2 ^ (8 * pa))
     (p19 : s0.gpr .r19 = BitVec.ofNat 64 pa) (qa1 : 1 ≤ qa) (qaw : qa ≤ 4 * g.w) (qa2 : qa < 2 ^ 32) (qqlt : v.q < 2 ^ (8 * qa))
-    (q21 : s0.gpr .r21 = BitVec.ofNat 64 qa) :
+    (q21 : s0.gpr .r21 = BitVec.ofNat 64 qa) (he : v.e < 2 ^ 33) (dplt : v.dP < 2 ^ (8 * pa))
+    (dqlt : v.dQ < 2 ^ (8 * qa)) :
     WP isa (seqs crtChecks) s fun t => ∃ R₁ R₂ A₁ A₂ : Nat,
       (v.dP < 2 * (v.p / 2) → 2 * (2 * (v.p / 2)) ≤ 2 ^ (32 * g.w) →
+        (Shape g.w pa qa → 2 ^ (64 * (g.w / 4 - 1)) ≤ 2 * (v.p / 2)) →
         R₁ = v.e % 2 ^ 33 * v.dP % (2 * (v.p / 2))) ∧
       (v.dQ < 2 * (v.q / 2) → 2 * (2 * (v.q / 2)) ≤ 2 ^ (32 * g.w) →
+        (Shape g.w pa qa → 2 ^ (64 * (g.w / 4 - 1)) ≤ 2 * (v.q / 2)) →
         R₂ = v.e % 2 ^ 33 * v.dQ % (2 * (v.q / 2))) ∧
       (v.qI < v.p → v.p % 2 = 1 → 2 ≤ v.p → (Shape g.w pa qa → 2 ^ (64 * (g.w / 4 - 1)) ≤ v.p) →
         (A₁ = A₂ ↔ v.q * v.qI % v.p = 1)) ∧
@@ -552,20 +637,26 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {L M : Nat}
   rw [wp_seqs_cons (by simp [ltA])]
   refine WP.mono (h5.clrLow_ok (j := aM2) (by decide)) fun t6 h6 => ?_
   -- `dP`.
-  rw [wp_seqs_append (by simp [ltA]) (by simp [mulA])]
+  have pa2 : pa < 2 ^ 32 := by omega
+  have m1lt : 2 * (v.p / 2) < 2 ^ (8 * pa) := Nat.lt_of_le_of_lt (by omega) plt
+  have m2lt : 2 * (v.q / 2) < 2 ^ (8 * qa) := Nat.lt_of_le_of_lt (by omega) qqlt
+  rw [wp_seqs_append (by simp [ltA]) (by simp)]
   refine WP.mono (h6.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun t7 h7 => ?_
-  rw [wp_seqs_append (by simp [mulA]) (by simp [eqA])]
-  refine WP.mono (h7.mulA_ok (y := aE) (x := aDP) (m := aM1) (k := 33) (by decide) (by decide) (by decide)
-    (by decide) rfl mulIdx_m1 (by decide) (by decide) (by decide) (by decide) fun u _ _ => cnt33_ok u)
+  rw [show ∀ r : List (Prog isa), (Code.block shape :: eMod aDP aM1 :: r) = [Code.block shape, eMod aDP aM1] ++ r
+    from fun _ => rfl, wp_seqs_append (by simp) (by simp [eqA])]
+  refine WP.mono (h7.eMod_ok (x := aDP) (m := aM1) (xa := pa) (by decide) (by decide) (by decide) (by decide) rfl
+    mulIdx_m1 (by decide) (by decide) he p19 q21 pa2 qa2 dplt m1lt (fun _ => rfl))
     fun t8 ⟨R₁, hR₁, h8⟩ => ?_
   rw [wp_seqs_append (by simp [eqA]) (by simp [ltA])]
   refine WP.mono (h8.eqA_ok (a := aA) (b := aOne) (by decide) (by decide)) fun t9 h9 => ?_
   -- `dQ`.
-  rw [wp_seqs_append (by simp [ltA]) (by simp [mulA])]
+  rw [wp_seqs_append (by simp [ltA]) (by simp)]
   refine WP.mono (h9.ltA_ok (a := aDQ) (b := aM2) (by decide) (by decide) (by decide)) fun t10 h10 => ?_
-  rw [wp_seqs_append (by simp [mulA]) (by simp [eqA])]
-  refine WP.mono (h10.mulA_ok (y := aE) (x := aDQ) (m := aM2) (k := 33) (by decide) (by decide) (by decide)
-    (by decide) rfl mulIdx_m2 (by decide) (by decide) (by decide) (by decide) fun u _ _ => cnt33_ok u)
+  rw [show ∀ r : List (Prog isa), (Code.block shape :: eMod aDQ aM2 :: r) = [Code.block shape, eMod aDQ aM2] ++ r
+    from fun _ => rfl, wp_seqs_append (by simp) (by simp [eqA])]
+  have h10' := h10.sub (live' := aM2 :: aM1 :: liveS) (by decide)
+  refine WP.mono (h10'.eMod_ok (x := aDQ) (m := aM2) (xa := qa) (by decide) (by decide) (by decide) (by decide) rfl
+    mulIdx_m2 (by decide) (by decide) he p19 q21 pa2 qa2 dqlt m2lt (fun hs => hs.2.2.1.symm))
     fun t11 ⟨R₂, hR₂, h11⟩ => ?_
   rw [wp_seqs_append (by simp [eqA]) (by simp [ltA])]
   refine WP.mono (h11.eqA_ok (a := aA) (b := aOne) (by decide) (by decide)) fun t12 h12 => ?_
