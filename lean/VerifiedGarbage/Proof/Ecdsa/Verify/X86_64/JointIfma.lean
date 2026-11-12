@@ -54,6 +54,20 @@ theorem ifma_frame_layout : FrameLayout p256vx ifmaRanges := by
   · decide +kernel
   · decide +kernel
 
+/-- `frame_input`, of what the joint multiplication with the loop in vectors leaves: it has `R`'s
+coordinates reduced, and no table of `Q`'s multiples as words. -/
+theorem frame_res (hc : BaseCfgOk p256vx) {W : List (Nat × Nat)} (hF : FrameLayout p256vx W)
+    {s₀ s t : State} {base : Addr} {g : Reg → BitVec 64} (h : Mid p256vx s₀ base g s) {A : Point p256vx.C}
+    (ht : VRes publicJointIfma base size A t) (hu : Unch base W s.mem t.mem) :
+    ProjectiveInput p256vx s₀ base g t := by
+  refine ⟨ht.scr, h.fixed.unch hc.n10 h.scr.nowrap hF.fixed hu,
+    (sv_unch hu hc.n10 h.scr.nowrap (by decide) hF.k).trans h.k, ?_, ht.x, ht.z⟩
+  refine (hu.word hF.flag ?_).trans h.flag
+  have := sl_le p256vx hc.n10 (i := FLAG) (by decide)
+  have := hc.n0
+  have := h.scr.nowrap
+  omega
+
 section
 variable (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start)
@@ -112,11 +126,11 @@ theorem ifmaPoints_ok {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre p256vx
   refine WP.mono (jointMulPrepB_ok rfl joint_ifma_prep_layout joint_ifma_init_layout.naf.lay field point
     (jointMid_affine hc hK h) zero generator (sv4 U) (sv4 V)) fun a ⟨ia, pa, ka, ua⟩ => ?_
   have hTa : GTab (s₀.gpr .rcx) (s₀.syms p256GTab.tsym) size a := ⟨by rw [ka.rd, ka.wr]; exact hTs.1, hTs.2⟩
-  refine WP.mono (vwindow_ok hL hcc.am3 joint_ifma_vlay joint_ifma_add_layout joint_ifma_init_layout rfl hm
+  refine WP.mono (vwindow_ok hL hO hcc.am3 joint_ifma_vlay joint_ifma_add_layout joint_ifma_init_layout rfl hm
     (hcc.jdbl hL) (joint_ifma_doubler hcc hL) hone honeval hc.onG hQ (fun _ => ⟨hO, by decide, hcc.am3⟩)
     (Nat.lt_trans h.u_lt nlt) (Nat.lt_trans h.v_lt nlt) (ia.to_tmv (C := p256vx.C)) pa hTa)
     fun t ⟨ct, _, _, _, ut⟩ => ?_
-  exact ⟨frame_input hc hK ifma_frame_layout h ct (ua.trans ut), ct.point⟩
+  exact ⟨frame_res hc ifma_frame_layout h ct (ua.trans ut), ct.point⟩
 
 /-- The joint verifier with the loop in vectors meets the verifier's functional specification. -/
 theorem jointVerify_p256_ifma_ok {s : State} (hp : VPre p256vx s) :
@@ -200,7 +214,7 @@ theorem ifmaPoints_relCT {s₀ t₀ : State} (ps : VPre p256vx s₀) (pt : VPre 
         (fun x ⟨_, _, kx, _⟩ => ⟨by rw [kx.rd, kx.wr]; exact tb.1, tb.2⟩)⟩)
   have win := vwindow_relCT (base := s₀.gpr .rcx) (T := s₀.syms p256GTab.tsym) (row := jointCombRow hc hL hG)
     (double := jointDouble publicJointIfma.K) (E₀ := tmv p256vx.C publicJointIfma.K.M.n (s₀.gpr .rcx) s)
-    hL hcc.am3 joint_ifma_vchecks joint_ifma_vlay joint_ifma_add_layout joint_ifma_init_layout rfl hm (hcc.jdbl hL)
+    hL hO hcc.am3 joint_ifma_vchecks joint_ifma_vlay joint_ifma_add_layout joint_ifma_init_layout rfl hm (hcc.jdbl hL)
     (joint_ifma_doubler hcc hL) hone honeval hc.onG hQ (fun _ => ⟨hO, by decide, hcc.am3⟩) checks.cached
     checks.fixed checks.table checks.cache checks.seed checks.counter joint_ifma_zero_ct
     (Nat.lt_trans hs.u_lt nlt) (Nat.lt_trans hs.v_lt nlt)
@@ -215,8 +229,9 @@ theorem ifmaPoints_relCT {s₀ t₀ : State} (ps : VPre p256vx s₀) (pt : VPre 
     rw [← jointPrepB_inline]; exact et
   obtain ⟨trace, post⟩ := ct _ _ _ _ _ _
     ⟨⟨fields, genS, genT, sv4 s U, sv4 s V, (sv4 t U).trans u, (sv4 t V).trans v⟩, hTs, hTt⟩ es' et'
-  obtain ⟨E, pair⟩ := post.1
-  exact ⟨trace, fieldPair_public pair⟩
+  refine ⟨trace, Taint.agree_ofRegs fun r hr => ?_⟩
+  rw [List.mem_singleton] at hr; subst hr
+  exact post.1.trans post.2.symm
 
 /-- The joint verifier with the loop in vectors is constant time between runs from the same public
 inputs. -/

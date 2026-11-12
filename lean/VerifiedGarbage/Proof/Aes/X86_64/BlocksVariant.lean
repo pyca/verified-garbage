@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Spec.AesEcb.Contract
 public import VerifiedGarbage.Impl.AesCfb8.X86_64
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Impl.AesCfb.X86_64
+public import VerifiedGarbage.Spec.Ofb.Contract
+public import VerifiedGarbage.Impl.AesOfb.X86_64
 public import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Impl.AesOcb.X86_64
@@ -124,6 +128,17 @@ structure BlocksImpl where
   handles it. -/
   cfb8DecRes : Option (RScrub.Analysed Spec.Cfb8.aesDecryptApi.sig 8 []
     (Impl.AesCfb8.X86_64.decrypt enc)) := none
+  /-- The residue analysis of `vg_aes_cfb128_encrypt` over it, if the
+  analysis handles it. -/
+  cfbEncRes : Option (RScrub.Analysed Spec.Cfb.aesEncryptApi.sig 8 []
+    (Impl.AesCfb.X86_64.encrypt enc)) := none
+  /-- The residue analysis of `vg_aes_cfb128_decrypt` over it, if the
+  analysis handles it. -/
+  cfbDecRes : Option (RScrub.Analysed Spec.Cfb.aesDecryptApi.sig 8 []
+    (Impl.AesCfb.X86_64.decrypt enc)) := none
+  /-- The residue analysis of `vg_aes_ofb` over it, if the analysis handles
+  it. -/
+  ofbRes : Option (RScrub.Analysed Spec.Ofb.aesApi.sig 8 [] (Impl.AesOfb.X86_64.crypt enc)) := none
   /-- The residue analysis of `vg_aes_ecb_encrypt` as its `enc` alone, if
   the analysis handles it. -/
   ecbEncRes : Option (RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] enc.code) := none
