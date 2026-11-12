@@ -39,7 +39,10 @@ MGF1 of `H`, and clears its top bits with the mask `c` of verification; and
 calls `vg_rsa_private_checked` on `EM`, from a frame of `privBytes` bytes
 below ours that holds its twelve stack arguments, as RSAES-OAEP decryption
 does. That function writes the signature (or zeros) to `out`, and its result
-is ours. Every branch and address depends only on the pointers, the lengths
+is ours. `vg_rsa_pss_sign_precomputed` (`signG true`) is the same code but
+for that call: it calls `vg_rsa_private_checked_precomputed`, with the key's
+precomputed values `pre` and `pre_len` (our stack arguments 16 and 17) as its
+stack arguments 12 and 13, from a frame 16 bytes larger. Every branch and address depends only on the pointers, the lengths
 and `n₀`; the digest and the salt are only copied and hashed.
 -/
 
@@ -143,11 +146,16 @@ def clearTop : List Instr :=
 /-! ## The private operation -/
 
 /-- The frame from which `vg_rsa_private_checked` is called: its twelve
-stack arguments, at its `sp`. -/
-def privBytes : Nat := 96
+stack arguments, at its `sp`; with `pc`, the fourteen of
+`vg_rsa_private_checked_precomputed`. -/
+def privBytes : Bool → Nat
+  | false => 96
+  | true => 112
 
-/-- `vg_rsa_private_checked`. -/
-def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.RISCV64.Priv.code
+/-- `vg_rsa_private_checked`, or with `pc` `vg_rsa_private_checked_precomputed`. -/
+def privCall : Bool → Prog isa
+  | false => .call "vg_rsa_private_checked" Impl.Rsa.RISCV64.Priv.code
+  | true => .call "vg_rsa_private_checked_precomputed" Impl.Rsa.RISCV64.Priv.codeP
 
 /-- Our stack argument `j` (`q` … `qinv_len`) to its stack argument
 `j + 2`. -/
@@ -158,39 +166,57 @@ the stack `p` and `p_len` (saved at `oP`) and our stack arguments 0 to 7,
 then the rest of `scratch` from `oRsa` and `scratch_len - 1024`; in the
 registers `out` (`k` bytes), `n`, `e` (saved at `oP`) and `EM` (`k`
 bytes). -/
-def privArgs : List Instr :=
-  [.addSp .t0 0, .addSp .t6 (privBytes + frameBytes), .load .d .t1 .s0 (oP + 24), .store .d .t1 .t0 0,
+def privArgsM (pc : Bool) : List Instr :=
+  [.addSp .t0 0, .addSp .t6 (privBytes pc + frameBytes), .load .d .t1 .s0 (oP + 24), .store .d .t1 .t0 0,
     .load .d .t1 .s0 (oP + 32), .store .d .t1 .t0 8] ++ (List.range 8).flatMap copyArg ++
     [.li .t1 1024, .shift .sll .d .t1 .t1 3, .add .t1 .s0 .t1, .store .d .t1 .t0 80, .load .d .t1 .t6 104,
       .addi .t1 .t1 (-1024), .store .d .t1 .t0 88, mov .a0 .s2, mov .a1 .s1, .load .d .a2 .s0 oP, mov .a3 .s1,
       .load .d .a4 .s0 (oP + 8), .load .d .a5 .s0 (oP + 16), .addi .a6 .s0 oEm, mov .a7 .s1]
 
+/-- With `pc`, `pre` and `pre_len` (our stack arguments 16 and 17) to its
+stack arguments 12 and 13. -/
+def privTail : Bool → List Instr
+  | false => []
+  | true => [.load .d .t1 .t6 128, .store .d .t1 .t0 96, .load .d .t1 .t6 136, .store .d .t1 .t0 104]
+
+/-- Its arguments. -/
+def privArgs (pc : Bool) : List Instr := privArgsM pc ++ privTail pc
+
 /-- The private operation, from its frame. -/
-def priv : Prog isa := .frame (.alloc privBytes) (.seq (.block privArgs) privCall) (.free privBytes)
+def priv (pc : Bool) : Prog isa :=
+  .frame (.alloc (privBytes pc)) (.seq (.block (privArgs pc)) (privCall pc)) (.free (privBytes pc))
 
 /-! ## The function -/
 
 /-- After the checks: `M'` and `H`, `EM`, and the private operation, with
 MGF1 the table `mgf1`, our stack argument 15. -/
-def signMain : Prog isa :=
+def signMain (pc : Bool) : Prog isa :=
   .seq (mPrime H) (.seq (hashM H be f) (.seq clearEm (.seq (putSalt H) (.seq (putH H)
-    (.seq (.block (dbArgs H)) (.seq (mgfXorT g 15) (.seq (.block clearTop) priv)))))))
+    (.seq (.block (dbArgs H)) (.seq (mgfXorT g 15) (.seq (.block clearTop) (priv pc))))))))
 
 /-- The checks, then `signMain`. -/
-def checks : Prog isa :=
+def checks (pc : Bool) : Prog isa :=
   .ite (.zero .t1) encFail
     (.seq (.block (chkEm H)) (.ite (.nonzero .a0) encFail
-      (.seq (.block (chkSalt H)) (.ite (.nonzero .a0) encFail (signMain H be f g)))))
+      (.seq (.block (chkSalt H)) (.ite (.nonzero .a0) encFail (signMain H be f g pc)))))
 
 /-- The frame's body. -/
-def body : Prog isa :=
-  .seq (.block (save ++ prologue)) (.seq (.block spill) (.seq (checks H be f g) (.block restore)))
+def body (pc : Bool) : Prog isa :=
+  .seq (.block (save ++ prologue)) (.seq (.block spill) (.seq (checks H be f g pc) (.block restore)))
 
 /-- The code for a hash function of the shape `H`, in its frame. -/
-def signFor : Prog isa := .frame (.alloc frameBytes) (body H be f g) (.free frameBytes)
+def signFor (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body H be f g pc) (.free frameBytes)
 
-/-- `vg_rsa_pss_sign`: the code for the hash function of the table `hash`,
-our stack argument 14, by its index. -/
-def sign : Prog isa := .seq (.block (idxLoad 14)) (byIdx (fun i => signFor (ofIdx i) (beOf i) f g) idxs)
+/-- `vg_rsa_pss_sign`, or with `pc` `vg_rsa_pss_sign_precomputed`: the code
+for the hash function of the table `hash`, our stack argument 14, by its
+index. -/
+def signG (pc : Bool) : Prog isa :=
+  .seq (.block (idxLoad 14)) (byIdx (fun i => signFor (ofIdx i) (beOf i) f g pc) idxs)
+
+/-- `vg_rsa_pss_sign`. -/
+abbrev sign : Prog isa := signG f g false
+
+/-- `vg_rsa_pss_sign_precomputed`. -/
+abbrev signP : Prog isa := signG f g true
 
 end VG.Impl.RsaPss.RISCV64.Sign

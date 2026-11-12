@@ -25,12 +25,12 @@ theorem jointPrefix_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c 
     WP isa (jointPrefix c) s₀ fun s => ∃ g,Mid c s₀ (s₀.gpr .rcx) g s := by
   refine front_ok hc hp fun g _ _ hF => mid_ok hc hF fun _ hM => WP.block_nil ⟨g,hM⟩
 
-theorem jointVerify_cut {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {s s' : State} {t : List Leak}
-    (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double).inline s t s') :
+theorem jointVerify_cut {c : Cfg} {pts : Prog isa} {s s' : State} {t : List Leak}
+    (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerifyWith c pts).inline s t s') :
     ∃ a b tp tc ts, Exec isa (jointPrefix c) s tp a ∧
-      Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline a tc b ∧
+      Exec isa pts.inline a tc b ∧
       Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline b ts s' ∧ t=tp++tc++ts := by
-  rw [jointVerify_inline] at he
+  rw [jointVerifyWith_inline] at he
   cases he with
   | seq e0 h => cases h with
     | seq e1 h => cases h with
@@ -46,16 +46,16 @@ theorem jointVerify_cut {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {s s' : St
                       (.seq e6 (.seq e7 (nil _))))))))
                     exact ⟨_,_,_,_,_,ep,ec,es,by simp only [List.append_nil,List.append_assoc]⟩
 
-theorem jointVerify_ct_of_points {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {d : CombData}
+/-- The joint verifier is constant time if its points' code `pts` is, between runs from public inputs. -/
+theorem jointVerifyWith_ct_of_points {c : Cfg} {pts : Prog isa} {d : CombData}
     (hc : BaseCfgOk c)
     (before : ConstantTime isa (fun _ => True)
       (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix c))
     (points : ∀ {s₀ t₀ : State},VPre c s₀ → VPre c t₀ → JointPublic c d s₀ t₀ →
       RelCT isa (fun s t => (∃ g,Mid c s₀ (s₀.gpr .rcx) g s) ∧ (∃ h,Mid c t₀ (t₀.gpr .rcx) h t))
-        (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
-        (fun s t => X86_64.Taint.Agree (Taint.ofRegs [.rdi]) s t))
+        pts.inline (fun s t => X86_64.Taint.Agree (Taint.ofRegs [.rdi]) s t))
     (after : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline) :
-    ConstantTime isa (VPre c) (JointPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double).inline := by
+    ConstantTime isa (VPre c) (JointPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerifyWith c pts).inline := by
   intro s₀ t₀ ls lt s' t' ps pt pub es et
   obtain ⟨a,b,lp,lc,lf,ep,ec,ef,he⟩ := jointVerify_cut es
   obtain ⟨a',b',lp',lc',lf',ep',ec',ef',he'⟩ := jointVerify_cut et
@@ -67,5 +67,17 @@ theorem jointVerify_ct_of_points {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {
   obtain ⟨hct,hpub⟩ := points ps pt pub _ _ _ _ _ _ ⟨pm,pm'⟩ ec ec'
   have hf := after _ _ _ _ _ _ trivial trivial hpub ef ef'
   rw [he,he',hp,hct,hf]
+
+theorem jointVerify_ct_of_points {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {d : CombData}
+    (hc : BaseCfgOk c)
+    (before : ConstantTime isa (fun _ => True)
+      (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix c))
+    (points : ∀ {s₀ t₀ : State},VPre c s₀ → VPre c t₀ → JointPublic c d s₀ t₀ →
+      RelCT isa (fun s t => (∃ g,Mid c s₀ (s₀.gpr .rcx) g s) ∧ (∃ h,Mid c t₀ (t₀.gpr .rcx) h t))
+        (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
+        (fun s t => X86_64.Taint.Agree (Taint.ofRegs [.rdi]) s t))
+    (after : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline) :
+    ConstantTime isa (VPre c) (JointPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double).inline :=
+  jointVerifyWith_ct_of_points hc before points after
 
 end VG.Proof.Ecdsa.Verify.X86_64

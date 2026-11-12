@@ -205,6 +205,18 @@ def signCBody : Prog isa :=
 `hash`. -/
 def signC : Prog isa := .frame (.alloc frameBytes) (signCBody f g privN privC) (.free frameBytes)
 
+/-- `signCBody` calling `vg_rsa_private_checked_precomputed` with `pre`. -/
+def signCBodyP : Prog isa :=
+  seqs [.block (signPrologue ++ n0 .x2),
+    .ite (.zero .x .x10) signFailP (seqs [.block (emBitsB ++ encArgs),
+      byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs,
+      .ite (.zero .w .x0) signFailP (.seq (.block privArgsP) (.call privN privC))]),
+    .block restoreP]
+
+/-- `vg_rsa_pss_sign_precomputed`, calling `encode` for the hash function of
+the table `hash`. -/
+def signCP : Prog isa := .frame (.alloc frameBytes) (signCBodyP f g privN privC) (.free frameBytes)
+
 /-- The arguments of the precomputed public operation: its output (`k`
 bytes) at `scratch`, `pre` (`pre_len` words), `e`, the signature (`k` bytes),
 and the rest of `scratch` after our part. -/

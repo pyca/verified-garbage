@@ -73,10 +73,7 @@ theorem copy1_ok {s : State} (hp : SPre tsH tsG s) {u : State} (hsp : u.gpr .rsp
   have := hp.sp2
   have hsc : Scr u (fb s) frameBytes := Scr.of_mem hfr (by omega)
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
-    rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+    rw [argAddr]; exact hp.argIn hrd hj
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) d) (stackArg s j)) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨k, hm, hm ▸ hf.writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega) (by omega))⟩

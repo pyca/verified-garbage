@@ -19,10 +19,14 @@ def jointPoints (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa) 
 def jointTail (c : Impl.Ecdsa.X86_64.Cfg) : Prog isa :=
   .seq (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)]) (tail c)
 
-def jointVerify (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa) : Prog isa :=
+/-- Verification by the public joint method, with `pts` for the code of `R = [u]G + [v]Q`. -/
+def jointVerifyWith (c : Impl.Ecdsa.X86_64.Cfg) (pts : Prog isa) : Prog isa :=
   .seq (.block (args c)) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D)) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.check c) <|
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (jointPoints c j double) (jointTail c)
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq pts (jointTail c)
+
+def jointVerify (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa) : Prog isa :=
+  jointVerifyWith c (jointPoints c j double)
 
 end Cfg
 end VG.Impl.Ecdsa.Verify.X86_64

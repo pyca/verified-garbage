@@ -52,10 +52,12 @@ theorem fr_toNat' (hsp : 16 + F ≤ (s.gpr .esp).toNat) {d : Nat} (hd : (s.gpr .
 theorem esp64_toNat (s : State) : ((s.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat := by
   rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
 
-theorem ok_entered {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S ≤ (s.gpr .esp).toNat)
+/-- `ok_entered`, of an entry whose permissions include the layout's. -/
+theorem ok_entered_of {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S ≤ (s.gpr .esp).toNat)
     (hn : 0 < argv.length)
     (hfit : (s.gpr .esp).toNat + 4 + 4 * argv.length ≤ 2 ^ 32)
-    (hrd : s.rd = ro) (hwr : s.wr = rw ++ [⟨argAddr s 0, 4 * argv.length⟩])
+    (hrd : ∀ r ∈ ro, r ∈ s.rd) (hwr : ∀ r ∈ rw, r ∈ s.wr)
+    (hargsW : ∃ k, 4 * argv.length ≤ k ∧ (⟨argAddr s 0, k⟩ : Region) ∈ s.wr)
     (hstk : ∀ r ∈ ro ++ rw,
       (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 S, S⟩ : Region).Disjoint r)
     (hret : ∀ r ∈ rw, (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r)
@@ -100,18 +102,27 @@ theorem ok_entered {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S ≤
     simp only [Lay.argA, Impl.RsaPkcs1Sig.X86.argOff, Nat.mul_zero, Nat.add_zero] at this
     exact this.symm
   refine
-    { sp := ?_, rd := ?_, wr := ?_, BC := ?_, fit := ?_, stk := ?_, ret := ?_, wro := ?_,
+    { sp := ?_, rd := ?_, wr := ?_, argsW := ?_, BC := ?_, fit := ?_, stk := ?_, ret := ?_, wro := ?_,
       wrw := hwrw, fits := hfits, args := ?_ }
   · rw [entered_esp]; rfl
-  · rw [entered_rd, hrd]; rfl
-  · rw [entered_wr, hwr, argAddr0]
-    have hsave : (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 = (layOf F argv ro rw s C).fr F := by
+  · rw [entered_rd]; exact hrd
+  · have hsave : (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 = (layOf F argv ro rw s C).fr F := by
       rw [hfr, Taint.sub_setWidth (by omega)]
       try simp only [layOf]
       rw [show BitVec.ofNat 64 (16 + F) = BitVec.ofNat 64 16 + BitVec.ofNat 64 F from BitVec.ofNat_add _ _,
         ← BitVec.sub_sub, BitVec.sub_add_cancel]
-    rw [hsave]
-    rfl
+    rw [entered_wr, hsave]
+    intro r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact List.mem_cons_self
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact List.mem_cons_of_mem _ List.mem_cons_self
+    exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (hwr r hr))
+  · obtain ⟨k, hk, hm⟩ := hargsW
+    refine ⟨k, hk, ?_⟩
+    show (⟨(layOf F argv ro rw s C).fr (F + 20), k⟩ : Region) ∈ _
+    rw [entered_wr, ← argAddr0]
+    exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hm)
   · show C ≤ (layOf F argv ro rw s C).B.toNat
     rw [hB]; omega
   · show (layOf F argv ro rw s C).B.toNat + F + 20 + 4 * argv.length ≤ 2 ^ 32
@@ -151,6 +162,21 @@ theorem ok_entered {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S ≤
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
     rw [Taint.sub_setWidth (by omega), argAddrJ j hj]
     exact Offset.disjoint_below _ (by omega)
+
+
+theorem ok_entered {S : Nat} (hS : S = C + 16 + F) (hF : FrameOk F) (hsp : S ≤ (s.gpr .esp).toNat)
+    (hn : 0 < argv.length)
+    (hfit : (s.gpr .esp).toNat + 4 + 4 * argv.length ≤ 2 ^ 32)
+    (hrd : s.rd = ro) (hwr : s.wr = rw ++ [⟨argAddr s 0, 4 * argv.length⟩])
+    (hstk : ∀ r ∈ ro ++ rw,
+      (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 S, S⟩ : Region).Disjoint r)
+    (hret : ∀ r ∈ rw, (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r)
+    (hwro : ∀ w ∈ rw, ∀ r ∈ ro ++ [⟨argAddr s 0, 4 * argv.length⟩], w.Disjoint r)
+    (hwrw : rw.Pairwise Region.Disjoint) (hfits : ∀ r ∈ ro ++ rw, r.base.toNat + r.len ≤ 2 ^ 32)
+    (hargs : ∀ j < argv.length, arg s j = argv.getD j 0) :
+    (layOf F argv ro rw s C).Ok (entered F s) :=
+  ok_entered_of hS hF hsp hn hfit (fun _ hr => hrd ▸ hr) (fun _ hr => hwr ▸ List.mem_append_left _ hr)
+    ⟨_, Nat.le_refl _, hwr ▸ List.mem_append_right _ (List.mem_singleton_self _)⟩ hstk hret hwro hwrw hfits hargs
 
 end
 

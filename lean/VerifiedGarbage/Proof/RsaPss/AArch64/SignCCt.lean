@@ -137,7 +137,7 @@ theorem call_ct (c : PrivChecked) {tsH tsG : List FnTable} {K : Nat} (hcK : c.st
       fun _ _ => True := by
   refine privCallCT c fun t₁ t₂ ⟨a, ⟨s₁, em₁, h₁, c₁⟩, ⟨s₂, em₂, h₂, c₂⟩⟩ => ?_
   have e : ∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r := fun r hr => (h₁.gpr hr).trans (h₂.gpr hr).symm
-  refine ⟨privOk_of c h₁.1 hcK c₁, privOk_of c h₂.1 hcK c₂, ⟨?_, fun r hr => ?_, fun i hi => ?_⟩, ?_, ?_⟩
+  refine ⟨privOk_of c h₁.1 hcK c₁.toArgs, privOk_of c h₂.1 hcK c₂.toArgs, ⟨?_, fun r hr => ?_, fun i hi => ?_⟩, ?_, ?_⟩
   · rw [c₁.sp, c₂.sp, h₁.fb, h₂.fb]
   · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

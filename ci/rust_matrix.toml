@@ -308,6 +308,7 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 
 # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
 # and (with AVX512F) vg_x25519_base_ifma, Ed25519's IFMA variants,
+# vg_ecdsa_p256_verify_ifma (with BMI2 and ADX, on the unrestricted line),
 # vg_rsa_private_checked_ifma and vg_poly1305_blocks_ifma (with the
 # `_ifma` instances of Poly1305, ChaCha20 and ChaCha20-Poly1305); VAES,
 # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
@@ -344,7 +345,7 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 chip = "icx"
 shards = 2
 runs = """
-- | x25519 ed25519 rsa ffdh dsa_parameters message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm aes_xts cmac chacha20 poly1305 cpu
+- | x25519 ed25519 p256 rsa ffdh dsa_parameters message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm aes_xts cmac chacha20 poly1305 cpu
 avx,avx2,avx512f,avx512ifma,avx512vl | ffdh cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 dsa_parameters_dispatch rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | dsa_parameters_dispatch rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs cpu

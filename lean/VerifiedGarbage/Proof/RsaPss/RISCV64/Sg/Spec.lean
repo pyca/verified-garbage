@@ -53,7 +53,7 @@ theorem lo_eq {s : State} (h0 : s.mem (s.gpr .a2) ≠ 0) : loS s = BitVec.ofNat 
   exact this
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem Entered.only {t t' : State} {rs : List Reg} (E : Entered s t) (o : Only rs t t')
