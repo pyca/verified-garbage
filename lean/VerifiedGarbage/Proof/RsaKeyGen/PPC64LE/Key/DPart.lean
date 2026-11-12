@@ -70,7 +70,8 @@ theorem dEven_eq : dEven = seqs (([.block (bitOf X0 aL ++ ([] : List Instr))] : 
       .block (andS X1 X2 X0 ++ (selS X6 X1 X6 X3 ++ ([] : List Instr))), sel aD 3 aS X3] : List (Prog isa)))) := rfl
 
 /-- `e` even: `x = e⁻¹ mod mL`; `[aD]` and `X6` by whether `e` is odd. -/
-theorem dEven_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 ≤ w) (he : V aE < 2 ^ 64)
+theorem dEven_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 ≤ w) (hwe : w % 2 = 0)
+    (he : V aE < 2 ^ 64)
     (one : V aOne = 1) (three : V aThree = 3) (zero : V aZero = 0) (b3 : F X3 = V aE % 2) (b6 : F X6 ≤ 1) :
     WP isa dEven s fun t => Ws t B Z w nArr ∧
       (∃ V' F', KS t.mem B w V' F' ∧ (∀ j < nArr, j ∉ dEvenArrs → V' j = V j) ∧
@@ -109,7 +110,7 @@ theorem dEven_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10
   have vE4 : V4 aE = V aE := by rw [o4 aE (by decide), o2 aE (by decide)]
   rw [wp_seqs_cons (by simp)]
   refine WP.mono (invOfE h4 k4 hw (a := aE) (m := aMl) (hk := nW_width h4) (hn1 := by omega_arith)
-    (hnw := Nat.le_refl _)
+    (hnw := Nat.le_refl _) (hfit := by omega_arith)
     (han := by rw [vE4]; exact Nat.lt_of_lt_of_le he (Nat.pow_le_pow_right (by decide) (by omega_arith)))
     (hmn := k4.lt (by decide)) (odd := by rw [vMl]; exact mo.1) (gt := by rw [vMl]; exact mo.2))
     fun t5 ⟨h5, ⟨V5, k5, o5, g5, d5, l5⟩, f5, r5⟩ => ?_
@@ -159,7 +160,8 @@ theorem dEven_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10
 abbrev dPartArrs : List Nat := [aT, aS] ++ dOddArrs ++ dEvenArrs
 
 /-- `X6` whether `d` exists, and then `[aD] = d`; `X3` `e` odd, `X5` `e < 3`. -/
-theorem dPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 ≤ w) (he : V aE < 2 ^ 64)
+theorem dPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 ≤ w) (hwe : w % 2 = 0)
+    (he : V aE < 2 ^ 64)
     (one : V aOne = 1) (two : V aTwo = 2) (three : V aThree = 3) (zero : V aZero = 0) :
     WP isa dPart s fun t => Ws t B Z w nArr ∧
       (∃ V' F', KS t.mem B w V' F' ∧ (∀ j < nArr, j ∉ dPartArrs → V' j = V j) ∧
@@ -195,7 +197,7 @@ theorem dPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10
   have e3 : V3 aE = V aE := by rw [o3 _ (by decide), e2]
   have l3 : V3 aL = V aL := by rw [o3 _ (by decide), l2]
   have w3 : F3 X3 = V aE % 2 := by rw [p3 X3 (by decide) (by decide) (by decide), y3]
-  refine WP.mono (dEven_ok h3 k3 hw (by rw [e3]; exact he) one3 three3 zero3 (by rw [w3, e3]) (by rw [z6, x6]; split <;> split <;> omega_arith))
+  refine WP.mono (dEven_ok h3 k3 hw hwe (by rw [e3]; exact he) one3 three3 zero3 (by rw [w3, e3]) (by rw [z6, x6]; split <;> split <;> omega_arith))
     fun t ⟨ht, ⟨V4, F4, k4, o4, p4, ⟨x', xl', xd', vD⟩, z6'⟩, f4, r4⟩ => ?_
   simp only [e3, l3] at xl' xd' vD z6'
   refine ⟨ht, ⟨V4, F4, k4, fun j hj hn => ?_, fun d a b c d3 d4 d5 d6 d7 => ?_, ?_, ?_, ?_, ?_⟩,

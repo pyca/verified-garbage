@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.InvBatch
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 
 /-!
 # Products for the RSA key checks on PPC64LE

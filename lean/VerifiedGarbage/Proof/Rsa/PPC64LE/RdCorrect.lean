@@ -57,6 +57,50 @@ theorem nV_lt256 (s0 : State) : nV s0 < 256 ^ kK s0 := by
 section
 variable [VG.Proof.Rsa.PPC64LE.InvLaw] {s0 s : State} {A : Bool → Nat → Nat} {V : Nat → Nat}
 
+/-- Appendix C.2 up to the GCD, the inverse's caller: the state kept. -/
+theorem det_gcd_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s) (z : A true 0 = 0)
+    (three : 3 ≤ A false 32) :
+    WP isa (seqs [VG.Impl.Rsa.PPC64LE.RecoverDet.deMinus, VG.Impl.Rsa.PPC64LE.RecoverDet.twos,
+      VG.Impl.Rsa.PPC64LE.RecoverDet.gcd]) s fun t =>
+      ∃ A' V', DS s0 false A' [(true, 8), (true, 12), (true, 15), (true, 9), (false, 32)] V' [sB1, sB0] t := by
+  have w1 := h.base.sz.w1
+  have nlo := h.lt (b' := false) (j := 32) (by decide)
+  rw [vw_false] at nlo
+  simp only [seqs]
+  -- `d e - 1`, and the halvings.
+  refine WP.seq (WP.mono (deMinus_ok h z) fun s1 ⟨A1, V1, h1, a15, a10, a9, a32, vb0, vb1⟩ => ?_)
+  rw [vw_true] at a10 vb1
+  refine WP.seq (WP.mono (twos_ok h1 a15) fun s2 ⟨A2, V2, h2, e2, b15, b8, b9, b32, b42, wb0, wb1⟩ => ?_)
+  rw [a10, a32, vw_true] at e2
+  rw [a9] at b9
+  rw [a32] at b32
+  have tw : twosOut (32 * ww (kK s0)) (32 * wW (kK s0)) (A false 32) (A true 3) = (A2 true 14, A2 true 13, A2 true 12) :=
+    e2.symm
+  -- `u` odd, and both below `2^(32 w)`.
+  have nm1 : wsub (32 * ww (kK s0)) (A false 32) 1 = A false 32 - 1 := wsub_of_le nlo (by omega)
+  have xlt : deX (32 * wW (kK s0)) (A true 3) % 2 ^ (32 * ww (kK s0)) < 2 ^ (32 * wW (kK s0)) :=
+    Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _)) (Nat.pow_le_pow_right (by decide)
+      (show 32 * ww (kK s0) ≤ 32 * (2 * ww (kK s0) + 2) by omega))
+  have uodd : A2 true 14 % 2 = 1 := by
+    have p := (twos_proj (32 * wW (kK s0)) (32 * ww (kK s0)) (A false 32 - 1)
+      (deX (32 * wW (kK s0)) (A true 3) % 2 ^ (32 * ww (kK s0))) (deX (32 * wW (kK s0)) (A true 3))
+      (deX (32 * wW (kK s0)) (A true 3) % 2 ^ (32 * ww (kK s0)))).1
+    have i := (twos_iter (b := 32 * wW (kK s0)) (N := A false 32 - 1) (k := 32 * ww (kK s0)) (by omega)
+      (by omega) xlt).1
+    rw [nm1] at e2
+    have := congrArg Prod.fst e2
+    simp only at this
+    rw [this, p]; exact i
+  have bnd := twos_le (32 * wW (kK s0)) (32 * ww (kK s0)) (wsub (32 * ww (kK s0)) (A false 32) 1,
+    deX (32 * wW (kK s0)) (A true 3) % 2 ^ (32 * ww (kK s0)), deX (32 * wW (kK s0)) (A true 3))
+  rw [← e2] at bnd
+  simp only at bnd
+  have ulo : A2 true 14 < 2 ^ (32 * ww (kK s0)) := by omega
+  have xlo : A2 true 13 < 2 ^ (32 * ww (kK s0)) :=
+    Nat.lt_of_le_of_lt bnd.2 (Nat.mod_lt _ (Nat.two_pow_pos _))
+  -- The GCD and the product.
+  exact WP.mono (gcd_ok h2 uodd ulo xlo b8 b42) fun s3 ⟨A3, V3, h3, _⟩ => ⟨A3, V3, h3⟩
+
 /-- Appendix C.2, from `n` (narrow array 32) and `d e` (wide array 3). -/
 theorem det_ok (h : DS s0 true A [(true, 0), (true, 3), (false, 32)] V [] s) (z : A true 0 = 0)
     (three : 3 ≤ A false 32) :
@@ -300,6 +344,20 @@ theorem valid_ok {s0 t : State} (hd : rdP.pre s0) (e : REnt s0 t)
         · exact h0
       have hQ : A3 false 6 ≤ nV s0 := by rw [← pq]; exact Nat.le_mul_of_pos_left _ P1
       rw [CrtValues.bytes_of hk bq, v6, e8, Nat.mod_eq_of_lt (by omega)]; rfl
+
+/-- The valid branch up to the GCD, the inverse's caller: the state kept. -/
+theorem valid_gcd_ok {s0 t : State} (e : REnt s0 t)
+    (hmv : Spec.Rsa.modulusValid (nV s0) (kK s0) = true) :
+    WP isa (seqs [VG.Impl.Rsa.PPC64LE.Recover.loads, VG.Impl.Rsa.PPC64LE.Recover.prod,
+      VG.Impl.Rsa.PPC64LE.RecoverDet.deMinus, VG.Impl.Rsa.PPC64LE.RecoverDet.twos,
+      VG.Impl.Rsa.PPC64LE.RecoverDet.gcd]) t fun u =>
+      ∃ A V, DS s0 false A [(true, 8), (true, 12), (true, 15), (true, 9), (false, 32)] V [sB1, sB0] u := by
+  rw [wp_seqs_cons (by simp)]
+  refine WP.mono (loads_ok e) fun t1 ⟨l1, _⟩ => ?_
+  rw [wp_seqs_cons (by simp)]
+  have hn := NOk.of_valid hmv
+  exact WP.mono (prodD_ok l1) fun t2 h2 => det_gcd_ok h2 (by simp only [A0]; rd_simp)
+    (by simp only [A0]; rd_simp; have := hn.big; omega)
 
 end
 

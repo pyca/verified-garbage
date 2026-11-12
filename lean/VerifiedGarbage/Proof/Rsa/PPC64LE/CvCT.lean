@@ -22,6 +22,9 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithB
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithC
+import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArith
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: constant time
@@ -44,6 +47,8 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE
 open VG.Impl.Rsa.PPC64LE.CrtValues (code entry check check1 check2 valid fail restore)
+open VG.Impl.Rsa.PPC64LE.Keys (seqs)
+open VG.Proof.Rsa.PPC64LE.Keys (flat_seqs)
 
 /-- The public data: the argument registers, the stack arguments and `n`'s bytes. -/
 structure CvD where
@@ -223,10 +228,12 @@ def A (d : CvD) (t : State) : Prop :=
 /-- The registers the stores start from: the arguments, the base, `w` and the stride. -/
 abbrev stRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r31, .r29, .r30]
 
-theorem pins_A : Pins A stRegs := by
+theorem pins_frame {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → ∃ s0, CVRel d s0 ∧ Base s0 s ∧ Args s0 s ∧
+    VG.Proof.Rsa.PPC64LE.Keys.Ws s (cvB s0) (cvZ s0) (cvW s0) VG.Impl.Rsa.PPC64LE.CrtValues.nArr) :
+    Pins Φ stRegs := by
   intro d s₁ s₂ h₁ h₂ r hr
-  obtain ⟨⟨a, ha, b₁, a₁, w₁⟩, -⟩ := h₁
-  obtain ⟨⟨b, hb, b₂, a₂, w₂⟩, -⟩ := h₂
+  obtain ⟨a, ha, b₁, a₁, w₁⟩ := hΦ _ _ h₁
+  obtain ⟨b, hb, b₂, a₂, w₂⟩ := hΦ _ _ h₂
   have ew : cvW a = cvW b := by simp only [cvW]; rw [ha.k hb]
   by_cases hbr : r ∈ brRegs
   · exact pins_args (Φ := fun d s => ∃ s0, CVRel d s0 ∧ Base s0 s ∧ Args s0 s) (fun _ _ h => h) d s₁ s₂
@@ -237,6 +244,8 @@ theorem pins_A : Pins A stRegs := by
     · rw [w₁.r29, w₂.r29, ew]
     · rw [w₁.r30, w₂.r30, ew]
 
+theorem pins_A : Pins A stRegs := pins_frame fun _ _ h => h.1
+
 theorem pre_A [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) :
     WP isa (.seq (.seq VG.Impl.Rsa.PPC64LE.CrtValues.setup VG.Impl.Rsa.PPC64LE.CrtValues.loads)
       VG.Impl.Rsa.PPC64LE.CrtValues.arith) s (A d) := by
@@ -244,12 +253,39 @@ theorem pre_A [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) :
   exact WP.assoc' (WP.mono (valid_pre_ok b a (hv.mp h0)) fun t ⟨⟨bt, at', wt⟩, w⟩ =>
     ⟨⟨s0, hs, bt, at', wt⟩, WP.mono w fun _ ⟨⟨⟨m, f⟩, _⟩, _⟩ => ⟨s0, m, hs, f⟩⟩)
 
-/-- The valid branch, in two: the stores' registers pinned again after
-`arith`. -/
+/-- The valid branch up to the inverse and its checks. -/
+abbrev preAB : Prog isa :=
+  seqs ([VG.Impl.Rsa.PPC64LE.CrtValues.setup, VG.Impl.Rsa.PPC64LE.CrtValues.loads] ++ (partA ++ partB))
+
+theorem flat_preAB : (Code.seq (.seq VG.Impl.Rsa.PPC64LE.CrtValues.setup VG.Impl.Rsa.PPC64LE.CrtValues.loads)
+    VG.Impl.Rsa.PPC64LE.CrtValues.arith).flat = preAB.flat ++ (seqs partC).flat := by
+  have nA : partA ≠ [] := by unfold partA; exact List.cons_ne_nil _ _
+  have nC : partC ≠ [] := by unfold partC; exact List.cons_ne_nil _ _
+  rw [preAB, flat_seqs (by simp), flat_seqs nC, Code.flat, Code.flat, arith_eq,
+    flat_seqs (List.append_ne_nil_of_left_ne_nil nA _)]
+  simp only [List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
+
+/-- After the inverse and its checks: the arguments kept, which the inverse
+reloads from memory, and the rest of `arith` then reaches `A`. -/
+def A1 (d : CvD) (t : State) : Prop :=
+  (∃ s0, CVRel d s0 ∧ Base s0 t ∧ Args s0 t ∧
+    VG.Proof.Rsa.PPC64LE.Keys.Ws t (cvB s0) (cvZ s0) (cvW s0) VG.Impl.Rsa.PPC64LE.CrtValues.nArr) ∧
+    WP isa (seqs partC) t (A d)
+
+theorem pins_A1 : Pins A1 stRegs := pins_frame fun _ _ h => h.1
+
+theorem pre_A1 [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) : WP isa preAB s (A1 d) := by
+  obtain ⟨⟨s0, hs, b, a, -⟩, -⟩ := id h
+  exact WP.and (WP.mono (preAB_ok b a) fun _ ⟨bt, at', wt⟩ => ⟨s0, hs, bt, at', wt⟩) (Keys.WP.cut flat_preAB (pre_A h))
+
+/-- The valid branch, in three: the stores' registers pinned again after the
+inverse, which reloads them from memory, and after `arith`, whose divisions
+do. -/
 theorem valid_ct [InvLaw] : RelCT isa (Two fun d s => C2 d s ∧ s.gpr .r0 = 0) valid (Two D) := by
   unfold valid
-  refine RelCT.assoc (RelCT.assoc (RelCT.seq (two_post (Ψ := A)
-    (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => pre_A h)
+  refine RelCT.assoc (RelCT.assoc (RelCT.seq (Keys.RelCT.cut (R := Two A1) flat_preAB
+    (two_post (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => pre_A1 h)
+    (two_post (two_taint _ pins_A1 (by taint_decide)) fun _ _ h => h.2))
     (two_post (two_taint _ pins_A (by taint_decide)) fun _ _ h => h.2)))
 
 theorem valid_D [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) : WP isa valid s (D d) := by

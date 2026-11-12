@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.Instances
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.IbInverse
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RdVerified
 public import VerifiedGarbage.Proof.Framework.Registration

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvFail
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArith
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithB
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvCheck
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBytes
 import VerifiedGarbage.Proof.Rsa.CrtValuesMath
@@ -92,6 +93,29 @@ theorem crtKey_masked_pq {nb pb qb db : List Byte}
       (R₃ := Spec.Rsa.os2ip db % (2 * (Spec.Rsa.os2ip qb / 2))) hv hp hq h₁ h₂ (fun _ => rfl) (fun _ => rfl),
       ite_eq_right hm, ite_eq_right hm]
 
+/-- The valid branch up to the inverse and its checks (`partA`, `partB`): the
+arguments, the base and the working space kept. -/
+theorem preAB_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
+    WP isa (seqs ([VG.Impl.Rsa.PPC64LE.CrtValues.setup, VG.Impl.Rsa.PPC64LE.CrtValues.loads] ++ (partA ++ partB))) s
+      fun t => Base s0 t ∧ Args s0 t ∧ Ws t (cvB s0) (cvZ s0) (cvW s0) nArr := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
+    -, -, -, -, -, -, -, -, -, p1, p2, q1, q2, -, -, -, -, -, -⟩ := h.pre
+  obtain ⟨-, -, hkw⟩ := pre_ws h.pre |>.2
+  have hk2 : (s0.gpr .r10).toNat ≤ 4 * cvW s0 := hkw
+  rw [List.cons_append, wp_seqs_cons (by simp)]
+  refine WP.mono (setup_ok h ha.r18) fun t1 ⟨b1, w1, z1, k1⟩ => ?_
+  rw [List.cons_append, List.nil_append, wp_seqs_cons (by simp [partA])]
+  refine WP.mono (loads_ok b1 (ha.of_keep k1) w1 z1) fun t2 ⟨b2, w2, i2, k2⟩ => ?_
+  have a2 := ha.of_keep (k1.trans k2)
+  have hP := os2ip_bytes_lt s0.mem (PPC64LE.stackArg s0 0) (PPC64LE.stackArg s0 1).toNat
+  have hQ := os2ip_bytes_lt s0.mem (PPC64LE.stackArg s0 2) (PPC64LE.stackArg s0 3).toNat
+  have hw16 := (pre_ws h.pre).2.1
+  refine WP.mono (arithAB_ok w2 i2 (hwe := by simp only [cvW]; omega) (pL := (PPC64LE.stackArg s0 1).toNat)
+    (qL := (PPC64LE.stackArg s0 3).toNat) (by omega) (by rw [a2.r20]; exact ofNat_toNat64 _)
+    (by rw [a2.r22]; exact ofNat_toNat64 _) p1 (by omega) (by omega) hP hQ) fun t3 ⟨w3, k3, r3⟩ => ?_
+  have b3 : Base s0 t3 := b2.of_keep k3 (by decide) (by decide) r3.sp r3.lr r3.rd r3.wr (r3.gpr _ (by decide))
+  exact ⟨b3, ha.of_keep ((k1.trans k2).trans r3), w3⟩
+
 /-- `valid` up to the stores: the base and the arguments kept, and the stores
 then end it. -/
 theorem valid_pre_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
@@ -119,7 +143,7 @@ theorem valid_pre_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
     refine Nat.lt_of_lt_of_le hQ (Nat.le_trans ?_ hn)
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by have : cvK s0 = (s0.gpr .r10).toNat := rfl; omega)
-  refine WP.mono (arith_ok w2 i2 (pL := (PPC64LE.stackArg s0 1).toNat) (qL := (PPC64LE.stackArg s0 3).toNat)
+  refine WP.mono (arith_ok w2 i2 (hwe := by simp only [cvW]; omega) (pL := (PPC64LE.stackArg s0 1).toNat) (qL := (PPC64LE.stackArg s0 3).toNat)
     (by omega) (by rw [a2.r20]; exact ofNat_toNat64 _) (by rw [a2.r22]; exact ofNat_toNat64 _) p1 q1 (by omega) (by omega) hP hQ hQN)
     fun t3 ⟨w3, k3, ⟨X₁, X₂, V, hm, h₁, h₂⟩, h₃, h₄, r3⟩ => ?_
   have b3 : Base s0 t3 := b2.of_keep k3 (by decide) (by decide) r3.sp r3.lr r3.rd r3.wr (r3.gpr _ (by decide))
@@ -133,16 +157,46 @@ theorem valid_pre_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
   have hn : 256 ^ (cvK s0 - 1) ≤ nIn s0 := by
     simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv
     exact hv.2
-  rw [crtKey_masked_pq (X₁ := X₁) (X₂ := X₂) (V := V) (R₂ := num t3.mem (cvB s0) (cvW s0) aDR2)
-    (R₃ := num t3.mem (cvB s0) (cvW s0) aDR3) (X := num t3.mem (cvB s0) (cvW s0) 3)
-    (by rw [hlen]; exact hv) (by rw [hlen, hlen]; exact p2) (by rw [hlen, hlen]; exact q2) h₁
-    h₂ (fun h0 pq => h₃ h0 fun hs => KeyCheck.shape_bound hs rfl pq hn hQ)
-    (fun h0 pq => h₄ h0 fun hs => KeyCheck.shape_bound (p := qIn s0) (q := pIn s0)
+  have h₃' : 0 < 2 * (pIn s0 / 2) → pIn s0 * qIn s0 = nIn s0 →
+      num t3.mem (cvB s0) (cvW s0) aDR2 = dIn s0 % (2 * (pIn s0 / 2)) := fun h0 pq => h₃ h0 fun hs => KeyCheck.shape_bound hs (by simp only [cvW]; omega) pq hn hQ
+  have h₄' : 0 < 2 * (qIn s0 / 2) → pIn s0 * qIn s0 = nIn s0 →
+      num t3.mem (cvB s0) (cvW s0) aDR3 = dIn s0 % (2 * (qIn s0 / 2)) := fun h0 pq => h₄ h0 fun hs => KeyCheck.shape_bound (p := qIn s0) (q := pIn s0)
       ⟨by have := hs.1; have := hs.2.2.1; omega, by have := hs.2.1; have := hs.2.2.1; omega, hs.2.2.1.symm,
-        by have := hs.2.2.2; have := hs.2.2.1; omega⟩ rfl (by rw [Nat.mul_comm]; exact pq) hn hP)]
-  simp only [hlen]
-  cases hb : decide (maskOf (pIn s0) (qIn s0) X₁ X₂ V)
-  · rw [decide_eq_false_iff_not] at hb
+        by have := hs.2.2.2; have := hs.2.2.1; omega⟩ (by simp only [cvW]; omega) (by rw [Nat.mul_comm]; exact pq) hn hP
+  by_cases hk : maskOf (pIn s0) (qIn s0) X₁ X₂ V = true
+  · -- Under the mask `p q = n`, so for a balanced key `p`'s top word is not zero.
+    have h₂' : 1 < modOf (pIn s0) → V = Nat.gcd (qIn s0) (modOf (pIn s0)) ∧
+        ((modOf (pIn s0) : Nat) : Int) ∣ (num t3.mem (cvB s0) (cvW s0) 3 : Int) * qIn s0 - V ∧
+        num t3.mem (cvB s0) (cvW s0) 3 < modOf (pIn s0) := fun h1 => by
+      obtain ⟨g, X, d, l, e⟩ := h₂ h1
+      have hk' := hk
+      simp only [maskOf, decide_eq_true_eq] at hk'
+      obtain ⟨podd, e1, e2, -⟩ := hk'
+      obtain ⟨f1, f2⟩ := h₁ (by omega)
+      have pq : pIn s0 * qIn s0 = nIn s0 := by
+        have := Nat.div_add_mod (nIn s0) (pIn s0)
+        rw [← f1, ← f2, e1, e2, Nat.add_zero] at this; exact this
+      rw [e fun hs => by have := KeyCheck.shape_bound hs (by simp only [cvW]; omega) pq hn hQ; unfold modOf; omega]
+      exact ⟨g, d, l⟩
+    rw [crtKey_masked_pq (X₁ := X₁) (X₂ := X₂) (V := V) (R₂ := num t3.mem (cvB s0) (cvW s0) aDR2)
+      (R₃ := num t3.mem (cvB s0) (cvW s0) aDR3) (X := num t3.mem (cvB s0) (cvW s0) 3)
+      (by rw [hlen]; exact hv) (by rw [hlen, hlen]; exact p2) (by rw [hlen, hlen]; exact q2) h₁ h₂' h₃' h₄']
+    simp only [hlen, hk, ↓reduceIte]
+    rw [show decide (maskOf (pIn s0) (qIn s0) X₁ X₂ V) = true from decide_eq_true hk] at vp vq vi t3'
+    refine ⟨by rw [t3']; rfl, ?_⟩
+    simp only [List.map_cons, List.map_nil]
+    rw [bytes_of (by omega_arith) vp, bytes_of (by omega_arith) vq, bytes_of (by omega_arith) vi]
+  · -- Else the outputs are zeros, whatever the inverse.
+    obtain ⟨X', h₂'⟩ : ∃ X' : Nat, 1 < modOf (pIn s0) → V = Nat.gcd (qIn s0) (modOf (pIn s0)) ∧
+        ((modOf (pIn s0) : Nat) : Int) ∣ (X' : Int) * qIn s0 - V ∧ X' < modOf (pIn s0) := by
+      by_cases h1 : 1 < modOf (pIn s0)
+      · obtain ⟨g, X, d, l, -⟩ := h₂ h1; exact ⟨X, fun _ => ⟨g, d, l⟩⟩
+      · exact ⟨0, fun h => absurd h h1⟩
+    rw [crtKey_masked_pq (X₁ := X₁) (X₂ := X₂) (V := V) (R₂ := num t3.mem (cvB s0) (cvW s0) aDR2)
+      (R₃ := num t3.mem (cvB s0) (cvW s0) aDR3) (X := X')
+      (by rw [hlen]; exact hv) (by rw [hlen, hlen]; exact p2) (by rw [hlen, hlen]; exact q2) h₁ h₂' h₃' h₄']
+    simp only [hlen]
+    have hb : ¬ maskOf (pIn s0) (qIn s0) X₁ X₂ V = true := hk
     simp only [hb]
     rw [show decide (maskOf (pIn s0) (qIn s0) X₁ X₂ V) = false from decide_eq_false hb] at vp vq vi t3'
     refine ⟨by rw [t3']; rfl, fun o ho => ?_⟩
@@ -151,12 +205,6 @@ theorem valid_pre_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
     · exact bytes_zero fun c hc => by rw [vp c hc]; rfl
     · exact bytes_zero fun c hc => by rw [vq c hc]; rfl
     · exact bytes_zero fun c hc => by rw [vi c hc]; rfl
-  · rw [decide_eq_true_iff] at hb
-    simp only [hb, ↓reduceIte]
-    rw [show decide (maskOf (pIn s0) (qIn s0) X₁ X₂ V) = true from decide_eq_true hb] at vp vq vi t3'
-    refine ⟨by rw [t3']; rfl, ?_⟩
-    simp only [List.map_cons, List.map_nil]
-    rw [bytes_of (by omega_arith) vp, bytes_of (by omega_arith) vq, bytes_of (by omega_arith) vi]
 
 /-- For a modulus that is not valid, `crtKey` is `none` and the results zeros. -/
 theorem valid_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)

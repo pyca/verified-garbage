@@ -5,13 +5,14 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvTail
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: the arithmetic, the inverse and the mask
 
 `partB_ok`: `inverse`'s start (`(q, m, 1, 0)` with `m = p | 1`, the negated
-modulus and 1), `inverse`, whether the gcd it finds is 1, and the mask of
-the four checks.
+modulus and 1), the inverse (`invG_ok`: by words for a balanced key), whether
+the gcd it finds is 1, and the mask of the four checks.
 -/
 
 @[expose] public section
@@ -21,7 +22,7 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Impl.Rsa.PPC64LE.Keys (seqs copy sub3 orOne setOne andS eqS aM aNM aZero aT1 aT2 aT3 aT4
  sOdd sB sC)
-open VG.Impl.Rsa.PPC64LE.CrtValues (invSetup sPodd sE1 sE2 sE3 sMask aOne aQ aP nArr)
+open VG.Impl.Rsa.PPC64LE.CrtValues (invSetup sPodd sE1 sE2 sE3 sMask aOne aQ aP nArr shape)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
 /-- `nCalc`: `r11 = ⌈max(p_len, q_len) / 4⌉`. -/
@@ -53,7 +54,8 @@ theorem nCalc_ok {s : State} {pL qL : Nat} (h20 : s.gpr .r20 = BitVec.ofNat 64 p
 
 /-- The second part of `arith`. -/
 def partB : List (Prog isa) :=
-  invSetup ++ [VG.Impl.Rsa.PPC64LE.InvBatch.inverse, eqS sE3 1 aOne,
+  invSetup ++ [.block shape, .ite (.zero .d .r0) VG.Impl.Rsa.PPC64LE.InvBatch.inverseS
+    VG.Impl.Rsa.PPC64LE.InvBatch.inverse, eqS sE3 1 aOne,
     .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3)]
 
 /-- The arrays and slots `partB` writes. -/
@@ -73,6 +75,7 @@ theorem modOf_lt {P k : Nat} (hk : 1 ≤ k) (h : P < 2 ^ k) : modOf P < 2 ^ k :=
   unfold modOf; omega
 
 theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s B Z w nArr) (hw : 10 ≤ w)
+    (hwe : w % 2 = 0)
     (hq : num s.mem B w aQ = Q) (hp : num s.mem B w aP = P)
     (z : ∀ j ∈ ([0, 1, 2, 3, aM, aNM, aZero, aOne] : List Nat), num s.mem B w j = 0)
     (bo : slot s.mem B sPodd ≤ 1) (b1 : slot s.mem B sE1 ≤ 1) (b2 : slot s.mem B sE2 ≤ 1)
@@ -83,9 +86,12 @@ theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s
       slot t.mem B sMask = (if slot s.mem B sPodd = 1 ∧ slot s.mem B sE1 = 1 ∧ slot s.mem B sE2 = 1 ∧
         num t.mem B w 1 = 1 then 1 else 0) ∧
       (1 < modOf P → num t.mem B w 1 = Nat.gcd Q (modOf P) ∧
-        ((modOf P : Nat) : Int) ∣ (num t.mem B w 3 : Int) * Q - num t.mem B w 1 ∧
-        num t.mem B w 3 < modOf P) ∧
-      Keep partBRegs s t := by
+        (KeyCheck.Shape w pL qL → ((modOf P : Nat) : Int) ∣
+          ((num t.mem B w 3 * 2 ^ (5 * (3 * (w / 4) + 2)) % modOf P : Nat) : Int) * Q - num t.mem B w 1 ∧
+          num t.mem B w 3 < modOf P) ∧
+        (¬ KeyCheck.Shape w pL qL → ((modOf P : Nat) : Int) ∣ (num t.mem B w 3 : Int) * Q - num t.mem B w 1 ∧
+          num t.mem B w 3 < modOf P)) ∧
+      num t.mem B w 8 = modOf P ∧ Keep partBRegs s t := by
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
   have wl := h.wle
@@ -123,9 +129,12 @@ theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s
   have hMn : modOf P < 2 ^ (32 * ((max pL qL + 3) / 4)) :=
     modOf_lt (by omega) (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (by decide) (by omega)))
   -- 4: the inverse.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (InvLaw.inverse_ok h5 (by decide) (by decide) hw r11 hn1 hnw q5 hQn m5' hMn
-    (by unfold modOf; omega)) fun t7 ⟨h7, k7, r7, v7⟩ => ?_
+  have r20 : t5.gpr .r20 = BitVec.ofNat 64 pL := by rw [k5.gpr _ (by decide), k04.gpr _ (by decide), h20]
+  have r22 : t5.gpr .r22 = BitVec.ofNat 64 qL := by rw [k5.gpr _ (by decide), k04.gpr _ (by decide), h22]
+  rw [show ∀ (a b c d : Prog isa), [a, b, c, d] = [a, b] ++ [c, d] from fun _ _ _ _ => rfl,
+    wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
+  refine WP.mono (invB_ok h5 hw hwe r11 r20 r22 hpL hpw hqw q5 hQn m5' hMn (by unfold modOf; omega))
+    fun t7 ⟨h7, k7, r7, v7⟩ => ?_
   -- 5: whether the gcd is 1.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (eqS_ok h7 (by decide) (by decide) (by decide) (by decide)) fun t8 ⟨h8, k8, e8, r8⟩ => ?_
@@ -153,15 +162,16 @@ theorem partB_ok [InvLaw] {s : State} {B : Addr} {Z w P Q pL qL : Nat} (h : Ws s
       k9.num (by simp) (by simp; decide) (fit _ hj)]
   have n8 : ∀ j, j < nArr → num t8.mem B w j = num t7.mem B w j := fun j hj =>
     k8.num (by simp) (by simp; decide) (fit _ hj)
-  refine ⟨h11, K8.trans (k9.mono.trans (k10.mono.trans k11.mono)), ?_, fun h1M => ?_,
+  refine ⟨h11, K8.trans (k9.mono.trans (k10.mono.trans k11.mono)), ?_, fun h1M => ?_, ?_,
     (((((((k04.trans k5).trans r7).trans r8).trans r9).trans r10).trans r11')).mono (by decide)⟩
   · rw [e11, e10, e9, so, s1, k9.slot (e := sE2) (by decide) (by decide), s2,
       k10.slot (e := sE3) (by decide) (by decide), k9.slot (e := sE3) (by decide) (by decide), e8,
       n7 1 (by decide), n8 1 (by decide)]
     by_cases a : slot s.mem B sPodd = 1 <;> by_cases b : slot s.mem B sE1 = 1 <;>
       by_cases c : slot s.mem B sE2 = 1 <;> by_cases d : num t7.mem B w 1 = 1 <;> simp [a, b, c, d]
-  · obtain ⟨g, dv, lt⟩ := v7 h1M
-    rw [n7 1 (by decide), n7 3 (by decide), n8 1 (by decide), n8 3 (by decide)]
-    exact ⟨g, dv, lt⟩
+  · rw [n7 1 (by decide), n7 3 (by decide), n8 1 (by decide), n8 3 (by decide)]
+    exact v7 h1M
+  · rw [n7 8 (by decide), n8 8 (by decide), k7.num (by decide) (by simp) (fit _ (by decide))]
+    exact m5'
 
 end VG.Proof.Rsa.PPC64LE.CrtValues
