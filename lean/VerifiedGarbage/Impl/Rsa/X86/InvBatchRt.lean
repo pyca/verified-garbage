@@ -9,8 +9,9 @@ public import VerifiedGarbage.Impl.Mont.X86.Inverse
 The inverse of the CRT's coefficient by batches of 30 divsteps on `w`-word numbers (`Divstep.W32`),
 in `KeyRt`'s arrays (`offset w j`), with every operation on them a loop whose pointers and count come
 from the modulus's length (`Lay.len`), `w` its 32-bit words and `n = w / 2` the primes'. The 30
-low-word divsteps and the matrix they build run in a window of eight header words at `win`; the
-reduction keeps its sign word in the header word `signSlot` across its product row.
+low-word divsteps and the matrix they build run in a window of eight header words at `win`; each
+batch then updates `f, g` and `d, e` in one pass each over interleaved arrays (`body`, "The fused
+batches" below); `linear` and `shr30` are `GcdBatchRt`'s.
 
 Each loop counts a register down by bytes. `edi`, which some loops move, is set back from the
 working space's argument (`Lay.ws`) after them.
@@ -237,64 +238,224 @@ def virtualize : Prog isa :=
   (.block [.alu .sub .eax (.imm 1), .alu .sbb .eax (.reg .eax), .alu .and .eax (.imm 2),
     .mov .ecx (.mem (at_ .ebp 0)), .alu .or .ecx (.reg .eax), .store (at_ .ebp 0) .ecx])
 
-/-- `[100] = 3 (n + 1)`, the batches; `esi = 6 (n + 1)`, the doublings (which keep `esi`), likewise
-from `4 (n + 1)`. -/
+/-- `[100] = 3 (n + 1)`, the batches. -/
 def batches : List Instr :=
   nBytes .eax 1 ++ [.shift .shr .eax 2, .mov .ecx (.reg .eax), .alu .add .eax (.reg .ecx),
     .alu .add .eax (.reg .ecx), .store (sc 100) .eax]
-def doublings : List Instr :=
-  nBytes .esi 1 ++ [.shift .shr .esi 1, .mov .eax (.reg .esi), .alu .add .esi (.reg .eax),
-    .alu .add .esi (.reg .eax)]
 
-def init : Prog isa := seqs [
-  .block (slots L), copy L (a 2) (a 8) (nBytes .edi 0), virtualize L,
-  copy L (a 4) (a 2) (nBytes .edi 0), .block (zeroWord L { arr := 4, half := 1 }),
-  copy L (a 5) (a 0) (nBytes .edi 0), .block (zeroWord L { arr := 5, half := 1 }),
-  zeros L (a 12) (nBytes .ecx 1),
-  .block (GcdBatch.evenMask (offset 0 0)), selIn L (a 12) (a 2) (nBytes .edi 0),
-  chain L .adc (a 5) (a 5) (a 12) (nBytes .edx 1),
-  .block [.mov .eax (.imm 1), .store (sc win) .eax],
-  zeros L (a 6) (nBytes .ecx 1), zeros L (a 7) (nBytes .ecx 1),
-  .block (ptr L .eax (a 7) .edx ++ [.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx]),
-  .block (ptr L .eax (a 2) .edx ++ [.mov .ebx (.mem (at_ .eax 0))] ++ Dynamic.inverse ++ [.store (sc (win + 28)) .eax]),
-  .block batches]
-
+/-- A batch's window from `f`, `g` (arrays 4 and 5) and the matrix's identity. -/
 def start : List Instr :=
   ptr L .ebx (a 4) .edx ++ [.mov .eax (.mem (at_ .ebx 0)), .store (sc (win + 4)) .eax] ++
   ptr L .ebx (a 5) .edx ++ [.mov .eax (.mem (at_ .ebx 0)), .store (sc (win + 8)) .eax] ++
   setConst 2 (win + 12) (1 + 2 ^ 96)
 
-def update : Prog isa := seqs [
-  linear L (win + 12) (win + 16) (a 11) (a 4) (a 5) (a 12) 1, shr30 L (a 0) (a 11),
-  linear L (win + 20) (win + 24) (a 11) (a 4) (a 5) (a 12) 1, shr30 L (a 1) (a 11),
-  linear L (win + 12) (win + 16) (a 11) (a 6) (a 7) (a 12) 0, reduce L (a 13),
-  linear L (win + 20) (win + 24) (a 11) (a 6) (a 7) (a 12) 0, reduce L (a 14),
-  copy L (a 4) (a 0) (nBytes .edi 1), copy L (a 5) (a 1) (nBytes .edi 1),
-  copy L (a 6) (a 13) (nBytes .edi 0), copy L (a 7) (a 14) (nBytes .edi 0)]
+/-! ## The fused batches
 
-def normalize : Prog isa := seqs [
-  copy L (a 12) (a 2) (nBytes .edi 0), chain L .sbb (a 12) (a 12) (a 6) (nBytes .edx 0),
-  .block (maskAt L { arr := 4, half := 1 }), selIn L (a 6) (a 12) (nBytes .edi 0),
-  csub L (a 6) (a 6)]
+The state in two interleaved arrays, from one scratch element on (which the first word of a row
+writes): `[f, g, f', g']` per word from array 4 (element size 16) and `[d, e, d', e', p]` from
+array 11 (element size 20), `n + 1` words each, two's complement. A batch reads one half of each
+element and writes the other, the next batch the other way. Each output is a row
+`(c₁ x + c₂ y (+ c₃ p)) / 2^30` in one pass over the words: the products as unsigned ones less
+`2^32 x` where the coefficient is negative, a signed 64-bit accumulator in `ebx:ecx`, and the
+words shifted by 30 as they go (`sP` keeps the previous word's top two bits). `d, e` divide by
+`2^30` modulo `p` exactly: `md, me` clear the low 30 bits (`-p⁻¹ mod 2^32`), with `u`, `v` added
+where `d`, `e` are negative, which keeps them in `(-2p, p)`. -/
 
-def twice : Prog isa := seqs [
-  chain L .adc (a 6) (a 6) (a 6) (nBytes .edx 1), csub L (a 6) (a 6),
-  .block (zeroWord L { arr := 6, half := 1 })]
+def fgArr : Nat := 4
+def deArr : Nat := 11
+def fgSz : Nat := 16
+def deSz : Nat := 20
 
-def finish : Prog isa := seqs [
-  zeros L (a 1) (wBytes .ecx), chain L .sbb (a 1) (a 1) (a 4) (nBytes .edx 0),
-  .block (maskAt L { arr := 4, half := 1 } ++ [.alu .xor .ecx (.imm (-1))]),
-  selIn L (a 1) (a 4) (nBytes .edi 0),
-  zeros L (a 3) (wBytes .ecx), copy L (a 3) (a 6) (nBytes .edi 0)]
+/-- Words at fixed places, in array 0 (`offset w 0 = 160`), which the batches no longer read: the
+coefficients' sign masks (`sMu` to `sMu + 12`), the previous word's top bits, the row's end,
+the signs of `d` and `e`, `md` and `me`, and their masks. -/
+def sMu : Nat := 160
+def sP : Nat := 176
+def sE : Nat := 180
+def sMd : Nat := 184
+def sMm : Nat := 200
+
+def neg (k : Nat) : Nat := 2 ^ 32 - k
+
+/-- A term of a row: the input's byte in the element, its coefficient's and mask's header words. -/
+structure Term where
+  x : Nat
+  c : Nat
+  m : Nat
+
+/-- `ebx:ecx(:ebp) += c · [esi + x]` for the signed coefficient `c`: the accumulator three words
+wide (`ebp` its top) where `wide`. -/
+def termI (wide : Bool) (t : Term) : List Instr :=
+  [.mov .eax (.mem (sc t.c)), .mov .edx (.mem (at_ .esi t.x)), .mul .edx,
+   .alu .add .ebx (.reg .eax), .alu .adc .ecx (.reg .edx)] ++
+  (if wide then [.alu .adc .ebp (.imm 0)] else []) ++
+  [.mov .eax (.mem (at_ .esi t.x)), .alu .and .eax (.mem (sc t.m)), .alu .sub .ecx (.reg .eax)] ++
+  (if wide then [.alu .sbb .ebp (.imm 0)] else [])
+
+/-- `eax` all ones where it is negative. -/
+def signEax : List Instr := [.alu .add .eax (.reg .eax), .alu .sbb .eax (.reg .eax)]
+
+/-- The end of a word of a row (see `wordI`). -/
+def tailI (wide : Bool) (sz o k : Nat) : List Instr :=
+  [.mov .eax (.reg .ebx), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax)] ++
+  (if wide then [.alu .add .eax (.mem (sc sP))] else [.alu .add .eax (.reg .ebp)]) ++
+  [.store (at_ .esi ((neg sz + o + k) % 2 ^ 32)) .eax, .shift .shr .ebx 30] ++
+  (if wide then [.store (sc sP) .ebx, .mov .ebx (.reg .ecx), .mov .ecx (.reg .ebp), .alu .add .ebp (.reg .ebp),
+      .alu .sbb .ebp (.reg .ebp)]
+   else [.mov .ebp (.reg .ebx), .mov .ebx (.reg .ecx), .alu .add .ecx (.reg .ecx), .alu .sbb .ecx (.reg .ecx)])
+
+/-- A word of a row at byte `k` from `esi`: the sum's word `S` in `ebx`; the previous element's
+output word `prev + S · 4`; the top bits of `S` kept (in `ebp` for a narrow row, else at `sP`);
+the accumulator shifted down a word, with its sign. -/
+def wordI (wide : Bool) (ts : List Term) (sz o k : Nat) : List Instr :=
+  (ts.map fun t => { t with x := t.x + k }).flatMap (termI wide) ++ tailI wide sz o k
+
+/-- Two words of a row, then on to the next two. -/
+def rowStep (wide : Bool) (ts : List Term) (sz o : Nat) : List Instr :=
+  wordI wide ts sz o 0 ++ wordI wide ts sz o sz ++
+  [.alu .add .esi (.imm (BitVec.ofNat 32 (2 * sz))), .alu .cmp .esi (.mem (sc sE))]
+
+/-- The sign of the top word of a signed input, times its coefficient, taken from the
+accumulator. -/
+def topFix (wide : Bool) (sz : Nat) (t : Term) : List Instr :=
+  [.mov .eax (.mem (at_ .esi (neg sz + t.x)))] ++ signEax ++
+  [.alu .and .eax (.mem (sc t.c)), .mov .edx (.reg .eax), .alu .add .edx (.reg .edx), .alu .sbb .edx (.reg .edx),
+   .alu .sub .ebx (.reg .eax), .alu .sbb .ecx (.reg .edx)] ++
+  (if wide then [.alu .sbb .ebp (.reg .edx)] else [])
+
+/-- `esi` at the first element of the array `arr` (after its scratch element), and `sE` past its
+first `n` elements of `sz` bytes. -/
+def rowStart (arr sz : Nat) : List Instr :=
+  ptr L .esi { arr := arr, byte := sz } .edx ++
+  [.mov .eax (.mem (sc halfSlot)), .mov .edx (.reg .eax)] ++
+  (if sz = 16 then [.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax)]
+   else [.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .edx)]) ++
+  [.alu .add .eax (.reg .esi), .store (sc sE) .eax]
+
+/-- A row: `(Σ cᵢ xᵢ) / 2^30` into byte `o` of each element, the terms `signed` sign-extended: two
+words at a time over the first `n` (`n` even), then word `n`. -/
+def row (wide : Bool) (arr sz o : Nat) (ts signed : List Term) : Prog isa :=
+  .seq (.block (rowStart L arr sz ++ [.mov .ebx (.imm 0), .mov .ecx (.imm 0), .mov .ebp (.imm 0)] ++
+      (if wide then [.store (sc sP) .ebx] else [])))
+    (.seq (.loop (.block (rowStep wide ts sz o)) .ne)
+      (.block (wordI wide ts sz o 0 ++ [.alu .add .esi (.imm (BitVec.ofNat 32 sz))] ++
+        signed.flatMap (topFix wide sz) ++
+        [.alu .add .ebx (.reg .ebx), .alu .add .ebx (.reg .ebx)] ++
+        (if wide then [.alu .add .ebx (.mem (sc sP))] else [.alu .add .ebx (.reg .ebp)]) ++
+        [.store (at_ .esi (neg sz + o)) .ebx] ++ restoreEdi L)))
+
+/-- The masks of the matrix's signs. -/
+def coefMasks : List Instr :=
+  (List.range 4).flatMap fun j => [.mov .eax (.mem (sc (win + 12 + 4 * j)))] ++ signEax ++ [.store (sc (sMu + 4 * j)) .eax]
+
+/-- `md` and `me` from the signs of `d`, `e` (at bytes `dx`, `dx + 4` of the elements) and their low
+words, and their masks. -/
+def mdme (dx : Nat) : List Instr :=
+  ptr L .esi { arr := deArr, byte := deSz } .edx ++
+  -- `ebx`, `ecx`: the low words; the top words' signs into `sMd`, `sMd + 4` for now.
+  [.mov .ebx (.mem (at_ .esi dx)), .mov .ecx (.mem (at_ .esi (dx + 4))),
+   .mov .eax (.mem (sc halfSlot)), .mov .edx (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+   .alu .add .eax (.reg .edx), .alu .add .esi (.reg .eax),
+   .mov .eax (.mem (at_ .esi dx))] ++ signEax ++ [.store (sc sMd) .eax,
+   .mov .eax (.mem (at_ .esi (dx + 4)))] ++ signEax ++ [.store (sc (sMd + 4)) .eax] ++
+  (List.range 2).flatMap (fun j =>
+    let cu := win + 12 + 8 * j
+    let cv := win + 16 + 8 * j
+    -- `md₀ = (u & sd) + (v & se)` into `esi`.
+    [.mov .esi (.mem (sc cu)), .alu .and .esi (.mem (sc sMd)), .mov .eax (.mem (sc cv)),
+     .alu .and .eax (.mem (sc (sMd + 4))), .alu .add .esi (.reg .eax),
+     -- `cd = u d₀ + v e₀ mod 2^32` into `ebp`.
+     .mov .eax (.mem (sc cu)), .mul .ebx, .mov .ebp (.reg .eax), .mov .eax (.mem (sc cv)), .mul .ecx,
+     .alu .add .ebp (.reg .eax),
+     -- `md = md₀ - ((md₀ + p⁻¹ cd) mod 2^30)`, with `-p⁻¹` at `win + 28`.
+     .mov .eax (.mem (sc (win + 28))), .mul .ebp, .mov .edx (.reg .esi), .alu .sub .edx (.reg .eax),
+     .alu .and .edx (.imm 0x3FFFFFFF), .alu .sub .esi (.reg .edx),
+     .store (sc (sMd + 8 + 4 * j)) .esi]) ++
+  [.mov .eax (.mem (sc (sMd + 8)))] ++ signEax ++ [.store (sc sMm) .eax,
+   .mov .eax (.mem (sc (sMd + 12)))] ++ signEax ++ [.store (sc (sMm + 4)) .eax] ++ restoreEdi L
+
+/-- A batch from the half `h` of the elements to the other. -/
+def batchF (h : Bool) : Prog isa :=
+  let i := if h then 0 else 8
+  let o := if h then 8 else 0
+  let u : Term := ⟨i, win + 12, sMu⟩
+  let v : Term := ⟨i + 4, win + 16, sMu + 4⟩
+  let q : Term := ⟨i, win + 20, sMu + 8⟩
+  let r : Term := ⟨i + 4, win + 24, sMu + 12⟩
+  seqs [
+    .block (ptr L .ebx { arr := fgArr, byte := fgSz } .edx ++
+      [.mov .eax (.mem (at_ .ebx i)), .store (sc (win + 4)) .eax, .mov .eax (.mem (at_ .ebx (i + 4))),
+       .store (sc (win + 8)) .eax] ++ setConst 2 (win + 12) (1 + 2 ^ 96)),
+    wordSteps win 30,
+    .block coefMasks,
+    row L false fgArr fgSz o [u, v] [u, v],
+    row L false fgArr fgSz (o + 4) [q, r] [q, r],
+    .block (mdme L i),
+    row L true deArr deSz o [u, v, ⟨16, sMd + 8, sMm⟩] [u, v],
+    row L true deArr deSz (o + 4) [q, r, ⟨16, sMd + 12, sMm + 4⟩] [q, r]]
+
+/-- `[esi + x]` for `n + 1` elements of `sz` bytes from `[ebp]`, words; `ecx` the count. -/
+def scatterLoop (sz x : Nat) : Prog isa :=
+  .loop (.block [.mov .eax (.mem (at_ .ebp 0)), .store (at_ .esi x) .eax, .alu .add .ebp (.imm 4),
+    .alu .add .esi (.imm (BitVec.ofNat 32 sz)), .alu .sub .ecx (.imm 1)]) .ne
+
+def gatherLoop (sz x : Nat) : Prog isa :=
+  .loop (.block [.mov .eax (.mem (at_ .esi x)), .store (at_ .ebp 0) .eax, .alu .add .ebp (.imm 4),
+    .alu .add .esi (.imm (BitVec.ofNat 32 sz)), .alu .sub .ecx (.imm 1)]) .ne
+
+def scatter (arr sz x : Nat) (src : Ref) : Prog isa :=
+  .seq (.block (ptr L .esi { arr := arr, byte := sz } .edx ++ ptr L .ebp src .edx ++ nBytes .ecx 1 ++
+    [.shift .shr .ecx 2])) (scatterLoop sz x)
+
+def gather (arr sz x : Nat) (dst : Ref) : Prog isa :=
+  .seq (.block (ptr L .esi { arr := arr, byte := sz } .edx ++ ptr L .ebp dst .edx ++ nBytes .ecx 1 ++
+    [.shift .shr .ecx 2])) (gatherLoop sz x)
+
+/-- The start: `p` as before (its word `n` zero, as `n + 1` words of it are read), `g = a`
+(`a + p` if `a` is even) in array 7, then interleaved;
+`(d, e) = (0, 1)`. -/
+def initF : Prog isa := seqs [
+  .block (slots L), copy L (a 2) (a 8) (nBytes .edi 0), virtualize L, .block (zeroWord L { arr := 2, half := 1 }),
+  copy L (a 7) (a 0) (nBytes .edi 0), .block (zeroWord L { arr := 7, half := 1 }),
+  zeros L (a 12) (nBytes .ecx 1),
+  .block (GcdBatch.evenMask (offset 0 0)), selIn L (a 12) (a 2) (nBytes .edi 0),
+  chain L .adc (a 7) (a 7) (a 12) (nBytes .edx 1),
+  scatter L fgArr fgSz 0 (a 2), scatter L fgArr fgSz 4 (a 7),
+  -- Zeros from `[3]`, apart from the elements (`[12]` is among them); `[3]` is the result, later.
+  zeros L (a 3) (nBytes .ecx 1),
+  scatter L deArr deSz 0 (a 3), scatter L deArr deSz 4 (a 3), scatter L deArr deSz 16 (a 2),
+  .block (ptr L .eax { arr := deArr, byte := deSz } .edx ++ [.mov .ecx (.imm 1), .store (at_ .eax 4) .ecx]),
+  .block [.mov .eax (.imm 1), .store (sc win) .eax],
+  .block (ptr L .eax (a 2) .edx ++ [.mov .ebx (.mem (at_ .eax 0))] ++ Dynamic.inverse ++ [.store (sc (win + 28)) .eax]),
+  -- `(3 n + 2) / 2` double batches, then one: `3 (n + 1)`.
+  .block (nBytes .eax 0 ++ [.shift .shr .eax 2, .mov .ecx (.reg .eax), .alu .add .eax (.reg .ecx),
+    .alu .add .eax (.reg .ecx), .alu .add .eax (.imm 2), .shift .shr .eax 1, .store (sc 100) .eax])]
+
+/-- `[x] := [x] + p` where `[x]` (`n + 1` words) is negative. -/
+def addIfNegF (x : Ref) : Prog isa := seqs [
+  chain L .adc tmp x mo (nBytes .edx 1),
+  .block (maskAt L { x with half := 1 }), selIn L x tmp (nBytes .edi 1)]
+
+/-- The end, after an odd number of batches (the state in the elements' second half): `f` and `d`
+gathered into arrays 14 and 7; `x = ±d` brought into `[0, p)`; then
+`[1] = |f|` and `[3] = x`. -/
+def finishF : Prog isa := seqs [
+  gather L fgArr fgSz 8 (a 14), gather L deArr deSz 8 (a 7),
+  -- `d := -d` if `f < 0`.
+  zeros L tmp (nBytes .ecx 1), chain L .sbb tmp tmp (a 7) (nBytes .edx 1),
+  .block (maskAt L { arr := 14, half := 1 }), selIn L (a 7) tmp (nBytes .edi 1),
+  addIfNegF L (a 7), addIfNegF L (a 7), csub L (a 7) (a 7),
+  zeros L (a 1) (wBytes .ecx), chain L .sbb (a 1) (a 1) (a 14) (nBytes .edx 0),
+  .block (maskAt L { arr := 14, half := 1 } ++ [.alu .xor .ecx (.imm (-1))]),
+  selIn L (a 1) (a 14) (nBytes .edi 0),
+  zeros L (a 3) (wBytes .ecx), copy L (a 3) (a 7) (nBytes .edi 0)]
 
 def body : Prog isa := seqs [
-  init L,
-  .loop (seqs [.block (start L), wordSteps win 30, update L,
+  initF L,
+  .loop (seqs [batchF L true, batchF L false,
     .block [.mov .esi (.mem (sc 100)), decCounter, .store (sc 100) .esi, testCounter]]) .ne,
-  normalize L,
-  .block doublings,
-  .loop (.seq (twice L) (.block [decCounter, testCounter])) .ne,
-  finish L]
+  batchF L true,
+  finishF L]
 
 /-! ## The choice -/
 
