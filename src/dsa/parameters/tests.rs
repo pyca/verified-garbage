@@ -52,14 +52,13 @@ fn prime_vectors() -> Vec<Vector> {
     cases
 }
 
-/// One refillable tape: the published seed, then 0x02 octets for its
-/// witnesses and generator candidates (deterministic, for known answers;
-/// production obtains independent bytes from the OS), and 0x02 octets in
-/// any refill.
-fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
+/// The tape: the published seed, then 0x02 octets for its witnesses and
+/// generator candidates (deterministic, for known answers; production
+/// obtains independent bytes from the OS). Each published answer is found
+/// on this first tape, with no refill.
+fn fill_known_answer(v: &Vector, buf: &mut [u8]) {
     buf.fill(2);
-    let seed = if tape == 0 { &v.seed[..] } else { &[] };
-    buf[..seed.len()].copy_from_slice(seed);
+    buf[..v.seed.len()].copy_from_slice(&v.seed);
 }
 
 const KNOWN_ANSWER_FILLS: usize = 1;
@@ -101,12 +100,12 @@ fn cavp_generated_parameters() {
     for v in generation_vectors(host_without_ifma, uses_ifma) {
         let mut tape = 0;
         let parameters = Parameters::generate_from(v.bits, |buf| {
-            fill_known_answer(&v, tape, buf);
+            fill_known_answer(&v, buf);
             tape += 1;
             Ok(())
         })
         .unwrap();
-        assert!(tape >= KNOWN_ANSWER_FILLS);
+        assert_eq!(tape, KNOWN_ANSWER_FILLS);
         assert_eq!(parameters.p(), v.p);
         assert_eq!(parameters.q(), v.q);
         assert_eq!(parameters.g().len(), v.p.len());
