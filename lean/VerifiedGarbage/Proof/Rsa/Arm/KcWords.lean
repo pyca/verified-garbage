@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDiv
 public import VerifiedGarbage.Proof.Rsa.Arm.KdMul
+public import VerifiedGarbage.Proof.Rsa.KeyCheckWords
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The checks of an RSA key on ARMv7: the division and product by words between the steps
@@ -110,9 +111,6 @@ theorem Stg.divW_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     rcases List.mem_cons.mp hj with rfl | hj'
     · exact hr
     · exact h.live_lt j hj'
-
-/-- `fixTop`'s value on a number `x` of `k` words: `2^(32 (k - 1))` added if its top word is zero. -/
-def fixT (k x : Nat) : Nat := if x / 2 ^ (32 * (k - 1)) = 0 then x + 2 ^ (32 * (k - 1)) else x
 
 /-- A number of `k + 1` words below `2^(32 (k + 1))` from its top word and the rest. -/
 theorem val32_top_word {mem : Mem} {base : Addr} {d k n : Nat} (hkn : k + 1 ≤ n)

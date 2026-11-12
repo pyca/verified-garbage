@@ -19,28 +19,6 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Ar
 open VG.Proof.Rsa.Arm.Keys
 open VG.Proof.X25519.Arm
 
-theorem fixT_lt {k x : Nat} (hk : 1 ≤ k) (hx : x < 2 ^ (32 * k)) : fixT k x < 2 ^ (32 * k) := by
-  have e : (2 : Nat) ^ (32 * k) = 2 ^ (32 * (k - 1)) * 2 ^ 32 := by rw [← Nat.pow_add]; congr 1; omega
-  have hP := Nat.two_pow_pos (32 * (k - 1))
-  unfold fixT
-  split
-  · rename_i h0
-    have : x < 2 ^ (32 * (k - 1)) := by
-      rcases Nat.lt_or_ge x (2 ^ (32 * (k - 1))) with h | h
-      · exact h
-      · exact absurd h0 (Nat.pos_iff_ne_zero.mp (Nat.div_pos h hP))
-    rw [e]
-    have : 2 ^ (32 * (k - 1)) * 2 ≤ 2 ^ (32 * (k - 1)) * 2 ^ 32 := Nat.mul_le_mul_left _ (by decide)
-    omega
-  · exact hx
-
-theorem fixT_ge {k x : Nat} : 2 ^ (32 * (k - 1)) ≤ fixT k x := by
-  unfold fixT
-  split
-  · omega
-  · rename_i h0
-    exact Nat.le_of_not_lt fun h => h0 (Nat.div_eq_of_lt h)
-
 /-- The products of a balanced key's checks, when their factors are below their moduli. -/
 def ProdsW (g : Geo) (v : Vals) (R₁ R₂ : Nat) : Prop :=
   (v.dP < 2 * (v.p / 2) → 2 * (2 * (v.p / 2)) ≤ 2 ^ (32 * g.w) →
@@ -49,11 +27,8 @@ def ProdsW (g : Geo) (v : Vals) (R₁ R₂ : Nat) : Prop :=
     R₂ = v.e % 2 ^ 33 * v.dQ % (2 * (v.q / 2)))
 
 /-- The mask a balanced key's checks compute. -/
-def cW (g : Geo) (v : Vals) (R₁ R₂ : Nat) : Bool :=
-  decide (v.p % 2 = 1) && decide (v.p * v.q % 2 ^ (32 * g.w) = v.n) && decide (v.dP < 2 * (v.p / 2)) &&
-    decide (R₁ = 1) && decide (v.dQ < 2 * (v.q / 2)) && decide (R₂ = 1) && decide (v.qI < v.p) &&
-    decide (v.q * v.qI % 2 ^ (32 * g.w) % fixT (g.w / 2) v.p = 1) && decide (v.d < v.n) &&
-    decide (v.d % fixT (g.w / 2) (2 * (v.p / 2)) = v.dP) && decide (v.d % fixT (g.w / 2) (2 * (v.q / 2)) = v.dQ)
+abbrev cW (g : Geo) (v : Vals) (R₁ R₂ : Nat) : Bool :=
+  VG.Proof.Rsa.keyBitsW g.w v.n v.d v.p v.q v.dP v.dQ v.qI R₁ R₂
 
 theorem divK_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live) (hz : aZ ∈ live) (hA0 : A aZ = 0)
