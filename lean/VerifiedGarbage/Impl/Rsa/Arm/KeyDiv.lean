@@ -168,7 +168,7 @@ def estimate (r : Nat) : List Instr :=
 
 /-- `[t]`'s `dw + 1` words zeroed (copied from `[aZ]`, zero). -/
 def clearT (t : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 t ++ ptr .r10 0 ++ [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1),
+  .seq (.block (ptr .r0 t ++ ptr .r10 0 ++ ptr .r12 0 ++ [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1),
     .mov .r11 (.imm 0)])) copyWords
 
 /-- `[t] := q̂ [m]` over `dw` words, the carry stored as word `dw`. -/
