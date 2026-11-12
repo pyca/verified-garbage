@@ -12,7 +12,8 @@ instance (`Instances.lean`).
 From `x` in array 0 and an odd `m` in array 8, both below `2^(32 n)` for `n`
 in `s8` (`1 ≤ n ≤ 2 w`), `inverse` leaves `gcd(x, m)` in array 1 and, for
 `m > 1`, `y < m` with `y x ≡ gcd(x, m) (mod m)` in array 3; `inverseS`
-leaves `y` without its factor, `y 2^(6 (n + 1)) x ≡ gcd(x, m)`; `gcd` leaves
+leaves `y` without its factor, `y 2^(5 (3 ν + 2)) x ≡ gcd(x, m)` for `ν = ⌈n / 2⌉`
+(`nu n`); `gcd` leaves
 only the GCD. Each writes only the arrays `invArrs` (`gcdArrs`) and the registers
 `invRegs`.
 -/
@@ -54,7 +55,7 @@ class InvLaw : Prop where
       WP isa Impl.Rsa.RISCV64.InvBatch.inverseS s fun t => Ws t B Z w N ∧
         Keys.Frame B w invArrs [] s.mem t.mem ∧ Keep invRegs s t ∧
         (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
-          (m : Int) ∣ ((num t.mem B w 3 * 2 ^ (6 * (n + 1)) % m : Nat) : Int) * x - num t.mem B w 1 ∧
+          (m : Int) ∣ ((num t.mem B w 3 * 2 ^ (5 * (3 * nu n + 2)) % m : Nat) : Int) * x - num t.mem B w 1 ∧
           num t.mem B w 3 < m)
   gcd_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N n) (hN : N ≤ 256) {x m : Nat}
       (hx : num s.mem B w Impl.Rsa.RISCV64.InvBatch.aX = x) (hxn : x < 2 ^ (32 * n))
