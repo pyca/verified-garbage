@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
 public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowCallCT
@@ -27,5 +28,12 @@ def code : Prog isa :=
 
 theorem base_verified : Verified target code (Proof.Rsa.privateCrtContract abi 0) :=
   verified called Mont.calledProductEight WindowVector.selector
+
+/-- `vg_rsa_private_crt_precomputed`: `code` without the check `p q = n`. -/
+def codeGiven : Prog isa :=
+  VG.Impl.Rsa.AArch64.WindowFive.codeGiven called.code WindowVector.selector.code Mont.calledProductEight.mm
+
+theorem given_verified : Verified target codeGiven Proof.Rsa.AArch64.privateCrtProductContract :=
+  verifiedGiven called Mont.calledProductEight WindowVector.selector
 
 end VG.Proof.Bignum.AArch64.WindowFive

@@ -26,7 +26,8 @@ structure SPre (s : State) : Prop where
   tabH : ∃ T ∈ tsH, Abi.tableHeld 64 s.mem (stackArg s 16) (FnTable.words isa s T)
   tabG : ∃ T ∈ tsG, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)
   hsy : (tabFns tsH ++ tabFns tsG).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g)
-  hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat⟩, ⟨stackArg s 8, (stackArg s 9).toNat⟩, ⟨stackArg s 10, (stackArg s 11).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat⟩, ⟨stackArg s 16, 88⟩, ⟨stackArg s 17, 88⟩, ⟨stackArgAddr s 0, 144⟩]
+  hrd : ∀ r ∈ ([⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat⟩, ⟨stackArg s 8, (stackArg s 9).toNat⟩, ⟨stackArg s 10, (stackArg s 11).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat⟩, ⟨stackArg s 16, 88⟩, ⟨stackArg s 17, 88⟩] : List Region), r ∈ s.rd
+  hra : ∃ A, 144 ≤ A ∧ (⟨stackArgAddr s 0, A⟩ : Region) ∈ s.rd
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩]
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   dOe : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
@@ -111,9 +112,28 @@ structure SPre (s : State) : Prop where
 theorem SPre.of {s : State} (h : (signK tsH tsG).pre s) : SPre tsH tsG s := by
   simp only [signK] at h
   obtain ⟨sp1, sp2, tabH, tabG, hsy, hrd, hwr, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOdg, dOsa, dOs, dOtH, dOtG, dOa, dns, des, dps, dqs, ddps, ddqs, dqis, ddgs, dsas, dstH, dstG, dsa, dRo, dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRdg, dRsa, dRs, dRtH, dRtG, dRa, dKo, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKdg, dKsa, dKs, dKtH, dKtG, dKa, wO, wN, wE, wP, wQ, wDp, wDq, wQi, wDg, wSa, wS, wTH, wTG, lv, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, hdl⟩ := h
-  exact ⟨sp1, sp2, tabH, tabG, hsy, hrd, hwr, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOdg, dOsa, dOs, dOtH, dOtG, dOa, dns, des, dps, dqs, ddps, ddqs, dqis, ddgs, dsas, dstH, dstG, dsa, dRo, dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRdg, dRsa, dRs, dRtH, dRtG, dRa, dKo, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKdg, dKsa, dKs, dKtH, dKtG, dKa, wO, wN, wE, wP, wQ, wDp, wDq, wQi, wDg, wSa, wS, wTH, wTG, lv, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, hdl⟩
+  exact ⟨sp1, sp2, tabH, tabG, hsy, fun r hr => by rw [hrd]; exact List.mem_append_left _ hr,
+    ⟨144, Nat.le_refl _, by rw [hrd]; simp⟩, hwr, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOdg, dOsa, dOs, dOtH, dOtG, dOa, dns, des, dps, dqs, ddps, ddqs, dqis, ddgs, dsas, dstH, dstG, dsa, dRo, dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRdg, dRsa, dRs, dRtH, dRtG, dRa, dKo, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKdg, dKsa, dKs, dKtH, dKtG, dKa, wO, wN, wE, wP, wQ, wDp, wDq, wQi, wDg, wSa, wS, wTH, wTG, lv, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, hdl⟩
 
 variable {tsH tsG}
+
+/-- A stack argument is in a region the caller reads. -/
+theorem SPre.argIn {s u : State} (hp : SPre tsH tsG s) (hrd : u.rd = s.rd) {j : Nat} (hj : j < 18) :
+    InRegions (u.rd ++ u.wr) (stackArgAddr s j) 8 := by
+  obtain ⟨A, hA, hm⟩ := hp.hra
+  refine ⟨_, List.mem_append_left _ (by rw [hrd]; exact hm), ?_⟩
+  have e : stackArgAddr s j - stackArgAddr s 0 = BitVec.ofNat 64 (8 * j) := by
+    rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
+      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
+    rw [BitVec.add_comm, BitVec.add_sub_cancel]
+  show (stackArgAddr s j - stackArgAddr s 0).toNat + 8 ≤ A
+  rw [e, BitVec.toNat_ofNat]; omega
+
+/-- A region of the precondition's list is read. -/
+theorem SPre.rdIn {s u : State} (hp : SPre tsH tsG s) (hrd : u.rd = s.rd) {r : Region}
+    (hr : r ∈ ([⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat⟩, ⟨stackArg s 8, (stackArg s 9).toNat⟩, ⟨stackArg s 10, (stackArg s 11).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat⟩, ⟨stackArg s 16, 88⟩, ⟨stackArg s 17, 88⟩] : List Region)) :
+    r ∈ u.rd ++ u.wr :=
+  List.mem_append_left _ (by rw [hrd]; exact hp.hrd r hr)
 
 theorem SPre.k1 {s : State} (hp : SPre tsH tsG s) : 64 ≤ (s.gpr .rcx).toNat := hp.lv.1
 theorem SPre.k2 {s : State} (hp : SPre tsH tsG s) : (s.gpr .rcx).toNat ≤ 1024 := hp.lv.2

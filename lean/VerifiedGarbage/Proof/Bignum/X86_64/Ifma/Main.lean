@@ -276,26 +276,35 @@ theorem main_eq (l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (mul : Nat → Nat → Nat
           pPhase mul (Crt.expLoop mul Crt.tabSelect))))] : List (Prog isa)) ++ finish)) := by
   simp only [CrtIfma.main, List.append_assoc]
 
-/-- `main`, for a valid modulus: `privateCrt`'s result as `vg_rsa_private_crt`
-leaves it, and MXCSR's control bits. -/
-theorem main_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) {s : State} {B : Addr} {Z k : Nat}
+/-- What `main` leaves, from `s` (`CrtPre`): `privateCrt`'s result as
+`vg_rsa_private_crt` leaves it, and MXCSR's control bits. -/
+abbrev MainOut (s : State) (B : Addr) (Z k : Nat) (op : Addr) (nb xb pb qb dpb dqb qib : List Byte) (t : State) : Prop :=
+  (∃ Mk : Bool, MainPost s t B Z k op
+    (if Mk then crtResult (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip dpb) (Spec.Rsa.os2ip dqb)
+      (Spec.Rsa.os2ip qib) (Spec.Rsa.os2ip xb) else 0) Mk ∧
+    (Mk = true ↔ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb =
+      Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb)) ∧
+    t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
+
+/-- `main` after the checks: the IFMA computation or the CRT one, and the
+result. -/
+theorem mainBack_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat}
     {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
-    (hfront : (seqs (nSetup M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
+      (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+        (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)))
+    (mx₀ : t₀.mxcsr = s.mxcsr)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hcrt : (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    WP isa (CrtIfma.main l2 M.mm) s fun t => (∃ Mk : Bool, MainPost s t B Z k op
-      (if Mk then crtResult (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip dpb) (Spec.Rsa.os2ip dqb)
-        (Spec.Rsa.os2ip qib) (Spec.Rsa.os2ip xb) else 0) Mk ∧
-      (Mk = true ↔ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb =
-        Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb)) ∧
-      t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
-  rw [main_eq]
-  refine wp_seqs_append (by simp [nSetup]) (by simp) (WP.mono_mx hfront (front_ok M h hv)
-    fun t₀ ⟨minv, mp, mq, hr⟩ mx₀ => ?_)
+    WP isa (seqs (([.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny l2] : List (Prog isa)) ++
+        CrtIfma.post M.mm)) (seqs (qPhase M.mm (Crt.expLoop M.mm Crt.tabSelect) ++
+          pPhase M.mm (Crt.expLoop M.mm Crt.tabSelect))))] : List (Prog isa)) ++ finish)) t₀
+      (MainOut s B Z k op nb xb pb qb dpb dqb qib) := by
   refine wp_seqs_append (by simp) (by simp [finish]) ?_
   have hcrtB : ∀ t₁, CrtReady s t₁ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
       (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
@@ -319,6 +328,23 @@ theorem main_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) 
   refine WP.mono hdisp fun t₂ ⟨hp, mx₂⟩ => ?_
   refine WP.mono_mx (by decide +kernel) (finPart_ok h hv hp rfl) fun t ht mxf => ⟨⟨_, ht, ?_⟩, by rw [mxf, mx₂]⟩
   simp only [keyMask, Bool.and_eq_true, decide_eq_true_eq, and_assoc]
+
+
+/-- `main`, for a valid modulus: `privateCrt`'s result as `vg_rsa_private_crt`
+leaves it, and MXCSR's control bits. -/
+theorem main_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) {s : State} {B : Addr} {Z k : Nat}
+    {op np ip pp qp dpp dqp qip : Addr}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hfront : (seqs (nSetup M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hcrt : (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)).allInstrs (fun i => !loadsMxcsr i) = true) :
+    WP isa (CrtIfma.main l2 M.mm) s (MainOut s B Z k op nb xb pb qb dpb dqb qib) := by
+  rw [main_eq]
+  exact wp_seqs_append (by simp [nSetup]) (by simp) (WP.mono_mx hfront (front_ok M h hv)
+    fun t₀ ⟨minv, mp, mq, hr⟩ mx₀ => mainBack_ok h2 M h hv hr mx₀ hpre hpost hcrt)
 
 /-- `vg_rsa_private_crt_ifma` with Montgomery multiplication `M`, given that
 the parts of its code outside the vector code never load MXCSR (which the

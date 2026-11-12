@@ -50,6 +50,10 @@ structure Lay where
   scr : Addr
   sl : BitVec 64
   B : Addr
+  /-- Further regions the function may read: none for
+  `vg_rsa_private_checked`; for `vg_rsa_private_checked_precomputed`, its
+  last stack arguments and `pre`. -/
+  X : List Region
 
 namespace Lay
 
@@ -147,7 +151,7 @@ def lay (s : State) : Lay :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, s.gpr .x6, s.gpr .x7,
     stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6,
     stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10, stackArg s 11,
-    s.sp - BitVec.ofNat 64 stackBytes⟩
+    s.sp - BitVec.ofNat 64 stackBytes, []⟩
 
 theorem lay_top (s : State) : (lay s).B + BitVec.ofNat 64 stackBytes = s.sp := BitVec.sub_add_cancel _ _
 

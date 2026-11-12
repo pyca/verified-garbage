@@ -48,13 +48,6 @@ theorem dbS_toNat (r : BitVec 64) : (dbS r).toNat = (2 * r.toNat + 1) % 2 ^ 64 :
   simp only [Nat.shiftLeft_eq, Nat.pow_one, BitVec.toNat_ofNat]
   omega
 
-theorem shr63_toNat (r : BitVec 64) : (r >>> 63) = BitVec.ofNat 64 (decide (2 ^ 63 ≤ r.toNat)).toNat := by
-  have := r.isLt
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat]
-  by_cases h : 2 ^ 63 ≤ r.toNat <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
-    omega
-
 theorem zero_zero_add (x : BitVec 64) : (0 : BitVec 64) + 0 + x = x := by simp
 
 theorem or_bits (a b : Bool) :

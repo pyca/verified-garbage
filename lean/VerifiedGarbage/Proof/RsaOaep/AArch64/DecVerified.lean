@@ -99,15 +99,13 @@ theorem tail_ct {w₁ : MdHash} (hw₁ : w₁ ∈ vs) {S : Nat} (hS : 15 ≤ S) 
         ⟨V₂, W₂, c₂.lay hL hP16 R₂ S₂.scr, R₂, ⟨dx c₂ S₂, tx₂⟩, l₂⟩⟩ e₁ e₂
 
 include hc in
-theorem dec_ct (pv : PrivImpl) :
-    ConstantTime isa (decSpec (tables vs) (pv.S + 1)).pre (decSpec (tables vs) (pv.S + 1)).pub
-      (decrypt (fnsOf vs) pv.name pv.code) := by
-  have hS := pv.S15
-  refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => pub_sp h.2.2) (RelCT.alloc (R := fun _ _ => True) ?_))
-  rw [decBody_eq]
-  refine ((head_ct (tables vs) hS).seq ((priv_ct pv (tables vs)).seq (two_split (Q := fun _ _ => True) fun T hT => ?_))).mono ?_
-    fun _ _ _ => trivial
-  · obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT
+/-- After the private-key operation: the table of the label's hash
+function, its digest length, and the tail for it. -/
+theorem after_ct {S : Nat} (hS : 15 ≤ S) :
+    RelCT isa (Two S (tables vs) CalledI) (.seq (.block (tabSlot 15)) (.seq (.block lenLoad)
+      (byLen (fun d => decTail (ofLen d) (fnsOf vs)) lens))) fun _ _ => True :=
+  two_split (Q := fun _ _ => True) fun T hT => by
+    obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT
     have hDl : w₁.H.D ∈ lens := by rw [← w₁.mgf.len]; exact mem_lens w₁.mgf.mem
     refine (tabSlot_ct hc hw₁ hS).seq ((lenLoad_ct hc hw₁ hS).seq (byLen_ct (D := w₁.H.D)
       (fun _ _ _ _ _ h => h.1.1) (mem_lens_lt hDl) (fun _ _ _ _ _ ⟨⟨_, _, _, _, _, _, h⟩, _⟩ => h)
@@ -115,8 +113,17 @@ theorem dec_ct (pv : PrivImpl) :
     obtain ⟨⟨hcx, V, W, R, hSl, h32, h16⟩, _⟩ := id h
     exact WithL.of (Φ := LenI w₁.H.D) h sy ⟨hcx.step hL (by omega_arith) st nil_ws, V, W, hm ▸ R, hSl, h32,
       (hg _ (by decide)).trans h16⟩
-  · rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
-    exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
+
+include hc in
+theorem dec_ct (pv : PrivImpl) :
+    ConstantTime isa (decSpec (tables vs) (pv.S + 1)).pre (decSpec (tables vs) (pv.S + 1)).pub
+      (decrypt (fnsOf vs) pv.name pv.code) := by
+  have hS := pv.S15
+  refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => pub_sp h.2.2) (RelCT.alloc (R := fun _ _ => True) ?_))
+  rw [decBody_eq]
+  refine ((head_ct (tables vs) hS).seq ((priv_ct pv (tables vs)).seq (after_ct hc hS))).mono ?_ fun _ _ _ => trivial
+  rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
+  exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
 
 /-- The stack the function uses: the callee's and the frames'. -/
 def decStack (pv : PrivImpl) : Nat := pv.stack + 288

@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
 
 import VerifiedGarbage.Proof.Rsa.Arm.PrivAllocCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivBodyCT
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivStages
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The callable private wrapper leaks only public layout and key bytes -/
@@ -10,14 +12,16 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm
 
-theorem privateFn_ct (v : CrtImpl) {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte}
-    (nb : bs1 0 = bs2 0) (eb : bs1 1 = bs2 1) :
-    RelCT isa (fun s t => PrivFnInput g bs1 s ∧ PrivFnInput g bs2 t ∧ s.sp = t.sp)
-      (privCode v) (fun _ _ => True) := by
-  unfold privCode code
+theorem codeWith_ct {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {Q1 Q2 : State → Prop}
+    {b : Prog isa}
+    (bodyCt : RelCT isa (fun s t => (PrivateStart g bs1 s ∧ Q1 s) ∧ (PrivateStart g bs2 t ∧ Q2 t) ∧ s.sp = t.sp)
+      b (fun _ _ => True)) :
+    RelCT isa (fun s t => (PrivFnInput g bs1 s ∧ Q1 (entered s)) ∧ (PrivFnInput g bs2 t ∧ Q2 (entered t)) ∧
+      s.sp = t.sp) (codeWith b) (fun _ _ => True) := by
+  unfold codeWith
   apply RelCT.frame (fun _ _ h => h.2.2)
   intro s t tr1 tr2 u w hp e1 e2
-  obtain ⟨s0, t0, ⟨hs, ht, sp⟩, ps, pt⟩ := hp
+  obtain ⟨s0, t0, ⟨⟨hs, q1⟩, ⟨ht, q2⟩, sp⟩, ps, pt⟩ := hp
   have ps' := push_pushed (s := s0)
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (by decide) (by change 56 ≤ s0.sp.toNat; have := hs.stackFit; simp only [stackBytes] at this; omega)
@@ -27,7 +31,7 @@ theorem privateFn_ct (v : CrtImpl) {g : PrivGeometry} {bs1 bs2 : Fin 8 → List 
   have es : pcPushed s0 = s := Option.some.inj (ps'.symm.trans ps)
   have et : pcPushed t0 = t := Option.some.inj (pt'.symm.trans pt)
   subst s; subst t
-  have alloc := relCT_keep_sp (privateAlloc_ct v hs ht nb eb) (by
+  have alloc := relCT_keep_sp (privateAllocWith_ct bodyCt hs ht q1 q2) (by
     intro a b h
     rw [h.1, h.2]
     simp only [pcPushed, pushed_sp, sp])
@@ -35,4 +39,12 @@ theorem privateFn_ct (v : CrtImpl) {g : PrivGeometry} {bs1 bs2 : Fin 8 → List 
       (fun s t => s.sp = t.sp) := stackLoads_ct pcCalleeSaved
   have trace := (alloc.seq restore) _ _ _ _ _ _ ⟨rfl, rfl⟩ e1 e2
   exact ⟨trace.1, trivial⟩
+
+theorem privateFn_ct (v : CrtImpl) {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte}
+    (nb : bs1 0 = bs2 0) (eb : bs1 1 = bs2 1) :
+    RelCT isa (fun s t => PrivFnInput g bs1 s ∧ PrivFnInput g bs2 t ∧ s.sp = t.sp)
+      (privCode v) (fun _ _ => True) :=
+  (codeWith_ct (Q1 := fun _ => True) (Q2 := fun _ => True) (privateBody_ct v nb eb |>.mono
+    (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial))).mono
+    (fun _ _ h => ⟨⟨h.1, trivial⟩, ⟨h.2.1, trivial⟩, h.2.2⟩) (fun _ _ _ => trivial)
 end VG.Proof.Rsa.Arm

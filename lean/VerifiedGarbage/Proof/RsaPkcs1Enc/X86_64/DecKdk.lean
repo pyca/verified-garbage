@@ -74,7 +74,7 @@ theorem kdkMac_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
   obtain ⟨h1, -⟩ := scr_len hp
   have hC : (⟨stackArg s 3, kOf s⟩ : Region) = ⟨stackArg s 3, (stackArg s 4).toNat⟩ := by rw [hl]
   refine mac_front hp h.ctx (kOff := sDH) (by decide) (by decide) (fun _ hc => kdkUpdArgs_run hp hc)
-    (Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, hC, hp.hrd]; simp))
+    (Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, hC]; exact hp.hrd _ (by simp)))
     (fun a n han => by
       rw [hC]
       exact hp.dis.sub_right (sub_trans (scSub (by unfold sMsg at han; unfold scrBytes; omega))

@@ -37,8 +37,10 @@ variable {α : Type} {Φ : α → State → Prop} (H : Hash)
 theorem dentry_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (save ++ Dec.prologue)) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
-theorem privArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block privArgs) fun _ _ => True :=
-  two_taint [] h (by taint_decide)
+theorem privArgs_taint (pc : Bool) (h : Pins Φ []) : RelCT isa (Two Φ) (.block (privArgs pc)) fun _ _ => True := by
+  cases pc
+  · exact two_taint [] h (by taint_decide)
+  · exact two_taint [] h (by taint_decide)
 
 theorem zext_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (.block [.shift .sll .d .s4 .a0 32, .shift .srl .d .s4 .s4 32]) fun _ _ => True :=

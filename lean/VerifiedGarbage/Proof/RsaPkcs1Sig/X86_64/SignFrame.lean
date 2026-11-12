@@ -36,10 +36,12 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
 structure PreS (s : State) : Prop where
   sp1 : sigStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 128 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
+  hrd : ∀ r ∈ ([⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
     ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat⟩,
     ⟨stackArg s 5, (stackArg s 6).toNat⟩, ⟨stackArg s 7, (stackArg s 8).toNat⟩,
-    ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩, ⟨stackArgAddr s 0, 120⟩]
+    ⟨stackArg s 9, (stackArg s 10).toNat⟩, ⟨stackArg s 11, (stackArg s 12).toNat⟩] : List Region), r ∈ s.rd
+  /-- The stack arguments, in a readable region of at least 120 bytes. -/
+  hra : ∃ A, 120 ≤ A ∧ A < 2 ^ 32 ∧ (⟨stackArgAddr s 0, A⟩ : Region) ∈ s.rd
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩]
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   dOe : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
@@ -114,7 +116,8 @@ theorem preS_of {s : State} (h : sigContract.pre s) : PreS s := by
   obtain ⟨k1, k2⟩ := hsplit10
   have hsl := h
   clear h
-  exact ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOd, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, des, dds, dps, dqs, ddps,
+  exact ⟨sp1, sp2, fun r hr => by rw [hrd]; exact List.mem_append_left [⟨stackArgAddr s 0, 120⟩] hr,
+    ⟨120, Nat.le_refl _, by decide, by rw [hrd]; simp⟩, hwr, dOn, dOe, dOd, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, des, dds, dps, dqs, ddps,
     ddqs, dqis, dsa, dRo, dRs, dKo, dKn, dKe, dKd, dKp, dKq, dKdp, dKdq, dKqi, dKs, dKa, wO, wN, wE, wD, wP, wQ, wDp,
     wDq, wQi, wS, k1, k2, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsl⟩
 
@@ -174,6 +177,25 @@ structure Env (s t : State) : Prop where
   sE : word t.mem (fb s) oE = s.gpr .r8
   sEl : word t.mem (fb s) oEl = s.gpr .r9
 
+/-- `Env` but for the slots of `out` and `out_len`, which the call of
+`vg_rsa_private_checked_precomputed` takes for its stack arguments; nothing
+reads them after it. -/
+structure EnvC (s t : State) : Prop where
+  rsp : t.gpr .rsp = fb s
+  rd : t.rd = s.rd
+  wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
+  mem : Frame [stkR s, outR s, scrR s] s.mem t.mem
+  sN : word t.mem (fb s) oN = s.gpr .rdx
+  sK : word t.mem (fb s) oK = s.gpr .rcx
+  sE : word t.mem (fb s) oE = s.gpr .r8
+  sEl : word t.mem (fb s) oEl = s.gpr .r9
+
+theorem Env.core {s t : State} (h : Env s t) : EnvC s t :=
+  ⟨h.rsp, h.rd, h.wr, h.mem, h.sN, h.sK, h.sE, h.sEl⟩
+
+theorem EnvC.scr {s t : State} (h : EnvC s t) (hp : PreS s) : Scr t (fb s) frameBytes :=
+  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega)
+
 theorem Env.scr {s t : State} (h : Env s t) (hp : PreS s) : Scr t (fb s) frameBytes :=
   Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega)
 
@@ -215,8 +237,9 @@ theorem Env.arg {s t : State} (h : Env s t) (hp : PreS s) {j : Nat} (hj : j < 15
     · exact hp.dsa.symm
 
 theorem arg_in {s t : State} (hp : PreS s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 15) :
-    InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 :=
-  ⟨⟨stackArgAddr s 0, 120⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp),
+    InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 := by
+  obtain ⟨A, hA, hA', hm⟩ := hp.hra
+  exact ⟨⟨stackArgAddr s 0, A⟩, List.mem_append_left _ (by rw [hrd]; exact hm),
     by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
 theorem arg_ea {s t : State} (h : t.gpr .rsp = fb s) (j : Nat) : t.ea (arg j) = stackArgAddr s j := by

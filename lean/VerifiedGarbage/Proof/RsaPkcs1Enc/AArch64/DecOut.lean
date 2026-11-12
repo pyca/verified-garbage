@@ -32,15 +32,15 @@ theorem outInit_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q)
       u.gpr .x10 = (t.mem.writeW (slot t Q oML) (t.gpr .x13)).readW (Q + BitVec.ofNat 64 oScr) 64 +
         BitVec.ofNat 64 sAM ∧ u.gpr .x9 = 0 ∧
       (∀ r, r ≠ .x9 → r ≠ .x10 → u.gpr r = t.gpr r) := by
-  have h104 := h 104 (by decide)
-  have h168 := h 168 (by decide)
-  have hw' : InRegions t.wr (t.mem.read (Q + BitVec.ofNat 64 104) 8 + BitVec.ofNat 64 0) 8 := hw
+  have h120 := h 120 (by decide)
+  have h184 := h 184 (by decide)
+  have hw' : InRegions t.wr (t.mem.read (Q + BitVec.ofNat 64 120) 8 + BitVec.ofNat 64 0) 8 := hw
   apply WP.of_runBlock
   simp only [outInit, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     addr, State.read, State.load, State.store, Size.bits, Size.bytes, BitVec.setWidth_eq, Nat.reduceMul,
     Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp, oML, oScr, sAM, Option.bind_some, Option.map_some,
     Option.some.injEq, exists_eq_left', RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write,
-    RegUpd.mem_write, reduceCtorEq, ite_false, h104, h168, hw']
+    RegUpd.mem_write, reduceCtorEq, ite_false, h120, h184, hw']
   exact ⟨⟨rfl, rfl, hsp.symm, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩,
     by rw [BitVec.add_zero]; rfl, by rw [BitVec.add_zero]; rfl, rfl,
     fun r h9 h10 => by simp only [h9, h10, ite_false]⟩
@@ -172,11 +172,11 @@ end
 
 theorem retR_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block [.ldrSp .x0 oR]) t fun u => SameR t u ∧ u.mem = t.mem ∧ u.gpr .x0 = slot t Q oR := by
-  have h176 := h 176 (by decide)
+  have h192 := h 192 (by decide)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oR, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write, BitVec.setWidth_eq,
-    h176]
+    h192]
   exact ⟨⟨rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl⟩
 
 section
@@ -254,7 +254,7 @@ theorem selInit_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
   rw [hml, x13] at m₂ x10
   have F₂ : Frame [L.ML] t₁.mem t₂.mem := by
     rw [m₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have frm : ∀ d, d + 8 ≤ 224 → t₂.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t₁.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
+  have frm : ∀ d, d + 8 ≤ 240 → t₂.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t₁.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d hd => F₂.readW (Region.contains_self _ _) (fun X hX => by
       rw [List.mem_singleton.mp hX]; exact hL.stk_buf hd (.inr (.inl fun _ h => h))) (by decide)
   rw [show (t₁.mem.writeW L.ml (BitVec.ofNat 64 (lenOf L EM kd) &&& bm (decide (R = 1)))).readW

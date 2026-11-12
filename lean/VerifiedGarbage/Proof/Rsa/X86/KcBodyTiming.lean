@@ -36,11 +36,13 @@ theorem body_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32)
     (apart : ∀ r ∈ g.writes, Region.Disjoint ⟨sp.setWidth 64, argSpan g.full⟩ r) :
     RelCT isa (fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 0 = inputBytes g t.mem 0 ∧
       inputBytes g s.mem 1 = inputBytes g t.mem 1) (body g.full) (fun _ _ => True) := by
-  let r := fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 1 = inputBytes g t.mem 1 ∧ s.zf = t.zf
+  let r := fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 1 = inputBytes g t.mem 1 ∧ s.zf = t.zf ∧
+    inputBytes g s.mem 0 = inputBytes g t.mem 0
   have branch : RelCT isa r (.ite .e (checkExponent g.full) failure) (fun _ _ => True) := by
     apply VG.RelCT.ite (M := isa) (c := .e) (P := r)
-    · exact fun _ _ h => h.2.2
-    · exact (checkExponent_relCT g len sp fit apart).mono (fun _ _ h => ⟨h.1.1, h.1.2.1⟩) (fun _ _ h => h)
+    · exact fun _ _ h => h.2.2.1
+    · exact (checkExponent_relCT g len sp fit apart).mono (fun _ _ h => ⟨⟨h.1.1, h.1.2.1⟩, h.1.2.2.2⟩)
+        (fun _ _ h => h)
     · exact failure_relCT.mono (fun _ _ _ => trivial) (fun _ _ h => h)
   intro s t tr ur sf tf ⟨⟨h, esp⟩, modulus, exponent⟩ es et
   cases es with
@@ -55,7 +57,7 @@ theorem body_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32)
         rw [zs, zt]
         change some (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (inputBytes g s.mem 0)) _) = _
         rw [modulus]; rfl
-      have eq2 := (branch _ _ _ _ _ _ ⟨⟨next, (ks.1 _ (by decide)).trans esp⟩, by rw [ms, mt]; exact exponent, flags⟩
-        e2 f2).1
+      have eq2 := (branch _ _ _ _ _ _ ⟨⟨next, (ks.1 _ (by decide)).trans esp⟩, by rw [ms, mt]; exact exponent, flags,
+        by rw [ms, mt]; exact modulus⟩ e2 f2).1
       exact ⟨by rw [eq1, eq2], trivial⟩
 end VG.Proof.Rsa.X86.KeyCheck

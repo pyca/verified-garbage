@@ -25,6 +25,8 @@ open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.Proof.RsaPkcs1Enc (firstZero outByte)
 
+variable {pc : Bool}
+
 /-- After the private-key operation's output is read: the frame, the slots
 and the result `R` in its slot, memory changed only in our stack, `out`,
 `*msg_len` and `scratch`. -/
@@ -43,7 +45,7 @@ theorem Post.fr3 {s : State} {R : BitVec 64} {EM : List Byte} {t : State} (hc : 
     rcases hr with rfl | rfl | rfl <;> simp, fun _ h => h⟩, hc.sl, hc.r⟩
 
 /-- A store to `out` or `*msg_len`. -/
-theorem Fr3.store {s : State} (h : DPre s) {R : BitVec 64} {t u : State} (hc : Fr3 s R t) (hrd : u.rd = t.rd)
+theorem Fr3.store {s : State} (h : DPre pc s) {R : BitVec 64} {t u : State} (hc : Fr3 s R t) (hrd : u.rd = t.rd)
     (hwr : u.wr = t.wr) (hsp : u.sp = t.sp) (hg : ∀ r ∈ preserved, u.gpr r = t.gpr r) {X : Region}
     (hX : X = oR s ∨ X = mlR s) {Y : Region} (hY : Region.Sub Y X) (hf : Frame [Y] t.mem u.mem) :
     Fr3 s R u := by
@@ -146,7 +148,7 @@ structure OInv (s : State) (R MLV : BitVec 64) (EM AM : List Byte) (v ok : Bool)
   am : ∀ j < (s.gpr .r7).toNat, t.mem (scA s sAM + BitVec.ofNat 64 j) = AM.getD j 0
 
 section
-variable {s : State} (h : DPre s)
+variable {s : State} (h : DPre pc s)
 include h
 
 theorem outW {t : State} (hwr : t.wr = fr s :: s.wr) {i : Nat} (hi : i < (s.gpr .r7).toNat) :

@@ -26,6 +26,8 @@ open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 open VG.Proof.Sha256.X86_64 (Compress)
 
+variable {X : State → State → Prop}
+
 variable {v : Compress}
 
 /-- No two runs. -/
@@ -37,18 +39,18 @@ theorem cxm_blk {G : State → Mem → Prop} {A A' : State → State → Prop} {
     {hc : VG.Taint.Hint VG.X86_64.Taint.T} (h : (taint.check (Taint.ofRegs [.rsp]) (.block is) hc).isSome = true)
     (hw : ∀ s t R EM, DPre s → Ctx s R EM t → G s t.mem → A s t →
       WP isa (.block is) t fun t' => Ctx s R EM t' ∧ t'.mem = t.mem ∧ A' s t') :
-    RelCT isa (Two (At fun s t => Cx s t ∧ G s t.mem ∧ A s t)) (.block is)
-      (Two (At fun s t => Cx s t ∧ G s t.mem ∧ A' s t)) :=
+    RelCT isa (Two (At X fun s t => Cx s t ∧ G s t.mem ∧ A s t)) (.block is)
+      (Two (At X fun s t => Cx s t ∧ G s t.mem ∧ A' s t)) :=
   cx_blk h fun s t R EM hp hc ⟨g, a⟩ => WP.mono (hw s t R EM hp hc g a) fun _ ⟨hc', hm, a'⟩ =>
     ⟨hc', by rw [hm]; exact g, a'⟩
 
 /-- A call from a state with `Cx`, facts `G` about the frame and `A`. -/
 theorem cxm_call {G : State → Mem → Prop} {A : State → State → Prop} {c : Prog isa}
     (hG : ∀ s m m', G s m → FrmKeep s m m' → G s m')
-    (hct : RelCT isa (Two (At fun s t => Cx s t ∧ G s t.mem ∧ A s t)) c fun _ _ => True)
+    (hct : RelCT isa (Two (At X fun s t => Cx s t ∧ G s t.mem ∧ A s t)) c fun _ _ => True)
     (hw : ∀ s t R EM, DPre s → Ctx s R EM t → A s t → WP isa c t fun t' => Ctx s R EM t' ∧ FrmKeep s t.mem t'.mem) :
-    RelCT isa (Two (At fun s t => Cx s t ∧ G s t.mem ∧ A s t)) c
-      (Two (At fun s t => Cx s t ∧ G s t.mem ∧ True)) :=
+    RelCT isa (Two (At X fun s t => Cx s t ∧ G s t.mem ∧ A s t)) c
+      (Two (At X fun s t => Cx s t ∧ G s t.mem ∧ True)) :=
   two_then hct fun s t hp ⟨⟨R, EM, hc⟩, g, a⟩ => WP.mono (hw s t R EM hp hc a) fun _ h =>
     ⟨⟨R, EM, h.1⟩, hG _ _ _ g h.2, trivial⟩
 
@@ -88,7 +90,7 @@ theorem prfBody_ct (j : Nat) (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 �
     (tf : (taint.check (Taint.ofRegs [.rsp]) (.block (prfFinArgs (label.length + 4) dst)) hf).isSome = true)
     {hi : VG.Taint.Hint VG.X86_64.Taint.T}
     (ti : (taint.check (Taint.ofRegs [.rsp]) (.block (incr count)) hi).isSome = true) :
-    RelCT isa (Two (At fun s t => Cx s t ∧ GW N j s t.mem ∧ True)) (prfBody (HH v) label lenC dst count)
+    RelCT isa (Two (At X fun s t => Cx s t ∧ GW N j s t.mem ∧ True)) (prfBody (HH v) label lenC dst count)
       fun _ _ => True := by
   by_cases hj : dst + 32 * j + 32 ≤ scrBytes
   case neg =>
@@ -130,7 +132,7 @@ theorem prfBody_ct (j : Nat) (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 �
   exact two_taint [.rsp] (rsp_pin fun _ _ h => h.1) ti
 
 /-- The loop of IRPRF's blocks, for constant time. -/
-theorem prfLoop_ct (hNs : ∀ a s, Sib a s → N s = N a)
+theorem prfLoop_ct (hNs : ∀ a s, Sib X a s → N s = N a)
     (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 ≤ dst) (hNb : ∀ s, DPre s → dst + 32 * N s ≤ scrBytes)
     (hmsg : ∀ s, DPre s → ∀ R EM t i, Ctx s R EM t → i < N s → t.gpr .rdi = sc s → t.gpr .rax = BitVec.ofNat 64 i →
       t.gpr .r9 = s.gpr .r8 → WP isa (.block (msgBytes label lenC)) t fun t' =>
@@ -145,9 +147,9 @@ theorem prfLoop_ct (hNs : ∀ a s, Sib a s → N s = N a)
     (tf : (taint.check (Taint.ofRegs [.rsp]) (.block (prfFinArgs (label.length + 4) dst)) hf).isSome = true)
     {hi : VG.Taint.Hint VG.X86_64.Taint.T}
     (ti : (taint.check (Taint.ofRegs [.rsp]) (.block (incr count)) hi).isSome = true) :
-    RelCT isa (Two (At fun s t => Cx s t ∧ GW N 0 s t.mem ∧ True))
+    RelCT isa (Two (At X fun s t => Cx s t ∧ GW N 0 s t.mem ∧ True))
       (.loop (prfBody (HH v) label lenC dst count) .ne) fun _ _ => True := by
-  have key := two_loop (α := State) (Φ := fun a j t => At (fun s t => Cx s t ∧ GW N j s t.mem ∧ True) a t)
+  have key := two_loop (α := State) (Φ := fun a j t => At X (fun s t => Cx s t ∧ GW N j s t.mem ∧ True) a t)
     (Ψ := fun _ _ => True) (body := prfBody (HH v) label lenC dst count) (cond := .ne) N
     ((relCT_union fun j => prfBody_ct (v := v) j hL16 hd1 hNb hmsg tm tu tf ti).mono
       (fun _ _ ⟨p, ⟨_, h₁⟩, ⟨_, h₂⟩⟩ => ⟨p.2, p.1, h₁, h₂⟩) fun _ _ q => q)

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyPhase
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.AArch64.WDiv
 
 /-!
 # `vg_rsa_check_key` on AArch64: `main`
@@ -32,14 +33,14 @@ theorem ck_final {k N E D P Q DP DQ QI : Nat} {dn pq gP gQ gQI : Bool} (hv : Spe
       gP = (decide (DP < P - 1) && decide (D * E % (P - 1) = 1) && decide (E * DP % (P - 1) = 1)))
     (hgQ : Q % 2 = 1 → 1 < Q → D < N → Q * P = N →
       gQ = (decide (DQ < Q - 1) && decide (D * E % (Q - 1) = 1) && decide (E * DQ % (Q - 1) = 1)))
-    (hgQI : 0 < P → gQI = (decide (QI < P) && decide (Q * QI % P = 1))) :
+    (hgQI : 0 < P → P * Q = N → gQI = (decide (QI < P) && decide (Q * QI % P = 1))) :
     (gQI && (gQ && (gP && (pq && (dn && true))))) = Spec.Rsa.keyValid k N E D P Q DP DQ QI := by
   unfold Spec.Rsa.keyValid
   rw [hv, he, hdn, hpq]
   by_cases hd : D < N
   · by_cases h : P * Q = N
     · obtain ⟨p1, p2, q1, q2⟩ := hf h
-      rw [hgP p1 p2 hd h, hgQ q1 q2 hd (by rw [Nat.mul_comm]; exact h), hgQI (by omega_arith)]
+      rw [hgP p1 p2 hd h, hgQ q1 q2 hd (by rw [Nat.mul_comm]; exact h), hgQI (by omega_arith) h]
       have hb : ∀ a b : Nat, (a == b) = decide (a = b) := fun a b => by
         cases h' : decide (a = b) <;> simp_all
       simp only [hb, h, hPn, hQn, decide_true, Bool.true_and, Bool.and_true, Bool.and_assoc]
@@ -57,6 +58,14 @@ theorem ck_final {k N E D P Q DP DQ QI : Nat} {dn pq gP gQ gQI : Bool} (hv : Spe
     · have : (P * Q == N) = false := by simpa using h
       simp [h, this]
   · simp only [hd, decide_false, Bool.false_and, Bool.and_false]
+
+/-- `wordGuard`'s checks and `p q = n` put `p - 1` and `q - 1` in `k / 16`
+words with their top bits set. -/
+theorem ck_gd {I : CkIn} (L : CkLens I) (hG : I.Gd) (he : I.P * I.Q = I.N) :
+    (2 ^ (64 * (wk I.k / 2) - 1) ≤ I.P - 1 ∧ I.P < 2 ^ (64 * (wk I.k / 2))) ∧
+    (2 ^ (64 * (wk I.k / 2) - 1) ≤ I.Q - 1 ∧ I.Q < 2 ^ (64 * (wk I.k / 2))) := by
+  obtain ⟨g16, g2, gpq, _, hb⟩ := hG
+  exact guard_factors L.nl (by have := L.k1; omega_arith) L.pbl L.qbl g16 g2 gpq hb he
 
 /-- What `main` needs on entry. -/
 structure CkPre (I : CkIn) (s : State) : Prop where
@@ -101,7 +110,7 @@ theorem ckMain_eq : VG.Impl.Rsa.AArch64.CheckKey.main = seqs (([.block VG.Impl.R
     ((loadA aX sD sDlen ++ ltA aX 0) ++
     ((loadA aX sP sPlen ++ (loadA aR sQ sQlen ++ (mulXR ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa)))))) ++
     (modChecks sP sPlen sDP sQlen ++ (modChecks sQ sQlen sDQ sPlen ++
-    ((loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++ (loadA aR sQ sQlen ++ (mulXR ++ CheckCrtKey.modOne CheckCrtKey.topQ))))) ++
+    ((loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++ (loadA aR sQ sQlen ++ (mulXR ++ wmodOne CheckCrtKey.topQ lenQ))))) ++
     ([.block retMask] : List (Prog isa))))))))))) := by
   simp only [VG.Impl.Rsa.AArch64.CheckKey.main, List.append_assoc]
 
@@ -138,14 +147,16 @@ theorem ckMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulusV
     (fun t ht => ⟨ht.args.p, ht.args.pl, ht.p, ht.args.dp, ht.dp⟩)
     (Y := I.Q) (by decide) L.qcap (fun _ h => h.args.ql)
     (lt_w (by rw [L.qbl]))
-    (by simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)) fun s₇ ⟨gP, k₇, hgP⟩ => ?_)
+    (by simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)
+    (fun hG hpq => (ck_gd L hG hpq).1)) fun s₇ ⟨gP, k₇, hgP⟩ => ?_)
   refine wp_seqs_append (by simp [modChecks]) (by simp [loadA]) (WP.mono (phMod_ok k₇ L hE64
     (by decide) (by decide) (by decide) L.ql1 L.ql2 L.qcap L.qbl L.dqbl
     (fun t ht => ⟨ht.args.q, ht.args.ql, ht.q, ht.args.dq, ht.dq⟩)
     (Y := I.P) (by decide) L.pcap (fun _ h => h.args.pl)
     (lt_w (by rw [L.pbl]))
-    (by simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)) fun s₈ ⟨gQ, k₈, hgQ⟩ => ?_)
-  refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (phQIC_ok k₈ L) fun s₉ ⟨gQI, k₉, hgQI⟩ => ?_)
+    (by simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2)
+    (fun hG hpq => (ck_gd L hG (by rw [Nat.mul_comm]; exact hpq)).2)) fun s₈ ⟨gQ, k₈, hgQ⟩ => ?_)
+  refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (phQIC_ok k₈ L (fun hG hpq => (ck_gd L hG hpq).1)) fun s₉ ⟨gQI, k₉, hgQI⟩ => ?_)
   obtain ⟨h₉, m₉, -⟩ := k₉
   refine WP.mono (cvExit_ok h₉.ws m₉) fun t ⟨⟨hx, _⟩, _⟩ => ?_
   rw [hx, ck_final hv he rfl rfl hPn hQn (factors_of hNo hlo hPl hQl L.pl2 L.ql2) hgP hgQ hgQI]

@@ -29,70 +29,171 @@
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3648 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "0f4h+AAAgTmmAgh8KAEM+MAAbPjIAKz40ADM+NgA7PjgAAz56AAs+fAATPmQAQzo+AAM+JgBDOgAAQz4+AEM6AgBDPioAQzoYAAM+LABDOhoAAz4uAEM6HAADPjAAQzoeAAM+MgBDOiAAAz40AEM6IgADPjYAQzokAAM+OABDOiYAAz46AEM6KAADPjwAQzoqAAM+PgBDOiwAAz4AAIM6LgADPh4O+R8eDPFfHg75nx4Qwd9eEsofQABLOl4I4p8"
+        r#".base64 "wf4h+AAAgTmmAgh8OAEM+NAAbPjYAKz44ADM+OgA7PjwAAz5+AAs+QABTPmgAQzoCAEM+KgBDOgQAQz4CAIM6BgBDPi4AQzoYAAM+MABDOhoAAz4yAEM6HAADPjQAQzoeAAM+NgBDOiAAAz44AEM6IgADPjoAQzokAAM+PABDOiYAAz4+AEM6KAADPgAAgzoqAAM+AgCDOiwAAz4EAIM6LgADPh4O+R8eDPFfHg75nx4Qwd9eEsofRABLOl4I4p8"
 bl {vg_rsa_private_checked}
-.base64 "PgBjVAAAgTkQAWz4CAFs6XAJaznYACzpAAAAOA=="
+.base64 "PgBjVAAAgTkgAWz4GAFs6XAJaznoACzpAAAAOA=="
 20:
 .base64 "AAALmAEAazn//yk5AAApKA=="
 bne %cr0, 20b
-.base64 "8ABM6fgALOkIAWzpcAlrOdgADOkUQmt9UFhpfQ=="
+.base64 "AAFM6QgBLOkYAWzpcAlrOegADOkUQmt9UFhpfQ=="
 21:
 .base64 "AAAKiAAAC5gBAEo5AQBrOf//KTkAACko"
 bne %cr0, 21b
-.base64 "AACBOQgBbOgAAGM4"
+.base64 "AACBORgBbOgAAGM4"
 bl {vg_sha256_init}
-.base64 "AACBOQgBbOgAAGM4AACAOAgBrOhwCaU42ADM6AgB7OjAAOc4"
+.base64 "AACBORgBbOgAAGM4AACAOBgBrOhwCaU46ADM6BgB7OjAAOc4"
 bl {vg_sha256_update_scratch}
-.base64 "AACBOQgBbOgAAGM42ACM6AgBrOgQBKU4CAHM6MAAxjg="
+.base64 "AACBORgBbOgAAGM46ACM6BgBrOgQBKU4GAHM6MAAxjg="
 bl {vg_sha256_finalize_scratch}
-.base64 "AACBOQgBbOgAAGM4CAGM6GAAhDgIAazoEASlOCAAwDgIAezowADnOA=="
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDgYAazoEASlOCAAwDgYAezowADnOA=="
 bl {vg_hmac_sha256_init_scratch}
-.base64 "AACBOQgBbOgAAGM4QACAOAABrOjYAMzoCAHs6MAA5zg="
+.base64 "AACBORgBbOgAAGM4QACAOBABrOjoAMzoGAHs6MAA5zg="
 bl {vg_sha256_update_scratch}
-.base64 "AACBOQgBbOgAAGM4CAGM6GAAhDjYAKzoQAClOAgBzOhQBMY4CAHs6MAA5zg="
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDjoAKzoQAClOBgBzOhQBMY4GAHs6MAA5zg="
 bl {vg_hmac_sha256_finalize_scratch}
-.base64 "AACBOQAAQDkYAUz52ABM6R8ASjlC2Up5IAFM+Q=="
+.base64 "AACBOQAAQDkoAUz56ABM6R8ASjlC2Up5MAFM+Q=="
 22:
-.base64 "AACBOQgBLOkABCk5GAFs6dgADOkAAEA5AABJmQEAaZlsAEA5AgBJmWUAQDkDAEmZbgBAOQQASZlnAEA5BQBJmXQAQDkGAEmZaABAOQcASZkIAEA5CABJmQAAQDkJAEmZAACBOQgBbOgAAGM4CAGM6GAAhDgIAazoUASlOCAAwDgIAezowADnOA=="
+.base64 "AACBORgBLOkABCk5KAFs6egADOkAAEA5AABJmQEAaZlsAEA5AgBJmWUAQDkDAEmZbgBAOQQASZlnAEA5BQBJmXQAQDkGAEmZaABAOQcASZkIAEA5CABJmQAAQDkJAEmZAACBORgBbOgAAGM4GAGM6GAAhDgYAazoUASlOCAAwDgYAezowADnOA=="
 bl {vg_hmac_sha256_init_scratch}
-.base64 "AACBOQgBbOgAAGM4QACAOAgBrOgABKU4CgDAOAgB7OjAAOc4"
+.base64 "AACBORgBbOgAAGM4QACAOBgBrOgABKU4CgDAOBgB7OjAAOc4"
 bl {vg_sha256_update_scratch}
-.base64 "AACBOQgBbOgAAGM4CAGM6GAAhDhKAKA4GAHM6KQuxngIAUzpcARKORRSxnwIAezowADnOA=="
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDhKAKA4KAHM6KQuxngYAUzpcARKORRSxnwYAezowADnOA=="
 bl {vg_hmac_sha256_finalize_scratch}
-.base64 "AACBORgBbOkBAGs5GAFs+QgAIDlQSCt9AAApKA=="
+.base64 "AACBOSgBbOkBAGs5KAFs+QgAIDlQSCt9AAApKA=="
 bne %cr0, 22b
-.base64 "AACBOQAAQDkYAUz5"
+.base64 "AACBOQAAQDkoAUz5"
 23:
-.base64 "AACBOQgBLOkABCk5GAFs6dgADOkAAEA5AABJmQEAaZltAEA5AgBJmWUAQDkDAEmZcwBAOQQASZlzAEA5BQBJmWEAQDkGAEmZZwBAOQcASZllAEA5CABJmSQfCnkKAEmZAsJKeQkASZkAAIE5CAFs6AAAYzgIAYzoYACEOAgBrOhQBKU4IADAOAgB7OjAAOc4"
+.base64 "AACBORgBLOkABCk5KAFs6egADOkAAEA5AABJmQEAaZltAEA5AgBJmWUAQDkDAEmZcwBAOQQASZlzAEA5BQBJmWEAQDkGAEmZZwBAOQcASZllAEA5CABJmSQfCnkKAEmZAsJKeQkASZkAAIE5GAFs6AAAYzgYAYzoYACEOBgBrOhQBKU4IADAOBgB7OjAAOc4"
 bl {vg_hmac_sha256_init_scratch}
-.base64 "AACBOQgBbOgAAGM4QACAOAgBrOgABKU4CwDAOAgB7OjAAOc4"
+.base64 "AACBORgBbOgAAGM4QACAOBgBrOgABKU4CwDAOBgB7OjAAOc4"
 bl {vg_sha256_update_scratch}
-.base64 "AACBOQgBbOgAAGM4CAGM6GAAhDhLAKA4GAHM6KQuxngIAUzpcAVKORRSxnwIAezowADnOA=="
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDhLAKA4KAHM6KQuxngYAUzpcAVKORRSxnwYAezowADnOA=="
 bl {vg_hmac_sha256_finalize_scratch}
-.base64 "AACBORgBbOkBAGs5GAFs+SABLOlQSCt9AAApKA=="
+.base64 "AACBOSgBbOkBAGs5KAFs+TABLOlQSCt9AAApKA=="
 bne %cr0, 23b
-.base64 "AACBOdgALOn1/yk5AAAAOQ=="
+.base64 "AACBOegALOn1/yk5AAAAOQ=="
 24:
 .base64 "FEIIfQEACDlQQEl94A9KeQAAKig="
 bne %cr0, 24b
-.base64 "AACBOQgBbOlwBGs5gADgOAAAwDg="
+.base64 "AACBORgBbOlwBGs5gADgOAAAwDg="
 25:
 .base64 "AABLieRFSnkBAKuIFCpKfThASn1QSKp84A+leP//pTh4UsR8OCiEfHgixnwCAGs5///nOAAAJyg="
 bne %cr0, 25b
-.base64 "AACBOcAAbOkCAGs52ADs6P7/5zgCAIA4AACgOAAAYDgAAAA4AAAAOf//CDk="
+.base64 "AACBOdAAbOkCAGs56ADs6P7/5zgCAIA4AACgOAAAYDgAAAA4AAAAOf//CDk="
 26:
 .base64 "AABLif//SjngD0p5UABKfXhCqXw4UCl9OCApfXhLY3x4U6V8AQCEOAEAazn//+c4AAAnKA=="
 bne %cr0, 26b
-.base64 "AACBOcAAbOnYAOzoAABLif//SjngD0p5UABKfQEAK4kCAIA4eCIpff//KTngDyl5UAApfThISn04UKV8CgCAOFAYJH3gDyl5UAApfXhCKX04SKV8UDgjff//KTl4Mil9OCgpfXhKxnwQAYzoAQAgOXhKhHz//4Q44A+EeFAAhHxQOGZ8OCDGfMgATOkAAMr4CAFM6XAFSjkAACA5"
+.base64 "AACBOdAAbOnoAOzoAABLif//SjngD0p5UABKfQEAK4kCAIA4eCIpff//KTngDyl5UAApfThISn04UKV8CgCAOFAYJH3gDyl5UAApfXhCKX04SKV8UDgjff//KTl4Mil9OCgpfXhKxnwgAYzoAQAgOXhKhHz//4Q44A+EeFAAhHxQOGZ8OCDGfNgATOkAAMr4GAFM6XAFSjkAACA5"
 27:
 .base64 "AADLiAAAiol4YsZ8OCjGfHhixnxQSIN94A+MeVAAjH14Qox9OCCMfThgxnwAAMuYAQApOQEAazkBAEo5///nOAAAJyg="
 bne %cr0, 27b
-.base64 "AACBORABbOgoAQzopgMIfDABITggAIBO""#,
+.base64 "AACBOSABbOg4AQzopgMIfEABITggAIBO""#,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,
+        vg_hmac_sha256_finalize_scratch = sym super::hmac_sha256::vg_hmac_sha256_finalize_scratch::vg_hmac_sha256_finalize_scratch,
+    )
+}
+
+/// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `msg_len` must be valid for reads and writes of 8 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3648 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "wf4h+AAAgTmmAgh8OAEM+NAAbPjYAKz44ADM+OgA7PjwAAz5+AAs+QABTPmgAQzoCAEM+KgBDOgQAQz4CAIM6BgBDPi4AQzoYAAM+MABDOhoAAz4yAEM6HAADPjQAQzoeAAM+NgBDOiAAAz44AEM6IgADPjoAQzokAAM+PABDOiYAAz4+AEM6KAADPgAAgzoqAAM+AgCDOiwAAz4EAIM6LgADPgYAgzowAAM+CACDOjIAAz4eDvkfHgzxXx4O+Z8eEMHfXhLKH0QASzpeCOKfA=="
+bl {vg_rsa_private_checked_precomputed}
+.base64 "PgBjVAAAgTkgAWz4GAFs6XAJaznoACzpAAAAOA=="
+20:
+.base64 "AAALmAEAazn//yk5AAApKA=="
+bne %cr0, 20b
+.base64 "AAFM6QgBLOkYAWzpcAlrOegADOkUQmt9UFhpfQ=="
+21:
+.base64 "AAAKiAAAC5gBAEo5AQBrOf//KTkAACko"
+bne %cr0, 21b
+.base64 "AACBORgBbOgAAGM4"
+bl {vg_sha256_init}
+.base64 "AACBORgBbOgAAGM4AACAOBgBrOhwCaU46ADM6BgB7OjAAOc4"
+bl {vg_sha256_update_scratch}
+.base64 "AACBORgBbOgAAGM46ACM6BgBrOgQBKU4GAHM6MAAxjg="
+bl {vg_sha256_finalize_scratch}
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDgYAazoEASlOCAAwDgYAezowADnOA=="
+bl {vg_hmac_sha256_init_scratch}
+.base64 "AACBORgBbOgAAGM4QACAOBABrOjoAMzoGAHs6MAA5zg="
+bl {vg_sha256_update_scratch}
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDjoAKzoQAClOBgBzOhQBMY4GAHs6MAA5zg="
+bl {vg_hmac_sha256_finalize_scratch}
+.base64 "AACBOQAAQDkoAUz56ABM6R8ASjlC2Up5MAFM+Q=="
+22:
+.base64 "AACBORgBLOkABCk5KAFs6egADOkAAEA5AABJmQEAaZlsAEA5AgBJmWUAQDkDAEmZbgBAOQQASZlnAEA5BQBJmXQAQDkGAEmZaABAOQcASZkIAEA5CABJmQAAQDkJAEmZAACBORgBbOgAAGM4GAGM6GAAhDgYAazoUASlOCAAwDgYAezowADnOA=="
+bl {vg_hmac_sha256_init_scratch}
+.base64 "AACBORgBbOgAAGM4QACAOBgBrOgABKU4CgDAOBgB7OjAAOc4"
+bl {vg_sha256_update_scratch}
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDhKAKA4KAHM6KQuxngYAUzpcARKORRSxnwYAezowADnOA=="
+bl {vg_hmac_sha256_finalize_scratch}
+.base64 "AACBOSgBbOkBAGs5KAFs+QgAIDlQSCt9AAApKA=="
+bne %cr0, 22b
+.base64 "AACBOQAAQDkoAUz5"
+23:
+.base64 "AACBORgBLOkABCk5KAFs6egADOkAAEA5AABJmQEAaZltAEA5AgBJmWUAQDkDAEmZcwBAOQQASZlzAEA5BQBJmWEAQDkGAEmZZwBAOQcASZllAEA5CABJmSQfCnkKAEmZAsJKeQkASZkAAIE5GAFs6AAAYzgYAYzoYACEOBgBrOhQBKU4IADAOBgB7OjAAOc4"
+bl {vg_hmac_sha256_init_scratch}
+.base64 "AACBORgBbOgAAGM4QACAOBgBrOgABKU4CwDAOBgB7OjAAOc4"
+bl {vg_sha256_update_scratch}
+.base64 "AACBORgBbOgAAGM4GAGM6GAAhDhLAKA4KAHM6KQuxngYAUzpcAVKORRSxnwYAezowADnOA=="
+bl {vg_hmac_sha256_finalize_scratch}
+.base64 "AACBOSgBbOkBAGs5KAFs+TABLOlQSCt9AAApKA=="
+bne %cr0, 23b
+.base64 "AACBOegALOn1/yk5AAAAOQ=="
+24:
+.base64 "FEIIfQEACDlQQEl94A9KeQAAKig="
+bne %cr0, 24b
+.base64 "AACBORgBbOlwBGs5gADgOAAAwDg="
+25:
+.base64 "AABLieRFSnkBAKuIFCpKfThASn1QSKp84A+leP//pTh4UsR8OCiEfHgixnwCAGs5///nOAAAJyg="
+bne %cr0, 25b
+.base64 "AACBOdAAbOkCAGs56ADs6P7/5zgCAIA4AACgOAAAYDgAAAA4AAAAOf//CDk="
+26:
+.base64 "AABLif//SjngD0p5UABKfXhCqXw4UCl9OCApfXhLY3x4U6V8AQCEOAEAazn//+c4AAAnKA=="
+bne %cr0, 26b
+.base64 "AACBOdAAbOnoAOzoAABLif//SjngD0p5UABKfQEAK4kCAIA4eCIpff//KTngDyl5UAApfThISn04UKV8CgCAOFAYJH3gDyl5UAApfXhCKX04SKV8UDgjff//KTl4Mil9OCgpfXhKxnwgAYzoAQAgOXhKhHz//4Q44A+EeFAAhHxQOGZ8OCDGfNgATOkAAMr4GAFM6XAFSjkAACA5"
+27:
+.base64 "AADLiAAAiol4YsZ8OCjGfHhixnxQSIN94A+MeVAAjH14Qox9OCCMfThgxnwAAMuYAQApOQEAazkBAEo5///nOAAAJyg="
+bne %cr0, 27b
+.base64 "AACBOSABbOg4AQzopgMIfEABITggAIBO""#,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,

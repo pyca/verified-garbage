@@ -22,8 +22,9 @@ step's index: in runs that agree on `m`, every branch agrees.
 
 The relations fix the values the branches depend on: a step's (`R2pS`), `m`
 and `x`; `addBackPub`'s (`R2pAB`), `m` and `t`. A step's first pieces, which
-the taint analysis checks, leave `t` with `t + q̂ m = 2^64 x + 2^(64 (w + 1)) b`
-for a borrow `b`, and `t < 2^(64 (w + 1))`, so the same `t` in both runs
+the taint analysis checks, leave `t` in place of `x` with
+`t + q̂ m = 2^64 x + 2^(64 (w + 1)) b` for a borrow `b`, and
+`t < 2^(64 (w + 1))`, so the same `t` in both runs
 (`r2pStepPre_ct`); `addBackPub` branches on its sign and leaves
 `(t + m) mod 2^(64 (w + 1))` or `t` (`r2pAddBack_ct`). The steps fix `m` and the
 first `x`, `R - m` (`r2pSteps_ct`), and `r2Pub_ct` is `r2_ct` with them.
@@ -65,14 +66,13 @@ def R2pAB.next (p : R2pAB) : R2pAB :=
 /-- A step's registers, `m` and `t`. -/
 def R2pABPre (p : R2pAB) (s : State) : Prop :=
   R2dGoodS p.L s ∧ StepRegs s p.L.B p.L.w ∧ wv s.mem p.L.B (slot p.L.w aN) p.L.w = p.M ∧
-    wv s.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1) = p.T
+    wv s.mem p.L.B (slot p.L.w aR2) (p.L.w + 1) = p.T
 
-theorem pins_r2pABPre : Pins R2pABPre [.x0, .x8, .x9, .x11, .x6, .x12, .x7] := by
+theorem pins_r2pABPre : Pins R2pABPre [.x0, .x9, .x11, .x6, .x12, .x7] := by
   intro p s₁ s₂ h₁ h₂ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact pins_r2dGood (fun (p : R2pAB) => p.L) (fun _ _ h => h.1) p s₁ s₂ h₁ h₂ .x0 (by simp)
-  · rw [h₁.2.1.x8, h₂.2.1.x8]
   · rw [h₁.2.1.x9, h₂.2.1.x9]
   · rw [h₁.2.1.x11, h₂.2.1.x11]
   · rw [h₁.2.1.x6, h₂.2.1.x6]
@@ -84,13 +84,13 @@ def R2pABSgn (p : R2pAB) (s : State) : Prop := R2pABPre p s ∧ s.gpr .x3 = BitV
 
 /-- `t`'s sign is its top word's top bit. -/
 theorem r2pABPre_sign {p : R2pAB} {s : State} (h : R2pABPre p s) :
-    decide (2 ^ 63 ≤ (word s.mem p.L.B (slot p.L.w aAcc + 8 * p.L.w)).toNat) = p.sgn := by
-  rw [R2pAB.sgn, word_of_wv s.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1) (Nat.lt_succ_self _), h.2.2.2]
+    decide (2 ^ 63 ≤ (word s.mem p.L.B (slot p.L.w aR2 + 8 * p.L.w)).toNat) = p.sgn := by
+  rw [R2pAB.sgn, word_of_wv s.mem p.L.B (slot p.L.w aR2) (p.L.w + 1) (Nat.lt_succ_self _), h.2.2.2]
 
 theorem r2pSign_ok {p : R2pAB} {s : State} (h : R2pABPre p s) : WP isa (.block signTest) s (R2pABSgn p) := by
   obtain ⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, r, hN, hT⟩ := h
-  have lA := Nat.le_trans (slot_le (w := p.L.w) (show aAcc < 8 by decide)) hZ
-  refine WP.mono (signTest_ok hg.scr r.x8 r.x12 hw' (by omega_arith)) fun t ⟨⟨h3, hm⟩, k⟩ => ?_
+  have lA := Nat.le_trans (slot_le (w := p.L.w) (show aR2 < 8 by decide)) hZ
+  refine WP.mono (signTest_ok hg.scr r.x11 r.x12 hw' (by omega_arith)) fun t ⟨⟨h3, hm⟩, k⟩ => ?_
   refine ⟨⟨⟨mi, ⟨hg.keep hm k (by decide), hZ⟩, hw, hw'⟩, r.keep k, by rw [hm]; exact hN, by rw [hm]; exact hT⟩, ?_⟩
   rw [h3, r2pABPre_sign ⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, r, hN, hT⟩]
 
@@ -114,7 +114,7 @@ theorem r2pAddBack_ct : RelCT isa (Two R2pABPre) addBackPub (Two fun (p : R2pAB)
       cases hb : p.sgn
       · rfl
       · rw [hb] at he; exact absurd he (by decide)
-    have hlt := wv_lt s.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)
+    have hlt := wv_lt s.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)
     rw [h.2.2.2] at hlt
     have hn : ¬ 2 ^ (64 * (p.L.w + 1)) / 2 ≤ p.T := fun hc => by
       rw [← r2pABPre_sgn_iff h, hs] at hc; exact absurd hc (by decide)
@@ -128,21 +128,17 @@ theorem r2pAddBack_ct : RelCT isa (Two R2pABPre) addBackPub (Two fun (p : R2pAB)
     obtain ⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, r, hN, hT⟩ := h
     have hn := hg.scr.nowrap
     have sl : ∀ j < 8, slot p.L.w j + 8 * (p.L.w + 2) ≤ p.L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-    have lA := sl aAcc (by decide)
+    have lA := sl aR2 (by decide)
     have lM := sl aN (by decide)
-    have sAM := slot_sep (w := p.L.w) (show aAcc ≠ aN by decide)
-    refine WP.mono (addBack_spec hg.scr r.x8 r.x9 r.x12 r.x7 (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
+    have sAM := slot_sep (w := p.L.w) (show aR2 ≠ aN by decide)
+    refine WP.mono (addBack_spec hg.scr r.x11 r.x9 r.x12 r.x7 (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
       fun t ⟨c, hv, o, k⟩ => ?_
-    have ha : Arrays p.L.B p.L.w [aAcc] s.mem t.mem :=
+    have ha : Arrays p.L.B p.L.w [aR2] s.mem t.mem :=
       Arrays.of_outside (List.mem_singleton_self _) o (Nat.le_refl _) (by omega_arith)
     refine ⟨⟨mi, ⟨⟨hg.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, hZ⟩, hw, hw'⟩,
       r.keep k, by show wv t.mem p.L.B (slot p.L.w aN) p.L.w = p.M; rw [o.wv (by omega_arith) (by omega_arith)]; exact hN, ?_⟩
     rw [hT, hN] at hv
     exact r2p_lt_carry_mod hv (wv_lt _ _ _ _)
-
-/-- Runs related after `addBackPub` are related by `R2pABPre`. -/
-theorem r2p_two_next {s₁ s₂ : State} (h : Two (fun (p : R2pAB) => R2pABPre p.next) s₁ s₂) : Two R2pABPre s₁ s₂ :=
-  two_bind (fun p _ _ h₁ h₂ => ⟨p.next, h₁, h₂⟩) h
 
 /-! ## A step -/
 
@@ -152,10 +148,8 @@ structure R2pS where
   M : Nat
   X : Nat
 
-/-- `q̂` of `x` and `m`'s top words. -/
-def R2pS.q (p : R2pS) : Nat :=
-  min ((p.X / 2 ^ (64 * (p.L.w - 1)) % 2 ^ 64 * 2 ^ 64 + p.X / 2 ^ (64 * (p.L.w - 2)) % 2 ^ 64) /
-    (p.M / 2 ^ (64 * (p.L.w - 1)) % 2 ^ 64)) (2 ^ 64 - 1)
+/-- `q̂` of `x` and `m`. -/
+def R2pS.q (p : R2pS) : Nat := r2dQ p.X p.M p.L.w
 
 /-- `stepPub`'s precondition (`r2dStep_ok`'s), with `m` and `x`. -/
 def R2pSPre (p : R2pS) (s : State) : Prop :=
@@ -165,38 +159,28 @@ def R2pSPre (p : R2pS) (s : State) : Prop :=
       (2 ^ 128 - 1) / (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat - 2 ^ 64 ∧
     wv s.mem p.L.B (slot p.L.w aR2) p.L.w = p.X ∧ p.X < p.M
 
-/-- `q̂` is a function of `m` and `x`. -/
-theorem r2pSPre_q {p : R2pS} {s : State} (h : R2pSPre p s) :
-    r2dQ s.mem p.L.B p.L.w (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat = p.q := by
-  obtain ⟨⟨_, _, hw, _⟩, hN, -, -, hX, -⟩ := h
-  unfold r2dQ R2pS.q
-  rw [word_of_wv s.mem p.L.B (slot p.L.w aR2) p.L.w (show p.L.w - 1 < p.L.w by omega_arith),
-    word_of_wv s.mem p.L.B (slot p.L.w aR2) p.L.w (show p.L.w - 2 < p.L.w by omega_arith),
-    word_of_wv s.mem p.L.B (slot p.L.w aN) p.L.w (show p.L.w - 1 < p.L.w by omega_arith), hX, hN]
-
 /-- After a step's first pieces: `t = 2^64 x - q̂ m` with a borrow. -/
 def R2pSMid (p : R2pS) (s : State) : Prop :=
   R2dGoodS p.L s ∧ StepRegs s p.L.B p.L.w ∧ wv s.mem p.L.B (slot p.L.w aN) p.L.w = p.M ∧
-    ∃ b : Bool, wv s.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1) + p.q * p.M =
+    ∃ b : Bool, wv s.mem p.L.B (slot p.L.w aR2) (p.L.w + 1) + p.q * p.M =
       2 ^ 64 * p.X + 2 ^ (64 * (p.L.w + 1)) * b.toNat
 
 theorem r2pSPre_mid {p : R2pS} {s : State} (h : R2pSPre p s) :
-    WP isa (seqs [.block (R2Div.bases ++ quot), zeroAcc, mulAddRow, subPass]) s (R2pSMid p) := by
-  have hq := r2pSPre_q h
+    WP isa (seqs [.block (R2Div.bases ++ quot), .block quot3, mulSub]) s (R2pSMid p) := by
   obtain ⟨⟨mi, ⟨hg, hZ⟩, hw, hw'⟩, hN, hd, hv, hX, hXM⟩ := h
   refine WP.mono (r2dStepPre_ok hg hZ hw hw' hN rfl hd hv (by rw [hX]; exact hXM))
     fun t ⟨g, r, hN', ⟨b, hb⟩, _, _⟩ => ⟨⟨mi, ⟨g, hZ⟩, hw, hw'⟩, r, hN', b, ?_⟩
-  rw [hq, hX] at hb; exact hb
+  rw [hX] at hb; exact hb
 
 /-- Runs with the same `m` and `x` leave the same `t`. -/
 theorem r2pSMid_bind (p : R2pS) (s₁ s₂ : State) (h₁ : R2pSMid p s₁) (h₂ : R2pSMid p s₂) :
     ∃ q, R2pABPre q s₁ ∧ R2pABPre q s₂ := by
   obtain ⟨g₁, r₁, n₁, b₁, e₁⟩ := h₁
   obtain ⟨g₂, r₂, n₂, b₂, e₂⟩ := h₂
-  refine ⟨⟨p.L, p.M, wv s₁.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)⟩, ⟨g₁, r₁, n₁, rfl⟩, ⟨g₂, r₂, n₂, ?_⟩⟩
-  show wv s₂.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1) = wv s₁.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)
-  have l₁ := wv_lt s₁.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)
-  have l₂ := wv_lt s₂.mem p.L.B (slot p.L.w aAcc) (p.L.w + 1)
+  refine ⟨⟨p.L, p.M, wv s₁.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)⟩, ⟨g₁, r₁, n₁, rfl⟩, ⟨g₂, r₂, n₂, ?_⟩⟩
+  show wv s₂.mem p.L.B (slot p.L.w aR2) (p.L.w + 1) = wv s₁.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)
+  have l₁ := wv_lt s₁.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)
+  have l₂ := wv_lt s₂.mem p.L.B (slot p.L.w aR2) (p.L.w + 1)
   generalize 2 ^ (64 * (p.L.w + 1)) = W at *
   generalize p.q * p.M = Q at *
   generalize 2 ^ 64 * p.X = X at *
@@ -206,11 +190,11 @@ theorem r2pSMid_bind (p : R2pS) (s₁ s₂ : State) (h₁ : R2pSMid p s₁) (h�
 /-- A step's first pieces leak the same, and leave the same `t`, in runs with
 the same `m` and `x`. -/
 theorem r2pStepPre_ct :
-    RelCT isa (Two R2pSPre) (seqs [.block (R2Div.bases ++ quot), zeroAcc, mulAddRow, subPass]) (Two R2pABPre) := by
-  have hct : RelCT isa (Two R2pSPre) (seqs [.block (R2Div.bases ++ quot), zeroAcc, mulAddRow, subPass])
+    RelCT isa (Two R2pSPre) (seqs [.block (R2Div.bases ++ quot), .block quot3, mulSub]) (Two R2pABPre) := by
+  have hct : RelCT isa (Two R2pSPre) (seqs [.block (R2Div.bases ++ quot), .block quot3, mulSub])
       fun _ _ => True := by
     refine two_map (fun (p : R2pS) => p.L) (fun _ _ h => h.1) ?_
-    show RelCT isa (Two R2dGoodS) (.seq (.block (R2Div.bases ++ quot)) (.seq zeroAcc (.seq mulAddRow subPass))) _
+    show RelCT isa (Two R2dGoodS) (.seq (.block (R2Div.bases ++ quot)) (.seq (.block quot3) mulSub)) _
     refine RelCT.seq (RelCT.block_append (RelCT.seq
       (two_piece (Ψ := R2dStepR) [.x0] (pins_r2dGood id fun _ _ h => h) (by taint_decide)
         fun _ _ h => r2dBases_ok h)
@@ -218,16 +202,14 @@ theorem r2pStepPre_ct :
       (two_taint _ pins_r2dStepR (by taint_decide))
   exact (two_post hct fun _ _ h => r2pSPre_mid h).mono (fun _ _ h => h) fun _ _ h => two_bind r2pSMid_bind h
 
-theorem r2pStep_eq : stepPub = seqs (([.block (R2Div.bases ++ quot), zeroAcc, mulAddRow, subPass] : List (Prog isa)) ++
-    ([addBackPub, addBackPub, copyBack] : List (Prog isa))) := rfl
+theorem r2pStep_eq : stepPub = seqs (([.block (R2Div.bases ++ quot), .block quot3, mulSub] : List (Prog isa)) ++
+    ([addBackPub] : List (Prog isa))) := rfl
 
 /-- `stepPub` leaks the same in runs with the same `m` and `x`. -/
 theorem r2pStep_ct : RelCT isa (Two R2pSPre) stepPub fun _ _ => True := by
   rw [r2pStep_eq]
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq r2pStepPre_ct ?_)
-  show RelCT isa (Two R2pABPre) (.seq addBackPub (.seq addBackPub copyBack)) _
-  refine RelCT.seq r2pAddBack_ct (RelCT.seq (r2pAddBack_ct.mono (fun _ _ h => r2p_two_next h) fun _ _ h => r2p_two_next h) ?_)
-  exact two_taint _ (pins_r2pABPre.r2pOf fun _ _ h => h) (by taint_decide)
+  exact RelCT.seqs_append (by simp) (by simp) (RelCT.seq r2pStepPre_ct (r2pAddBack_ct.mono (fun _ _ h => h)
+    fun _ _ _ => trivial))
 
 /-! ## The steps -/
 

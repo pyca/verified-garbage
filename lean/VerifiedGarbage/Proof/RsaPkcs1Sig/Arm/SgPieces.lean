@@ -110,7 +110,7 @@ theorem encode_wp {σ s : State} (h : E1 P σ s) : WP isa Impl.RsaPkcs1Sig.Arm.e
   have hK := hs.1.k1024
   have fit := ok.fit
   have e : State.addr (P.B + BitVec.ofNat 32 oEM) = P.lay.fr oEM :=
-    ok.addrB (by show oEM < frameBytes + 56 + 68; decide)
+    ok.addrB (P.lt_lay (by decide))
   have hfd := ok.fits P.DIG (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hfd
   have hin : EncIn s (P.B + BitVec.ofNat 32 oEM) P.dig P.hash P.K P.dl :=

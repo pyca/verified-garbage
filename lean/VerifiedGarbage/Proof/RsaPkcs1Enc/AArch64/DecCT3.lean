@@ -167,7 +167,7 @@ theorem clLoop_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
     (fun i hi => Offset.ofNat_sub_ofNat (by omega_arith))
     (fun i hi hL _ _ _ _ _ u hu ⟨x9, x11, _⟩ => WP.mono (msgCL_ok x9 x11 (by omega_arith) (hu.msgW hL))
       fun _ ⟨a, b, c, d, e, f, _⟩ => ⟨⟨a, b, c, d, e⟩, f⟩)
-    fun _ _ _ _ _ u hu _ => WP.mono (incrCL_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 184) (by decide)))
+    fun _ _ _ _ _ u hu _ => WP.mono (incrCL_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 200) (by decide)))
       fun _ hw => hw)
 
 theorem amLoop_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
@@ -185,7 +185,7 @@ theorem amLoop_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
     (fun i hi => Offset.ofNat_sub_ofNat (by omega_arith))
     (fun i hi hL _ _ _ _ _ u hu ⟨x9, x11, x12⟩ => WP.mono (msgAM_ok x9 x11 x12 (by omega_arith) hk (hu.msgW hL))
       fun _ ⟨a, b, c, d, e, f, _⟩ => ⟨⟨a, b, c, d, e⟩, f⟩)
-    fun _ _ _ _ _ u hu hnb => WP.mono (incrAM_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 184) (by decide)))
+    fun _ _ _ _ _ u hu hnb => WP.mono (incrAM_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 200) (by decide)))
       fun _ ⟨a, b, c⟩ => ⟨a, b, by rw [c, hnb]⟩) _ _ _ _ _ _ hp e₁ e₂
 
 theorem clLoop_ct {S : Nat} (hS : 15 ≤ S) :

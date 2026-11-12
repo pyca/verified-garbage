@@ -83,15 +83,20 @@ theorem argAt {P : EP} {σ s : State} (hi : In P σ) (hs : P.lay.St σ s) {j : N
     State.addr (P.B + BitVec.ofNat 32 (arg j)) = P.lay.fr (arg j) ∧
     InRegions (s.rd ++ s.wr) (P.lay.fr (arg j)) 4 ∧
     s.mem.readW (P.lay.fr (arg j)) 32 = P.argv.getD j 0 := by
-  have hl : j < P.lay.argv.length := by simp only [EP.argv, List.length_cons, List.length_nil]; omega
+  have hl : j < P.lay.argv.length := by
+    simp only [EP.argv, List.length_append, List.length_cons, List.length_nil]; omega
+  have hA := hi.A84
   exact ⟨hi.ok.addrB (by
-      show arg j < frameBytes + 56 + 84; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
-    by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl, hs.arg hl⟩
+      show arg j < frameBytes + 56 + P.A; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
+    by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl,
+    (hs.arg hl).trans (by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_left
+        (by simp only [EP.argv, List.length_cons, List.length_nil]; omega), ← List.getD_eq_getElem?_getD])⟩
 
 /-- A slot, written with `r12 = sp`. -/
 theorem slotAt {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     State.addr (P.B + BitVec.ofNat 32 d) = P.lay.fr d :=
-  hi.ok.addrB (by show d < frameBytes + 56 + 84; unfold frameBytes at hd ⊢; omega)
+  hi.ok.addrB (by have := hi.A84; show d < frameBytes + 56 + P.A; unfold frameBytes at hd ⊢; omega)
 
 /-! ## `scratch` to its slot -/
 

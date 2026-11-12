@@ -26,7 +26,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-variable (tsH tsG : List FnTable)
+variable (tsH tsG : List FnTable) (Xs : State → State → Prop)
 
 /-- Word 5 of the table `hash`: the index of its hash function. -/
 def idxWord (s : State) : BitVec 64 := s.mem.readW (off (stackArg s 16) 40) 64
@@ -34,21 +34,21 @@ def idxWord (s : State) : BitVec 64 := s.mem.readW (off (stackArg s 16) 40) 64
 /-- The entry state `s` of a run, and the first's, `a`, with the same index
 of the hash function of the table `hash` (word 5 of the table, which the
 tables of `MdHash` the precondition allows give, and the public data fix). -/
-def SSib (a s : State) : Prop := (signK tsH tsG).pre a ∧ (signK tsH tsG).pub a s ∧ (signK tsH tsG).pre s ∧
-  idxWord s = idxWord a
+def SSib (a s : State) : Prop := SPre tsH tsG a ∧ (signK tsH tsG).pub a s ∧ SPre tsH tsG s ∧
+  idxWord s = idxWord a ∧ Xs a s
 
 /-- A predicate of the state of a run, given its entry state, for every run
 whose entry state agrees with `a`. -/
-def SAt (J : State → State → Prop) (a t : State) : Prop := ∃ s, SSib tsH tsG a s ∧ J s t
+def SAt (J : State → State → Prop) (a t : State) : Prop := ∃ s, SSib tsH tsG Xs a s ∧ J s t
 
 theorem spub_refl (s : State) : (signK tsH tsG).pub s s :=
   ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl⟩
 
-variable {tsH tsG}
+variable {tsH tsG Xs}
 
 namespace SSib
 
-variable {a s : State} (h : SSib tsH tsG a s)
+variable {a s : State} (h : SSib tsH tsG Xs a s)
 include h
 
 theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) : s.gpr r = a.gpr r :=
@@ -66,10 +66,12 @@ theorem nB : Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
 theorem eB : Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat =
     Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat := h.2.1.2.2.2.1.symm
 
-theorem pa : SPre tsH tsG a := SPre.of tsH tsG h.1
-theorem ps : SPre tsH tsG s := SPre.of tsH tsG h.2.2.1
+theorem pa : SPre tsH tsG a := h.1
+theorem ps : SPre tsH tsG s := h.2.2.1
 
-theorem idxw : idxWord s = idxWord a := h.2.2.2
+theorem idxw : idxWord s = idxWord a := h.2.2.2.1
+
+theorem x : Xs a s := h.2.2.2.2
 
 theorem fb : fb s = fb a := by
   simp only [VG.Proof.RsaPss.X86_64.fb, h.gpr (r := .rsp) (by decide)]
@@ -139,7 +141,7 @@ def spw (H : Hash) (s : State) (ks : List Nat) : List (Nat × BitVec 64) := ks.m
 
 namespace SSib
 
-variable {a s : State} (h : SSib tsH tsG a s)
+variable {a s : State} (h : SSib tsH tsG Xs a s)
 include h
 
 theorem sn0v : sn0v s = sn0v a := by simp only [VG.Proof.RsaPss.X86_64.sn0v, h.n0]
@@ -189,7 +191,7 @@ structure SS (H : Hash) (s t : State) (ks : List Nat) (rs : List (Reg × BitVec 
 
 variable {H : Hash}
 
-theorem ss_pub {a s t : State} (S : SSib tsH tsG a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
+theorem ss_pub {a s t : State} (S : SSib tsH tsG Xs a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
     {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : SS H s t ks rs X) :
     Pub (fb a) (stackArg a 14) a.wr (spw H a ks) rs X t := by
   obtain ⟨V, W, R, hw, hx⟩ := h.W
@@ -204,7 +206,7 @@ theorem ss_pub {a s t : State} (S : SSib tsH tsG a s) {ks : List Nat} {rs : List
 /-- A piece the analysis checks from `pT 2 ks rgs`. -/
 theorem stwo {Φ : State → State → Prop} {c : Prog isa} (ks : List Nat) (rgs : List Reg)
     (rs : State → List (Reg × BitVec 64))
-    (hΦ : ∀ a t, Φ a t → ∃ s X, SSib tsH tsG a s ∧ SS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
+    (hΦ : ∀ a t, Φ a t → ∃ s X, SSib tsH tsG Xs a s ∧ SS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
     (hks : ∀ k ∈ ks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
     (h : (taint.check (pT 2 ks rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
   two_pub 2 ks rgs fb (fun a => stackArg a 14) State.wr (fun a => spw H a ks) rs

@@ -119,6 +119,8 @@ structure CkLens (I : CkIn) : Prop where
   qcap : I.ql ≤ I.cap
   dcap : I.dl ≤ I.cap
   fit : I.k ≤ 8 * wW I.cap
+  /-- `vg_rsa_check_key` multiplies operands of up to `k` bytes. -/
+  capk : I.cap = I.k
 
 /-- What every piece of `main` keeps, from the memory `m₀` on entry to
 `main`. -/

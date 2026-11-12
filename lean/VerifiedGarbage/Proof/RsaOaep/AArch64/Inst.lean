@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncVerified
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPCT
+public import VerifiedGarbage.Proof.Rsa.PreKey
 import Mathlib.Data.Nat.Basic
 
 /-!
@@ -98,6 +100,101 @@ theorem dec_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs)
        sig_simp_only [Region.Contains, decSatBase, stackArg, stackArgAddr, Mem.readW, Mem.read] at h₁ h₂
        bv_omega)
 
+/-! ## Decryption with the key's precomputed values -/
+
+open VG.Proof.Rsa.PreKey (keyIn keyMem key_pre_of)
+open VG.Proof.HashTable (putWs add8_toNat)
+
+/-- The stack arguments of `decPSatBase`: the key (`keyMem`'s), an empty
+label, a 64-byte ciphertext, a working space of 2080 words, both tables at
+`0x300000`, and `pre` at `0x4800`. -/
+def decPArgs : List Nat :=
+  [32, 0x4300, 32, 0x4400, 32, 0x4500, 32, 0x4600, 32, 0x4700, 0, 0x4100, 64, 0x20000, 2080, 0x300000, 0x300000,
+    0x4800, 24]
+
+/-- The memory of `decPSatBase`: the stack arguments from `0x10000`, and the
+key. -/
+def decPMem (a : Addr) : Byte :=
+  let i := a.toNat
+  bif Nat.ble 0x10000 i && Nat.blt i 0x10098 then
+    BitVec.ofNat 8 (decPArgs.getD ((i - 0x10000) / 8) 0 / 256 ^ ((i - 0x10000) % 8))
+  else bif keyIn i then keyMem a else 0
+
+/-- A state meeting the precomputed decryption's precondition but for the
+tables: the key `keyMem` holds (a 512-bit modulus at `0x2000`, 256-bit
+primes at `0x4200` and `0x4300` and `pre` at `0x4800`), one-byte `e`. -/
+def decPSatBase : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x1800 | .x3 => 0x2000 | .x4 => 64 | .x5 => 0x3000 | .x6 => 1
+    | .x7 => 0x4200 | _ => 0
+  sp := 0x10000
+  mem := decPMem
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 32⟩, ⟨0x4300, 32⟩, ⟨0x4400, 32⟩, ⟨0x4500, 32⟩, ⟨0x4600, 32⟩,
+    ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x4800, 192⟩, ⟨0x300000, 88⟩, ⟨0x300000, 88⟩, ⟨0x10000, 152⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 16640⟩]
+
+theorem decPSat_args : ∀ j < 19, stackArg decPSatBase j = BitVec.ofNat 64 (decPArgs.getD j 0) := by decide
+
+/-- Below the words `putWs` writes, a byte as before. -/
+theorem putWs_byte {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)}, a.toNat < p.toNat →
+    p.toNat + 8 * ws.length < 2 ^ 64 → putWs m p ws a = m a
+  | _, [], _, _ => rfl
+  | p, w :: ws, h, hp => by
+    simp only [List.length_cons] at hp
+    have h8 := add8_toNat (p := p) (by omega)
+    simp only [putWs]
+    rw [putWs_byte (by rw [h8]; omega) (by rw [h8]; omega)]
+    have hne : ¬ (a - p).toNat < 64 / 8 := by
+      rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega)]; omega
+    simp only [Mem.writeW, Mem.write, hne, ↓reduceIte]
+
+theorem decPSat_key (vs : List MdHash) (w : MdHash) :
+    Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt (withTable decPSatBase vs w).mem 0x2000 64)
+      (Spec.Rsa.bytesAt (withTable decPSatBase vs w).mem 0x4200 32)
+      (Spec.Rsa.bytesAt (withTable decPSatBase vs w).mem 0x4300 32) =
+    some (Spec.Rsa.wordsAt (withTable decPSatBase vs w).mem 0x4800 24) :=
+  key_pre_of fun a ha => by
+    have hk : a.toNat < 0x48C0 := by
+      simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at ha; omega
+    have h2 : (Nat.ble 0x10000 a.toNat && Nat.blt a.toNat 0x10098) = false := by
+      rw [Bool.eq_false_iff]; intro h; simp only [Bool.and_eq_true, Nat.ble_eq] at h; omega
+    show putWs decPMem 0x300000 (MdHashTable.AArch64.twL vs w) a = keyMem a
+    rw [putWs_byte (by show a.toNat < 0x300000; omega) (MdHashTable.AArch64.twL_room vs w)]
+    show (bif _ then _ else _) = _
+    rw [h2, Bool.cond_false, ha, Bool.cond_true]
+
+theorem decP_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 32)
+    (c : Proof.Rsa.AArch64.CrtImpl) :
+    ∃ s, (Dec.decSpecP (tables vs) (RsaPkcs1Sig.AArch64.privPOf c).stack).pre s := by
+  refine ⟨withTable decPSatBase vs w, ?_⟩
+  have hA : ∀ j < 19, (stackArgAddr decPSatBase j).toNat + 8 ≤ 0x300000 := by decide
+  have hb : ∀ j < 19, stackArg (withTable decPSatBase vs w) j = BitVec.ofNat 64 (decPArgs.getD j 0) :=
+    fun j hj => (withTable_arg _ vs w (hA j hj)).trans (decPSat_args j hj)
+  rw [show (RsaPkcs1Sig.AArch64.privPOf c).stack = 3248 from rfl]
+  sig_pre [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
+    Spec.RsaOaep.decryptSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
+    Abi.withTables, Sig.wordIndex, AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop,
+    List.append_eq]
+  simp only [hb 0 (by decide), hb 1 (by decide), hb 2 (by decide), hb 3 (by decide), hb 4 (by decide),
+    hb 5 (by decide), hb 6 (by decide), hb 7 (by decide), hb 8 (by decide), hb 9 (by decide), hb 10 (by decide),
+    hb 11 (by decide), hb 12 (by decide), hb 13 (by decide), hb 14 (by decide), hb 15 (by decide),
+    hb 16 (by decide), hb 17 (by decide), hb 18 (by decide), decPArgs]
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
+  sig_pre [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
+    Spec.RsaOaep.decryptSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
+    Abi.withTables, Sig.wordIndex, AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop,
+    List.append_eq]
+  sig_and_intros
+  all_goals first
+    | (show Spec.Rsa.privatePrecompute _ _ _ = _; exact decPSat_key vs w)
+    | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact symsOf_distinct2 hl
+    | (simp only [Spec.Rsa.lenValid]; decide)
+
 /-! ## Encryption with a precomputed key -/
 
 /-- A state meeting encryption's contract for `H` but for the tables: a
@@ -189,6 +286,17 @@ theorem dec_ok (vs : List MdHash) (h : OK vs) (c : Proof.Rsa.AArch64.CrtImpl) :
         (Dec.decStack (RsaPkcs1Enc.AArch64.privOf c))) := by
   rw [Dec.decStack_eq]
   exact Dec.dec_verified h.1 _ (let ⟨_, hw⟩ := h.mem; dec_sat hw h.2.1 c)
+
+/-- `vg_rsa_oaep_decrypt_precomputed`, with the tables of `vs`, calling
+`vg_rsa_private_checked_precomputed` of the implementation `c`. -/
+theorem decP_ok (vs : List MdHash) (h : OK vs) (c : Proof.Rsa.AArch64.CrtImpl) :
+    Verified AArch64.target (Impl.RsaOaep.AArch64.decryptP (fnsOf vs) (RsaPkcs1Sig.AArch64.privPOf c).name
+        (RsaPkcs1Sig.AArch64.privPOf c).code)
+      (Spec.RsaOaep.decryptPrecomputedMdTablesContract
+        (AArch64.abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables vs), ("mgf1", tables vs)])
+        ((RsaPkcs1Sig.AArch64.privPOf c).stack + 288)) :=
+  Dec.decP_verified h.1 _ (by show 16 ≤ Proof.Rsa.AArch64.stackBytes; decide)
+    (let ⟨_, hw⟩ := h.mem; decP_sat hw h.2.1 c)
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs` and the
 precomputed public operation of `c`. -/

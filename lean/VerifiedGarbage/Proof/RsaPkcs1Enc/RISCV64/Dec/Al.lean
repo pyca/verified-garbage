@@ -24,6 +24,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Proof.RsaPkcs1Enc (bitMask altStep)
 
+variable {pc : Bool}
+
 /-- The borrow of `a - b`, for values below `2 ^ 63`. -/
 theorem borrow (a b : Nat) (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
     (BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 = BitVec.ofNat 64 (if b ≤ a then 0 else 1) := by
@@ -179,7 +181,7 @@ theorem alLoop_ok {t₀ : State} {x M : Nat} {CL : List Byte} {B : Addr}
 /-! ## The parts -/
 
 section
-variable {s : State} (h : DPre s) {R : BitVec 64} {EM : List Byte} {kd : List Byte}
+variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte} {kd : List Byte}
 include h
 
 /-- `AMR` is kept by code writing only registers it does not keep. -/

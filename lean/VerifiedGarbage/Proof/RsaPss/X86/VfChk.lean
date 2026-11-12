@@ -62,7 +62,7 @@ theorem n0_at {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D)
   have hK := hi.k64
   have a : addr P.n 0 = P.n.setWidth 64 := by simp [addr]
   rw [a]
-  refine ⟨?_, ⟨P.N, by rw [hs.rd, hi.ok.rd]; simp, by
+  refine ⟨?_, ⟨P.N, by rw [hs.rd]; exact List.mem_append_left _ (hi.ok.rd _ (by simp)), by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩⟩
   have e : Spec.Rsa.bytesAt s.mem (P.n.setWidth 64) P.K = P.nB := (hs.ro (R := P.N) (by simp)).trans hi.nB
   show s.mem (P.n.setWidth 64) = P.nB.getD 0 0

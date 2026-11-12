@@ -71,8 +71,8 @@ theorem ckMod_ct {sX sXlen sDX sYlen : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (
     (fun I m₀ s hs L => ⟨hs.args.d, hs.args.dl, ⟨_, hs.d, L.dbl⟩, L.dl1, L.dcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))
   have mE := mulE_ckct (by taint_decide) (by taint_decide)
-  have rD : RelCT isa (Two GK) (seqs (CheckCrtKey.modOne (topD sYlen))) (Two GK) :=
-    modOneTop_ckct (fun p => (yl p + 7) / 8 + 1)
+  have rD : RelCT isa (Two GK) (seqs (wmodOne (topD sYlen) lenD)) (Two GK) :=
+    wmodOne_ckct (fun p => (yl p + 7) / 8 + 1) (fun p => wW p.cap / 2)
       (fun p s h => by
         obtain ⟨I, m₀, c, rfl, hs, L, _⟩ := h
         obtain ⟨a, b⟩ := hY I m₀ s hs L
@@ -82,21 +82,36 @@ theorem ckMod_ct {sX sXlen sDX sYlen : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (
         have := (hY I m₀ s hs L).2
         have := L.cap1
         change 1 ≤ (yl I.pub + 7) / 8 + 1 ∧ (yl I.pub + 7) / 8 + 1 < wW I.cap
-        unfold wW wk; omega_arith) tHi tLo tCnt
-  have rE : RelCT isa (Two GK) (seqs (CheckCrtKey.modOne CheckCrtKey.topE)) (Two GK) :=
-    modOneTop_ckct (fun _ => 1) (fun p s _ => topE_ok p.B p.Z s.mem)
+        unfold wW wk; omega_arith)
+      (fun p s h => by
+        obtain ⟨I, m₀, c, rfl, -, L, -⟩ := h
+        have := L.k2
+        dsimp only [CkIn.pub]
+        rw [L.capk]
+        exact ⟨ckLenD_ok _ (by unfold wW wk; omega), by omega, by unfold wW wk; omega⟩)
+      (by taint_decide) tHi tLo tCnt
+  have rE : RelCT isa (Two GK) (seqs (wmodOne CheckCrtKey.topE lenE)) (Two GK) :=
+    wmodOne_ckct (fun _ => 1) (fun p => (wW p.cap - 2) / 4 + 1) (fun p s _ => topE_ok p.B p.Z s.mem)
       (fun p s h => by obtain ⟨I, m₀, c, rfl, hs, L, _⟩ := h; simp only [CkIn.pub, wW]; omega_arith)
-      (by taint_decide) (by taint_decide) (by taint_decide)
+      (fun p s h => by
+        obtain ⟨I, m₀, c, rfl, -, L, -⟩ := h
+        have := L.k2
+        have := L.k1
+        dsimp only [CkIn.pub]
+        rw [L.capk]
+        exact ⟨ckLenE_ok _ (by unfold wW wk; omega) (by unfold wW wk; omega), by unfold wW wk; omega,
+          by unfold wW wk; omega⟩)
+      (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
   exact ct_app (by simp [loadA]) (by simp) ldX (ct_app (a := [.block (decA aM)]) (by simp) (by simp [loadA])
     (ct_one (decA_ckct (by decide) (by taint_decide)))
     (ct_app (by simp [loadA]) (by simp [ltA]) ldDX
     (ct_app (by simp [ltA]) (by simp [loadA]) (toGK (ltA_ckct (a := aX) (b := aM) (js := [aX]) (by decide)
       (by decide) (by decide) (by taint_decide)))
     (ct_app (by simp [loadA]) (by simp [mulE]) ldD
-    (ct_app (by simp [mulE]) (by simp [CheckCrtKey.modOne, CheckCrtKey.reduceTop]) mE
-    (ct_app (by simp [CheckCrtKey.modOne, CheckCrtKey.reduceTop]) (by simp [loadA]) rD
+    (ct_app (by simp [mulE]) (by simp [wmodOne]) mE
+    (ct_app (by simp [wmodOne]) (by simp [loadA]) rD
     (ct_app (by simp [loadA]) (by simp [mulE]) ldDX
-    (ct_app (by simp [mulE]) (by simp [CheckCrtKey.modOne, CheckCrtKey.reduceTop]) mE rE))))))))
+    (ct_app (by simp [mulE]) (by simp [wmodOne]) mE rE))))))))
 
 /-! ## `main` -/
 

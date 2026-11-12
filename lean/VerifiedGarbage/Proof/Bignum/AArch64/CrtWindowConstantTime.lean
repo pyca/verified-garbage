@@ -36,10 +36,11 @@ theorem nSetup_ct (M : Mont) :
   two_map id (fun _ _ ⟨σ,xb,pb,qb,dpb,dqb,qib,h,hv,hr⟩ =>
     ⟨σ,xb,pb,qb,dpb,dqb,qib,h.toCrtPre,hv,hr⟩) (VG.Proof.Bignum.AArch64.nSetup_ct M)
 
-theorem main_ct (W : Window) (M : Mont) (S : Selector) :
-    RelCT isa (Two (Stage R0))
-      (VG.Impl.Rsa.AArch64.WindowFive.main W.code S.code M.mm) (fun _ _ => True) :=
-  crtMain_ct W M S (nSetup_ct M) setup_ct checks_ct
+theorem main_ct (W : Window) (M : Mont) (S : Selector) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop}
+    (hC : ChecksCTOf C) (hok : ChecksOk C G) :
+    RelCT isa (Two (Stage (RG G R0)))
+      (VG.Impl.Rsa.AArch64.WindowFive.mainWith C W.code S.code M.mm) (fun _ _ => True) :=
+  crtMain_ct W M S (nSetup_ct M) setup_ct hC hok
     (qPhase_ct W M S (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
       (pow_ct W M S (redc_ct_Y M) (expLoop_ct W M S (by taint_decide)) (by taint_decide)))
     (pPhase_ct W M S (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))

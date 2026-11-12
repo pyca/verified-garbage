@@ -26,6 +26,8 @@ of the check: a faulted exponentiation releases nothing that fails it.
 
 namespace VG.Proof.Rsa.X86_64
 
+variable {X : List Region}
+
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
@@ -67,7 +69,7 @@ holds and the CRT returned. -/
 theorem check_ok (pc : Prog isa) (P : PublicImpl) (pcName pdName : String)
     (pcOk : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s')
     (pcNosp : NoSp pc) (pcDepth : pc.depth = 1)
-    {s t : State} (hp : PreF s) (he : Env s t) :
+    {s t : State} (hp : PreF X s) (he : Env s t) :
     WP isa (seqs (check pcName pc pdName (P.code))) t fun t' =>
       Env s t' ∧
       t'.gpr .rax = checkResult (t.gpr .rax) (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)

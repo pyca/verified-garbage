@@ -36,8 +36,9 @@ end VG.Artifacts.RsaOaep.X86.AllSha1AllSha256
 -- RSAES-OAEP decryption on x86, with both hash functions as tables
 namespace VG.Artifacts.RsaOaep.X86.RsaPrivateCrtAllSha1AllSha256
 
-open VG.Proof.RsaOaep.X86 (OK dec_ok)
+open VG.Proof.RsaOaep.X86 (OK dec_ok decP_ok)
 open VG.Proof.HashTable.X86 (vars tables)
+open VG.Proof.Rsa.X86.PrivChecked (crtPBaseline)
 
 def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86.Variants.Backend)
     (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
@@ -48,7 +49,14 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86
       code := Proof.RsaOaep.X86.Dec.decCode (vars vs1 vs256) c
       stack := Proof.RsaOaep.X86.Dec.stackBytes
       verified := dec_ok _ h c
-      spSafe := Proof.RsaOaep.X86.Dec.code_sp c }]
+      spSafe := Proof.RsaOaep.X86.Dec.code_sp c },
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact X86.target {
+      suffix := qualifiedName "" [("crt", c.suffix)]
+      tables := [("hash", tables (vars vs1 vs256)), ("mgf1", tables (vars vs1 vs256))]
+      code := Proof.RsaOaep.X86.Dec.decCodeP (vars vs1 vs256) c crtPBaseline
+      stack := Proof.RsaOaep.X86.Dec.stackBytes
+      verified := decP_ok _ h c crtPBaseline
+      spSafe := Proof.RsaOaep.X86.Dec.code_spP c crtPBaseline }]
   else []
 
 end VG.Artifacts.RsaOaep.X86.RsaPrivateCrtAllSha1AllSha256

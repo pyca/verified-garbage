@@ -69,18 +69,12 @@ theorem cvMain_ct [InvLaw] : RelCT isa (Two GM) main fun _ _ => True := by
   exact (ct_app (by simp) (by simp [loadA]) (ct_one head_ct)
     (ct_app (by simp [loadA]) (by simp [pqCheck]) loads_ct
     (ct_app (by simp [pqCheck]) (by simp [invPart, invSetup]) pqCheck_ct
-    (ct_app (by simp [invPart, invSetup]) (by simp [divisor]) invPart_ct
-    (ct_app (by simp [divisor]) (by simp)
-      (ct_app (by simp [divisor]) (by simp) (divisor_ct (by decide) (by decide) (by taint_decide))
-        (ct_one (divmod_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))))
-    (ct_app (by simp) (by simp [divisor])
+    (ct_app (by simp [invPart, invSetup]) (by simp) invPart_ct
+    (ct_app (by simp) (by simp) (ct_one (wordChoice_ct (.inl rfl)))
+    (ct_app (by simp) (by simp)
       (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
         (ct_one (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))))
-    (ct_app (by simp [divisor]) (by simp [storeA])
-      (ct_app (by simp [divisor]) (by simp) (divisor_ct (by decide) (by decide) (by taint_decide))
-        (ct_one (divmod_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))))
+    (ct_app (by simp) (by simp [storeA]) (ct_one (wordChoice_ct (.inr rfl)))
       (stores_ct.mono (fun _ _ h => two_mono (fun _ _ h => h.gs) h) fun _ _ h => h)))))))).mono
     (fun _ _ h => h) fun _ _ _ => trivial
 

@@ -15,8 +15,14 @@ def pPhase (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat �
   subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
 
 
-def main (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (nSetup mul ++ VG.Impl.Rsa.AArch64.WindowFive.primesSetup ++ checks ++
+/-- The computation, once `n` is known valid, with the key checks `chk`. -/
+def mainWith (chk : List (Prog isa)) (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) :
+    Prog isa :=
+  seqs (nSetup mul ++ VG.Impl.Rsa.AArch64.WindowFive.primesSetup ++ chk ++
     VG.Impl.Rsa.AArch64.WindowFive.qPhase window mul select ++ pPhase window select mul ++ VG.Impl.Rsa.AArch64.Crt.finish)
+
+/-- The computation, with the checks `checks`. -/
+abbrev main (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  mainWith checks window select mul
 
 end VG.Impl.Rsa.AArch64.WindowFive

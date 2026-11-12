@@ -32,6 +32,8 @@ open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 open VG.Proof.Sha256.X86_64 (Compress)
 
+variable {X : State → State → Prop}
+
 variable {v : Compress}
 
 /-- After the checks: `EM` in `rdi` and `k` in `r9`. -/
@@ -90,7 +92,7 @@ theorem outInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
     fun t' ⟨h, k⟩ => ⟨k.gpr (by decide), k.gpr (by decide), k.gpr (by decide), h⟩
   xrun [outInit, ea_atd (p := s.gpr .rdx), h8, hml, hcx]
 
-theorem selPart_ct : RelCT isa (Two (At JSC)) selPart fun _ _ => True := by
+theorem selPart_ct : RelCT isa (Two (At X JSC)) selPart fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := JV) [.rdi, .rsp] (pins (J := JSC) [(.rdi, fun s => s.gpr .rdi), (.rsp, fb)]
     (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -143,7 +145,7 @@ theorem selPart_ct : RelCT isa (Two (At JSC)) selPart fun _ _ => True := by
 /-! ## The function -/
 
 theorem body_ct (v : Compress) (pv : PrivImpl) :
-    RelCT isa (Two (At J0)) (body (HH v) pv.name pv.code) fun _ _ => True := by
+    RelCT isa (Two (At X J0)) (body (HH v) pv.name pv.code) fun _ _ => True := by
   rw [body_eq]
   exact RelCT.seq setup_two (RelCT.seq (priv_two pv) (RelCT.seq dBuild_two (RelCT.seq hashD_two
     (RelCT.seq kdkMac_two (RelCT.seq clLoop_two (RelCT.seq amLoop_two (RelCT.seq maskPart_two
@@ -151,17 +153,18 @@ theorem body_ct (v : Compress) (pv : PrivImpl) :
 
 theorem dec_constantTime (v : Compress) (pv : PrivImpl) :
     ConstantTime isa decK.pre decK.pub (code (HH v) pv.name pv.code) :=
-  RelCT.constantTime (relCT_alloc ((body_ct v pv).mono
-    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨h₁, pub_refl s₁⟩, e₁⟩, ⟨s₂, ⟨h₂, hpub⟩, e₂⟩⟩)
+  RelCT.constantTime (relCT_alloc ((body_ct (X := fun _ _ => True) v pv).mono
+    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨⟨dPre_of h₁, pub_refl s₁⟩, trivial⟩, e₁⟩,
+      ⟨s₂, ⟨⟨dPre_of h₂, hpub⟩, trivial⟩, e₂⟩⟩)
     fun _ _ h => h))
 
 theorem dec_verified (v : Compress) (pv : PrivImpl) :
     Verified target (code (HH v) pv.name pv.code) (Spec.RsaPkcs1Enc.decryptContract abi decStack) :=
   Verified.of_correct (k := decK) (dec_correct v pv) (dec_constantTime v pv) decrypt_implies
 
-/-- It writes `rsp` only in its frame's push and pop, and its callees' own. -/
-theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
-    (code (HH v) pv.name pv.code).all (fun i => !isa.writesSp i) = true := by
+/-- What follows the private-key operation writes `rsp` only in its callees'
+own frames. -/
+theorem afterPriv_spSafe (v : Compress) : (afterPriv (HH v)).all (fun i => !isa.writesSp i) = true := by
   have K := Proof.Pbkdf2.Md.X86_64.Sha256.callees v
   have hI : (HH v).hmacInit.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacInitSp
   have hF : (HH v).hmacFin.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacFinSp
@@ -172,8 +175,17 @@ theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
     (Proof.Pbkdf2.Md.X86_64.core_finC K.cSp
       (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.finC.allInstrs _ = true by decide +kernel))
   have hIn : (HH v).initC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs K.iSp
-  simp only [code, body, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
-    Code.all, hI, hF, hU, hFi, hIn, pv.spSafe, Bool.and_true, Bool.true_and]
+  simp only [afterPriv, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
+    Code.all, hI, hF, hU, hFi, hIn, Bool.and_true, Bool.true_and]
+  decide +kernel
+
+/-- It writes `rsp` only in its frame's push and pop, and its callees' own. -/
+theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
+    (code (HH v) pv.name pv.code).all (fun i => !isa.writesSp i) = true := by
+  have h := afterPriv_spSafe v
+  have h2 := pv.spSafe
+  simp only at h h2
+  simp only [code, body, Code.all, h, h2, Bool.and_true]
   decide +kernel
 
 /-! ## Without secret residue

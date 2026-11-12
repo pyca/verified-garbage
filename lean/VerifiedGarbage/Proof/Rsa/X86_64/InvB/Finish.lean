@@ -402,6 +402,105 @@ theorem fin2_ok {s : State} {B : Addr} {Z w n p t₁ : Nat} {f : Int} (h : FS B 
     exact (((frW o₁ (by decide) (by decide) (by omega)).trans (frW o₂ (by decide) (by decide) (by omega))).trans
       F₄).trans F₅
 
+/-- The end's second part without the doublings (`finishS`'s). -/
+def fin2SL : List (Prog isa) := [
+  .block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aP .r8 ++ base aT .r10 ++ base aS .rsi), wordLoop 0 subBody,
+  .block (nonNeg aF ++ base aT .r8 ++ base aS .rsi), wordLoop 0 selBody] ++ csubT
+
+/-- `t := ±t mod m` for the sign of `f`, from `t < m`. -/
+theorem fin2S_ok {s : State} {B : Addr} {Z w n p t₁ : Nat} {f : Int} (h : FS B Z w n s)
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 (n + 1)) (hT : wv s.mem B (slot w aT) (n + 1) = t₁) (ht₁ : t₁ < p)
+    (hZT : HZ s.mem B w n aT) (hP : wv s.mem B (slot w aP) (n + 1) = p) (hpn : p < 2 ^ (64 * n))
+    (hf : (wv s.mem B (slot w aF) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = f % 2 ^ (64 * (n + 1)))
+    (hf1 : -(p : Int) ≤ f) (hf2 : f ≤ p) :
+    WP isa (seqs fin2SL) s fun t => FS B Z w n t ∧ t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧
+      ∃ x : Nat, wv t.mem B (slot w aT) (n + 1) = x ∧ x < p ∧
+      (x : Int) ≡ (if 0 ≤ f then (t₁ : Int) else -t₁) [ZMOD p] ∧
+      HZ t.mem B w n aT ∧ wv t.mem B (slot w aP) (n + 1) = p ∧
+      wv t.mem B (slot w aF) (n + 1) = wv s.mem B (slot w aF) (n + 1) ∧
+      Frm B [(slot w 16, 80 * (w + 2))] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
+  have hn := h.ws.scr.nowrap
+  have hnw := h.nw; have hn1 := h.n1
+  have eF : slot w aF = 256 + 19 * (8 * (w + 2)) := slot_eq w 19
+  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
+  have eP : slot w aP = 256 + 25 * (8 * (w + 2)) := slot_eq w 25
+  have e26 : slot w 26 = 256 + 26 * (8 * (w + 2)) := slot_eq w 26
+  have hZ := h.z
+  have hw := h.ws.w2
+  have hM : 2 * p < 2 ^ (64 * (n + 1)) := by
+    rw [show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add]
+    have : 2 ≤ 2 ^ 64 := by decide
+    have := Nat.mul_le_mul_left (2 ^ (64 * n)) this
+    omega
+  have hH : (p : Int) < 2 ^ (64 * n) * 2 ^ 63 := by
+    have : 2 ^ (64 * n) ≤ 2 ^ (64 * n) * 2 ^ 63 := Nat.le_mul_of_pos_right _ (by decide)
+    have : p < 2 ^ (64 * n) * 2 ^ 63 := by omega
+    exact_mod_cast this
+  rw [fin2SL, seqs_append_iff _ _ (by simp) (by simp [csubT])]
+  rw [show ([.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aP .r8 ++ base aT .r10 ++ base aS .rsi),
+      wordLoop 0 subBody, .block (nonNeg aF ++ base aT .r8 ++ base aS .rsi), wordLoop 0 selBody] : List (Prog isa)) =
+      [.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aP .r8 ++ base aT .r10 ++ base aS .rsi),
+        wordLoop 0 subBody] ++ [.block (nonNeg aF ++ base aT .r8 ++ base aS .rsi), wordLoop 0 selBody] from rfl,
+    seqs_append_iff _ _ (by simp) (by simp)]
+  -- `s := m - t`.
+  refine WP.mono (subN_ok h (a := aP) (b := aT) (c := aS) (by decide) (by decide) (by decide) (by decide)
+    (by decide) h12 (N := n + 1) (by omega) (by omega)) fun s₁ ⟨cb, _, hv₁, _, _, o₁, k₁⟩ => ?_
+  have h₁ := h.of_out o₁ k₁ (by decide) (by decide) (by decide)
+  rw [hT, hP] at hv₁
+  have hS1 := wv_lt s₁.mem B (slot w aS) (n + 1)
+  have hS₁ : wv s₁.mem B (slot w aS) (n + 1) = p - t₁ := by
+    cases cb <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at hv₁ <;> omega
+  have T₁ : wv s₁.mem B (slot w aT) (n + 1) = t₁ := by rw [o₁.wv (Or.inl (by omega)) (by omega), hT]
+  have F₁ : wv s₁.mem B (slot w aF) (n + 1) = wv s.mem B (slot w aF) (n + 1) := by
+    rw [o₁.wv (Or.inl (by omega)) (by omega)]
+  -- `t := s` if `f < 0`.
+  refine WP.mono (selN_ok h₁ (nonNeg_ok h₁ (j := aF) (by decide) (x := f) (by rw [F₁]; exact hf) (by omega)
+    (by omega)) (a := aT) (c := aS) (by decide) (by decide) (by decide) ((k₁.gpr (by decide)).trans h12)
+    (N := n + 1) (by omega) (by omega)) fun s₂ ⟨hv₂, o₂, k₂⟩ => ?_
+  have h₂ := h₁.of_out o₂ k₂ (by decide) (by decide) (by decide)
+  rw [T₁, hS₁] at hv₂
+  have P₂ : wv s₂.mem B (slot w aP) (n + 1) = p := by
+    rw [o₂.wv (Or.inr (by omega)) (by omega), o₁.wv (Or.inr (by omega)) (by omega), hP]
+  have k12 := k₁.trans k₂
+  have e : ((if decide (0 ≤ f) = true then t₁ else p - t₁ : Nat) : Int) ≡
+      (if 0 ≤ f then (t₁ : Int) else -t₁) [ZMOD p] := by
+    by_cases h0 : 0 ≤ f
+    · simp only [h0, decide_true, ↓reduceIte]; exact Int.ModEq.refl _
+    · simp only [h0, decide_false, Bool.false_eq_true, ↓reduceIte]
+      rw [Nat.cast_sub (by omega)]
+      exact Int.modEq_iff_dvd.mpr ⟨-1, by ring⟩
+  have le₀ : (if decide (0 ≤ f) = true then t₁ else p - t₁) ≤ p := by split <;> omega
+  generalize (if decide (0 ≤ f) = true then t₁ else p - t₁) = t₀ at hv₂ e le₀
+  -- The last subtraction.
+  refine WP.mono (csubT_ok h₂ ((k12.gpr (by decide)).trans h12) (N := n + 1) (by omega) (by omega) hv₂ P₂)
+    fun t ⟨vt, f₅, F₅, k₅⟩ =>
+    ⟨⟨h₂.ws.congr f₅ (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact Mut.ofSlot _ _ _) k₅ (by decide), hZ,
+      (k₅.gpr (by decide)).trans h₂.r9, (k₅.gpr (by decide)).trans h₂.r13, hn1, hnw⟩,
+      (k₅.gpr (by decide)).trans ((k12.gpr (by decide)).trans h12), _, vt, ?_, ?_, ?_, ?_, ?_, ?_,
+      (k12.trans k₅).mono (by decide)⟩
+  · split <;> omega
+  · split
+    · exact e
+    · rw [Nat.cast_sub (by omega)]
+      exact (Int.modEq_iff_dvd.mpr ⟨1, by ring⟩).trans e
+  · intro i h1 h2
+    have := h.sl (show aT < 26 by decide)
+    have z₂ := (hZT.out o₁ (fun i _ _ => Or.inl (by omega)) (by omega)).out o₂ (fun i h1 _ => Or.inr (by omega))
+      (by omega)
+    rw [f₅.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega) (by omega)]
+    exact z₂ i h1 h2
+  · rw [frm2_wv f₅ (by decide) (by decide) (by omega) (by omega) (by have := h.sl (show aP < 26 by decide); omega), P₂]
+  · have := h.sl (show aF < 26 by decide)
+    rw [frm2_wv f₅ (by decide) (by decide) (by omega) (by omega) (by omega),
+      o₂.wv (Or.inl (by omega)) (by omega), F₁]
+  · exact ((frW o₁ (by decide) (by decide) (by omega)).trans (frW o₂ (by decide) (by decide) (by omega))).trans F₅
+
 theorem countN_ok {s : State} {n : Nat} (h13 : s.gpr .r13 = BitVec.ofNat 64 n) :
     WP isa (.block countN) s fun t => t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧ t.mem = s.mem ∧ Keep [.r12] s t := by
   refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 (n + 1) ∧ t.mem = s.mem) (by

@@ -44,7 +44,7 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (chkContract)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-variable {tsH tsG : List FnTable} {H : Hash}
+variable {tsH tsG : List FnTable} {Xs : State → State → Prop} {H : Hash}
 
 /-! ## The public values -/
 
@@ -65,16 +65,16 @@ instance (s : State) : Decidable (sfits s) := inferInstanceAs (Decidable (_ ≤ 
 /-- The index of the table `hash`'s hash function. -/
 def sidx (a : State) : Nat := (idxWord a).toNat
 
-theorem SSib.seb {a s : State} (S : SSib tsH tsG a s) : seb s = seb a := by
+theorem SSib.seb {a s : State} (S : SSib tsH tsG Xs a s) : seb s = seb a := by
   simp only [VG.Proof.RsaPss.X86_64.seb, S.sn0v, S.gpr (r := .rcx) (by decide)]
 
-theorem SSib.sel {a s : State} (S : SSib tsH tsG a s) : sel s = sel a := by
+theorem SSib.sel {a s : State} (S : SSib tsH tsG Xs a s) : sel s = sel a := by
   simp only [VG.Proof.RsaPss.X86_64.sel, S.seb]
 
-theorem SSib.sclo {a s : State} (S : SSib tsH tsG a s) : sclo s = sclo a := by
+theorem SSib.sclo {a s : State} (S : SSib tsH tsG Xs a s) : sclo s = sclo a := by
   simp only [VG.Proof.RsaPss.X86_64.sclo, S.sel, S.gpr (r := .rcx) (by decide)]
 
-theorem SSib.sfits {a s : State} (S : SSib tsH tsG a s) : sfits s ↔ sfits a := by
+theorem SSib.sfits {a s : State} (S : SSib tsH tsG Xs a s) : sfits s ↔ sfits a := by
   simp only [VG.Proof.RsaPss.X86_64.sfits, S.sel, S.ssl, S.arg (i := 11) (by decide)]
 
 theorem seb_ok {s : State} (hp : SPre tsH tsG s) :
@@ -99,8 +99,8 @@ variable (f : MdFns) (g : Impl.Mgf1.X86_64.Table.Fns) in
 functions `T` and hash functions `Hs`, `Gs`, the same for every run, that
 `encode` for the index of `a`'s table computes with, in constant time. -/
 structure SGood (a : State) (T : Tabs) (Hs Gs : Spec.Mgf1.Hash) : Prop where
-  sel : ∀ s, (signK tsH tsG).pub a s → (signK tsH tsG).pre s → ESel f g s (sidx a) T Hs Gs
-  words : ∀ s, (signK tsH tsG).pub a s → (signK tsH tsG).pre s →
+  sel : ∀ s, (signK tsH tsG).pub a s → SPre tsH tsG s → ESel f g s (sidx a) T Hs Gs
+  words : ∀ s, (signK tsH tsG).pub a s → SPre tsH tsG s →
     tabWords s.mem (stackArg s 16) (stackArg s 17) = tabWords a.mem (stackArg a 16) (stackArg a 17)
   ct : ConstantTime isa (encK T Hs Gs).pre (encK T Hs Gs).pub (encode f (ofIdx (sidx a)) g)
 
@@ -126,8 +126,8 @@ def SJ2 (H : Hash) (s t : State) : Prop :=
 /-- At the end. -/
 def SJR (H : Hash) (s t : State) : Prop := SS H s t [] [] fun _ _ => True
 
-theorem spro_ct : RelCT isa (Two (SAt tsH tsG J0)) (.block (signPrologue ++ n0 ++ ([.mov .r11 (.mem (arg 16))] : List Instr)))
-    (Two (SAt tsH tsG (SJ1 H))) := by
+theorem spro_ct : RelCT isa (Two (SAt tsH tsG Xs J0)) (.block (signPrologue ++ n0 ++ ([.mov .r11 (.mem (arg 16))] : List Instr)))
+    (Two (SAt tsH tsG Xs (SJ1 H))) := by
   obtain ⟨_, hc⟩ := scFixed.pro
   have ar : ∀ (s : State) {r : Reg}, r ≠ .rsp → (allocState frameBytes s).gpr r = s.gpr r := fun s r hr => by
     rw [allocState_gpr']; exact ifn hr _ _
@@ -157,7 +157,7 @@ theorem spro_ct : RelCT isa (Two (SAt tsH tsG J0)) (.block (signPrologue ++ n0 +
   simp only [KS1, List.mem_cons, List.not_mem_nil, or_false] at hk
   rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [proW, upd, sw]
 
-theorem sidx_ct : RelCT isa (Two (SAt tsH tsG (SJ1 H))) (.block idxSlot) (Two (SAt tsH tsG (SJ2 H))) := by
+theorem sidx_ct : RelCT isa (Two (SAt tsH tsG Xs (SJ1 H))) (.block idxSlot) (Two (SAt tsH tsG Xs (SJ2 H))) := by
   obtain ⟨_, hc⟩ := scFixed.idx
   refine two_post (stwo (H := H) [] [.r11] (fun a => [(.r11, stackArg a 16)])
     (fun a t ⟨s, S, h⟩ => ⟨s, _, S, h.1.sub (fun _ hk => by cases hk) _ (fun p hp => by
@@ -176,8 +176,8 @@ theorem sidx_ct : RelCT isa (Two (SAt tsH tsG (SJ1 H))) (.block idxSlot) (Two (S
 
 /-- A refusal: zeros to `out`. -/
 theorem sfail_ct {Φ : State → State → Prop}
-    (hΦ : ∀ a t, Φ a t → ∃ s X, SSib tsH tsG a s ∧ SS H s t [16, 17] [] X) :
-    RelCT isa (Two Φ) signFail (Two (SAt tsH tsG (SJR H))) := by
+    (hΦ : ∀ a t, Φ a t → ∃ s X, SSib tsH tsG Xs a s ∧ SS H s t [16, 17] [] X) :
+    RelCT isa (Two Φ) signFail (Two (SAt tsH tsG Xs (SJR H))) := by
   obtain ⟨_, hc⟩ := sFixed.fail
   refine two_post (stwo (H := H) [16, 17] [] (fun _ => []) hΦ (fun _ => rfl) (by decide) hc)
     fun a t h => ?_
@@ -225,8 +225,8 @@ def CJT (H : Hash) (s t : State) : Prop :=
     t.zf = some (!decide (sfits s))
 
 theorem cprep_ct :
-    RelCT isa (Two fun a t => SAt tsH tsG (SJ2 H) a t ∧ isa.eval .e t = some false)
-      (.block (emBitsB ++ encArgs ++ idxLoad)) (Two (SAt tsH tsG (CJE H))) := by
+    RelCT isa (Two fun a t => SAt tsH tsG Xs (SJ2 H) a t ∧ isa.eval .e t = some false)
+      (.block (emBitsB ++ encArgs ++ idxLoad)) (Two (SAt tsH tsG Xs (CJE H))) := by
   obtain ⟨_, hc⟩ := scFixed.prep
   refine two_post (stwo (H := H) [17, 21, 22, 37, 39, 40, 47] [.rax] (fun a => [(.rax, BitVec.ofNat 64 (sn0v a))])
     (fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) _ (fun p hp => by
@@ -294,27 +294,27 @@ theorem tabWords_call {s t : State} (hp : SPre tsH tsG s) (hM : Frame (wrR s) s.
     tab_read hp fSE (.inr rfl) (by decide : 48 + 8 ≤ 56)]
 
 variable {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
-  (hsel : ∀ a, (signK tsH tsG).pre a → ∃ T Hs Gs, SGood (tsH := tsH) (tsG := tsG) f g a T Hs Gs)
+  (hsel : ∀ a, SPre tsH tsG a → ∃ T Hs Gs, SGood (tsH := tsH) (tsG := tsG) f g a T Hs Gs)
   (hspE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g))
   (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack)
 
 include hsel hspE hdE in
 /-- The call of `encode` for the index `j`. -/
 theorem ecall_ct {j : Nat} (hj : j ∈ idxs) :
-    RelCT isa (Two fun a t => SAt tsH tsG (CJE H) a t ∧ sidx a = j) (.call (encName j) (encode f (ofIdx j) g))
-      (Two (SAt tsH tsG (CJC H))) := by
+    RelCT isa (Two fun a t => SAt tsH tsG Xs (CJE H) a t ∧ sidx a = j) (.call (encName j) (encode f (ofIdx j) g))
+      (Two (SAt tsH tsG Xs (CJC H))) := by
   have g' : ∀ (t : State) (rd wr : List Region) {r : Reg}, r ≠ .rsp →
       (t.callEntry.withRegions rd wr).gpr r = t.gpr r :=
     fun t rd wr r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr]
   refine two_post ?_ fun a t ⟨⟨s, S, h⟩, hja⟩ => ?_
   · refine (RelCT.exists_ (P := fun (x : Tabs × Spec.Mgf1.Hash × Spec.Mgf1.Hash) t₁ t₂ => ∃ a,
-        (SAt tsH tsG (CJE H) a t₁ ∧ sidx a = j) ∧ (SAt tsH tsG (CJE H) a t₂ ∧ sidx a = j) ∧
-        SGood (tsH := tsH) (tsG := tsG) f g a x.1 x.2.1 x.2.2 ∧ (signK tsH tsG).pre a) fun x => ?_).mono
+        (SAt tsH tsG Xs (CJE H) a t₁ ∧ sidx a = j) ∧ (SAt tsH tsG Xs (CJE H) a t₂ ∧ sidx a = j) ∧
+        SGood (tsH := tsH) (tsG := tsG) f g a x.1 x.2.1 x.2.2 ∧ SPre tsH tsG a) fun x => ?_).mono
       (fun t₁ t₂ ⟨a, h₁, h₂⟩ => by
-        have hpa : (signK tsH tsG).pre a := h₁.1.choose_spec.1.1
+        have hpa : SPre tsH tsG a := h₁.1.choose_spec.1.1
         obtain ⟨T, Hs, Gs, G⟩ := hsel a hpa
         exact ⟨(T, Hs, Gs), a, h₁, h₂, G, hpa⟩) fun _ _ h => h
-    by_cases hx : ∃ a, sidx a = j ∧ SGood (tsH := tsH) (tsG := tsG) f g a x.1 x.2.1 x.2.2 ∧ (signK tsH tsG).pre a
+    by_cases hx : ∃ a, sidx a = j ∧ SGood (tsH := tsH) (tsG := tsG) f g a x.1 x.2.1 x.2.2 ∧ SPre tsH tsG a
     · obtain ⟨a₀, hj₀, G₀, hpa₀⟩ := hx
       have E₀ := G₀.sel a₀ (spub_refl tsH tsG a₀) hpa₀
       rw [hj₀] at E₀
@@ -376,8 +376,8 @@ theorem ecall_ct {j : Nat} (hj : j ∈ idxs) :
 
 include hsel hspE hdE in
 /-- The choice of `encode` by the table's index, and its call. -/
-theorem echoose_ct : RelCT isa (Two (SAt tsH tsG (CJE H)))
-    (byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs) (Two (SAt tsH tsG (CJC H))) := by
+theorem echoose_ct : RelCT isa (Two (SAt tsH tsG Xs (CJE H)))
+    (byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs) (Two (SAt tsH tsG Xs (CJC H))) := by
   refine byIdx_ct sidx (fun a t t' ⟨s, S, h⟩ k hm sy => ?_) (fun a t ⟨s, S, h⟩ => ?_) cmpOk_idxs
     (fun j hj => ?_) (fun j hj => ecall_ct hsel hspE hdE hj)
   · obtain ⟨v, hrd, hM, h0, di, si, dx, cx, r8, r9, r11⟩ := h
@@ -394,8 +394,8 @@ theorem echoose_ct : RelCT isa (Two (SAt tsH tsG (CJE H)))
         rw [List.mem_singleton.mp hp, ← S.idxw]; exact h.2.2.2.2.2.2.2.2.2.2) fun _ _ x => x⟩)
       (fun _ => rfl) (by decide) hc
 
-theorem ctest_ct : RelCT isa (Two (SAt tsH tsG (CJC H))) (.block [.alu32 .test .rax (.reg .rax)])
-    (Two (SAt tsH tsG (CJT H))) := by
+theorem ctest_ct : RelCT isa (Two (SAt tsH tsG Xs (CJC H))) (.block [.alu32 .test .rax (.reg .rax)])
+    (Two (SAt tsH tsG Xs (CJT H))) := by
   obtain ⟨_, hc⟩ := scFixed.test
   refine two_post (stwo (H := H) [] [] (fun _ => [])
     (fun a t ⟨s, S, h⟩ => ⟨s, _, S, h.1.sub (by decide) [] (fun _ hp => by cases hp) fun _ _ x => x⟩)
@@ -406,8 +406,8 @@ theorem ctest_ct : RelCT isa (Two (SAt tsH tsG (CJC H))) (.block [.alu32 .test .
   rw [hz, hax]
   by_cases hf : sfits s <;> simp [hf]
 
-theorem cpriv_ct : RelCT isa (Two fun a t => SAt tsH tsG (CJT H) a t ∧ isa.eval .e t = some false) (.block privArgs)
-    (Two (SAt tsH tsG (SJP H))) := by
+theorem cpriv_ct : RelCT isa (Two fun a t => SAt tsH tsG Xs (CJT H) a t ∧ isa.eval .e t = some false) (.block privArgs)
+    (Two (SAt tsH tsG Xs (SJP H))) := by
   obtain ⟨_, hc⟩ := sFixed.privArgs
   refine two_post (stwo (H := H) [] [] (fun _ => [])
     (fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) [] (fun _ hp => by cases hp) fun _ _ x => x⟩)
@@ -434,7 +434,7 @@ theorem sentry_bytes {s t : State} (hst : t.gpr .rsp = fb s) (hM : Frame (wrR s)
     rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., ret8_sub s⟩)
   exact bytesAt_frame fSE (in_apart hK hO hS) hl
 
-theorem pArg_sib {a s : State} (S : SSib tsH tsG a s) {i : Nat} (hi : i < 14) : pArg s i = pArg a i := by
+theorem pArg_sib {a s : State} (S : SSib tsH tsG Xs a s) {i : Nat} (hi : i < 14) : pArg s i = pArg a i := by
   unfold pArg
   split
   · rw [S.arg (i := 14) (by decide)]
@@ -444,7 +444,7 @@ theorem pArg_sib {a s : State} (S : SSib tsH tsG a s) {i : Nat} (hi : i < 14) : 
   · exact S.arg (by omega_arith)
 
 /-- The call's public data agree. -/
-theorem scall_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : SSib tsH tsG a s₁) (h₁ : SJP H s₁ t₁) (S₂ : SSib tsH tsG a s₂)
+theorem scall_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : SSib tsH tsG Xs a s₁) (h₁ : SJP H s₁ t₁) (S₂ : SSib tsH tsG Xs a s₂)
     (h₂ : SJP H s₂ t₂) :
     chkContract.pub (t₁.callEntry.withRegions (pRd s₁) (pWr s₁)) (t₂.callEntry.withRegions (pRd s₂) (pWr s₂)) := by
   obtain ⟨v₁, -, hM₁, ha₁, di₁, si₁, dx₁, cx₁, r8₁, r9₁⟩ := h₁
@@ -452,17 +452,17 @@ theorem scall_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : SSib tsH tsG a s₁) (
   have p₁ := S₁.ps
   have p₂ := S₂.ps
   have hE₁ : ∀ i < 14, stackArg (t₁.callEntry.withRegions (pRd s₁) (pWr s₁)) i = pArg a i :=
-    fun i hi => ((stackArg_call p₁ v₁.L.rsp _ _ hi).trans (ha₁ i hi)).trans (pArg_sib S₁ hi)
+    fun i hi => ((stackArg_call p₁ v₁.L.rsp _ _ (by omega)).trans (ha₁ i hi)).trans (pArg_sib S₁ hi)
   have hE₂ : ∀ i < 14, stackArg (t₂.callEntry.withRegions (pRd s₂) (pWr s₂)) i = pArg a i :=
-    fun i hi => ((stackArg_call p₂ v₂.L.rsp _ _ hi).trans (ha₂ i hi)).trans (pArg_sib S₂ hi)
-  have bn : ∀ {s t : State}, SSib tsH tsG a s → t.gpr .rsp = fb s → Frame (wrR s) s.mem t.mem →
+    fun i hi => ((stackArg_call p₂ v₂.L.rsp _ _ (by omega)).trans (ha₂ i hi)).trans (pArg_sib S₂ hi)
+  have bn : ∀ {s t : State}, SSib tsH tsG Xs a s → t.gpr .rsp = fb s → Frame (wrR s) s.mem t.mem →
       Spec.Rsa.bytesAt t.callEntry.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
         Spec.Rsa.bytesAt a.mem (a.gpr .rdx) (a.gpr .rcx).toNat := fun {s t} S hst hM => by
     have hp := S.ps
     rw [← S.nB]
     exact sentry_bytes (R := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩) hst hM hp.dKn hp.dOn hp.dns
       (by have := hp.wN; dsimp only; omega_arith)
-  have be : ∀ {s t : State}, SSib tsH tsG a s → t.gpr .rsp = fb s → Frame (wrR s) s.mem t.mem →
+  have be : ∀ {s t : State}, SSib tsH tsG Xs a s → t.gpr .rsp = fb s → Frame (wrR s) s.mem t.mem →
       Spec.Rsa.bytesAt t.callEntry.mem (s.gpr .r8) (s.gpr .r9).toNat =
         Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat := fun {s t} S hst hM => by
     have hp := S.ps
@@ -501,7 +501,7 @@ variable {privN : String} {privC : Prog isa}
   (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
 
 include hv hct hspC hdC in
-theorem scall_ct : RelCT isa (Two (SAt tsH tsG (SJP H))) (.call privN privC) (Two (SAt tsH tsG (SJR H))) := by
+theorem scall_ct : RelCT isa (Two (SAt tsH tsG Xs (SJP H))) (.call privN privC) (Two (SAt tsH tsG Xs (SJR H))) := by
   refine two_post (RelCT.callEx (k := chkContract) hv hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, h₁⟩, ⟨s₂, S₂, h₂⟩⟩ => ?_)
     fun a t ⟨s, S, h⟩ => ?_
   · obtain ⟨c₁, w₁⟩ := priv_covers S₁.ps h₁.2.1 h₁.1.wr
@@ -520,40 +520,52 @@ theorem scall_ct : RelCT isa (Two (SAt tsH tsG (SJP H))) (.call privN privC) (Tw
     have R' := R.of_keep v.L.geo fun x hx => hk' x hx
     exact ⟨s, S, v.next (v.L.of_rep' R R' rfl (cs' .rsp (by decide)) wr') wr' R' hw trivial sy⟩
 
-theorem srestore_ct : RelCT isa (Two (SAt tsH tsG (SJR H))) (.block restoreRegs) fun _ _ => True := by
+theorem srestore_ct : RelCT isa (Two (SAt tsH tsG Xs (SJR H))) (.block restoreRegs) fun _ _ => True := by
   obtain ⟨_, hc⟩ := sFixed.restore
   exact stwo (H := H) [] [] (fun _ => []) (fun a t ⟨s, S, v⟩ => ⟨s, _, S, v⟩) (fun _ => rfl) (by decide) hc
 
-include hsel hspE hdE hv hct hspC hdC in
-theorem scbody_ct (H : Hash) :
-    RelCT isa (Two (SAt tsH tsG J0)) (signCBody f g privN privC) fun _ _ => True := by
-  unfold signCBody
+include hsel hspE hdE in
+/-- The body of `signC`'s frame, with the private-key operation's arguments
+`args` and call constant time from the test of `encode`'s result on. -/
+theorem scbodyWith_ct (H : Hash) {args : List Instr}
+    (hpriv : RelCT isa (Two fun a t => SAt tsH tsG Xs (CJT H) a t ∧ isa.eval .e t = some false)
+      (.seq (.block args) (.call privN privC)) (Two (SAt tsH tsG Xs (SJR H)))) :
+    RelCT isa (Two (SAt tsH tsG Xs J0)) (signCBodyWith f g privN privC args) fun _ _ => True := by
+  unfold signCBodyWith
   simp only [seqs]
   refine (spro_ct (H := H)).seq (sidx_ct.seq ((two_ite (fun a t₁ t₂ ⟨s₁, S₁, h₁⟩ ⟨s₂, S₂, h₂⟩ => by
       rw [show isa.eval .e t₁ = t₁.zf from rfl, show isa.eval .e t₂ = t₂.zf from rfl, h₁.2.2.2.2, h₂.2.2.2.2,
         S₁.sn0v, S₂.sn0v])
-    (sfail_ct (Φ := fun a t => SAt tsH tsG (SJ2 H) a t ∧ isa.eval .e t = some true)
+    (sfail_ct (Φ := fun a t => SAt tsH tsG Xs (SJ2 H) a t ∧ isa.eval .e t = some true)
       fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) [] (fun _ hp => by cases hp) fun _ _ x => x⟩)
     (cprep_ct.seq ((echoose_ct hsel hspE hdE).seq (ctest_ct.seq
       (two_ite (fun a t₁ t₂ ⟨s₁, S₁, h₁⟩ ⟨s₂, S₂, h₂⟩ => by
           rw [show isa.eval .e t₁ = t₁.zf from rfl, show isa.eval .e t₂ = t₂.zf from rfl, h₁.2.2.2,
             h₂.2.2.2, decide_eq_decide.mpr ((S₁.sfits).trans S₂.sfits.symm)])
-        (sfail_ct (Φ := fun a t => SAt tsH tsG (CJT H) a t ∧ isa.eval .e t = some true)
+        (sfail_ct (Φ := fun a t => SAt tsH tsG Xs (CJT H) a t ∧ isa.eval .e t = some true)
           fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) [] (fun _ hp => by cases hp) fun _ _ x => x⟩)
-        (cpriv_ct.seq (scall_ct hv hct hspC hdC))))))).seq srestore_ct))
+        hpriv))))).seq srestore_ct))
+
+include hsel hspE hdE hv hct hspC hdC in
+theorem scbody_ct (H : Hash) :
+    RelCT isa (Two (SAt tsH tsG Xs J0)) (signCBody f g privN privC) fun _ _ => True :=
+  scbodyWith_ct hsel hspE hdE H (cpriv_ct.seq (scall_ct hv hct hspC hdC))
 
 include hsel hspE hdE hv hct hspC hdC in
 /-- `signC` is constant time. -/
 theorem signC_ct (H : Hash) :
     ConstantTime isa (signK tsH tsG).pre (signK tsH tsG).pub (Impl.RsaPss.X86_64.signC f g privN privC) :=
-  RelCT.constantTime (valloc ((scbody_ct hsel hspE hdE hv hct hspC hdC H).mono
+  RelCT.constantTime (valloc ((scbody_ct (Xs := fun _ _ => True) hsel hspE hdE hv hct hspC hdC H).mono
     (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => by
-      obtain ⟨T, Hs, Gs, G⟩ := hsel s₁ h₁
+      have p₁ := SPre.of tsH tsG h₁
+      have p₂ := SPre.of tsH tsG h₂
+      obtain ⟨T, Hs, Gs, G⟩ := hsel s₁ p₁
       have hi : idxWord s₂ = idxWord s₁ := by
-        have e₂' := (G.sel s₂ hpub h₂).idx
-        have e₁' := (G.sel s₁ (spub_refl tsH tsG s₁) h₁).idx
+        have e₂' := (G.sel s₂ hpub p₂).idx
+        have e₁' := (G.sel s₁ (spub_refl tsH tsG s₁) p₁).idx
         exact e₂'.trans e₁'.symm
-      exact ⟨s₁, ⟨s₁, ⟨h₁, spub_refl tsH tsG s₁, h₁, rfl⟩, e₁⟩, ⟨s₂, ⟨h₁, hpub, h₂, hi⟩, e₂⟩⟩) fun _ _ h => h))
+      exact ⟨s₁, ⟨s₁, ⟨p₁, spub_refl tsH tsG s₁, p₁, rfl, trivial⟩, e₁⟩, ⟨s₂, ⟨p₁, hpub, p₂, hi, trivial⟩, e₂⟩⟩)
+    fun _ _ h => h))
 
 include hsel hspE hdE hct hdC in
 /-- `signC` meets the contract with the tables `tsH` and `tsG`. -/
@@ -562,7 +574,8 @@ theorem signC_verified (H : Hash) (hsat : ∃ s, (signC tsH tsG).pre s)
     (hC : SpSafe privC) :
     Verified X86_64.target (Impl.RsaPss.X86_64.signC f g privN privC) (signC tsH tsG) :=
   Verified.of_correct (k := signK tsH tsG)
-    (signC_correct (fun s h => let ⟨T, Hs, Gs, G⟩ := hsel s h; ⟨_, T, Hs, Gs, G.sel s (spub_refl tsH tsG s) h⟩)
+    (signC_correct (fun s h => let ⟨T, Hs, Gs, G⟩ := hsel s (SPre.of tsH tsG h)
+      ⟨_, T, Hs, Gs, G.sel s (spub_refl tsH tsG s) (SPre.of tsH tsG h)⟩)
       hspE hdE hv hC hdC)
     (signC_ct hsel hspE hdE hv hct hC hdC H) (sign_implies tsH tsG hsat)
 
