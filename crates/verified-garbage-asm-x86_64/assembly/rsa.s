@@ -18137,9 +18137,13 @@ vg_rsa_check_key:
 	cmp r14, rcx
 	jne 2116b
 	mov r11, QWORD PTR [rdi+72]
-	mov r10, QWORD PTR [rdi+48]
+	mov r10, QWORD PTR [rdi+192]
+	add r10, 7
+	shr r10, 3
 	mov r9, QWORD PTR [rdi+112]
-	mov r12, QWORD PTR [rdi+48]
+	mov r12, QWORD PTR [rdi+208]
+	add r12, 7
+	shr r12, 3
 	mov r8, QWORD PTR [rdi+80]
 	mov r13d, 0
 2117:
