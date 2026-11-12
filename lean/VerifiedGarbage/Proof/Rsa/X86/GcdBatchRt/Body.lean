@@ -72,6 +72,8 @@ theorem update_ok {s : State} (h : Bx L s B Z len N) (hodd : nw len % 2 = 1) (h3
       (val32 z.mem B (rv (kw len) (a 5)) (nw len + 1) : Int) % 2 ^ (32 * (nw len + 1)) =
         ((T.q * f + T.r * g) / 2 ^ 30) % 2 ^ (32 * (nw len + 1)) ∧
       Keeps wordClob s z ∧ Unch B (arrWrites len) s.mem z.mem := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hn := h.nowrap
   have hf16 := h.fits16
   have r0 := rv_a len 0; have r4 := rv_a len 4; have r5 := rv_a len 5; have r11 := rv_a len 11
@@ -129,6 +131,8 @@ theorem batch_ok {s : State} (h : Bx L s B Z len N) (hodd : nw len % 2 = 1) (h3 
     WP isa (batchCode L) s fun z => Bx L z B Z len N ∧ GState len B (Divstep.divsteps 30 I) z ∧
       w32 z.mem B 100 = j - 1 ∧ z.zf = some (decide (j - 1 = 0)) ∧
       Keeps wordClob s z ∧ Unch B (gcdWrites len) s.mem z.mem := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hn := h.nowrap
   have hf16 := h.fits16
   have e16 : win = 16 := rfl
@@ -203,6 +207,8 @@ theorem loop_ok {s : State} (h : Bx L s B Z len N) (hodd : nw len % 2 = 1) (h3 :
     (facts : ∀ i < K, Facts (divsteps (30 * i) (1, m, x)) p) :
     WP isa (.loop (batchCode L) .ne) s fun z => Bx L z B Z len N ∧
       GState len B (divsteps (30 * K) (1, m, x)) z ∧ Keeps wordClob s z ∧ Unch B (gcdWrites len) s.mem z.mem := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   let J := fun j u => Bx L u B Z len N ∧ GState len B (divsteps (30 * (K - j)) (1, m, x)) u ∧
     w32 u.mem B 100 = j ∧ Keeps wordClob s u ∧ Unch B (gcdWrites len) s.mem u.mem
   refine VG.Proof.Weierstrass.X86.countLoop_ok (Inv := J) (n := K) ?_ ?_ hK ?_
@@ -231,6 +237,8 @@ theorem finish_ok {s : State} (h : Bx L s B Z len N) {f : Int}
       Bx L z B Z len N ∧ val32 z.mem B (rv (kw len) res) (nw len) = f.natAbs ∧
       val32 z.mem B (rv (kw len) (a 5)) (nw len) = 0 ∧ Keeps wordClob s z ∧
       Unch B (finishWrites len) s.mem z.mem := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hn := h.nowrap
   have hZ := h.halfZ
   have hf16 := h.fits16
@@ -297,6 +305,8 @@ theorem body_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hodd : n
       val32 z.mem B (rv (kw len) res) (nw len - 1) = Nat.gcd m x ∧
       val32 z.mem B (rv (kw len) (a 5)) (nw len - 1) = 0 ∧
       Keeps wordClob s z ∧ Unch B (gcdWrites len) s.mem z.mem := by
+  have hnw : nw len = kw len / 2 := rfl
+  have hke := kw_eq len
   have hn := h.ws.workspace.nowrap
   have mlt : m < 2 ^ (32 * (nw len - 1)) := hm ▸ val32_lt _ _ _ _
   have xlt : x < 2 ^ (32 * (nw len - 1)) := hx ▸ val32_lt _ _ _ _

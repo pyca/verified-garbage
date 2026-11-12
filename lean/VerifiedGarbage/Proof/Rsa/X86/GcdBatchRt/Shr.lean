@@ -19,8 +19,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 /-! # The GCD's shift right by 30 and its matrix rows, for an odd `n`
 
 `shr30o_ok`: `InvBatchRt.shr30_ok`'s statement for `shr30o`, its pairs then one word then the
-top word; `fgRowO_ok`: a matrix row of `f` and `g`, `(u f + v g) / 2 ^ 30` (`InvBatchRt.fgRow_ok`
-with `shr30o`).
+top word; `fgRowO_ok`: a matrix row of `f` and `g`, `(u f + v g) / 2 ^ 30` by
+`shr30o`.
 -/
 
 @[expose] public section

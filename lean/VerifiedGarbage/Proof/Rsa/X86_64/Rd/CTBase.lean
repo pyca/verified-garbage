@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Twos
-import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Sqrt
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTFail
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -16,7 +15,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Twos
-meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Sqrt
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Rd.CTFail
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
@@ -138,7 +136,6 @@ variable {w : Nat → Nat} {F : RpIn → State → Prop}
 theorem slot_Z {p : RpP} {s : State} (h : GD w F p s) {j : Nat} (hj : j < 16) :
     slot (w p.k) j + 8 * (w p.k + 2) ≤ p.Z := h.ws.sl hj
 
-theorem slot_256 (w j : Nat) : 256 ≤ slot w j := by simp only [Bignum.slot, hdrBytes]; omega_arith
 
 theorem zeroA_gd {j : Nat} (hj : j < 16) (hF : Arr F) (p : RpP) (s : State) (h : GD w F p s) :
     WP isa (zeroA j) s (GD w F p) :=
@@ -272,9 +269,6 @@ def ShlPre (pre : List Instr) (c₀ : Bool) (s : State) : Prop :=
 
 theorem shlPre_zero (s : State) : ShlPre [.mov32 .rbp (.imm 0)] false s := fun _ _ _ _ _ _ =>
   WP.keep [.rbp] (Q := fun t' => t'.gpr .rbp = mask false ∧ _) (by xrun) rfl
-
-theorem shlPre_ones (s : State) : ShlPre [.mov .rbp (.imm (BitVec.ofInt 32 (-1)))] true s := fun _ _ _ _ _ _ =>
-  WP.keep [.rbp] (Q := fun t' => t'.gpr .rbp = mask true ∧ _) (by xrun [sx_m1]) rfl
 
 theorem shlA_eq (wide : Bool) (j : Nat) (pre : List Instr) : shlA wide j pre =
     .seq (.block (ws ++ ((if wide then wideR else []) ++ (base j .rbx ++ pre)))) (wordLoop 0 shlBody) := by
@@ -412,59 +406,31 @@ theorem GD.frm {p : RpP} {s t : State} (h : GD w F p s) {rs : List (Nat × Nat)}
   h.arr (P := fun y => ∃ r ∈ rs, r.1 ≤ y ∧ y < r.1 + r.2) (FrmP.of_frm hf fun r hr y h1 h2 => ⟨r, hr, h1, h2⟩)
     (fun y ⟨r, hr, h1, h2⟩ => by have := hrs r hr; omega_arith) k hr hF
 
-theorem divmod_gd {iQ iR iD iT : Nat} (hQ : iQ < 16) (hR : iR < 16) (hD : iD < 16) (hT : iT < 16)
-    (dQR : iQ ≠ iR) (dQD : iQ ≠ iD) (dQT : iQ ≠ iT) (dRD : iR ≠ iD) (dRT : iR ≠ iT) (dDT : iD ≠ iT) (hF : Arr F)
-    (p : RpP) (s : State) (h : GD w F p s) : WP isa (divmod iQ iR iD iT) s (GD w F p) := by
-  have hw := h.ws
-  refine WP.mono (divmod_ok hw.scr hw.rdi hw.hw hw.hS (by have := hw.w1; omega_arith) hw.w2 hw.hZ hQ hR hD hT dQR
-    dQD dQT dRD dRT dDT) fun t ⟨_, f, k, _⟩ => h.frm f (fun r hr => ?_) k (by decide) hF
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact ⟨slot_256 _ _, slot_Z h hQ⟩
-  · exact ⟨slot_256 _ _, slot_Z h hR⟩
-  · exact ⟨slot_256 _ _, slot_Z h hT⟩
-
-theorem divmod_ct {iQ iR iD iT : Nat} (hQ : iQ < 16) (hR : iR < 16) (hD : iD < 16) (hT : iT < 16)
-    (dQR : iQ ≠ iR) (dQD : iQ ≠ iD) (dQT : iQ ≠ iT) (dRD : iR ≠ iD) (dRT : iR ≠ iT) (dDT : iD ≠ iT) (hF : Arr F)
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base iR .r8 ++ (([.mov .r11 (.reg .r12)] : List Instr) ++
-      (List.replicate 6 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr)))))
-      (.seq zeroAccLoop (.loop (VG.Impl.Rsa.X86_64.Keys.divStep iQ iR iD iT) .ne))) hc).isSome = true) :
-    RelCT isa (Two (GD w F)) (divmod iQ iR iD iT) (Two (GD w F)) := by
-  have e : divmod iQ iR iD iT = .seq (.block (ws ++ (base iR .r8 ++ ([.mov .r11 (.reg .r12)] ++
-      (List.replicate 6 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)])))))
-      (.seq zeroAccLoop (.loop (VG.Impl.Rsa.X86_64.Keys.divStep iQ iR iD iT) .ne)) := by
-    simp only [divmod, divInit, seqs, List.append_assoc]
-  rw [e]
-  exact wsG_ct (fun _ _ h => h) ht fun p s h => by
-    rw [← e]; exact divmod_gd hQ hR hD hT dQR dQD dQT dRD dRT dDT hF p s h
-
-theorem inverse_gd [InvLaw] {iU iV iX₂ iM : Nat} (hZ26 : ∀ p s, GD w F p s → slot (w p.k) 26 ≤ p.Z)
-    (hw20 : ∀ p s, GD w F p s → w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16)
-    (hVX : iV ≠ iX₂) (hF : Arr F) (p : RpP) (s : State) (h : GD w F p s) :
-    WP isa (inverse iU iV iX₂ iM) s (GD w F p) := by
-  refine WP.mono (InvLaw.inverse_ok h.ws (hZ26 p s h) (hw20 p s h) hU hV hX hM hVX) fun t ⟨_, f, k, _⟩ =>
+theorem gcdW_gd [InvLaw] {iU iV iM : Nat} (hZ26 : ∀ p s, GD w F p s → slot (w p.k) 26 ≤ p.Z)
+    (hw20 : ∀ p s, GD w F p s → w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hM : iM < 16)
+    (hF : Arr F) (p : RpP) (s : State) (h : GD w F p s) :
+    WP isa (gcdW iU iV iM) s (GD w F p) := by
+  refine WP.mono (gcdW_ok h.ws (hZ26 p s h) (hw20 p s h) hU hV hM) fun t ⟨f, k, _⟩ =>
     h.frm f (fun r hr => ?_) k (by decide) hF
   have z26 := hZ26 p s h
   have l26 := slot_lin (w p.k) 26
   have l16 := slot_lin (w p.k) 16
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact ⟨slot_256 _ _, by have := slot_Z h hV; dsimp only; omega_arith⟩
-  · exact ⟨slot_256 _ _, by have := slot_Z h hX; dsimp only; omega_arith⟩
   · exact ⟨slot_256 _ _, by dsimp only; omega_arith⟩
 
-theorem inverse_ct [InvLaw] {iU iV iX₂ iM : Nat} (hZ26 : ∀ p s, GD w F p s → slot (w p.k) 26 ≤ p.Z)
-    (hw20 : ∀ p s, GD w F p s → w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hX : iX₂ < 16) (hM : iM < 16)
-    (hVX : iV ≠ iX₂) (hF : Arr F) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem gcdW_ct [InvLaw] {iU iV iM : Nat} (hZ26 : ∀ p s, GD w F p s → slot (w p.k) 26 ≤ p.Z)
+    (hw20 : ∀ p s, GD w F p s → w p.k < 2 ^ 20) (hU : iU < 16) (hV : iV < 16) (hM : iM < 16)
+    (hF : Arr F) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r13 (.reg .r12)] : List Instr))
-      (inverseN iU iV iX₂ iM)) hc).isSome = true) :
-    RelCT isa (Two (GD w F)) (inverse iU iV iX₂ iM) (Two (GD w F)) := by
-  have e : inverse iU iV iX₂ iM = .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr)))
-      (inverseN iU iV iX₂ iM) := rfl
+      (gcdN iU iV iM)) hc).isSome = true) :
+    RelCT isa (Two (GD w F)) (gcdW iU iV iM) (Two (GD w F)) := by
+  have e : gcdW iU iV iM = .seq (.block (ws ++ ([.mov .r13 (.reg .r12)] : List Instr)))
+      (gcdN iU iV iM) := rfl
   rw [e]
   exact wsG_ct (fun _ _ h => h) ht fun p s h => by
-    rw [← e]; exact inverse_gd hZ26 hw20 hU hV hX hM hVX hF p s h
+    rw [← e]; exact gcdW_gd hZ26 hw20 hU hV hM hF p s h
 
 end
 

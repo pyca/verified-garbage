@@ -72,7 +72,8 @@ theorem gcd_vp [InvLaw] {f : Nat × Nat × Nat → Nat × Nat × Nat} {E : State
   · have sz := h.sizes
     have g : Gk s P.B P.Z P.w P.w nArr := ⟨hw.nowrap, hw.writable, hw.fits, hw.wpos, le_refl _, hw.wle, hw.r7,
       hw.r8, hw.r9⟩
-    refine WP.mono (InvLaw.inverseK_ok g (by decide) (by decide)) fun t ⟨gt, k, r, v⟩ => ⟨⟨e, ?_, ?_⟩, ?_⟩
+    refine WP.mono (InvLaw.inverseK_ok g (by decide) (by decide)
+      (by have := sz.sw; have := sz.w6a; simp only [S] at *; omega)) fun t ⟨gt, k, r, v⟩ => ⟨⟨e, ?_, ?_⟩, ?_⟩
     · have fitI : ∀ j ∈ invArrs, arr P.w j + S P.w ≤ P.Z := fun j hj => fitZ_w sz (by
         rw [invArrs_eq] at hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
         rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)

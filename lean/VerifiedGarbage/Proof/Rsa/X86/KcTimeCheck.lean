@@ -47,9 +47,9 @@ structure HalfCk (full : Bool) (o a b : Nat) : Prop where
       (VG.Proof.Rsa.X86.WordRt.rowTail (lay full) o a b none true)) hint).isSome = true
 
 /-- The taint checks of `wordMod` for `x`, `r`, `m`. -/
-structure ModCk (full : Bool) (x r m : Nat) (wide : Bool) : Prop where
+structure ModCk (full : Bool) (x r m : Nat) (top : Option Nat) : Prop where
   c₀ : ∃ hint, (VG.Taint.check sseTaint (τV full) (.seq (.seq (.block (VG.Impl.Rsa.X86.WordModRt.orTop (lay full) (pLenArg full) m))
-      (VG.Impl.Rsa.X86.WordModRt.recip (lay full))) (VG.Impl.Rsa.X86.WordModRt.seed (lay full) (pLenArg full) x r wide))
+      (VG.Impl.Rsa.X86.WordModRt.recip (lay full))) (VG.Impl.Rsa.X86.WordModRt.seed (lay full) (pLenArg full) x r top))
     hint).isSome = true
   c₁ : ∃ hint, (VG.Taint.check sseTaint (τV full) (.block (VG.Proof.Rsa.X86.WordRt.digitHead (lay full) x)) hint).isSome = true
   c₂ : ∃ hint, (VG.Taint.check sseTaint { τV full with regs := .ofList [.edi, .esp, .eax, .ebx] }
@@ -68,12 +68,12 @@ structure WCk (full : Bool) : Prop where
   eqDQ : ∃ hint, (VG.Taint.check sseTaint (τV full) (VG.Impl.Rsa.X86.Keys.seqs (eqA full aVR aDQ)) hint).isSome = true
   rDP : RowsCk full aY aDP aE (some 2)
   rDQ : RowsCk full aY aDQ aE (some 2)
-  rQI : RowsCk full aY aQ aQI none
-  mM1 : ModCk full aY aA aM1 false
-  mM2 : ModCk full aY aA aM2 false
-  mP : ModCk full aY aA aP true
-  dM1 : ModCk full aD aVR aM1 false
-  dM2 : ModCk full aD aVR aM2 false
+  rQI : HalfCk full aY aQ aQI
+  mM1 : ModCk full aY aA aM1 (some 2)
+  mM2 : ModCk full aY aA aM2 (some 2)
+  mP : ModCk full aY aA aP none
+  dM1 : ModCk full aD aVR aM1 none
+  dM2 : ModCk full aD aVR aM2 none
 
 /-- The bit-by-bit branch. -/
 def bitsBranch (full : Bool) : Prog isa :=

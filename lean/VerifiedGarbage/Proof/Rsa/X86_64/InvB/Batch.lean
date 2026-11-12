@@ -24,7 +24,8 @@ A batch (`batch_ok`) is `Divstep.batchS 59` on the window and arrays (`BS`):
 the divsteps on the low words (`bWords_ok`) and the coefficients' magnitudes
 and masks (`first_ok`), then `(f, g)` by `fgRow` (`fgPart_ok`, through
 `Divstep.shr_nat`) and `(a, b)` by `abRow` (`abPart_ok`, through
-`Divstep.mredRaw_nat`).
+`Divstep.mredRaw_nat`). A batch of the GCD alone (`batchG_ok`) is the same
+without `(a, b)`, on `BSg`.
 -/
 
 @[expose] public section
@@ -436,8 +437,25 @@ structure BS (B : Addr) (Z w n p mi : Nat) (I : Divstep.IState) (s : State) : Pr
   a : (wv s.mem B (slot w 21) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.a % 2 ^ (64 * (n + 1))
   b : (wv s.mem B (slot w 22) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.b % 2 ^ (64 * (n + 1))
 
+/-- `BS` without `a` and `b`: the state between the batches of the GCD alone. -/
+structure BSg (B : Addr) (Z w n p mi : Nat) (I : Divstep.IState) (s : State) : Prop where
+  scr : Scr s B Z
+  rdi : s.gpr .rdi = off B (slot w 16)
+  r9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))
+  r15 : s.gpr .r15 = BitVec.ofNat 64 n
+  d : word s.mem B (slot w 16 + oD) = BitVec.ofInt 64 I.d
+  mi : (word s.mem B (slot w 16 + oMi)).toNat = mi
+  P : wv s.mem B (slot w 25) n = p
+  Pz : word s.mem B (slot w 25 + 8 * n) = 0
+  f : (wv s.mem B (slot w 19) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.f % 2 ^ (64 * (n + 1))
+  g : (wv s.mem B (slot w 20) (n + 1) : Int) % 2 ^ (64 * (n + 1)) = I.g % 2 ^ (64 * (n + 1))
+
+theorem BS.toG {B : Addr} {Z w n p mi : Nat} {I : Divstep.IState} {s : State} (h : BS B Z w n p mi I s) :
+    BSg B Z w n p mi I s :=
+  ⟨h.scr, h.rdi, h.r9, h.r15, h.d, h.mi, h.P, h.Pz, h.f, h.g⟩
+
 theorem dsteps_ok {s : State} {B : Addr} {Z w n p mi : Nat} (L : Lay B Z w n) {I : Divstep.IState}
-    (h : BS B Z w n p mi I s) (hd : |I.d| ≤ 2 ^ 30) (hodd : I.f % 2 = 1) :
+    (h : BSg B Z w n p mi I s) (hd : |I.d| ≤ 2 ^ 30) (hodd : I.f % 2 = 1) :
     WP isa (.block (bStart ++ bWords ++ bSave)) s fun t =>
       word t.mem B (slot w 16 + oD) = BitVec.ofInt 64 (Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).d ∧
       word t.mem B (slot w 16 + oU) = BitVec.ofInt 64 (Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).u ∧
@@ -545,7 +563,7 @@ theorem abs4_ok {s : State} {B : Addr} {Z eW : Nat} (hs : Scr s B Z) (hdi : s.gp
 
 /-- A batch's first block: the divsteps, then the coefficients' magnitudes and masks. -/
 theorem first_ok {s : State} {B : Addr} {Z w n p mi : Nat} (L : Lay B Z w n) {I : Divstep.IState}
-    (h : BS B Z w n p mi I s) (hd : |I.d| ≤ 2 ^ 30) (hodd : I.f % 2 = 1) :
+    (h : BSg B Z w n p mi I s) (hd : |I.d| ≤ 2 ^ 30) (hodd : I.f % 2 = 1) :
     WP isa (.block ((bStart ++ bWords ++ bSave) ++ (absS oU oMu ++ absS oV oMv ++ absS oQ oMq ++ absS oR oMr))) s
       fun t =>
       word t.mem B (slot w 16 + oD) = BitVec.ofInt 64 (Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).d ∧
@@ -744,7 +762,7 @@ theorem batch_ok {s : State} {B : Addr} {Z w n p mi c : Nat} (L : Lay B Z w n) {
   rw [batch_eq, seqs_append_iff _ [.block [.alu .sub .rsi (.imm 1)]] (by simp) (by simp),
     seqs_append_iff _ abRow (by simp) (by simp [abRow]),
     seqs_append_iff [.block _] fgRow (by simp) (by simp [fgRow]), hbS]
-  refine WP.mono (first_ok L h hd hodd) fun s₂ ⟨d₂, u₂, mu₂, v₂, mv₂, q₂, mq₂, r₂, mr₂, mi₂, f₂, di₂, r9₂, k₂⟩ => ?_
+  refine WP.mono (first_ok L h.toG hd hodd) fun s₂ ⟨d₂, u₂, mu₂, v₂, mv₂, q₂, mq₂, r₂, mr₂, mi₂, f₂, di₂, r9₂, k₂⟩ => ?_
   generalize Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g) = m at *
   have hs₂ : Scr s₂ B Z := h.scr.congr k₂.2.2
   have r15₂ : s₂.gpr .r15 = BitVec.ofNat 64 n := (k₂.gpr (by decide)).trans h.r15
@@ -839,5 +857,99 @@ theorem batch_ok {s : State} {B : Addr} {Z w n p mi c : Nat} (L : Lay B Z w n) {
       f₃ x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith),
       f₂ x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega_arith)]
   · exact keep_drop (r := .r15) (k24.mono (by decide)) (by rw [kt.gpr (by decide), r15₄, h.r15])
+
+theorem batchG_eq : batchG = seqs (([.block ((bStart ++ bWords ++ bSave) ++
+    (absS oU oMu ++ absS oV oMv ++ absS oQ oMq ++ absS oR oMr))] : List (Prog isa)) ++ fgRow ++
+    ([.block ([.alu .sub .rsi (.imm 1)] : List Instr)] : List (Prog isa))) := by
+  simp only [batchG, List.append_assoc]
+
+/-- A batch of the GCD alone: `Divstep.batchS 59`'s `d`, `f` and `g` on the window and arrays (`BSg`). -/
+theorem batchG_ok {s : State} {B : Addr} {Z w n p mi c : Nat} (L : Lay B Z w n) {I : Divstep.IState}
+    (h : BSg B Z w n p mi I s) (hrsi : s.gpr .rsi = BitVec.ofNat 64 c) (hc : 1 ≤ c) (hc' : c < 2 ^ 32)
+    (hd : |I.d| ≤ 2 ^ 30) (hodd : I.f % 2 = 1)
+    (hF : |I.f| ≤ 2 ^ (64 * n) * 2 ^ 3) (hG : |I.g| ≤ 2 ^ (64 * n) * 2 ^ 3) :
+    WP isa batchG s fun t =>
+      BSg B Z w n p mi (Divstep.batchS 59 p mi I) t ∧ t.gpr .rsi = BitVec.ofNat 64 (c - 1) ∧
+      t.zf = some (decide (c - 1 = 0)) ∧
+      Frm B [(slot w 16, 72 * (w + 2))] s.mem t.mem ∧
+      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s t := by
+  have hN := L.nowrap
+  have hn1 := L.n1; have hnw := L.nw; have hw2' := L.w2; have hZ := L.z
+  have e16 := slot_eq w 16; have e19 := slot_eq w 19; have e20 := slot_eq w 20; have e21 := slot_eq w 21
+  have e25 := slot_eq w 25; have e26 := slot_eq w 26
+  obtain ⟨rel₁, rel₂⟩ := Divstep.msteps_mat (d := I.d) (g := I.g) hodd 59
+  obtain ⟨bnd₁, bnd₂⟩ := Divstep.msteps_bnd I.d I.f I.g 59
+  have hbS : Divstep.batchS 59 p mi I = ⟨(Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).d,
+      ((Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).u * I.f +
+        (Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).v * I.g) / 2 ^ 59,
+      ((Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).q * I.f +
+        (Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).r * I.g) / 2 ^ 59,
+      Divstep.mredRaw p mi ((Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).u * I.a +
+        (Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).v * I.b),
+      Divstep.mredRaw p mi ((Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).q * I.a +
+        (Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)).r * I.b)⟩ := by
+    simp only [Divstep.batchS]
+  rw [batchG_eq, seqs_append_iff _ [.block [.alu .sub .rsi (.imm 1)]] (by simp) (by simp),
+    seqs_append_iff [.block _] fgRow (by simp) (by simp [fgRow]), hbS]
+  refine WP.mono (first_ok L h hd hodd) fun s₂ ⟨d₂, u₂, mu₂, v₂, mv₂, q₂, mq₂, r₂, mr₂, mi₂, f₂, di₂, r9₂, k₂⟩ => ?_
+  generalize Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g) = m at *
+  have hs₂ : Scr s₂ B Z := h.scr.congr k₂.2.2
+  have r15₂ : s₂.gpr .r15 = BitVec.ofNat 64 n := (k₂.gpr (by decide)).trans h.r15
+  have aw₂ : ∀ e k, slot w 16 + 96 ≤ e → e + 8 * k ≤ Z → wv s₂.mem B e k = wv s.mem B e k := fun e k h1 h2 =>
+    f₂.wv_eq (fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; dsimp only; omega_arith)
+      (by omega_arith)
+  have W : Win B w m.u m.v m.q m.r s₂ := ⟨u₂, mu₂, v₂, mv₂, q₂, mq₂, r₂, mr₂, bnd₁, bnd₂⟩
+  have z₁ : m.u * I.f + m.v * I.g = 2 ^ 59 * ((m.u * I.f + m.v * I.g) / 2 ^ 59) := by
+    rw [← rel₁, Int.mul_ediv_cancel_left _ (by norm_num)]
+  have z₂ : m.q * I.f + m.r * I.g = 2 ^ 59 * ((m.q * I.f + m.r * I.g) / 2 ^ 59) := by
+    rw [← rel₂, Int.mul_ediv_cancel_left _ (by norm_num)]
+  have bF : ∀ y z : Int, |y| + |z| ≤ 2 ^ 59 →
+      -((2 ^ (64 * n) * 2 ^ 63 : Nat) : Int) ≤ y * I.f + z * I.g ∧ y * I.f + z * I.g < ((2 ^ (64 * n) * 2 ^ 63 : Nat) : Int) :=
+    fun y z hyz => by
+      have := Divstep.comb_le hyz hF hG
+      rw [abs_le] at this
+      push_cast
+      have : (2 : Int) ^ 59 * (2 ^ (64 * n) * 2 ^ 3) < 2 ^ (64 * n) * 2 ^ 63 := by
+        have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); nlinarith
+      constructor <;> linarith
+  refine WP.mono (fgPart_ok L hs₂ di₂ r9₂ r15₂ W
+    (by rw [aw₂ _ _ (by omega_arith) (by omega_arith)]; exact h.f)
+    (by rw [aw₂ _ _ (by omega_arith) (by omega_arith)]; exact h.g) z₁ z₂ (bF _ _ bnd₁) (bF _ _ bnd₂))
+    fun s₃ ⟨F₃, G₃, f₃, r15₃, k₃⟩ => ?_
+  have rsi₃ : s₃.gpr .rsi = BitVec.ofNat 64 c := (k₂.trans k₃).gpr (by decide) |>.trans hrsi
+  refine WP.mono (decRsi_ok s₃ hc (by omega_arith) rsi₃) fun t ⟨rt, zt, mt, kt⟩ => ?_
+  have w₃ : ∀ d, d + 8 ≤ slot w 19 ∨ slot w 21 ≤ d → d + 8 ≤ Z → word t.mem B d = word s₂.mem B d :=
+    fun d hd hz => by
+      rw [mt]
+      exact f₃.word_eq (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
+  have aw₃ : ∀ e k, slot w 21 ≤ e → e + 8 * k ≤ Z → wv t.mem B e k = wv s₂.mem B e k := fun e k h1 h2 => by
+    rw [mt]
+    exact f₃.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
+  have wc : ∀ o, o + 8 ≤ 96 → word t.mem B (slot w 16 + o) = word s₂.mem B (slot w 16 + o) := fun o ho =>
+    w₃ _ (.inl (by omega_arith)) (by omega_arith)
+  have k23 := (k₂.trans k₃).trans kt
+  refine ⟨?_, rt, zt, ?_, ?_⟩
+  · refine ⟨h.scr.congr k23.2.2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [(k₃.trans kt).gpr (by decide), di₂]
+    · rw [(k₃.trans kt).gpr (by decide), r9₂]
+    · rw [kt.gpr (by decide), r15₃]
+    · rw [wc oD (by decide), d₂]
+    · rw [wc oMi (by decide)]; exact mi₂
+    · rw [aw₃ _ _ (by omega_arith) (by omega_arith), aw₂ _ _ (by omega_arith) (by omega_arith)]; exact h.P
+    · rw [w₃ _ (.inr (by omega_arith)) (by omega_arith),
+        f₂.word_eq (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; dsimp only; omega_arith) (by omega_arith)]
+      exact h.Pz
+    · rw [mt]; exact F₃
+    · rw [mt]; exact G₃
+  · intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hx
+    rw [mt, f₃ x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith),
+      f₂ x (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega_arith)]
+  · exact keep_drop (r := .r15) (k23.mono (by decide)) (by rw [kt.gpr (by decide), r15₃, h.r15])
 
 end VG.Proof.Rsa.X86_64.InvB

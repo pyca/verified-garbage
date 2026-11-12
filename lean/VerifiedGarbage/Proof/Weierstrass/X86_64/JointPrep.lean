@@ -23,10 +23,9 @@ def jointPrepRanges (c : Joint.Cfg) : List (Nat×Nat) :=
 /-- The recoders call nothing: their inlined code is their code. -/
 theorem jointPrep_inline (c : Joint.Cfg) (u v : Nat) : (Joint.prep c u v).inline=Joint.prep c u v := by
   unfold Joint.prep
-  split <;> rfl
-
-theorem jointPrepB_inline (c : Joint.Cfg) (u v : Nat) :
-    (Joint.prepB c u v).inline=Joint.prepB c u v := rfl
+  split
+  · rfl
+  · split <;> rfl
 
 /-- What the recoders leave, of the state `s` before them. -/
 def JointPrepPost (c : Joint.Cfg) (base : Addr) (size u v : Nat) (s t : State) : Prop :=
@@ -67,32 +66,7 @@ theorem jointPrepOf_ok {c : Joint.Cfg} {pG pQ : Prog isa} {s : State} {base : Ad
   · rw [va] at dt
     exact dt
 
-theorem jointPrep_ok {c : Joint.Cfg} {s : State} {base : Addr} {size u v : Nat}
-    (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9)
-    (hs : Scr s base size) (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size)
-    (hg : c.gBits+jointGSpan c≤size) (hq : c.K.bits+64*c.K.M.n+8≤size)
-    (hsep : c.gBits+jointGSpan c≤c.K.bits ∨ c.K.bits+64*c.K.M.n+8≤c.gBits)
-    (hvs : v+8*c.K.M.n≤c.gBits ∨ c.gBits+jointGSpan c≤v) :
-    WP isa (Joint.prep c u v) s fun t => Scr t base size ∧
-      (∀ j<jointGLen c,t.mem (off base (c.gBits+j))=
-        jointGByte c (wordsVal s.mem base u c.K.M.n) j) ∧
-      (∀ j<64*c.K.M.n+1,t.mem (off base (c.K.bits+j))=
-        FastNaf.byte 5 (wordsVal s.mem base v c.K.M.n) j) ∧
-      KeepRegs (nafPrepClobN c.K.M.n) s t ∧ Unch base (jointPrepRanges c) s.mem t.mem := by
-  have first : WP isa (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else
-      FastNaf.prepN c.K.M.n u c.gBits 7) s fun a =>
-      (∀ j<jointGLen c,a.mem (off base (c.gBits+j))=jointGByte c (wordsVal s.mem base u c.K.M.n) j) ∧
-      KeepRegs (nafPrepClobN c.K.M.n) s a ∧ Outside base c.gBits (jointGSpan c) s.mem a.mem := by
-    by_cases h9 : c.gw=9
-    · simp only [jointGSpan,h9,ite_true] at hg
-      simpa only [jointGLen,jointGSpan,jointGByte,h9,ite_true] using fastPrepDigits16_ok hn hs hu hg
-    · simp only [jointGSpan,h9,ite_false] at hg
-      simpa only [jointGLen,jointGSpan,jointGByte,h9,ite_false] using
-        fastPrepDigits_ok hn (Or.inr rfl) hs hu hg
-  exact jointPrepOf_ok hs hv hg hq hsep hvs first
-    (fun a sa => fastPrepDigits_ok hn (Or.inl rfl) sa hv hq)
-
-/-- `jointPrep_ok` for the recoders without branches on the scalars' bits. -/
+/-- What `Joint.prepB`, the recoders without branches on the scalars' bits, leaves. -/
 theorem jointPrepB_ok {c : Joint.Cfg} {s : State} {base : Addr} {size u v : Nat}
     (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9) (h9 : c.gw=9)
     (hs : Scr s base size) (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size)
@@ -108,5 +82,35 @@ theorem jointPrepB_ok {c : Joint.Cfg} {s : State} {base : Addr} {size u v : Nat}
     simpa only [jointGLen,jointGSpan,jointGByte,h9,ite_true] using fastPrepDigitsB16_ok hn hs hu hg'
   exact jointPrepOf_ok hs hv hg hq hsep hvs first
     (fun a sa => fastPrepDigitsB_ok hn sa hv hq)
+
+theorem jointPrep_ok {c : Joint.Cfg} {s : State} {base : Addr} {size u v : Nat}
+    (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9)
+    (hs : Scr s base size) (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size)
+    (hg : c.gBits+jointGSpan c≤size) (hq : c.K.bits+64*c.K.M.n+8≤size)
+    (hsep : c.gBits+jointGSpan c≤c.K.bits ∨ c.K.bits+64*c.K.M.n+8≤c.gBits)
+    (hvs : v+8*c.K.M.n≤c.gBits ∨ c.gBits+jointGSpan c≤v) (hB : c.recodeB=true → c.gw=9) :
+    WP isa (Joint.prep c u v) s fun t => Scr t base size ∧
+      (∀ j<jointGLen c,t.mem (off base (c.gBits+j))=
+        jointGByte c (wordsVal s.mem base u c.K.M.n) j) ∧
+      (∀ j<64*c.K.M.n+1,t.mem (off base (c.K.bits+j))=
+        FastNaf.byte 5 (wordsVal s.mem base v c.K.M.n) j) ∧
+      KeepRegs (nafPrepClobN c.K.M.n) s t ∧ Unch base (jointPrepRanges c) s.mem t.mem := by
+  rw [Joint.prep]
+  by_cases hr : c.recodeB=true
+  · simp only [hr,ite_true]
+    exact jointPrepB_ok hn (hB hr) hs hu hv hg hq hsep hvs
+  simp only [hr,Bool.false_eq_true,ite_false]
+  have first : WP isa (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else
+      FastNaf.prepN c.K.M.n u c.gBits 7) s fun a =>
+      (∀ j<jointGLen c,a.mem (off base (c.gBits+j))=jointGByte c (wordsVal s.mem base u c.K.M.n) j) ∧
+      KeepRegs (nafPrepClobN c.K.M.n) s a ∧ Outside base c.gBits (jointGSpan c) s.mem a.mem := by
+    by_cases h9 : c.gw=9
+    · simp only [jointGSpan,h9,ite_true] at hg
+      simpa only [jointGLen,jointGSpan,jointGByte,h9,ite_true] using fastPrepDigits16_ok hn hs hu hg
+    · simp only [jointGSpan,h9,ite_false] at hg
+      simpa only [jointGLen,jointGSpan,jointGByte,h9,ite_false] using
+        fastPrepDigits_ok hn (Or.inr rfl) hs hu hg
+  exact jointPrepOf_ok hs hv hg hq hsep hvs first
+    (fun a sa => fastPrepDigits_ok hn (Or.inl rfl) sa hv hq)
 
 end VG.Proof.Weierstrass.X86_64

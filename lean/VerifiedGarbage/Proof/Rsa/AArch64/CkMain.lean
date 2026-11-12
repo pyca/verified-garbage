@@ -110,7 +110,7 @@ theorem ckMain_eq : VG.Impl.Rsa.AArch64.CheckKey.main = seqs (([.block VG.Impl.R
     ((loadA aX sD sDlen ++ ltA aX 0) ++
     ((loadA aX sP sPlen ++ (loadA aR sQ sQlen ++ (mulPQ ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa)))))) ++
     (modChecks sP sPlen sDP sQlen ++ (modChecks sQ sQlen sDQ sPlen ++
-    ((loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++ (loadA aR sQ sQlen ++ (mulXR ++ wmodOne CheckCrtKey.topQ lenQ))))) ++
+    ((loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++ (loadA aR sQ sQlen ++ (mulPQ ++ wmodOne CheckCrtKey.topQ lenQ))))) ++
     ([.block retMask] : List (Prog isa))))))))))) := by
   simp only [VG.Impl.Rsa.AArch64.CheckKey.main, List.append_assoc]
 

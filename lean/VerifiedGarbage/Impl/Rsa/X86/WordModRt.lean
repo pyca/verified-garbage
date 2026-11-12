@@ -116,19 +116,23 @@ def step (ml r m t : Nat) : Prog isa :=
 
 /-! ## The remainder -/
 
-/-- `r`, the dividend's bytes: `B` (one array), or `2 B` (`wide`, a product across two). -/
-def xBytes (wide : Bool) (r : Reg) : List Instr := bytesB L r ++ (if wide then [.alu .add r (.reg r)] else [])
+/-- `r`, the dividend's bytes: `B`, its array's (`top = none`), or `4 (W' + k)`, the divisor's words
+and `k` more (`top = some k`, for `m_len` argument `ml`). -/
+def xBytes (ml : Nat) (top : Option Nat) (r : Reg) : List Instr :=
+  match top with
+  | none => bytesB L r
+  | some k => width4 ml r ++ [.alu .add r (.imm (BitVec.ofNat 32 (4 * k)))]
 
 /-- `r` set to `x`'s top `W' - 1` words, its word `W' - 1` zero, and the steps' count
 `X - W' + 1` into the header, for `X` the dividend's words. -/
-def seed (ml x r : Nat) (wide : Bool) : Prog isa := seqs [
+def seed (ml x r : Nat) (top : Option Nat) : Prog isa := seqs [
   zeroWide L r,
-  .block (arrPtr L .esi x .edx ++ xBytes L wide .ecx ++ [.alu .add .esi (.reg .ecx)] ++ width4 ml .ecx ++
+  .block (arrPtr L .esi x .edx ++ xBytes L ml top .ecx ++ [.alu .add .esi (.reg .ecx)] ++ width4 ml .ecx ++
     [.alu .sub .ecx (.imm 4), .alu .sub .esi (.reg .ecx)] ++ arrPtr L .ebp r .edx ++
     width4 ml .edi ++ [.alu .sub .edi (.imm 4)]),
   .ite .e (.block []) (.loop (.block [.mov .eax (.mem (at_ .esi 0)), .store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4),
     .alu .add .ebp (.imm 4), .alu .sub .edi (.imm 4)]) .ne),
-  .block (restoreEdi L ++ xBytes L wide .eax ++ [.shift .shr .eax 2] ++ width4 ml .ecx ++
+  .block (restoreEdi L ++ xBytes L ml top .eax ++ [.shift .shr .eax 2] ++ width4 ml .ecx ++
     [.shift .shr .ecx 2, .alu .sub .eax (.reg .ecx), .alu .add .eax (.imm 1), .store (sc oSteps) .eax])]
 
 /-- The digit `x[steps - 1]` into the header, then the step, then the count down. -/
@@ -138,8 +142,10 @@ def digitStep (ml x r m t : Nat) : Prog isa := seqs [
   step L ml r m t,
   .block [.mov .eax (.mem (sc oSteps)), .alu .sub .eax (.imm 1), .store (sc oSteps) .eax]]
 
-/-- `[r] = [x] mod [m]` (`W'` words of `r`; `t` its temporary of `W' + 1`). -/
-def wordMod (ml x r m t : Nat) (wide : Bool := false) : Prog isa := seqs [.block (orTop L ml m), recip L, seed L ml x r wide,
+/-- `[r] = [x] mod [m]` (`W'` words of `r`; `t` its temporary of `W' + 1`), for the dividend's words
+`xBytes`' (`top`). -/
+def wordMod (ml x r m t : Nat) (top : Option Nat := none) : Prog isa := seqs [.block (orTop L ml m), recip L,
+  seed L ml x r top,
   .loop (digitStep L ml x r m t) .ne]
 
 /-! ## The guard -/

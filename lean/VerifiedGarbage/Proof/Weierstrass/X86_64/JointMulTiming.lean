@@ -150,7 +150,7 @@ theorem jointMulPrep_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size src
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fin C.p}
     (hL : JointPrepLayout c size srcU srcV) (hF : Lay c.K.M size (·∈nafSlots c.K))
     (hp : InvJ C (E c.K.P.x) (E c.K.P.y) (E c.K.P.z) Q) (hp1 : E c.K.P.z=1) (hz : E c.K.zero=0)
-    (hcG : JointPrepGChecks c srcU) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :
+    (hcG : JointPrepGChecks c srcU) (hcQ : JointPrepQChecks c srcV) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
       JointGenerator c C base T size row s ∧ JointGenerator c C base T size row t ∧
       wordsVal s.mem base srcU c.K.M.n=u ∧ wordsVal s.mem base srcV c.K.M.n=v ∧
@@ -159,26 +159,8 @@ theorem jointMulPrep_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size src
       (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
         JointWindowInput c C base T size u v Q row s ∧ JointWindowInput c C base T size u v Q row t) :=
   jointMulPrepOf_relCT hL hF hp hp1 hz
-    (jointPrep_relCT (base:=base) hL.n hL.sourceU hL.sourceV hL.generator hL.peer hL.keepV hcG hcQ)
-    (fun _ hs => jointPrep_ok hL.n hs hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV)
-
-/-- `jointMulPrep_relCT` for the recoders without branches on the scalars' bits. -/
-theorem jointMulPrepB_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size srcU srcV u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fin C.p}
-    (h9 : c.gw=9)
-    (hL : JointPrepLayout c size srcU srcV) (hF : Lay c.K.M size (·∈nafSlots c.K))
-    (hp : InvJ C (E c.K.P.x) (E c.K.P.y) (E c.K.P.z) Q) (hp1 : E c.K.P.z=1) (hz : E c.K.zero=0)
-    (hcG : FastPrepChecksB16 c.K.M.n srcU c.gBits) (hcQ : FastPrepChecksB c.K.M.n srcV c.K.bits) :
-    RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
-      JointGenerator c C base T size row s ∧ JointGenerator c C base T size row t ∧
-      wordsVal s.mem base srcU c.K.M.n=u ∧ wordsVal s.mem base srcV c.K.M.n=v ∧
-      wordsVal t.mem base srcU c.K.M.n=u ∧ wordsVal t.mem base srcV c.K.M.n=v)
-      (Joint.prepB c srcU srcV)
-      (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
-        JointWindowInput c C base T size u v Q row s ∧ JointWindowInput c C base T size u v Q row t) :=
-  jointMulPrepOf_relCT hL hF hp hp1 hz
-    (jointPrepB_relCT (base:=base) hL.n h9 hL.sourceU hL.sourceV hL.generator hL.peer hL.keepV hcG hcQ)
-    (fun _ hs => jointPrepB_ok hL.n h9 hs hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV)
+    (jointPrep_relCT (base:=base) hL.n hL.sourceU hL.sourceV hL.generator hL.peer hL.keepV hL.recode hcG hcQ)
+    (fun _ hs => jointPrep_ok hL.n hs hL.sourceU hL.sourceV hL.generator hL.peer hL.separate hL.keepV hL.recode)
 
 theorem jointMul_relCT {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Addr}
     {size srcU srcV u v : Nat} {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
@@ -196,7 +178,7 @@ theorem jointMul_relCT {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T :
     (ht : JointTableChecks c) (hcache : ScratchCT (Joint.cacheCode c).inline)
     (hseed : ScratchCT (.block (Jacobian.infinity c.K c.K.R)))
     (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))]))
-    (hcG : JointPrepGChecks c srcU) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :
+    (hcG : JointPrepGChecks c srcU) (hcQ : JointPrepQChecks c srcV) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s t ∧
       JointGenerator c C base T size row s ∧ JointGenerator c C base T size row t ∧
       wordsVal s.mem base srcU c.K.M.n=u ∧ wordsVal s.mem base srcV c.K.M.n=v ∧

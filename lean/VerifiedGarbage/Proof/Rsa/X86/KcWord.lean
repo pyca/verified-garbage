@@ -48,15 +48,15 @@ theorem Stg.mulWide_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
       (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
   · rw [e, h.arrs.get ha, h.arrs.get hb]
 
-/-- `mulHalf o a b`: `[a] [b]`, both below `2^(32 (w / 2))`, `2 w` words from array `o` on. -/
-theorem Stg.mulHalf_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+/-- `mulHalf o a b`: `[a] [b]` where both are below `2^(32 (w / 2))`, `2 w` words from array `o` on. -/
+theorem Stg.mulHalf_if_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {o a b : Nat} (ho : o + 1 < nArr) (ha : a ∈ live) (hb : b ∈ live)
-    (hol : ∀ j ∈ live, j ≠ o ∧ j ≠ o + 1) (hv : o ≠ aVD ∧ o + 1 ≠ aVD)
-    (hA : A a < 2 ^ (32 * (g.w / 2))) (hB : A b < 2 ^ (32 * (g.w / 2))) :
+    (hol : ∀ j ∈ live, j ≠ o ∧ j ≠ o + 1) (hv : o ≠ aVD ∧ o + 1 ≠ aVD) :
     WP isa (VG.Impl.Rsa.X86.WordModRt.mulHalf g.L o a b) s fun t => Stg g s0 A live c t ∧
-      val32 t.mem g.B (arr g.w o) (2 * g.w) = A a * A b := by
+      (A a < 2 ^ (32 * (g.w / 2)) → A b < 2 ^ (32 * (g.w / 2)) →
+        val32 t.mem g.B (arr g.w o) (2 * g.w) = A a * A b) := by
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulHalf_ok h.ws ho (h.live_lt a ha) (h.live_lt b hb)
-    (hol a ha).1 (hol a ha).2 (hol b hb).1 (hol b hb).2) fun t ⟨ht, k, e, r⟩ => ⟨?_, ?_⟩
+    (hol a ha).1 (hol a ha).2 (hol b hb).1 (hol b hb).2) fun t ⟨ht, k, e, r⟩ => ⟨?_, fun hA hB => ?_⟩
   · refine h.next ht k (by simp; omega) (by decide) r wordRegs_body
       (h.arrs_keep k (fun j hj => by simp [(hol j hj).1, (hol j hj).2]) (by decide)) h.live_lt
       (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
@@ -64,6 +64,15 @@ theorem Stg.mulHalf_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     have eb : val32 s.mem g.B (arr g.w b) g.w = A b := h.arrs.get hb
     rw [e, VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := g.w) (Nat.div_le_self _ _) (by rw [ea]; exact hA), ea,
       VG.Proof.Rsa.X86.WordRt.val32_low_of_lt (n := g.w) (Nat.div_le_self _ _) (by rw [eb]; exact hB), eb]
+
+/-- `mulHalf o a b`: `[a] [b]`, both below `2^(32 (w / 2))`, `2 w` words from array `o` on. -/
+theorem Stg.mulHalf_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {o a b : Nat} (ho : o + 1 < nArr) (ha : a ∈ live) (hb : b ∈ live)
+    (hol : ∀ j ∈ live, j ≠ o ∧ j ≠ o + 1) (hv : o ≠ aVD ∧ o + 1 ≠ aVD)
+    (hA : A a < 2 ^ (32 * (g.w / 2))) (hB : A b < 2 ^ (32 * (g.w / 2))) :
+    WP isa (VG.Impl.Rsa.X86.WordModRt.mulHalf g.L o a b) s fun t => Stg g s0 A live c t ∧
+      val32 t.mem g.B (arr g.w o) (2 * g.w) = A a * A b :=
+  WP.mono (h.mulHalf_if_ok ho ha hb hol hv) fun _ ⟨ht, e⟩ => ⟨ht, e hA hB⟩
 
 /-- Two words are the number, when it is below `2^64`. -/
 theorem val32_two {m : Mem} {B : Addr} {w j : Nat} (hw : 2 ≤ w) (hl : num m B w j < 2 ^ 64) :
@@ -131,25 +140,25 @@ theorem Stg.ifBalanced_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : Lis
   · rw [ev, sub0_beq, decide_eq_false_iff_not] at hb
     exact hb (by rw [← sl]; exact hg.mpr p)
 
-/-- `wordMod x r m`: `[r] = X mod [m]`, `X` the `w` (or, `wide`, `2 w`) words from array `x`
-on, by word steps, `m` of `p`'s length `W'` words, when the top bit of its `W'` words is set (and
-`m` is then left as it was). -/
+/-- `wordMod x r m top`: `[r] = X mod [m]`, `X` the dividend's words from array `x` on (`w`, or
+`W' + k` for `top = some k`), by word steps, `m` of `p`'s length `W'` words, when the top bit of its
+`W'` words is set (and `m` is then left as it was). -/
 theorem Stg.wordMod_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
-    (h : Stg g s0 A live c s) {x r m ap : Nat} {wide : Bool}
+    (h : Stg g s0 A live c s) {x r m ap : Nat} {top : Option Nat}
     (hm : MLen s0 g.B g.Z (pLenArg g.full) ap) (h4 : 4 ≤ wq ap) (hw : wq ap ≤ g.w)
-    (hx : x + wide.toNat < nArr) (hr : r < nArr) (hmL : m ∈ live)
+    (htop : ∀ k, top = some k → wq ap + k ≤ g.w)
+    (hx : x < nArr) (hr : r < nArr) (hmL : m ∈ live)
     (hl : ∀ j ∈ live, j ≠ r ∧ j ≠ aT) (hrm : r ≠ m) (hrT : r ≠ aT) (hmT : m ≠ aT)
     (hxr : r ≠ x) (hxt : aT ≠ x) (hxm : m ≠ x)
-    (hxr1 : wide = true → r ≠ x + 1) (hxt1 : wide = true → aT ≠ x + 1) (hxm1 : wide = true → m ≠ x + 1)
     (hv : m ≠ aVD ∧ r ≠ aVD) :
-    WP isa (wordMod g.full x r m wide) s fun t => ∃ M R,
+    WP isa (wordMod g.full x r m top) s fun t => ∃ M R,
       (Top (wq ap) (A m) →
-        M = A m ∧ R = val32 s.mem g.B (arr g.w x) (if wide then 2 * g.w else g.w) % A m) ∧
+        M = A m ∧ R = val32 s.mem g.B (arr g.w x) (VG.Proof.Rsa.X86.WordRt.xw g.len ap top) % A m) ∧
       Stg g s0 (upd (upd A m M) r R) (r :: live) c t := by
   have hmN := h.live_lt m hmL
   have fm := h.ws.ws.fit64 hmN
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.wordMod_ok h.ws ⟨h.arg hm.arg, hm.le⟩ hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm
-    hxr1 hxt1 hxm1 h4 hw) fun t ⟨ht, k, wk, wtop, wr, K⟩ => ⟨num t.mem g.B g.w m, num t.mem g.B g.w r, ?_, ?_⟩
+    h4 hw htop) fun t ⟨ht, k, wk, wtop, wr, K⟩ => ⟨num t.mem g.B g.w m, num t.mem g.B g.w r, ?_, ?_⟩
   · intro ⟨lo, hi⟩
     have gm := h.arrs.get hmL
     have hpos : 0 < wq ap := by omega

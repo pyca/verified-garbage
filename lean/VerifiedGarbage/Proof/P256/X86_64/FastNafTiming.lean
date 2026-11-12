@@ -33,8 +33,19 @@ theorem fastGenerator16_checks : FastPrepChecks16 4 (p256.sl U) 6000 := by
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs (nafPrepPublicN 4))
       (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem fastPeer_adx_checks : FastPrepChecks 4 (p256x.sl V) p256x.winBits 5 := fastPeer_checks
+/-- With BMI2 and ADX the recoders have no branches on the scalars' bits (`Joint.Cfg.recodeB`). -/
+theorem fastPeer_adx_checks : FastPrepChecksB 4 (p256x.sl V) p256x.winBits := by
+  constructor
+  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
+      (fun _ _ _ _ h => h) (by taint_decide)
+  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs (nafPrepPublicN 4))
+      (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem fastGenerator16_adx_checks : FastPrepChecks16 4 (p256x.sl U) 6000 := fastGenerator16_checks
+theorem fastGenerator16_adx_checks : FastPrepChecksB16 4 (p256x.sl U) 6000 := by
+  constructor
+  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
+      (fun _ _ _ _ h => h) (by taint_decide)
+  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs (nafPrepPublicN 4))
+      (fun _ _ _ _ h => h) (by taint_decide)
 
 end VG.Proof.P256.X86_64
