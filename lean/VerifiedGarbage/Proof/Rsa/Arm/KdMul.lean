@@ -79,7 +79,7 @@ theorem mulRow_ok {s0 v : State} {B : BitVec 32} {Z w N o x y Y i : Nat} (I : Mu
   simp only [VG.Impl.Rsa.Arm.Keys.hdr] at hz'
   have tv : ∀ {o' v' : Nat}, slot v.mem B o' = v' → v.mem.readW (off (State.addr B) o') 32 = BitVec.ofNat 32 v' :=
     fun e => by rw [← e]; exact (ofNat_toNat32 _).symm
-  rw [mulRow, WP.seq_iff]
+  rw [mulRow, wp_seq_blocks, WP.seq_iff]
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine ptr_ok h (r := .r0) (by decide) (j := o) (by omega) fun u1 p1 r1 m1 h1 => ?_
   refine wp_ldrSlot h1 (d := sJ) (by decide) fun u2 U2 => ?_

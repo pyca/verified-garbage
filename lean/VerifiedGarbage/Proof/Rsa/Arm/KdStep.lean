@@ -17,7 +17,7 @@ namespace VG.Proof.Rsa.Arm.KeyDiv
 open VG VG.Arm VG.Impl.Rsa.Arm.KeyDiv VG.Proof.Rsa.Arm.Keys VG.Proof.Mont VG.Impl.Bignum.Arm
   VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov wp_dp wp_str op2_reg op2_imm op2_lsr dpVal)
-open VG.Impl.Rsa.Arm.Keys (sC)
+open VG.Impl.Rsa.Arm.Keys (sC ptr)
 
 /-- `lr := w / 2 + 1` from `r9 = w`. -/
 theorem dwLr_val {w : Nat} (hw : w ≤ 1024) :
@@ -192,7 +192,9 @@ theorem subT_ok {s : State} {B : BitVec 32} {Z w N r t u j : Nat} (h : Ws s B Z 
   have r0 : 160 ≤ arr w r := Nat.le_add_right _ _
   simp only [S] at fr ft fu dr dt
   simp only [VG.Impl.Rsa.Arm.Keys.hdr] at hz'
-  rw [subT, WP.seq_iff, List.append_assoc, List.append_assoc]
+  rw [subT, wp_seq_blocks, WP.seq_iff, show ∀ X : List Instr, ptr .r0 u ++ ptr .r10 r ++ [.ldr .r1 .r8 sJ] ++
+    ([.dp .add .r10 .r10 (.reg .r1)] ++ ptr .r12 t ++ X) = ptr .r0 u ++ (winPtr .r10 r .r1 ++ (ptr .r12 t ++ X))
+    from fun X => by simp [winPtr]]
   refine ptr_ok h (r := .r0) (by decide) (j := u) (by omega) fun s1 p1 r1 m1 h1 => ?_
   refine winPtr_ok h1 (r := .r10) (t := .r1) (by decide) (by decide) (by decide) (rr := r) (j := j) (by omega)
     (by rw [m1]; exact hJ) fun s2 p2 r2 m2 h2 => ?_
@@ -293,7 +295,9 @@ theorem subBack_ok {s : State} {B : BitVec 32} {Z w N r t u j : Nat} (h : Ws s B
   have du := arr_disj (w := w) hru
   have dt := arr_disj (w := w) hrt
   simp only [S] at fr ft fu du dt
-  rw [subBack, WP.seq_iff, List.append_assoc, List.append_assoc]
+  rw [subBack, wp_seq_blocks, WP.seq_iff, show ∀ X : List Instr, ptr .r0 r ++ [.ldr .r1 .r8 sJ] ++
+    ([.dp .add .r0 .r0 (.reg .r1)] ++ ptr .r10 u ++ ptr .r12 t ++ X) =
+      winPtr .r0 r .r1 ++ (ptr .r10 u ++ (ptr .r12 t ++ X)) from fun X => by simp [winPtr]]
   refine winPtr_ok h (r := .r0) (t := .r1) (by decide) (by decide) (by decide) (rr := r) (j := j) (by omega)
     hJ fun s1 p1 r1 m1 h1 => ?_
   refine ptr_ok h1 (r := .r10) (by decide) (j := u) (by omega) fun s2 p2 r2 m2 h2 => ?_
@@ -365,7 +369,8 @@ theorem stepA_ok {s : State} {B : BitVec 32} {Z w N r m t j z : Nat} (h : Ws s B
     (hz0 : val32 s.mem (State.addr B) (arr w 0) (w / 2 + 1) = 0) {rest : Prog isa} {Q : State → Prop}
     (k : ∀ v q, Y / M ≤ q → q ≤ Y / M + 1 → val32 v.mem (State.addr B) (arr w t) (w / 2 + 1) = q * M →
       Keep B w [t] [sMk, sQ, sU0, sU2] s.mem v.mem → Ws v B Z w N → Rest divRegs s v → WP isa rest v Q) :
-    WP isa (.seq (.block (estimate r)) (.seq (clearT t) (.seq (prodT m t) rest))) s Q := by
+    WP isa (.seq (.block (estA r)) (.seq (.block estB) (.seq (clearT t) (.seq (prodT m t) rest)))) s Q := by
+  rw [wp_seq_blocks, show estA r ++ estB = estimate r by simp [estA, estB, estimate]]
   have := h.wle
   have fm := h.arr_fit hm
   have ft := h.arr_fit ht

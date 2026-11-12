@@ -164,6 +164,16 @@ def estimate (r : Nat) : List Instr :=
   topPtr .r10 r 3 .r0 ++ [.ldr .r0 .r8 sJ, .dp .add .r10 .r10 (.reg .r0)] ++ topWords ++ quot ++ refine3 ++
     [.mov .r8 (.reg .r12)] ++ ctx
 
+/-- `estimate`'s instructions up to the window's offset, read from 72. The
+offset is the same in both runs but read from memory, so the address it makes
+starts a block of its own (`estB`): each block computes its addresses from
+registers the two runs agree on. -/
+def estA (r : Nat) : List Instr := topPtr .r10 r 3 .r0 ++ [.ldr .r0 .r8 sJ]
+
+/-- The rest of `estimate`. -/
+def estB : List Instr :=
+  [.dp .add .r10 .r10 (.reg .r0)] ++ topWords ++ quot ++ refine3 ++ [.mov .r8 (.reg .r12)] ++ ctx
+
 /-! ## A step's subtraction -/
 
 /-- `[t]`'s `dw + 1` words zeroed (copied from `[aZ]`, zero). -/
@@ -176,19 +186,22 @@ def prodT (m t : Nat) : Prog isa :=
   .seq (.block (ptr .r0 t ++ ptr .r12 m ++ [.mov .lr (.shifted .r9 .lsr 1), .ldr .r1 .r8 sQ, .mov .r11 (.imm 0)]))
     (.seq row (.block ([.str .r11 .r0 0] ++ ctx)))
 
-/-- The window's address (word `j` of `[r]`) into `r`, through `t`. -/
+/-- The window's address (word `j` of `[r]`) into `r`, through `t`; in the code, a
+block ends after the load of the offset, as for `estA`. -/
 def winPtr (r : Reg) (j : Nat) (t : Reg) : List Instr := ptr r j ++ [.ldr t .r8 sJ, .dp .add r r (.reg t)]
 
 /-- `[u] := Y - [t]` over `dw + 1` words, the borrow into `sC`. -/
 def subT (r t u : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 u ++ winPtr .r10 r .r1 ++ ptr .r12 t ++
-    [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)]))
-    (.seq subRow (.block [.str .r11 .r8 sC]))
+  .seq (.block (ptr .r0 u ++ ptr .r10 r ++ [.ldr .r1 .r8 sJ]))
+    (.seq (.block ([.dp .add .r10 .r10 (.reg .r1)] ++ ptr .r12 t ++
+      [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)]))
+    (.seq subRow (.block [.str .r11 .r8 sC])))
 
 /-- `Y := [u] - [t]` over `dw + 1` words. -/
 def subBack (r t u : Nat) : Prog isa :=
-  .seq (.block (winPtr .r0 r .r1 ++ ptr .r10 u ++ ptr .r12 t ++
-    [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)])) subRow
+  .seq (.block (ptr .r0 r ++ [.ldr .r1 .r8 sJ]))
+    (.seq (.block ([.dp .add .r0 .r0 (.reg .r1)] ++ ptr .r10 u ++ ptr .r12 t ++
+      [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)])) subRow)
 
 /-- `[t] := [nm]` if the borrow (`sC`) is set, else zero, over `dw + 1` words. -/
 def selT (t nm : Nat) : Prog isa :=
@@ -197,8 +210,8 @@ def selT (t nm : Nat) : Prog isa :=
 
 /-- A step: the estimate, `Y - q̂ [m]`, `[m]` added back where negative, and
 the window a word down. -/
-def step (r m t nm u : Nat) : Prog isa := seqs [.block (estimate r), clearT t, prodT m t, subT r t u, selT t nm,
-  subBack r t u, .block [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]]
+def step (r m t nm u : Nat) : Prog isa := seqs [.block (estA r), .block estB, clearT t, prodT m t, subT r t u,
+  selT t nm, subBack r t u, .block [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]]
 
 /-- `[r] := [a]`, word `w` of `[r]` zero, `[nm] := -[m]`, `P`, `d`, `d₁`, `v`,
 and the window at word `w - dw`. -/
@@ -219,13 +232,15 @@ def divW (a r m t nm u : Nat) : Prog isa :=
 /-! ## Products -/
 
 /-- Row `i` (`4 i` at 72) of `[o] += x_i [y]` over the `w - i` words from word
-`i`, the carry out dropped; then the next row. -/
+`i`, the carry out dropped; then the next row. A block ends after the load of
+the offset, as for `estA`. -/
 def mulRow (o x y : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 o ++ [.ldr .r2 .r8 sJ, .dp .add .r0 .r0 (.reg .r2)] ++ ptr .r12 y ++
+  .seq (.block (ptr .r0 o ++ [.ldr .r2 .r8 sJ]))
+    (.seq (.block ([.dp .add .r0 .r0 (.reg .r2)] ++ ptr .r12 y ++
       [.mov .r3 (.shifted .r2 .lsr 2), .dp .sub .lr .r9 (.reg .r3)] ++ ptr .r1 x ++
       [.dp .add .r1 .r1 (.reg .r2), .ldr .r1 .r1 0, .mov .r11 (.imm 0)]))
     (.seq row (.block (ctx ++ [.ldr .r0 .r8 sJ, .dp .add .r0 .r0 (.imm 4), .str .r0 .r8 sJ,
-      .mov .r1 (.shifted .r9 .lsl 1), .cmp .r0 (.reg .r1)])))
+      .mov .r1 (.shifted .r9 .lsl 1), .cmp .r0 (.reg .r1)]))))
 
 /-- `[o] := [x] [y] mod 2^(32 w)`, for `[x]` of `w / 2` words. -/
 def mulLo (o x y : Nat) : Prog isa :=

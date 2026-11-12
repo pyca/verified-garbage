@@ -61,4 +61,12 @@ macro_rules
         Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, Option.map_some, Option.some.injEq, exists_eq_left',
         List.cons_append, List.nil_append, and_true, true_and, BitVec.add_zero, slots_lt, $ls,*]))
 
+/-- Two blocks in sequence are their instructions in one block. -/
+theorem wp_seq_blocks {a b : List Instr} {c : Prog isa} {s : State} {Q : State → Prop} :
+    WP isa (.seq (.block a) (.seq (.block b) c)) s Q ↔ WP isa (.seq (.block (a ++ b)) c) s Q := by
+  rw [WP.seq_iff, WP.seq_iff, WP.block_append_iff]
+  have e : (fun s' => WP isa (.seq (.block b) c) s' Q) = fun s' => WP isa (.block b) s' fun s'' => WP isa c s'' Q :=
+    funext fun _ => propext WP.seq_iff
+  rw [e]
+
 end VG.Proof.Rsa.Arm.KeyDiv
