@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
 public import VerifiedGarbage.Impl.Bignum.Arm.LoadBE
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyDiv
 
 /-! # `vg_rsa_crt_values` on ARMv7
 
@@ -175,8 +176,34 @@ def stores : Prog isa := seqs [
   .block [.ldrSp .r10 0, .ldrSp .r11 20], store 3,
   .block [.ldr .r0 .r8 sMask]]
 
+/-! ## Balanced keys, by words -/
+
+/-- `KeyDiv.shape` with `n_len` into `r11`: Z exactly for a balanced key (`p_len` and
+`q_len` both `2 w` bytes, `w` even). -/
+def shapeCv : List Instr := .ldrSp .r11 12 :: KeyDiv.shape 20 28
+
+/-- `[r] := [d] mod [aDD]` by words (`KeyDiv.divW`), `[aDD]` being `[d']` with its low bit
+cleared and its top word (of `w / 2`) made not zero (as it is for `p - 1` and `q - 1`
+when `p q = n`), through `aDQ`, `aDT` and `aT1`. -/
+def divKc (r d' : Nat) : List (Prog isa) :=
+  [copy aDD d', .block (clrLow aDD ++ KeyDiv.fixTop aDD), KeyDiv.divW aD r aDD aDQ aDT aT1]
+
+/-- The checks and the values for a balanced key: `p q = n` by `p q mod 2^(32 w)`
+(`KeyDiv.mulLo`, exact there) in place of the division of `n` by `p` (the check of
+the remainder always passes), the inverse as for any key, then (array 0, which
+`inverse` uses, zero again for `KeyDiv`) `d mod (p - 1)` and `d mod (q - 1)` by words. -/
+def midW : Prog isa := seqs ([
+  .block (ctx ++ bitOf sPodd aP), KeyDiv.mulLo aDR aP aQ, eqS sE1 aDR aDQ aT1, eqS sE2 aZero aZero aT1] ++
+  invSetup ++ [
+  .block primeWidth, inverse, .block ctx, eqS sE3 1 aOne aT1,
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
+  copy 0 aZero] ++ divKc aDR2 aP ++ divKc aDR3 aQ)
+
+/-- The checks and the values for any key: `n` divided by `p`. -/
+def midD : Prog isa := seqs [seqs divN, Rsa.Arm.Div.code, checks, Rsa.Arm.Div.code, divQ, Rsa.Arm.Div.code]
+
 def valid : Prog isa := seqs [
-  loads, seqs divN, Rsa.Arm.Div.code, checks, Rsa.Arm.Div.code, divQ, Rsa.Arm.Div.code,
+  loads, .block shapeCv, .ite .eq midW midD,
   .block (ctx ++ [.ldr .r10 .r8 sDp, .ldr .r12 .r8 sDq]), stores]
 
 /-- `r4`–`r11` and `lr` restored. -/

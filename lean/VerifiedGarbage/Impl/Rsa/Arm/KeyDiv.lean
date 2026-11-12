@@ -236,6 +236,16 @@ def divW (a r m t nm u : Nat) : Prog isa :=
   seqs [prep a r m nm, .loop (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne,
     step r m t nm u]
 
+/-! ## Balanced keys -/
+
+/-- `Z` exactly for a balanced key: `p_len` and `q_len` (the stack words at `oP`
+and `oQ`) both `2 w` bytes and `w = ⌈n_len / 4⌉` (from `r11`) even, so that `p` and
+`q` have `w / 2` words and `p q` is below `2^(32 w)`. From the lengths alone. -/
+def shape (oP oQ : Nat) : List Instr :=
+  [.dp .add .r3 .r11 (.imm 3), .mov .r3 (.shifted .r3 .lsr 2), .ldrSp .r0 oP, .ldrSp .r1 oQ,
+    .mov .r2 (.shifted .r3 .lsl 1), .dp .eor .r0 .r0 (.reg .r2), .dp .eor .r1 .r1 (.reg .r2),
+    .dp .orr .r0 .r0 (.reg .r1), .dp .and .r2 .r3 (.imm 1), .dp .orr .r0 .r0 (.reg .r2), .cmp .r0 (.imm 0)]
+
 /-! ## Products -/
 
 /-- Row `i` (`4 i` at 72) of `[o] += x_i [y]` over the `w - i` words from word
