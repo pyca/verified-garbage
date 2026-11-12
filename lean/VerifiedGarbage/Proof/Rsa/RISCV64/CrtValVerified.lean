@@ -50,7 +50,8 @@ namespace VG.Proof.Rsa.RISCV64.CrtValues
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.RISCV64.Taint VG.Proof.Mont VG.Proof.Bignum.RISCV64
   VG.Proof.Rsa.RISCV64.Keys
 open VG.Impl.Rsa.RISCV64.Keys (saved save restore mov)
-open VG.Impl.Rsa.RISCV64.CrtValues (code entry nCheck valid fail front dPartsAll stores nArr)
+open VG.Impl.Rsa.RISCV64.CrtValues (code entry nCheck valid fail front dPartsAll stores nArr setup loads checks
+  invPart storeQ)
 open VG.Proof.Rsa.CrtValues (maskOf)
 open VG.Impl.Bignum.RISCV64.Precompute (check1 check2)
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint getD_of_lt)
@@ -202,6 +203,9 @@ theorem pub_pins {s0 s1 x y : State} {M M' : Mem} (sm : Same s0 s1) (cx : CB s0 
     · rw [wx.s9, wy.s9, wOf, wOf, hk]
     · rw [wx.s10, wy.s10, wOf, wOf, hk]
 
+/-- After `front` but the write of `qInv`, for a valid modulus. -/
+def SA' (d : Dt) (t : State) : Prop :=
+  ∃ s0, C0 d s0 ∧ Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true ∧ ∃ X₁ X₂ V X, IvA s0 X₁ X₂ V X t
 /-- After `front`, for a valid modulus. -/
 def SA (d : Dt) (t : State) : Prop :=
   ∃ s0, C0 d s0 ∧ Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true ∧ ∃ X₁ X₂ V X, Iv s0 X₁ X₂ V X t
@@ -213,7 +217,7 @@ def SB (d : Dt) (u : State) : Prop :=
 
 /-! ## The pieces -/
 
-theorem valid_eq : valid = .seq front (.seq dPartsAll stores) := rfl
+theorem valid_eq : valid = .seq (.seq (VG.Impl.Rsa.RISCV64.Keys.seqs [setup, loads, checks, invPart]) storeQ) (.seq dPartsAll stores) := rfl
 
 theorem nCheck_eq : nCheck = .seq (.block [mov .s7 .s1, mov .s8 .s2]) (.seq (.block check1) check2) := rfl
 
@@ -306,14 +310,21 @@ theorem code_rel [InvLaw] : RelCT isa (Two C0) code fun _ _ => True := by
         -- public registers are those `CB` pins again.
         rw [valid_eq]
         refine RelCT.mono (P := Two fun a s => S5 a s ∧ s.gpr .s0 = 0)
-          (RelCT.seq (R := Two SA) ?_ (RelCT.seq (R := Two SB) ?_ ?_)) ?_ fun _ _ h => h
+          (RelCT.seq (R := Two SA) (RelCT.seq (R := Two SA') ?_ ?_) (RelCT.seq (R := Two SB) ?_ ?_)) ?_
+          fun _ _ h => h
         · refine two_post (Φ := fun a s => S5 a s ∧ s.gpr .s0 = 0)
             (two_taint bodyRegs ?_ (by taint_decide)) ?_
           · rintro a s₁ s₂ ⟨⟨x, hx, cx, -⟩, -⟩ ⟨⟨y, hy, cy, -⟩, -⟩ r hr
             exact CB.pins (hx.same hy) cx cy r hr
           · rintro a t ⟨⟨s0, c0, c, x0⟩, z⟩
-            exact WP.mono (front_ok (preC_of c0.1) c) fun u ⟨X₁, X₂, V, X, iv⟩ =>
-              ⟨s0, c0, x0.mp z, X₁, X₂, V, X, iv⟩
+            exact WP.mono (frontA_ok (preC_of c0.1) c) fun u ⟨X₁, X₂, V, X, ia⟩ =>
+              ⟨s0, c0, x0.mp z, X₁, X₂, V, X, ia⟩
+        · -- The write of `qInv`, its registers pinned again after the tail's restore.
+          refine two_post (two_taint pubRegs ?_ (by taint_decide)) ?_
+          · rintro a s₁ s₂ ⟨x, hx, -, _, _, _, _, ix⟩ ⟨y, hy, -, _, _, _, _, iy⟩ r hr
+            exact pub_pins (hx.same hy) ix.cb iy.cb ix.ws iy.ws r hr
+          · rintro a t ⟨s0, c0, hv, X₁, X₂, V, X, ia⟩
+            exact WP.mono (storeQ_ok (preC_of c0.1) ia) fun u iv => ⟨s0, c0, hv, X₁, X₂, V, X, iv⟩
         · refine two_post (two_taint pubRegs ?_ (by taint_decide)) ?_
           · rintro a s₁ s₂ ⟨x, hx, -, _, _, _, _, ix⟩ ⟨y, hy, -, _, _, _, _, iy⟩ r hr
             exact pub_pins (hx.same hy) ix.cb iy.cb ix.ws iy.ws r hr

@@ -18,6 +18,9 @@ For a balanced key, `CrtValues.invG` runs the inverse without its doublings
 `K = 6 (w + 1) = 64 Q + T`: `y`'s words shifted left by `T` into word `Q` of a
 zeroed array (`shlTLoop_ok`), and one division by words (`divW_ok`). -/
 
+-- separate module: its proofs (the tail's shift and division) are not re-checked with every change to the
+-- inverse's phase (`CrtValInv.lean`)
+
 @[expose] public section
 
 namespace VG.Proof.Rsa.RISCV64.Loops
@@ -375,11 +378,11 @@ theorem placed_val {m m0 : Mem} {B : Addr} {d w Q n : Nat} (hQ : Q + n ≤ w) (h
 
 /-- `tail`: `y := y 2^(6 (w + 1)) mod m` in array 3, for `y < 2^(64 v)`,
 exact for `m` (array 8) of exactly `v = w / 2` words. -/
-theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8 ≤ w) (hw2 : w % 2 = 0)
-    (hy : num s.mem B w 3 < 2 ^ (64 * (w / 2))) :
+theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8 ≤ w) (hw2 : w % 2 = 0) :
     WP isa tail s fun t => Ws t B Z w nArr ∧ Keys.Frame B w [aDR, 3, aTD, aTT] [] s.mem t.mem ∧
       Keep dwRegs s t ∧
-      (InW w (num s.mem B w 8) → num t.mem B w 3 = num s.mem B w 3 * 2 ^ (6 * (w + 1)) % num s.mem B w 8) := by
+      (num s.mem B w 3 < 2 ^ (64 * (w / 2)) → InW w (num s.mem B w 8) →
+        num t.mem B w 3 = num s.mem B w 3 * 2 ^ (6 * (w + 1)) % num s.mem B w 8) := by
   have hS : S w = 8 * (w + 2) := rfl
   have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   have hwl := h.wle
@@ -406,25 +409,26 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8
     (by have := w2.arr_fit (j := 3) (by decide); omega) (by have := w2.arr_fit (j := aDR) (by decide); omega)
     (.inl (by omega))) fun t3 ⟨v3, o3, k3⟩ => ?_
   -- `y`'s words, and the dividend.
-  have y1 : num t1.mem B w 3 = num s.mem B w 3 := f1.num (by decide) (by simp) (fit _ (by decide))
-  have yv : wordsVal t2.mem B (arr w 3) (w / 2 + 1) = num s.mem B w 3 := by
-    rw [m2]
-    exact words_low (by omega) y1 (Nat.lt_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega)))
-  rw [yv] at v3
-  have ylt : num s.mem B w 3 * 2 ^ T < 2 ^ (64 * (w / 2 + 1)) := by
-    rw [Nat.mul_add, Nat.mul_one, Nat.pow_add]
-    exact Nat.mul_lt_mul_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega)) (Nat.two_pow_pos _)
-  have c0 : (t3.gpr .a4).toNat = 0 := by
-    rcases Nat.eq_zero_or_pos (t3.gpr .a4).toNat with e | e
-    · exact e
-    · have := Nat.le_mul_of_pos_right (2 ^ (64 * (w / 2 + 1))) e
-      omega
-  rw [c0, Nat.mul_zero, Nat.add_zero] at v3
-  have nR3 : num t3.mem B w aDR = num s.mem B w 3 * 2 ^ (6 * (w + 1)) := by
-    have o3' : Outside B (arr w aDR + 8 * Q) (8 * (w / 2 + 1)) t1.mem t3.mem := by rw [← m2]; exact o3
-    show wordsVal t3.mem B (arr w aDR) w = _
-    rw [placed_val hQv z1 o3' (by omega), v3, hK, Nat.pow_add]
-    ac_rfl
+  have nR3 : num s.mem B w 3 < 2 ^ (64 * (w / 2)) →
+      num t3.mem B w aDR = num s.mem B w 3 * 2 ^ (6 * (w + 1)) := fun hy => by
+   have y1 : num t1.mem B w 3 = num s.mem B w 3 := f1.num (by decide) (by simp) (fit _ (by decide))
+   have yv : wordsVal t2.mem B (arr w 3) (w / 2 + 1) = num s.mem B w 3 := by
+     rw [m2]
+     exact words_low (by omega) y1 (Nat.lt_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega)))
+   rw [yv] at v3
+   have ylt : num s.mem B w 3 * 2 ^ T < 2 ^ (64 * (w / 2 + 1)) := by
+     rw [Nat.mul_add, Nat.mul_one, Nat.pow_add]
+     exact Nat.mul_lt_mul_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega)) (Nat.two_pow_pos _)
+   have c0 : (t3.gpr .a4).toNat = 0 := by
+     rcases Nat.eq_zero_or_pos (t3.gpr .a4).toNat with e | e
+     · exact e
+     · have := Nat.le_mul_of_pos_right (2 ^ (64 * (w / 2 + 1))) e
+       omega
+   rw [c0, Nat.mul_zero, Nat.add_zero] at v3
+   have o3' : Outside B (arr w aDR + 8 * Q) (8 * (w / 2 + 1)) t1.mem t3.mem := by rw [← m2]; exact o3
+   show wordsVal t3.mem B (arr w aDR) w = _
+   rw [placed_val hQv z1 o3' (by omega), v3, hK, Nat.pow_add]
+   ac_rfl
   have w3 : Ws t3 B Z w nArr := w2.of_keep k3
   have F3 : Keys.Frame B w [aDR] [] s.mem t3.mem :=
     f1.trans (Keys.Frame.of_arr (o := aDR) (d := 8 * Q) (n := 8 * (w / 2 + 1)) (by rw [← m2]; exact o3)
@@ -442,15 +446,15 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8
   have n3 : num t6.mem B w 3 = 0 := by
     rw [f6.num (by decide) (by simp) (fit _ (by decide)), f5.num (by decide) (by simp) (fit _ (by decide))]
     exact z4
-  have nR : num t6.mem B w aDR = num s.mem B w 3 * 2 ^ (6 * (w + 1)) := by
+  have nR : num t6.mem B w aDR = num t3.mem B w aDR := by
     rw [f6.num (by decide) (by simp) (fit _ (by decide)), f5.num (by decide) (by simp) (fit _ (by decide)),
-      f4.num (by decide) (by simp) (fit _ (by decide)), nR3]
+      f4.num (by decide) (by simp) (fit _ (by decide))]
   have r0 : wordsVal t6.mem B (arr w 3) (w / 2) = 0 := by
     simpa using wordsVal_zero_part (a := 0) (c := w / 2) n3 (by omega)
   refine WP.mono (divW_ok w6 (a := aDR) (r := 3) (m := aTD) (t := aTT) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw hw2 r0 p6')
     fun t ⟨w7, f7, k7, x7, top7, hi7⟩ => ?_
-  refine ⟨w7, ?_, ?_, fun hin => ?_⟩
+  refine ⟨w7, ?_, ?_, fun hy hin => ?_⟩
   · exact (F3.mono (by simp) (by simp)).trans ((f4.mono (by simp) (by simp)).trans ((f5.mono (by simp) (by simp)).trans
       ((f6.mono (by simp) (by simp)).trans (f7.mono (by simp) (by simp)))))
   · exact Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans' (Keep.trans'
@@ -465,7 +469,7 @@ theorem tail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) (hw : 8
       words_low (w := w) (v := w / 2) (by omega) (show num t5.mem B w aTD = _ by rw [v5, m8]) hin.2
     have tp := top_pos (m := t5.mem) (B := B) (d := arr w aTD) (v := w / 2) (by omega) (by rw [mv]; exact hin.1)
     have hne : ¬ (word t5.mem B (arr w aTD + 8 * (w / 2 - 1))).toNat = 0 := by omega
-    rw [v6, mv, ite_eq_right hne, Nat.add_zero, nR] at x7
+    rw [v6, mv, ite_eq_right hne, Nat.add_zero, nR, nR3 hy] at x7
     refine num_of_low (v := w / 2) (by omega) x7 top7 ?_
     rw [hi7]
     exact wordsVal_zero_part n3 (by omega)

@@ -216,8 +216,6 @@ theorem divWP_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) {a r :
     rw [hi5]
     exact wordsVal_zero_part n1r (by omega)
 
-/-- A balanced key, from the lengths. -/
-abbrev Bal (s0 : State) : Prop := pL s0 % 8 = 0 ∧ 4 * wOf s0 = pL s0 ∧ pL s0 = qL s0 ∧ 32 ≤ pL s0
 
 /-- Under the mask, for a balanced key, `p - 1` and `q - 1` are numbers of
 exactly `w / 2` words. -/
@@ -245,7 +243,7 @@ theorem bal_inW {s0 : State} (hv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true
   exact ⟨⟨by omega, by rw [e64]; omega⟩, ⟨by omega, by rw [e64]; omega⟩⟩
 
 open VG.Impl.Rsa.RISCV64.Keys (storeBytes restore)
-open VG.Impl.Rsa.RISCV64.CrtValues (code stores valid front mask checks invPart)
+open VG.Impl.Rsa.RISCV64.CrtValues (code stores valid front mask checks invPart setup loads storeQ)
 
 /-- The outputs, as the function leaves them. -/
 structure Out (s0 : State) (X₁ X₂ V X R₂ R₃ : Nat) (u : State) : Prop where
@@ -446,17 +444,24 @@ def VP (s0 u : State) : Prop :=
     IC s0 V X ∧ (maskOf (Pv s0) (Qv s0) X₁ X₂ V = true → 0 < 2 * (Pv s0 / 2) → R₂ = Dv s0 % (2 * (Pv s0 / 2))) ∧
     (maskOf (Pv s0) (Qv s0) X₁ X₂ V = true → 0 < 2 * (Qv s0 / 2) → R₃ = Dv s0 % (2 * (Qv s0 / 2)))
 
-/-- `front`: the set-up, the loads, the checks and the inverse. -/
-theorem front_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
-    WP isa front s fun t => ∃ X₁ X₂ V X, Iv s0 X₁ X₂ V X t := by
-  unfold front
+/-- `front` before `qInv` is written. -/
+theorem frontA_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
+    WP isa (seqs [setup, loads, checks, invPart]) s fun t => ∃ X₁ X₂ V X, IvA s0 X₁ X₂ V X t := by
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (setup_ok h c) fun t1 ⟨c1, w1, z1⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (loads_ok h c1 w1 z1) fun t2 l2 => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (checks_ok h l2) fun t3 ⟨X₁, X₂, ck⟩ => ?_
-  exact WP.mono (invPart_ok h ck) fun t4 ⟨V, X, iv⟩ => ⟨X₁, X₂, V, X, iv⟩
+  exact WP.mono (invPart_ok h ck) fun t4 ⟨V, X, ia⟩ => ⟨X₁, X₂, V, X, ia⟩
+
+/-- `front`: the set-up, the loads, the checks, the inverse and `qInv` written. -/
+theorem front_ok [InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
+    WP isa front s fun t => ∃ X₁ X₂ V X, Iv s0 X₁ X₂ V X t := by
+  unfold front
+  rw [WP.seq_iff]
+  exact WP.mono (frontA_ok h c) fun t4 ⟨X₁, X₂, V, X, ia⟩ =>
+    WP.mono (storeQ_ok h ia) fun t5 iv => ⟨X₁, X₂, V, X, iv⟩
 
 theorem valid_ok [InvLaw] {s0 s : State} (h : PreC s0) (hv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true)
     (c : CB s0 s0.mem s) : WP isa valid s (VP s0) := by
@@ -478,11 +483,26 @@ theorem post_valid {s0 u v : State} (h : PreC s0)
     (ha : v.gpr .a0 = u.gpr .a0) : fnPost s0 v := by
   obtain ⟨X₁, X₂, V, X, R₂, R₃, o, hx, ic, r2, r3⟩ := vp
   have e : Mv s0 = 2 * (Pv s0 / 2) + 1 := by simp only [Mv]; omega_arith
-  have h2 := ic.vx
-  rw [e] at h2
   unfold fnPost
   by_cases hk : maskOf (Pv s0) (Qv s0) X₁ X₂ V = true
-  · have K := VG.Proof.Rsa.CrtValues.crtKey_masked (nb := nB s0) (pb := pB s0) (qb := qB s0) (db := dB s0)
+  · -- Under the mask, `X` is the inverse: for a balanced key `p` is of exactly `w / 2` words.
+    have h2 : 1 < Mv s0 → V = Nat.gcd (Qv s0) (Mv s0) ∧ (Mv s0 : Int) ∣ (X : Int) * Qv s0 - V ∧ X < Mv s0 := by
+      intro h1
+      obtain ⟨g, X', d, l, hX⟩ := ic.vx h1
+      have : X = X' := hX fun hb => by
+        have i := (bal_inW hv hb hx hk).1
+        have podd : Pv s0 % 2 = 1 := by simp only [maskOf, decide_eq_true_eq] at hk; exact hk.1
+        have ev : 2 ∣ 2 ^ (64 * (wOf s0 / 2)) :=
+          Nat.dvd_trans (by decide) (Nat.pow_dvd_pow 2 (show 1 ≤ 64 * (wOf s0 / 2) by
+            obtain ⟨_, h4, _, h32⟩ := hb; omega))
+        obtain ⟨i1, i2⟩ := i
+        refine ⟨by omega, ?_⟩
+        obtain ⟨k, hk'⟩ := ev
+        omega
+      subst this
+      exact ⟨g, d, l⟩
+    rw [e] at h2
+    have K := VG.Proof.Rsa.CrtValues.crtKey_masked (nb := nB s0) (pb := pB s0) (qb := qB s0) (db := dB s0)
       (by rw [bytesAt_length]; exact hv) (by rw [bytesAt_length, bytesAt_length]; exact h.p2)
       (by rw [bytesAt_length, bytesAt_length]; exact h.q2) hx h2 (r2 hk) (r3 hk)
     simp only [bytesAt_length, ← pow256] at K
@@ -494,7 +514,15 @@ theorem post_valid {s0 u v : State} (h : PreC s0)
       simp [hk]
     · rw [o.dp, o.dq, o.qi]
       simp [hk]
-  · have K := VG.Proof.Rsa.CrtValues.crtKey_masked (nb := nB s0) (pb := pB s0) (qb := qB s0) (db := dB s0)
+  · -- Else the outputs are zeros, whatever the inverse.
+    have ⟨X', h2⟩ : ∃ X' : Nat, 1 < Mv s0 → V = Nat.gcd (Qv s0) (Mv s0) ∧
+        (Mv s0 : Int) ∣ (X' : Int) * Qv s0 - V ∧ X' < Mv s0 := by
+      by_cases h1 : 1 < Mv s0
+      · obtain ⟨g, X', d, l, -⟩ := ic.vx h1
+        exact ⟨X', fun _ => ⟨g, d, l⟩⟩
+      · exact ⟨0, fun h => absurd h h1⟩
+    rw [e] at h2
+    have K := VG.Proof.Rsa.CrtValues.crtKey_masked (nb := nB s0) (pb := pB s0) (qb := qB s0) (db := dB s0)
       (R₂ := Dv s0 % (2 * (Pv s0 / 2))) (R₃ := Dv s0 % (2 * (Qv s0 / 2)))
       (by rw [bytesAt_length]; exact hv) (by rw [bytesAt_length, bytesAt_length]; exact h.p2)
       (by rw [bytesAt_length, bytesAt_length]; exact h.q2) hx h2 (fun _ => rfl) (fun _ => rfl)

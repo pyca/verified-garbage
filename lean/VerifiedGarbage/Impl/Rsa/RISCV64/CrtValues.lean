@@ -27,7 +27,11 @@ scratch_len)`, the last eight on the stack. As on PPC64LE
   by batches of divsteps), which exists if the gcd it computes is 1, on
   numbers of the primes' digits of 32 bits `⌈max(p_len, q_len) / 4⌉` (`s8`,
   computed without a branch), in arrays 0–14, which hold nothing the rest
-  needs by then.
+  needs by then. For a balanced key (`shape`), the inverse leaves out its
+  `6 (n + 1)` doublings modulo `p | 1` (`InvBatch.inverseS`), and `tail`
+  multiplies it by `2^(6 (w + 1))` modulo `p | 1` by one shift and one
+  division by words (`WordDiv.divW`) instead; `qInv` is written last, after
+  the registers `divW` writes are restored.
 * `dP` and `dQ` are the remainders of `d` divided by `p` and by `q` with
   their low bits cleared: `p - 1` and `q - 1` for odd primes, which `p q = n`
   makes them; the divisions pass over `⌈p_len / 8⌉` and `⌈q_len / 8⌉` words.
