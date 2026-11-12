@@ -27,17 +27,6 @@ reduction (`mredRaw_words`) and the normalization (`norm_words`).
 
 namespace VG.Proof.Divstep
 
-/-- A batch of `N` divsteps, `(a, b)` by `mredRaw`. -/
-def batchS (N : Nat) (p m : Int) (s : IState) : IState :=
-  let t := msteps N (MSt.init s.d s.f s.g)
-  ⟨t.d, (t.u * s.f + t.v * s.g) / 2 ^ N, (t.q * s.f + t.r * s.g) / 2 ^ N,
-    mredRaw p m (t.u * s.a + t.v * s.b), mredRaw p m (t.q * s.a + t.r * s.b)⟩
-
-/-- `B` such batches from the start. -/
-def invRunS (N : Nat) (p m x : Int) : Nat → IState
-  | 0 => ⟨1, p, x, 0, 1⟩
-  | B + 1 => batchS N p m (invRunS N p m x B)
-
 /-- `mredRaw` of congruent numbers are congruent. -/
 theorem mredRaw_cong {p m t t' : Int} (hp : p % 2 = 1) (hp0 : 0 < p) (hm : (p * m + 1) % 2 ^ 64 = 0)
     (h : t ≡ t' [ZMOD p]) : mredRaw p m t ≡ mredRaw p m t' [ZMOD p] := by

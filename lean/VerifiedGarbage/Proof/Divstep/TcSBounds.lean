@@ -2,6 +2,7 @@ module
 -- separate module: its lemmas name no ISA, for any target's batched inverse over 64-bit words
 public import VerifiedGarbage.Proof.Divstep.TcS
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
+public import VerifiedGarbage.Proof.Divstep.TcSLaw
 
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
@@ -108,5 +109,9 @@ theorem invRunS_done {N B : Nat} (hN : N ≤ 62) {p m u : Nat} (hp : p % 2 = 1)
       exact this.symm
   · have h1 : (p : Int) = 1 := by omega_arith
     rw [h1]; exact Int.modEq_one
+
+/-- The signed batches' algebra, for the registrations of the proofs that take `[TcSLaw]`. -/
+instance tcsLaw : TcSLaw :=
+  ⟨comb_le2, mredRaw_nat, invRunS_bounds, invRunS_done, comb_le, shr_nat⟩
 
 end VG.Proof.Divstep

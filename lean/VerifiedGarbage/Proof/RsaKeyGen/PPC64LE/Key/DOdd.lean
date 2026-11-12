@@ -119,7 +119,7 @@ theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 
   have vM5 : V5 aME = mE (V aE) := by
     rw [o5 aME (by decide) (by decide) (by decide) (by decide), o4 aME (by decide), o3 aME (by decide), vME]
   refine WP.seq (WP.mono (invOfE h5 k5 hw (a := aR) (m := aME) (hk := nTwo_width) (hn1 := by decide)
-    (hnw := by omega_arith) (han := by rw [vR]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) mlt)
+    (hnw := by omega_arith) (hfit := by omega_arith) (han := by rw [vR]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) mlt)
     (hmn := by rw [vM5]; exact mlt) (odd := by rw [vM5]; exact mo.1) (gt := by rw [vM5]; exact mo.2))
     fun t6 ⟨h6, ⟨V6, k6, o6, g6, d6, l6⟩, f6, r6⟩ => ?_)
   simp only [vM5, vR] at g6 d6 l6

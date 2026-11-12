@@ -15,7 +15,8 @@ in `r3`–`r10`, the others on the stack, at `sp + 96 + 8 i` for the `i`-th of
 them (`p` is the 0th). As on ARMv7 (`Impl/Rsa/Arm/CrtValues.lean`):
 
 `n` is checked as `vg_rsa_public_precompute` checks it (it is public, and the
-only branch on data). Then, with `w = ⌈n_len / 4⌉` digits of 32 bits:
+only branch on data). Then, with `w = 2 ⌈n_len / 8⌉` digits of 32 bits (even,
+so that the inverse's `⌈n / 2⌉ + 1` words fit in an array of `w + 2` digits):
 
 * `n`, `p`, `q` and `d` are read into arrays: `p q = n` is `p` odd,
   `p q ≡ n (mod 2^(32 w))` (`MontKey.mulLo`) and `n ≡ 0 (mod p)`, as
@@ -133,10 +134,10 @@ def fail : Prog isa := seqs [
 
 /-! ## A valid modulus -/
 
-/-- `w = ⌈n_len / 4⌉` into `r29`, the stride into `r30`, and every array
+/-- `w = 2 ⌈n_len / 8⌉` into `r29`, the stride into `r30`, and every array
 zeroed. -/
 def setup : Prog isa :=
-  .seq (.block ([.addi .r29 .r18 3, .lsr .d .r29 .r29 2] ++ stride ++
+  .seq (.block ([.addi .r29 .r18 7, .lsr .d .r29 .r29 3, .lsl .r29 .r29 1] ++ stride ++
       [.li .r8 nArr, .mul .r8 .r8 .r30, .lsr .d .r8 .r8 2]))
     (zeroArrays .r8)
 
@@ -171,6 +172,31 @@ def shape : List Instr :=
     .logic .xor .r3 .r20 .r22, .logic .or .r0 .r0 .r3, .lsr .d .r3 .r20 5, .li .r12 0, .sub .r3 .r12 .r3,
     .lsr .d .r3 .r3 63, .li .r12 1, .logic .xor .r3 .r3 .r12, .logic .or .r0 .r0 .r3]
 
+/-- For `K = 5 (3 ν + 2) = 64 Q + T` (`ν = w / 4`, the inverse's words for a
+balanced key): `r6 :=` `y`'s address (array 3), `r5 :=` that of word `Q` of
+`aDR`, `r7 := T`, `r8 := ν + 1`, `r9 := 0` and `r12 := 1`. -/
+def tailSetup : List Instr :=
+  ptr .r6 InvBatch.aY ++ ptr .r5 aDR ++
+  [.lsr .d .r3 .r29 2, .lsl .r4 .r3 4, .sub .r4 .r4 .r3, .addi .r4 .r4 10, .li .r0 63, .logic .and .r7 .r4 .r0,
+    .lsr .d .r4 .r4 6, .lsl .r4 .r4 3, .add .r5 .r5 .r4, .addi .r8 .r3 1, .li .r9 0, .li .r12 1]
+
+/-- `r12 := 2^T`, by `T` (`r7`) doublings. -/
+def pow2T : Prog isa := .ite (.zero .d .r7) (.block []) (countLoop .r7 [.add .r12 .r12 .r12])
+
+/-- One word of `y 2^T` (`2^T` in `r12`): the word at `r6` times `2^T`, its low
+word with the carry `r9` in to `r5`, its high word the carry out. -/
+def shlBody : List Instr :=
+  [.load .d .r0 .r6 0, .mulhu .r3 .r0 .r12, .mul .r0 .r0 .r12, .logic .or .r0 .r0 .r9, .store .d .r0 .r5 0,
+    .addi .r9 .r3 0, .addi .r5 .r5 8, .addi .r6 .r6 8]
+
+/-- `y := y 2^K mod p`, for `y < p` of `ν` words in array 3: `y 2^K`, `y`'s
+`ν + 1` words times `2^T` into the zeroed `aDR` at word `Q`, divided by `p`
+(array 8, copied to array 4 with its top word made not zero) into the zeroed
+array 3, through array 5 and the save area `aDQ` (`KeyDiv.divW`). -/
+def tail : Prog isa := seqs [InvBatch.zeroW aDR, .block tailSetup, pow2T, countLoop .r8 shlBody,
+  InvBatch.zeroW InvBatch.aY, copy InvBatch.aF InvBatch.aMin, .block (KeyDiv.fixTop InvBatch.aF),
+  KeyDiv.divW aDR InvBatch.aY InvBatch.aF InvBatch.aG aDQ]
+
 /-- `d` divided by `[a]` (`p` or `q`) with its low bit cleared, by words, the
 remainder in `[r]`: `[a]` copied to `aDD`, its top word made not zero
 (`KeyDiv.fixTop`), `aDQ` the save area (`KeyDiv.divW`). -/
@@ -195,9 +221,9 @@ def arith : Prog isa := seqs ([
   .ite (.zero .d .r0) (copy aDT aZero) (seqs [copy aDD aP, .block (orOne aDD ++ setOne aDR3),
     MontKey.montMul aDT aDQ aDR3 aDD aDR2 .r20 MontKey.cntW]),
   eqS sE2 aDT aZero] ++ invSetup ++ [
-  VG.Impl.Rsa.PPC64LE.InvBatch.inverse, eqS sE3 1 aOne,
+  .block shape, .ite (.zero .d .r0) InvBatch.inverseS InvBatch.inverse, eqS sE3 1 aOne,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
-  .block shape, .ite (.zero .d .r0) (seqs (divW aP aDR2 ++ divW aQ aDR3))
+  .block shape, .ite (.zero .d .r0) (seqs (tail :: (divW aP aDR2 ++ divW aQ aDR3)))
     (seqs (divB .r20 aP aDR2 ++ divB .r22 aQ aDR3))])
 
 /-- `[j]`'s low `r8` bytes to `r5`, most significant first, masked by `r9`. -/

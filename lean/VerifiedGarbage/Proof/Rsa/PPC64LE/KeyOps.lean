@@ -266,7 +266,7 @@ theorem copy_ok {s : State} {B : Addr} {Z w N o a : Nat} (h : Ws s B Z w N)
         lsr1_ofNat (show w < 2 ^ 64 by omega_arith)]) (by decide)) fun x ⟨⟨x5, x6, x8, xm⟩, kx⟩ => ?_
     have hx := hu.of_keep kx
     refine WP.mono (copyWLoop_ok hx.scr x5 x6 x8 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-      (aheadW hev (ahead_of_ne hoa))) fun t' ⟨v, out, kt'⟩ => ?_
+      (aheadW hev (ahead_of_ne hoa))) fun t' ⟨v, out, kt', _⟩ => ?_
     have mt : t.mem = s.mem := rfl
     rw [xm, mu, mt] at v out
     exact post t' (by simpa only [show 8 * (w / 2) = 4 * w by omega_arith] using out) (hx.of_keep kt')

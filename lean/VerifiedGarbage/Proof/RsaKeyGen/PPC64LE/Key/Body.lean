@@ -78,8 +78,25 @@ theorem slot_flag {m : Mem} {B : Addr} {d x : Nat} {c : Prop} [Decidable c] (h :
     (hx : x = if c then 1 else 0) : slot m B d = if decide c then 1 else 0 := by
   rw [h, hx]; by_cases hc : c <;> simp [hc]
 
-theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
-    WP isa body s fun t => BodyPost s0 t ∧ Keep bodyAll s t := by
+/-- The body up to `L` (`lcmPart`, which calls the inverse). -/
+abbrev bodyL : List (Prog isa) := setup :: loads :: (consts ++ [primes, lcmPart])
+
+/-- From `qInv` (`qinvPart`, which calls the inverse) on. -/
+abbrev bodyT : List (Prog isa) := [crtPart, nPart, maskPart, stores]
+
+/-- `w` and the stride in `r29` and `r30`. -/
+def WReg (s0 t : State) : Prop :=
+  t.gpr .r29 = BitVec.ofNat 64 (kW s0) ∧ t.gpr .r30 = BitVec.ofNat 64 (VG.Proof.Rsa.KeyWorkspace.S (kW s0))
+
+/-- `body_ok` with the base, the arguments and `WReg` after each phase that calls the
+inverse (`lcmPart`, `dPart`, `qinvPart`), which reloads the arguments'
+registers from memory: where the constant-time proof (`CT.lean`) pins them
+again. -/
+theorem body_cut_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
+    WP isa (seqs bodyL) s fun t5 => Base s0 t5 ∧ Args s0 t5 ∧ WReg s0 t5 ∧
+      WP isa dPart t5 fun t6 => Base s0 t6 ∧ Args s0 t6 ∧ WReg s0 t6 ∧
+      WP isa (seqs [smallPart, qinvPart]) t6 fun t8 => Base s0 t8 ∧ Args s0 t8 ∧ WReg s0 t8 ∧
+      WP isa (seqs bodyT) t8 fun t => BodyPost s0 t ∧ Keep bodyAll s t := by
   have p := kpre h.pre
   obtain ⟨-, hw16, hw256, hlw, h4⟩ := pre_ws h.pre
   have l1 := p.l1
@@ -99,7 +116,7 @@ theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
     exact Nat.lt_of_lt_of_le this (by
       rw [show (2 : Nat) ^ 64 = 256 ^ 8 by decide]; exact Nat.pow_le_pow_right (by decide) el8)
   have hW : 32 * kW s0 = 16 * kL s0 := by omega_arith
-  rw [body_eq, wp_seqs_cons (List.cons_ne_nil _ _)]
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (setup_ok h ha.r22) fun t1 ⟨b1, w1, k1, r1⟩ => ?_
   have a1 := ha.of_keep r1
   rw [wp_seqs_cons (by simp [consts])]
@@ -134,7 +151,6 @@ theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   -- `L`.
   have h22 : t4.gpr .r22 = BitVec.ofNat 64 (kL s0) := by
     rw [a4.r22]; exact VG.Proof.Rsa.PPC64LE.CrtValues.ofNat_toNat64 _
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (lcmPart_ok w4 k4 h22 (by omega_arith) (by omega_arith) hW (by omega_arith) h4 (by rw [vPm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hP)
     (by rw [vQm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hQ)
     (by vsimp [o4, one3]) (by vsimp [o4, o3, two3]) (by vsimp [o4, three3]) (by vsimp [o4, zero3]))
@@ -142,15 +158,16 @@ theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   have b5 := b4.of_phase f5 r5
   have a5 := a4.of_keep r5
   rw [vPm, vQm] at vL
+  refine ⟨b5, a5, ⟨w5.r29, w5.r30⟩, ?_⟩
   -- `d`.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (dPart_ok w5 k5 (by omega_arith) (by vsimp [o5, o4, e3]; exact hel) (by vsimp [o5, o4, one3])
+  refine WP.mono (dPart_ok w5 k5 (by omega_arith) (by omega_arith) (by vsimp [o5, o4, e3]; exact hel) (by vsimp [o5, o4, one3])
     (by vsimp [o5, o4, two3]) (by vsimp [o5, o4, three3]) (by vsimp [o5, o4, zero3]))
     fun t6 ⟨w6, ⟨V6, F6, k6, o6, p6, x3, x5, x6, vD⟩, f6, r6⟩ => ?_
   have b6 := b5.of_phase f6 r6
   have a6 := a5.of_keep r6
   have eE5 : V5 aE = eIn s0 := by vsimp [o5, o4, e3]
   simp only [eE5, vL] at x3 x5 x6 vD
+  refine ⟨b6, a6, ⟨w6.r29, w6.r30⟩, ?_⟩
   -- Small.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (smallPart_ok w6 k6 (flag_le x6)) fun t7 ⟨w7, ⟨V7, F7, k7, o7, p7, x7⟩, f7, r7⟩ => ?_
@@ -159,15 +176,16 @@ theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   have vC6 : V6 aC = 2 ^ (8 * kL s0) + 1 := by vsimp [o6, o5, o4, c3]
   simp only [x6, vC6] at x7
   -- `qInv`.
-  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   have vP7 : V7 aP = kP s0 := by vsimp [o7, o6, o5, vP]
   have vQ7 : V7 aQ = kQ s0 := by vsimp [o7, o6, o5, vQ]
   refine WP.mono (qinvPart_ok w7 k7 (by vsimp [o7, o6, o5, o4, one3]) (by vsimp [o7, o6, o5, o4, three3])
-    (by vsimp [o7, o6, o5, o4, zero3]) (by omega_arith) (by rw [a7.r22, ← a4.r22]; exact h22) (by omega_arith) h4
+    (by vsimp [o7, o6, o5, o4, zero3]) (by omega_arith) (by omega_arith) (by rw [a7.r22, ← a4.r22]; exact h22)
+    (by omega_arith) h4
     (by omega_arith) (by omega_arith) (by rw [vP7]; exact hP) (by rw [vQ7]; exact hQ)) fun t8 ⟨w8, ⟨V8, F8, k8, o8, p8, y0, y1, xl, xd⟩, f8, r8⟩ => ?_
   have b8 := b7.of_phase f8 r8
   have a8 := a7.of_keep r8
   simp only [vP7, vQ7] at y0 y1 xl xd
+  refine ⟨b8, a8, ⟨w8.r29, w8.r30⟩, ?_⟩
   -- `dP`, `dQ`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (crtPart_ok w8 k8 (by vsimp [o8, o7, o6, o5, o4, one3]) (by vsimp [o8, o7, o6, o5, o4, zero3]))
@@ -227,5 +245,16 @@ theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   · rw [k11.arrs _ (by decide)]; vsimp [o11, o10, o9]
   · exact (((((((((((r1.trans r2).trans r3).trans r4).trans r5).trans r6).trans r7).trans r8).trans r9).trans
       r10).trans r11).trans kt).mono
+
+theorem body_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
+    WP isa body s fun t => BodyPost s0 t ∧ Keep bodyAll s t := by
+  rw [body_eq, show setup :: loads :: (consts ++ [primes, lcmPart, dPart, smallPart, qinvPart, crtPart, nPart,
+      maskPart, stores]) = bodyL ++ ([dPart] ++ ([smallPart, qinvPart] ++ bodyT)) by simp,
+    wp_seqs_append (by simp) (by simp)]
+  refine WP.mono (body_cut_ok h ha) fun _ ⟨_, _, _, w⟩ => ?_
+  rw [wp_seqs_append (by simp) (by simp)]
+  refine WP.mono w fun _ ⟨_, _, _, w'⟩ => ?_
+  rw [wp_seqs_append (by simp) (by simp)]
+  exact WP.mono w' fun _ ⟨_, _, _, w''⟩ => w''
 
 end VG.Proof.RsaKeyGen.PPC64LE.Key

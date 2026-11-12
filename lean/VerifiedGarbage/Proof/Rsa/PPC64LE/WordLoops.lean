@@ -179,7 +179,7 @@ theorem copyWLoop_ok {s : State} {B : Addr} {Z dO dA m : Nat} (hs : Scr s B Z)
     (hm : 1 ≤ m) (hm' : m < 2 ^ 32) (hO : dO + 8 * m ≤ Z) (hA : dA + 8 * m ≤ Z) (aA : AheadW dO dA m) :
     WP isa (countLoop .r8 copyWBody) s fun t =>
       wordsVal t.mem B dO m = wordsVal s.mem B dA m ∧ Outside B dO (8 * m) s.mem t.mem ∧
-      Keep loopRegs s t := by
+      Keep loopRegs s t ∧ t.gpr .r5 = off B (dO + 8 * m) := by
   have hnw := hs.nowrap
   let Inv : Nat → State → Prop := fun i t =>
     t.gpr .r5 = off B (dO + 8 * i) ∧ t.gpr .r6 = off B (dA + 8 * i) ∧
@@ -188,7 +188,7 @@ theorem copyWLoop_ok {s : State} {B : Addr} {Z dO dA m : Nat} (hs : Scr s B Z)
     (cnt := .r8) (N := m) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨j5, j6, jout, jeq, jk⟩ hc => ?_)
     ⟨by rw [h5]; rfl, by rw [h6]; rfl, Outside.refl _ _ _ _, rfl, Keep.refl _ _⟩ h8)
-    fun t ⟨_, _, jout, jeq, jk⟩ => ⟨jeq, jout, jk⟩
+    fun t ⟨j5, _, jout, jeq, jk⟩ => ⟨jeq, jout, jk, j5⟩
   have hst : WP isa (.block (copyWBody ++ ([.subi .r8 .r8 1] : List Instr))) t fun t' =>
       (t'.gpr .r5 = off B (dO + 8 * i + 8) ∧ t'.gpr .r6 = off B (dA + 8 * i + 8) ∧
         t'.gpr .r8 = t.gpr .r8 - BitVec.ofNat 64 1 ∧
