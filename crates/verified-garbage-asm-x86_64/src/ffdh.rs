@@ -455,6 +455,8 @@ pub const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES: verified_garbage_cpu:
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -550,7 +552,7 @@ jne 220b
 22:
 .base64 "SYtEJHBIg/gE"
 je 20b
-.base64 "SYtUJHhJi0wkWEmLRCRwTYtkJCBIiQrD"
+.base64 "SYtUJHhJi0wkWEmLRCRwTYtkJCBIiQpmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkuPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkSInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_ffdh_generate_key_cached_adx = sym super::ffdh::vg_ffdh_generate_key_cached_adx::vg_ffdh_generate_key_cached_adx,
     )
@@ -1354,6 +1356,8 @@ jmp 281f
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -1448,7 +1452,7 @@ jne 220b
 22:
 .base64 "SYtEJHBIg/gE"
 je 20b
-.base64 "SYtUJHhJi0wkWEmLRCRwTYtkJCBIiQrD"
+.base64 "SYtUJHhJi0wkWEmLRCRwTYtkJCBIiQpmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkuPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkSInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_ffdh_generate_key_cached = sym super::ffdh::vg_ffdh_generate_key_cached::vg_ffdh_generate_key_cached,
     )

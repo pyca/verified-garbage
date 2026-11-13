@@ -61,6 +61,8 @@ pub unsafe fn vg_ffdh_generate_key_precompute_auto(_dit: verified_garbage_cpu::D
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_generate_key_search_cached_adx` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES`); or else `vg_ffdh_generate_key_search_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.

@@ -86,12 +86,13 @@ def artifacts : List Artifact :=
       verified := Proof.Ffdh.X86_64.Cached.precomputeCode_verified v
       spSafe := Proof.Ffdh.X86_64.Cached.precomputeCode_sp v }
     (Proof.Ffdh.X86_64.Scrub.generationPrecomputeOut 8 Impl.Ffdh.X86_64.VettedValidation.tableConsts)),
-    Spec.Ffdh.cachedKeySearchApi.artifact X86_64.target {
+    Spec.Ffdh.cachedKeySearchApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       stack := 72
       code := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode v
       verified := Proof.Ffdh.X86_64.Cached.SearchProof.key_verified v
-      spSafe := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode_sp v }]) ++
+      spSafe := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode_sp v }
+      (Proof.Ffdh.X86_64.Scrub.cachedKeySearchOut _))]) ++
   direct ++
   (VG.Proof.Variants.FfdhExp.X86_64.variants.flatMap fun v2 =>
     VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++

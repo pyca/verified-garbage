@@ -134,4 +134,41 @@ theorem sievedParameterSearchOut (stack : Nat) (cs : List (String × List (BitVe
       · exact h
       · exact toNat_sw cs outLen
 
+theorem cachedKeySearchOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
+    PostOut (Spec.Ffdh.cachedKeySearchContract (abi.withConsts cs) stack)
+      (Spec.Ffdh.cachedKeySearchSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen hp hb h => by
+    obtain ⟨x, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 14) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨xLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨y, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨yLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨used, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    iterate 7
+      obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+      replace hlen := Nat.succ.inj hlen
+    obtain ⟨state, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    iterate 2
+      obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+      replace hlen := Nat.succ.inj hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero hlen
+    simp only [Spec.Ffdh.cachedKeySearchSig, Spec.Ffdh.keySearchSig, List.cons_append, List.nil_append,
+      Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size] at hb
+    change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+    change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+    change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+    dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+    have ex : ∀ X, X = xLen.toNat → Spec.Rsa.bytesAt m₂ x X = Spec.Rsa.bytesAt m₁ x X :=
+      fun X hX => hX ▸ bytesAt_of hb.1
+    have ey : ∀ X, X = yLen.toNat → Spec.Rsa.bytesAt m₂ y X = Spec.Rsa.bytesAt m₁ y X :=
+      fun X hX => hX ▸ bytesAt_of hb.2.1
+    rw [ex _ (by rw [← hp.2.2.1]; exact toNat_sw cs xLen), ey _ (by rw [← hp.2.2.2.1]; exact toNat_sw cs yLen),
+      wordsAt_of hb.2.2.2.2.2.2.1, wordsAt_of hb.2.2.1]
+    exact h
+
 end VG.Proof.Ffdh.X86_64.Scrub
