@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
@@ -138,20 +139,22 @@ def artifacts : List Artifact := [
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified_ifma hasLaw.law (Proof.P256.gtabOk9 hasLaw.law)
       hasLaw.inv hasLaw.prime }
-    (Proof.Ecdsa.Verify.X86_64.verifyHashOut_consts Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts 96)),
-  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target {
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts)),
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.jointVerifyP256
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime },
-  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target {
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts)),
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified_adx hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime }] ++
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.X86_64

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
@@ -115,20 +117,22 @@ namespace VG.Artifacts.EcdsaP384.X86_64
 open VG.Proof.P384.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target {
+  Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.jointVerifyP384
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.P384.verifyHash_verified hasLaw.law (Proof.P384.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime },
-  Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target {
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P384.inst Impl.P384.X86_64.p384v.combConsts)),
+  Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.P384.verifyHash_verified_adx hasLaw.law (Proof.P384.gtabOk9 hasLaw.law)
       hasLaw.inv
-      hasLaw.prime }] ++
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P384.inst Impl.P384.X86_64.p384v.combConsts))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP384.X86_64

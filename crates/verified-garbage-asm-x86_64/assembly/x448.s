@@ -125,6 +125,21 @@ vg_x448_exchange_adx:
 	shr rcx, 63
 	xor rcx, 1
 	mov rax, rcx
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5155,6 +5170,21 @@ vg_x448_exchange:
 	shr rcx, 63
 	xor rcx, 1
 	mov rax, rcx
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 

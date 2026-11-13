@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Xts.Contract
 public import VerifiedGarbage.Spec.Xts.OutOfPlace
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.UnitTo.Verified
@@ -16,7 +17,8 @@ import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
 counterparts over an implementation of the whole-block functions
 (`AesXts.X86_64.XtsImpl`), each followed by `Impl.Scrub.X86_64.scrubTail`
 (`X86_64.Scrub.withScrub`) where the implementation gives the residue
-analysis of the instance (`XtsImpl.encUnitRes`, …). Their postconditions
+analysis of the instance (`XtsImpl.encUnitRes`, …), and otherwise with its
+16 or 24 bytes of stack wiped (`X86_64.RScrub.withScrubOrAll`). Their postconditions
 read the memory on return only within the buffers (`X86_64.Scrub.PostOut`):
 the data, or the output as long as the input, which the out-of-place
 functions' precondition requires.
@@ -88,7 +90,7 @@ open VG.X86_64.RScrub VG.Proof.AesXts.X86_64
 
 /-- `vg_aes_xts_encrypt_unit` over `v`. -/
 def encryptUnitReg (v : XtsImpl) : Registration Spec.Xts.aesEncryptUnitApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesXts.X86_64Unit.encrypt v.xts
     stack := 16
@@ -97,7 +99,7 @@ def encryptUnitReg (v : XtsImpl) : Registration Spec.Xts.aesEncryptUnitApi X86_6
 
 /-- `vg_aes_xts_decrypt_unit` over `v`. -/
 def decryptUnitReg (v : XtsImpl) : Registration Spec.Xts.aesDecryptUnitApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesXts.X86_64Unit.decrypt v.xts
     stack := 16
@@ -106,7 +108,7 @@ def decryptUnitReg (v : XtsImpl) : Registration Spec.Xts.aesDecryptUnitApi X86_6
 
 /-- `vg_aes_xts_encrypt_unit_to` over `v`. -/
 def encryptUnitToReg (v : XtsImpl) : Registration Spec.Xts.aesEncryptUnitToApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesXts.X86_64UnitTo.encrypt v.xts (UnitTo.UnitImpl.of v).xt
     stack := 24
@@ -115,7 +117,7 @@ def encryptUnitToReg (v : XtsImpl) : Registration Spec.Xts.aesEncryptUnitToApi X
 
 /-- `vg_aes_xts_decrypt_unit_to` over `v`. -/
 def decryptUnitToReg (v : XtsImpl) : Registration Spec.Xts.aesDecryptUnitToApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesXts.X86_64UnitTo.decrypt v.xts (UnitTo.UnitImpl.of v).xt
     stack := 24

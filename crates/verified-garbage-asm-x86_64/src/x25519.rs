@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_x25519_exchange_ifma` requires (`Artifact.features`).
-pub const VG_X25519_EXCHANGE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_X25519_EXCHANGE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -19,13 +21,13 @@ pub const VG_X25519_EXCHANGE_IFMA_FEATURES: verified_garbage_cpu::Features = ver
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512ifma`, `avx512vl`, `avx512f`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x25519_ifma}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTo8w9/RCQITIkcJEiNZCQYicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_x25519_ifma = sym super::x25519::vg_x25519_ifma::vg_x25519_ifma,
     )
@@ -37,6 +39,8 @@ pub const VG_X25519_EXCHANGE_ADX_FEATURES: verified_garbage_cpu::Features = veri
 /// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -53,7 +57,7 @@ pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange_adx(out: *mut [u8; 32], 
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x25519_adx}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_x25519_adx = sym super::x25519::vg_x25519_adx::vg_x25519_adx,
     )
@@ -62,6 +66,8 @@ call {vg_x25519_adx}
 /// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -77,7 +83,7 @@ pub(crate) unsafe extern "sysv64" fn vg_x25519_exchange(out: *mut [u8; 32], scal
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x25519}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
     )
@@ -160,6 +166,8 @@ pub const VG_X25519_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verified
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -210,7 +218,7 @@ jmp 25f
 jne 21b
 .base64 "TIuHgAAAAEwDR2BMi4+IAAAATBNPaEyLl5AAAABME1dwTIufmAAAAEwTX3hIGcBIg+AmSQHASYPRAEmD0gBJg9MASBnASIPgJkkBwEyJR0BMiU9ITIlXUEyJX1hMi4eAAAAATCtHYEyLj4gAAABMG09oTIuXkAAAAEwbV3BMi5+YAAAATBtfeEgZwEiD4CZJKcBJg9kASYPaAEmD2wBIGcBIg+AmSSnATImHgAAAAEyJj4gAAABMiZeQAAAATImfmAAAAA=="
 call {vg_gf25519_r64_invert}
-.base64 "SIuXIAIAADHtxGK79k9AxGL79ldIZkwPOPbIxGL79l9QZkwPOPbQxGL79mdYZkwPOPbYZkwPOPblSIuXKAIAADHtxOL79k9A80wPOPbIZkwPOPbRxOL79k9I80wPOPbQZkwPOPbZxOL79k9Q80wPOPbYZkwPOPbhxGL79m9Y80wPOPbgZkwPOPbt80wPOPbtSIuXMAIAADHtxOL79k9A80wPOPbQZkwPOPbZxOL79k9I80wPOPbYZkwPOPbhxOL79k9Q80wPOPbgZkwPOPbpxGL79ndY80wPOPboZkwPOPb180wPOPb1SIuXOAIAADHtxOL79k9A80wPOPbYZkwPOPbhxOL79k9I80wPOPbgZkwPOPbpxOL79k9Q80wPOPboZkwPOPbxxGL79n9Y80wPOPbwZkwPOPb980wPOPb9uiYAAAAx7cTC+/bM80wPOPbAZkwPOPbJxML79s3zTA849shmTA849tHEwvv2zvNMDzj20GZMDzj22cRC+/bn80wPOPbYZkwPOPbl80wPOPblSdHjTRHkSdHrSWvEE0kBwEmD0QBJg9IASYPTAEyJR0BMiU9ITIlXUEyJX1hIi5cgAgAAMe3EYrv2T2DEYvv2V2hmTA849sjEYvv2X3BmTA849tDEYvv2Z3hmTA849thmTA849uVIi5coAgAAMe3E4vv2T2DzTA849shmTA849tHE4vv2T2jzTA849tBmTA849tnE4vv2T3DzTA849thmTA849uHEYvv2b3jzTA849uBmTA849u3zTA849u1Ii5cwAgAAMe3E4vv2T2DzTA849tBmTA849tnE4vv2T2jzTA849thmTA849uHE4vv2T3DzTA849uBmTA849unEYvv2d3jzTA849uhmTA849vXzTA849vVIi5c4AgAAMe3E4vv2T2DzTA849thmTA849uHE4vv2T2jzTA849uBmTA849unE4vv2T3DzTA849uhmTA849vHEYvv2f3jzTA849vBmTA849v3zTA849v26JgAAADHtxML79szzTA849sBmTA849snEwvv2zfNMDzj2yGZMDzj20cTC+/bO80wPOPbQZkwPOPbZxEL79ufzTA849thmTA849uXzTA849uVJ0eNNEeRJ0etJa8QTSQHASYPRAEmD0gBJg9MATIlHYEyJT2hMiVdwTIlfeEyLR0BMi09ITItXUEyLX1hMidhIweg/SLr/////////f0kh07kAAAAASCnBSIPhE0kByEmD0QBJg9IASYPTAE2JxEmDxBNNic1Jg9UATYnWSYPWAE2J30mD1wBMifhIweg/SSHXuQAAAABIKcFNMcRJIcxNMeBNMc1JIc1NMelNMdZJIc5NMfJNMd9JIc9NMftIifpIi38wSIsaSItqCEyLYhBMi2oYTItyIEyLeihMiQdMiU8ITIlXEEyJXxjD"
+.base64 "SIuXIAIAADHtxGK79k9AxGL79ldIZkwPOPbIxGL79l9QZkwPOPbQxGL79mdYZkwPOPbYZkwPOPblSIuXKAIAADHtxOL79k9A80wPOPbIZkwPOPbRxOL79k9I80wPOPbQZkwPOPbZxOL79k9Q80wPOPbYZkwPOPbhxGL79m9Y80wPOPbgZkwPOPbt80wPOPbtSIuXMAIAADHtxOL79k9A80wPOPbQZkwPOPbZxOL79k9I80wPOPbYZkwPOPbhxOL79k9Q80wPOPbgZkwPOPbpxGL79ndY80wPOPboZkwPOPb180wPOPb1SIuXOAIAADHtxOL79k9A80wPOPbYZkwPOPbhxOL79k9I80wPOPbgZkwPOPbpxOL79k9Q80wPOPboZkwPOPbxxGL79n9Y80wPOPbwZkwPOPb980wPOPb9uiYAAAAx7cTC+/bM80wPOPbAZkwPOPbJxML79s3zTA849shmTA849tHEwvv2zvNMDzj20GZMDzj22cRC+/bn80wPOPbYZkwPOPbl80wPOPblSdHjTRHkSdHrSWvEE0kBwEmD0QBJg9IASYPTAEyJR0BMiU9ITIlXUEyJX1hIi5cgAgAAMe3EYrv2T2DEYvv2V2hmTA849sjEYvv2X3BmTA849tDEYvv2Z3hmTA849thmTA849uVIi5coAgAAMe3E4vv2T2DzTA849shmTA849tHE4vv2T2jzTA849tBmTA849tnE4vv2T3DzTA849thmTA849uHEYvv2b3jzTA849uBmTA849u3zTA849u1Ii5cwAgAAMe3E4vv2T2DzTA849tBmTA849tnE4vv2T2jzTA849thmTA849uHE4vv2T3DzTA849uBmTA849unEYvv2d3jzTA849uhmTA849vXzTA849vVIi5c4AgAAMe3E4vv2T2DzTA849thmTA849uHE4vv2T2jzTA849uBmTA849unE4vv2T3DzTA849uhmTA849vHEYvv2f3jzTA849vBmTA849v3zTA849v26JgAAADHtxML79szzTA849sBmTA849snEwvv2zfNMDzj2yGZMDzj20cTC+/bO80wPOPbQZkwPOPbZxEL79ufzTA849thmTA849uXzTA849uVJ0eNNEeRJ0etJa8QTSQHASYPRAEmD0gBJg9MATIlHYEyJT2hMiVdwTIlfeEyLR0BMi09ITItXUEyLX1hMidhIweg/SLr/////////f0kh07kAAAAASCnBSIPhE0kByEmD0QBJg9IASYPTAE2JxEmDxBNNic1Jg9UATYnWSYPWAE2J30mD1wBMifhIweg/SSHXuQAAAABIKcFNMcRJIcxNMeBNMc1JIc1NMelNMdZJIc5NMfJNMd9JIc9NMftIifpIi38wSIsaSItqCEyLYhBMi2oYTItyIEyLeihMiQdMiU8ITIlXEEyJXxjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjWQkCDHAMckx0jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_ed25519_r64_double_ext_adx = sym super::ed25519::vg_ed25519_r64_double_ext_adx::vg_ed25519_r64_double_ext_adx,
         vg_ed25519_r64_add_affine_ext_adx = sym super::ed25519::vg_ed25519_r64_add_affine_ext_adx::vg_ed25519_r64_add_affine_ext_adx,
@@ -222,6 +230,8 @@ call {vg_gf25519_r64_invert}
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -270,7 +280,7 @@ jmp 25f
 jne 21b
 .base64 "TIuHgAAAAEwDR2BMi4+IAAAATBNPaEyLl5AAAABME1dwTIufmAAAAEwTX3hIGcBIg+AmSQHASYPRAEmD0gBJg9MASBnASIPgJkkBwEyJR0BMiU9ITIlXUEyJX1hMi4eAAAAATCtHYEyLj4gAAABMG09oTIuXkAAAAEwbV3BMi5+YAAAATBtfeEgZwEiD4CZJKcBJg9kASYPaAEmD2wBIGcBIg+AmSSnATImHgAAAAEyJj4gAAABMiZeQAAAATImfmAAAAA=="
 call {vg_gf25519_r64_invert}
-.base64 "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"
+.base64 "QbgAAAAAQbkAAAAAQboAAAAAQbsAAAAASItPQL0AAAAASIuHIAIAAEj34UgB6EiD0gBJAcBIg9IASInVSIuHKAIAAEj34UgB6EiD0gBJAcFIg9IASInVSIuHMAIAAEj34UgB6EiD0gBJAcJIg9IASInVSIuHOAIAAEj34UgB6EiD0gBJAcNIg9IASInVSYnsSItPSL0AAAAASIuHIAIAAEj34UgB6EiD0gBJAcFIg9IASInVSIuHKAIAAEj34UgB6EiD0gBJAcJIg9IASInVSIuHMAIAAEj34UgB6EiD0gBJAcNIg9IASInVSIuHOAIAAEj34UgB6EiD0gBJAcRIg9IASInVSYntSItPUL0AAAAASIuHIAIAAEj34UgB6EiD0gBJAcJIg9IASInVSIuHKAIAAEj34UgB6EiD0gBJAcNIg9IASInVSIuHMAIAAEj34UgB6EiD0gBJAcRIg9IASInVSIuHOAIAAEj34UgB6EiD0gBJAcVIg9IASInVSYnuSItPWL0AAAAASIuHIAIAAEj34UgB6EiD0gBJAcNIg9IASInVSIuHKAIAAEj34UgB6EiD0gBJAcRIg9IASInVSIuHMAIAAEj34UgB6EiD0gBJAcVIg9IASInVSIuHOAIAAEj34UgB6EiD0gBJAcZIg9IASInVSYnvuSYAAAC9AAAAAEyJ4Ej34UgB6EiD0gBJAcBIg9IASInVTInoSPfhSAHoSIPSAEkBwUiD0gBIidVMifBI9+FIAehIg9IASQHCSIPSAEiJ1UyJ+Ej34UgB6EiD0gBJAcNIg9IASInVSInoSPfhSdHjSBntSdHrSIPlE0gB6EkBwEmD0QBJg9IASYPTAEyJR0BMiU9ITIlXUEyJX1hBuAAAAABBuQAAAABBugAAAABBuwAAAABIi09gvQAAAABIi4cgAgAASPfhSAHoSIPSAEkBwEiD0gBIidVIi4coAgAASPfhSAHoSIPSAEkBwUiD0gBIidVIi4cwAgAASPfhSAHoSIPSAEkBwkiD0gBIidVIi4c4AgAASPfhSAHoSIPSAEkBw0iD0gBIidVJiexIi09ovQAAAABIi4cgAgAASPfhSAHoSIPSAEkBwUiD0gBIidVIi4coAgAASPfhSAHoSIPSAEkBwkiD0gBIidVIi4cwAgAASPfhSAHoSIPSAEkBw0iD0gBIidVIi4c4AgAASPfhSAHoSIPSAEkBxEiD0gBIidVJie1Ii09wvQAAAABIi4cgAgAASPfhSAHoSIPSAEkBwkiD0gBIidVIi4coAgAASPfhSAHoSIPSAEkBw0iD0gBIidVIi4cwAgAASPfhSAHoSIPSAEkBxEiD0gBIidVIi4c4AgAASPfhSAHoSIPSAEkBxUiD0gBIidVJie5Ii094vQAAAABIi4cgAgAASPfhSAHoSIPSAEkBw0iD0gBIidVIi4coAgAASPfhSAHoSIPSAEkBxEiD0gBIidVIi4cwAgAASPfhSAHoSIPSAEkBxUiD0gBIidVIi4c4AgAASPfhSAHoSIPSAEkBxkiD0gBIidVJie+5JgAAAL0AAAAATIngSPfhSAHoSIPSAEkBwEiD0gBIidVMiehI9+FIAehIg9IASQHBSIPSAEiJ1UyJ8Ej34UgB6EiD0gBJAcJIg9IASInVTIn4SPfhSAHoSIPSAEkBw0iD0gBIidVIiehI9+FJ0eNIGe1J0etIg+UTSAHoSQHASYPRAEmD0gBJg9MATIlHYEyJT2hMiVdwTIlfeEyLR0BMi09ITItXUEyLX1hMidhIweg/SLr/////////f0kh07kAAAAASCnBSIPhE0kByEmD0QBJg9IASYPTAE2JxEmDxBNNic1Jg9UATYnWSYPWAE2J30mD1wBMifhIweg/SSHXuQAAAABIKcFNMcRJIcxNMeBNMc1JIc1NMelNMdZJIc5NMfJNMd9JIc9NMftIifpIi38wSIsaSItqCEyLYhBMi2oYTItyIEyLeihMiQdMiU8ITIlXEEyJXxhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjWQkCDHAMckx0jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_ed25519_r64_double_ext = sym super::ed25519::vg_ed25519_r64_double_ext::vg_ed25519_r64_double_ext,
         vg_ed25519_r64_add_affine_ext = sym super::ed25519::vg_ed25519_r64_add_affine_ext::vg_ed25519_r64_add_affine_ext,
