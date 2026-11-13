@@ -95,17 +95,6 @@ x86_64 vg_aes_siv_init
 x86_64 vg_aes_siv_init_aesni
 x86_64 vg_aes_siv_init_vaes
 x86_64 vg_camellia_ctr_final
-x86_64 vg_cast5_cbc_decrypt_chained
-x86_64 vg_cast5_cbc_encrypt_chained
-x86_64 vg_cast5_cfb64_decrypt
-x86_64 vg_cast5_cfb64_decrypt_final
-x86_64 vg_cast5_cfb64_encrypt
-x86_64 vg_cast5_cfb64_encrypt_final
-x86_64 vg_cast5_ecb_decrypt
-x86_64 vg_cast5_ecb_encrypt
-x86_64 vg_cast5_expand_key
-x86_64 vg_cast5_ofb
-x86_64 vg_cast5_ofb_final
 x86_64 vg_chacha20_poly1305_open
 x86_64 vg_chacha20_poly1305_open_avx2
 x86_64 vg_chacha20_poly1305_open_avx512
