@@ -79,8 +79,9 @@ own changes are rebuilt either way, on top of the restored build.
 * **Changes to `lean/VerifiedGarbage/TCB/` or `Spec/` are trust changes.**
   Keep them minimal (adding an instruction for a measured speedup is fine),
   call them out explicitly in the PR description, and justify each ISA
-  semantics change by citing the vendor manual (e.g. Intel SDM pseudocode). Never weaken a model, contract or `Verified` to make a proof go
-  through: fix the proof or the code. An instruction outside the target's
+  semantics change by citing the vendor manual (e.g. Intel SDM pseudocode).
+  Never weaken a model, contract or `Verified` to make a proof go through:
+  fix the proof or the code. An instruction outside the target's
   baseline ISA must list the CPU features it needs in the model's
   `requires`, citing the manual (the SDM's "CPUID Feature Flag", the Arm
   ARM's `FEAT_*`).
