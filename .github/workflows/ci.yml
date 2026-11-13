@@ -55,10 +55,73 @@ jobs:
       manifest-cache: ${{ steps.keys.outputs.manifest-cache }}
       manifest-cache-prefix: ${{ steps.keys.outputs.manifest-cache-prefix }}
     steps:
+      # The git objects of a recent commit of `main` (`lean-git-*`, which
+      # this job saves on main, below), for the checkout to start from: it
+      # then fetches only the objects that commit lacks, in a couple of
+      # seconds, where GitHub takes 20 s to pack every object of a commit
+      # (12 s to count and compress its 37,000 objects, before sending
+      # 120 MB). A pull request's or the merge queue's run takes the latest
+      # entry; a push to main only today's, so that the day's first push
+      # fetches every object, and saves them as one pack.
+      - name: Name the cache of main's git objects
+        id: git-base
+        working-directory: ${{ github.workspace }}
+        run: echo "key=lean-git-$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+      - name: Restore main's git objects
+        id: git-base-restore
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/git-base
+          key: ${{ steps.git-base.outputs.key }}
+          restore-keys: ${{ github.event_name != 'push' && 'lean-git-' || '' }}
+      # A repository with those objects, as a shallow clone of that commit
+      # that has nothing checked out, which `actions/checkout` then takes
+      # for the workspace's own (the same remote; `clean: false`, or it
+      # would check that commit out first): its fetch offers the commit, a
+      # ref, as one it has. If the action does not take it, it removes it
+      # and fetches everything, as without the cache.
+      - name: Start the checkout from main's git objects
+        working-directory: ${{ github.workspace }}
+        run: |
+          base="$RUNNER_TEMP/git-base"
+          if [ ! -f "$base/sha" ]; then
+            echo "No git objects of main: the checkout fetches every object."
+            exit 0
+          fi
+          sha=$(cat "$base/sha")
+          # Anything that fails only leaves the checkout to fetch every object.
+          if git init -q . &&
+              git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" &&
+              mkdir -p .git/objects/pack &&
+              mv "$base"/pack-* .git/objects/pack/ &&
+              echo "$sha" > .git/shallow &&
+              git update-ref refs/lean-git/base "$sha" &&
+              git update-ref --no-deref HEAD "$sha"; then
+            echo "The checkout starts from the objects of $sha."
+          else
+            echo "::warning::main's git objects could not be used: the checkout fetches every object."
+            rm -rf .git
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          clean: false
       - uses: ./.github/actions/runner-info
+      # On main, the day's first push fetched every object of its commit
+      # (no entry is restored for it, above): one pack, saved for the Lean
+      # jobs of the runs that follow.
+      - name: Collect main's git objects
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.git-base-restore.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/git-base"
+          cp .git/objects/pack/pack-* "$RUNNER_TEMP/git-base/"
+          git rev-parse HEAD > "$RUNNER_TEMP/git-base/sha"
+      - name: Save main's git objects
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.git-base-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/git-base
+          key: ${{ steps.git-base.outputs.key }}
       # The keys of the caches of the build and of its manifest.
       - uses: ./.github/actions/lean-keys
         id: keys
@@ -184,9 +247,44 @@ jobs:
       run:
         working-directory: lean
     steps:
+      # As the `lean` job's: the checkout starts from main's git objects.
+      - name: Name the cache of main's git objects
+        id: git-base
+        working-directory: ${{ github.workspace }}
+        run: echo "key=lean-git-$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+      - name: Restore main's git objects
+        id: git-base-restore
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/git-base
+          key: ${{ steps.git-base.outputs.key }}
+          restore-keys: ${{ github.event_name != 'push' && 'lean-git-' || '' }}
+      - name: Start the checkout from main's git objects
+        working-directory: ${{ github.workspace }}
+        run: |
+          base="$RUNNER_TEMP/git-base"
+          if [ ! -f "$base/sha" ]; then
+            echo "No git objects of main: the checkout fetches every object."
+            exit 0
+          fi
+          sha=$(cat "$base/sha")
+          # Anything that fails only leaves the checkout to fetch every object.
+          if git init -q . &&
+              git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" &&
+              mkdir -p .git/objects/pack &&
+              mv "$base"/pack-* .git/objects/pack/ &&
+              echo "$sha" > .git/shallow &&
+              git update-ref refs/lean-git/base "$sha" &&
+              git update-ref --no-deref HEAD "$sha"; then
+            echo "The checkout starts from the objects of $sha."
+          else
+            echo "::warning::main's git objects could not be used: the checkout fetches every object."
+            rm -rf .git
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          clean: false
       - uses: ./.github/actions/runner-info
       - uses: ./.github/actions/download-artifact
         with:
