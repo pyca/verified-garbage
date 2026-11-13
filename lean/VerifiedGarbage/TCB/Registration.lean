@@ -274,6 +274,14 @@ structure Artifact where
   says when the dispatcher may choose the implementation, and means nothing
   for a base, which the dispatcher falls back on. -/
   vendor : Option String := none
+  /-- Microarchitectures (`verified_garbage_cpu::TUNING`), by their names,
+  on which its function's dispatcher never chooses it, but tries the next
+  implementation: the cores it is measured slower on than the one it falls
+  through to. Not for a base, which the dispatcher falls back on. Like
+  `extra`, it is not trusted: it only says when the dispatcher may choose the
+  implementation, and keeping one from being chosen can only leave another
+  the CPU can run, the base at last, which needs no feature. -/
+  notWith : List String := []
   /-- A proof that the function returns without secret residue
   (`Target.noResidue`), or `none`. Every artifact of a target that defines
   it has one, but those `ci/residue_allowlist.txt` lists, as the emitter
@@ -415,6 +423,8 @@ structure Registration (api : Api) (target : Target) where
   extra : List String := []
   /-- `Artifact.vendor`. -/
   vendor : Option String := none
+  /-- `Artifact.notWith`. -/
+  notWith : List String := []
   /-- `Artifact.residue`. -/
   residue : Option (PLift (target.noResidue.elim False fun R =>
       R code contract (api.sig.retBits ((target.abi.withConsts consts).withTables api.sig tables).ptrBits)))
@@ -455,6 +465,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   writtenOk := r.writtenOk
   extra := r.extra
   vendor := r.vendor
+  notWith := r.notWith
   residue := r.residue
 
 end VG

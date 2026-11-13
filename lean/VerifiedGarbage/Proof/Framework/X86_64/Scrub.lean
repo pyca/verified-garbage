@@ -1648,6 +1648,7 @@ def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     rw [hw]; exact fun _ _ _ _ _ => True.intro
   extra := r.extra
   vendor := r.vendor
+  notWith := r.notWith
   residue := some ⟨scrubCodeE_noResidue r v ks hd hst h8 hlv hmx hrb hpost hres he⟩
 
 /-- `Code.all p` implies `Code.all q` if `p` implies `q`. -/
