@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Final
+public import VerifiedGarbage.Proof.Aes.X86_64.FinalScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
@@ -12,21 +13,9 @@ public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 
 namespace VG.Artifacts.AesCtr.X86_64
 
-open VG.Proof.AesCtr.X86_64
-
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
-    Spec.Ctr.aesApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.AesCtr.X86_64.crypt v.callee
-      stack := 8
-      verified := Proof.AesCtr.keyed (crypt_verified v)
-      spSafe := crypt_spSafe v },
-    Spec.Ctr.aesFinalApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackArgScratchWiped 80 0 8 (Impl.AesCtr.X86_64.cryptFinal v.callee v.suffix)
-      stack := 96
-      verified := Proof.AesCtr.final_keyed (cryptFinal_framed v)
-      spSafe := cryptFinal_framed_spSafe v }]
+    Spec.Ctr.aesApi.artifact X86_64.target (Proof.Aes.X86_64.FinalScrub.ctrReg v),
+    Spec.Ctr.aesFinalApi.artifact X86_64.target (Proof.Aes.X86_64.FinalScrub.ctrFinalReg v)]
 
 end VG.Artifacts.AesCtr.X86_64

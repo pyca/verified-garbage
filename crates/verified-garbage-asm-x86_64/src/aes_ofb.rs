@@ -49,6 +49,8 @@ pub const VG_AES_OFB_FINAL_VAES_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -76,7 +78,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
+.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJLDF/n9EJDDF/n9EJBDzD38EJEiNZCRQMcAxyTHSMfYx/0UxwEUx0sM="
 .p2align 6"#,
         vg_aes_ofb_vaes_core = sym super::aes_ofb::vg_aes_ofb_vaes_core::vg_aes_ofb_vaes_core,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
@@ -129,6 +131,8 @@ pub const VG_AES_OFB_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -156,7 +160,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
+.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJLDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRQMcAxyTHSMfYx/0UxwEUx0sM="
 .p2align 6"#,
         vg_aes_ofb_aesni_core = sym super::aes_ofb::vg_aes_ofb_aesni_core::vg_aes_ofb_aesni_core,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
@@ -202,6 +206,8 @@ jmp 21f
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -228,7 +234,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
+.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRAZg/vwEUx20iNZCSw8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkUDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_aes_ofb_core = sym super::aes_ofb::vg_aes_ofb_core::vg_aes_ofb_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,

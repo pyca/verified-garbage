@@ -31,7 +31,6 @@ import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -63,7 +62,6 @@ meta import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
 meta import VerifiedGarbage.Proof.Modes.X86_64.Setup
 meta import VerifiedGarbage.Spec.TripleDes.Cfb
 meta import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 
 /-!
 # Triple DES-CBC and -CFB64 decryption on x86-64, many blocks at a time: verified
@@ -102,9 +100,10 @@ analysis could not follow the call: correctness says what those registers
 hold after it (`Called`).
 
 *The contracts.* `cbc_framed` and `cfb_framed`: the shared contracts, with
-the working space on the stack, zeroed on return: 2128 bytes, the 265 words
-of the scratch buffer and 8 more; the stack below holds the ECB function's
-return address and frame (1048 bytes).
+the working space on the stack: 2128 bytes, the 265 words of the scratch
+buffer and 8 more; the stack below holds the ECB function's return address
+and frame (1048 bytes). The scrub after them zeroes all 3176
+(`Proof.TripleDes.X86_64.Batch.Scrub`).
 -/
 
 @[expose] public section
@@ -1352,37 +1351,37 @@ theorem decrypt_depth (v : EcbImpl) (cfb : Bool) :
 
 /-- CBC decryption with its working space on the stack. -/
 theorem cbc_framed (v : EcbImpl) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 W
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2128 .r8
         (decrypt false (v.name .decrypt) (v.code .decrypt)))
       (Spec.TripleDes.cbcDecryptChainedContract X86_64.abi 3176) :=
-  X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := W) (post := Proof.TripleDes.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 1048)
     (bytes := 2128) (cbc_verified v) (by decide) (by decide) (by decide) (decrypt_sp v false)
-    (decrypt_depth v false) (by decide) (Proof.TripleDes.cbcDecChainedPostOut_local _)
+    (decrypt_depth v false)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- CFB64 decryption with its working space on the stack. -/
 theorem cfb_framed (v : EcbImpl) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 W
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2128 .r8
         (decrypt true (v.name .encrypt) (v.code .encrypt)))
       (Spec.TripleDes.cfbDecryptContract X86_64.abi 3176) :=
-  X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
     (n := W) (post := Proof.TripleDes.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 1048)
     (bytes := 2128) (cfb_verified v) (by decide) (by decide) (by decide) (decrypt_sp v true)
-    (decrypt_depth v true) (by decide) (Proof.TripleDes.cfbDecPostOut_local _)
+    (decrypt_depth v true)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem framed_spSafe (v : EcbImpl) (cfb : Bool) :
-    (Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 W (decrypt cfb (v.name (dir cfb)) (v.code (dir cfb)))).all
+    (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (decrypt cfb (v.name (dir cfb)) (v.code (dir cfb)))).all
       (fun i => !isa.writesSp i) = true :=
-  withStackScratch_spSafe (by decide) (by simp only [Code.all, decrypt_sp v cfb, wipe_spSafe, Bool.and_self])
+  withStackScratch_spSafe (by decide) (decrypt_sp v cfb)
 
 theorem cbc_spSafe (v : EcbImpl) :
-    (Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 W (decrypt false (v.name .decrypt) (v.code .decrypt))).all
+    (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (decrypt false (v.name .decrypt) (v.code .decrypt))).all
       (fun i => !isa.writesSp i) = true := framed_spSafe v false
 
 theorem cfb_spSafe (v : EcbImpl) :
-    (Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 W (decrypt true (v.name .encrypt) (v.code .encrypt))).all
+    (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (decrypt true (v.name .encrypt) (v.code .encrypt))).all
       (fun i => !isa.writesSp i) = true := framed_spSafe v true
 
 end VG.Proof.TripleDes.X86_64.Batch

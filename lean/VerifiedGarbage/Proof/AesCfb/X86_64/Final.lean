@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 import VerifiedGarbage.Proof.AesCbc.X86_64.Group
 import VerifiedGarbage.Proof.AesCfb.X86_64.Group
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 meta import VerifiedGarbage.Impl.AesCfb.X86_64.Final
 meta import VerifiedGarbage.Proof.AesCfb.Final
 meta import VerifiedGarbage.Proof.AesCfb.X86_64.Verified
@@ -41,7 +41,7 @@ meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.Group
 meta import VerifiedGarbage.Proof.AesCfb.X86_64.Group
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-CFB128 of a message's last piece on x86-64
@@ -77,7 +77,7 @@ Constant time (`final_rel`): the blocks by the taint analysis, the calls by
 their contracts' constant time (`RelCT.callEx`, `blk_rel`), every address
 and branch from the pointers and `len`, which agree in both runs.
 `encryptFinal_framed` runs the code with `save` in a frame of 64 bytes on
-the stack (`Verified.stackArgScratchWiped`), zeroed on return.
+the stack (`Verified.stackArgScratch`), which the scrub after it zeroes.
 -/
 
 @[expose] public section
@@ -1100,10 +1100,11 @@ theorem decryptFinal_verified (v : BlocksImpl) :
 /-! ## With `save` on the stack
 
 The final functions have six argument words, so `save` is their first stack
-argument: they run their code in a frame of 64 bytes (`withStackArgScratchWiped`):
+argument: they run their code in a frame of 64 bytes (`withStackArgScratch`):
 the quadword standing for the return address, `save`'s address, and `save`'s
-48 bytes, which it zeroes before returning. The code's calls use 16 bytes
-below it, so 80 in all. -/
+48 bytes, which the scrub after it zeroes with the rest of the stack
+(`Proof.Aes.X86_64.FinalScrub`). The code's calls use 16 bytes below it, so
+80 in all. -/
 
 /-- A state satisfying the precondition, without `save`. -/
 def finalFrameSat : State :=
@@ -1119,34 +1120,30 @@ theorem decFrameSat_pre : ∃ s, (decryptFinalRoundsContract X86_64.abi 80).pre 
 
 theorem encryptFinal_framed (v : BlocksImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (encryptFinal v.enc v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (encryptFinal v.enc v.suffix))
       (encryptFinalRoundsContract X86_64.abi 80) :=
-  X86_64.Verified.stackArgScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
+  X86_64.Verified.stackArgScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
     (pre := finalPre X86_64.abi.ptrBits) (post := encryptFinalPost X86_64.abi.ptrBits) (wa := false)
-    (stack := 16) (bytes := 64) (words := 6) (encryptFinal_verified v) (by decide) (by decide) (by decide)
-    (encryptFinal_spSafe v) (encryptFinal_xdepth v) (by decide) (finalPre_local _) (encryptFinalPost_local _)
-    (encryptFinalPost_localOut _) encFrameSat_pre
+    (stack := 16) (bytes := 64) (encryptFinal_verified v) (by decide) (by decide) (by decide)
+    (encryptFinal_spSafe v) (encryptFinal_xdepth v) (finalPre_local _) (encryptFinalPost_local _) encFrameSat_pre
 
 theorem decryptFinal_framed (v : BlocksImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (decryptFinal v.enc v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (decryptFinal v.enc v.suffix))
       (decryptFinalRoundsContract X86_64.abi 80) :=
-  X86_64.Verified.stackArgScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
+  X86_64.Verified.stackArgScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
     (pre := finalPre X86_64.abi.ptrBits) (post := decryptFinalPost X86_64.abi.ptrBits) (wa := false)
-    (stack := 16) (bytes := 64) (words := 6) (decryptFinal_verified v) (by decide) (by decide) (by decide)
-    (decryptFinal_spSafe v) (decryptFinal_xdepth v) (by decide) (finalPre_local _) (decryptFinalPost_local _)
-    (decryptFinalPost_localOut _) decFrameSat_pre
+    (stack := 16) (bytes := 64) (decryptFinal_verified v) (by decide) (by decide) (by decide)
+    (decryptFinal_spSafe v) (decryptFinal_xdepth v) (finalPre_local _) (decryptFinalPost_local _) decFrameSat_pre
 
 theorem encryptFinal_framed_spSafe (v : BlocksImpl) :
-    (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (encryptFinal v.enc v.suffix)).all
+    (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (encryptFinal v.enc v.suffix)).all
       (fun i => !X86_64.isa.writesSp i) = true :=
-  X86_64.withStackArgScratch_spSafe (by
-    simp only [Code.all, encryptFinal_spSafe v, X86_64.wipeAt_spSafe, Bool.and_self])
+  X86_64.withStackArgScratch_spSafe (encryptFinal_spSafe v)
 
 theorem decryptFinal_framed_spSafe (v : BlocksImpl) :
-    (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (decryptFinal v.enc v.suffix)).all
+    (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (decryptFinal v.enc v.suffix)).all
       (fun i => !X86_64.isa.writesSp i) = true :=
-  X86_64.withStackArgScratch_spSafe (by
-    simp only [Code.all, decryptFinal_spSafe v, X86_64.wipeAt_spSafe, Bool.and_self])
+  X86_64.withStackArgScratch_spSafe (decryptFinal_spSafe v)
 
 end VG.Proof.AesCfb.X86_64

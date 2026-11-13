@@ -36,8 +36,8 @@ S-boxes. `ofb_verified`, …: each is correct and constant time, by the taint
 analysis: the pointers, `rounds`, `n`, the stack pointer and the table's
 address are public, and so is everything the code computes from them; the
 subkeys, the IV and the data are secret. `ofb_framed`, … run them with their
-working space on the stack, zeroed on return: 240 bytes, the 29 words of the
-scratch buffer and 8 more.
+working space on the stack: 240 bytes, the 29 words of the scratch buffer and
+8 more, which the scrub after them zeroes (`Proof.Cast5.X86_64.Scrub`).
 -/
 
 @[expose] public section
@@ -473,7 +473,7 @@ theorem fbFrame_sat (post : Spec.Cast5.ofbSig.Post X86_64.abi.ptrBits) :
 
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 ofb)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 ofb)
       (Proof.Cast5.ofbRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.ofbPre X86_64.abi.ptrBits)
@@ -483,7 +483,7 @@ theorem ofb_framed :
 
 /-- CFB64 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cfbEncrypt)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cfbEncrypt)
       (Proof.Cast5.cfbEncryptRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbPre X86_64.abi.ptrBits)
@@ -493,7 +493,7 @@ theorem cfbEncrypt_framed :
 
 /-- CFB64 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cfbDecrypt)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cfbDecrypt)
       (Proof.Cast5.cfbDecryptRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbPre X86_64.abi.ptrBits)

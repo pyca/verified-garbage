@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalLit
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Scrub
 public import VerifiedGarbage.Proof.Variants.TripleDesEcb.X86_64
 
 /-! # Triple DES-CFB64 on x86-64 -/
@@ -25,17 +25,11 @@ end VG.Artifacts.TripleDesCfb.X86_64
 
 namespace VG.Artifacts.TripleDesCfb.X86_64
 
-open VG.Proof.TripleDes.X86_64.Batch
+open VG.Proof.TripleDes.X86_64.Batch (EcbImpl)
 
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.TripleDesEcb.X86_64.variants.flatMap fun (v : EcbImpl) => [
-    Spec.TripleDes.cfbDecryptApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 265
-        (Impl.TripleDes.X86_64.Batch.decrypt true (v.name .encrypt) (v.code .encrypt))
-      stack := 3176
-      verified := cfb_framed v
-      spSafe := cfb_spSafe v }])
+    Spec.TripleDes.cfbDecryptApi.artifact X86_64.target (Proof.TripleDes.X86_64.Batch.Scrub.cfbDecryptReg v)])
 
 end VG.Artifacts.TripleDesCfb.X86_64

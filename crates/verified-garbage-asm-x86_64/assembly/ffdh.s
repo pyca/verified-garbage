@@ -1418,6 +1418,39 @@ vg_ffdh_generate_key_search_cached_adx:
 	mov rax, QWORD PTR [r12+112]
 	mov r12, QWORD PTR [r12+32]
 	mov QWORD PTR [rdx], rcx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-72]
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4395,6 +4428,39 @@ vg_ffdh_generate_key_search_cached:
 	mov rax, QWORD PTR [r12+112]
 	mov r12, QWORD PTR [r12+32]
 	mov QWORD PTR [rdx], rcx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-72]
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+72]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
