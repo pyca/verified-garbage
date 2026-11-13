@@ -111,13 +111,13 @@ jobs:
       # (no entry is restored for it, above): one pack, saved for the Lean
       # jobs of the runs that follow.
       - name: Collect main's git objects
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.git-base-restore.outputs.cache-hit != 'true' }}
+        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' && github.ref == 'refs/heads/main') && steps.git-base-restore.outputs.cache-hit != 'true' }} # TEMPORARY: pull requests too
         run: |
           mkdir -p "$RUNNER_TEMP/git-base"
           cp .git/objects/pack/pack-* "$RUNNER_TEMP/git-base/"
           git rev-parse HEAD > "$RUNNER_TEMP/git-base/sha"
       - name: Save main's git objects
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.git-base-restore.outputs.cache-hit != 'true' }}
+        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'push' && github.ref == 'refs/heads/main') && steps.git-base-restore.outputs.cache-hit != 'true' }} # TEMPORARY: pull requests too
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/git-base
