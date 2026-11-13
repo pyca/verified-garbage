@@ -21,6 +21,11 @@ implementation gives the residue analysis of the instance
 frame of 2.3 KB, of which the analysis cannot tell what may hold secrets.
 Its postcondition reads the memory on return only within the MAC
 (`X86_64.Scrub.PostOut`).
+
+`vg_cmac_aes_init` over such an implementation, in a frame of only the 152
+bytes it and its calls write (`initF_framed`), which `X86_64.Scrub.withScrubAll`
+wipes whole on return; over the others, as before. Its postcondition reads
+the memory on return only within the state (`initOut`).
 -/
 
 @[expose] public section
@@ -74,10 +79,20 @@ theorem finishOut (stack : Nat) :
       rw [bytesAt_of0 hb.2 (by decide)]
       exact h key msg hr hro hc hlt
 
+theorem initOut (stack : Nat) :
+    PostOut (Spec.Cmac.aesInitContract X86_64.abi stack) (Spec.Cmac.aesInitSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [st, key, kl], _ =>
+      simp only [Spec.Cmac.aesInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq] at hb
+      exact Proof.CmacAes.Stream.repr_congr_304 (agree_le hb.1 (by decide)) h
+
 /-! ## The registration -/
 
 open VG.X86_64.RScrub
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.Stream.X86_64 (ekF)
 
 /-- `vg_cmac_aes_finish` over `v`: with no working space for an
 implementation that needs none, and then without secret residue where the
@@ -98,5 +113,27 @@ def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi X86_64.targe
       stack := 2328
       verified := Proof.CmacAes.Stream.X86_64.finish_framed v
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v) }
+
+/-- `vg_cmac_aes_init` over `v`: with no working space for an implementation
+that needs none, then without secret residue, its frame of 184 bytes wiped
+whole (`withScrubAll`). -/
+def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi X86_64.target :=
+  match v.free with
+  | some f =>
+    withScrubAll {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 168 .rcx
+        (Impl.CmacAes.Stream.X86_64.initF ekF v.callee v.suffix)
+      stack := 184
+      verified := Proof.CmacAes.Stream.X86_64.initF_framed v f
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.initF_spSafe v) }
+      (initOut _)
+  | none => {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
+        (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
+      stack := 2328
+      verified := Proof.CmacAes.Stream.X86_64.init_framed v
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) }
 
 end VG.Proof.CmacAes.Stream.X86_64.Scrub

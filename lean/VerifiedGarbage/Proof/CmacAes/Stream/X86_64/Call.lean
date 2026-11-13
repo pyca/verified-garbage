@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 
 @[expose] public section
 
@@ -138,7 +139,8 @@ namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (UpdateImpl updateX86_64 subkeysX86_64 finalizeX86_64 finalizeX86_64F finalizeF_correct finalizeF_ct subkeys_correct
+open VG.Proof.CmacAes.X86_64 (UpdateImpl updateX86_64 subkeysX86_64 subkeysX86_64F subkeysF_correct subkeysF_ct
+  finalizeX86_64 finalizeX86_64F finalizeF_correct finalizeF_ct subkeys_correct
   finalize_correct subkeys_ct finalize_ct callEntry_frame bytesAt_frame toNat_rounds)
 
 /-! ## The stack -/
@@ -164,6 +166,12 @@ theorem callEntry_bytes (s : State) {p : Addr} {n : Nat} (h : (below (s.gpr .rsp
 
 theorem toNat_ofNat {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
+
+/-- An offset from `p - a`, from `p`. -/
+theorem sub_add_ofNat (p : Addr) {a d : Nat} (h : a ≤ d) :
+    p - BitVec.ofNat 64 a + BitVec.ofNat 64 d = p + BitVec.ofNat 64 (d - a) := by
+  rw [show BitVec.ofNat 64 d = BitVec.ofNat 64 a + BitVec.ofNat 64 (d - a) by
+    rw [BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h], ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
 /-! ## No writes of `rsp` -/
 
@@ -599,6 +607,212 @@ theorem ek_rel (v : Ctr32Impl) {P : State → State → Prop}
   obtain ⟨Kp, W, S, KL, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
   simp only [Proof.Aes.expandKeyX86_64, State.withRegions_gpr, State.callEntry_rsp,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+    h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## Calls that write no more than a given part of the working space
+
+`vg_aes_expand_key_scratch` and `vg_cmac_aes_subkeys` over implementations of
+AES that need no working space (`Aes.X86_64.Ctr32Free`) write less of it:
+none of it, and only the 32 bytes at `S + 2048` (`subkeysX86_64F`). What
+the callers need of either call is its arguments without the working space
+(`EArgsF`, `SArgsF`), and that it writes no more of it than some region `X`
+(`EPostX`, `SPostX`). -/
+
+/-- What a call of `vg_aes_expand_key_scratch` needs, but its working space. -/
+structure EArgsF (s : State) (Kp W : Addr) (KL : Nat) : Prop where
+  rdi : s.gpr .rdi = Kp
+  rsi : s.gpr .rsi = BitVec.ofNat 64 KL
+  rdx : s.gpr .rdx = W
+  klen : KL = 16 ∨ KL = 24 ∨ KL = 32
+  kw : (⟨Kp, KL⟩ : Region).Disjoint ⟨W, 240⟩
+  stkK : (below (s.gpr .rsp) 16).Disjoint ⟨Kp, KL⟩
+  stkW : (below (s.gpr .rsp) 16).Disjoint ⟨W, 240⟩
+  reads : Covers ([⟨Kp, KL⟩] ++ [⟨W, 240⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨W, 240⟩] s.wr
+
+/-- What a call of `vg_aes_expand_key_scratch` leaves, writing no more than
+`X` of its working space. -/
+structure EPostX (s : State) (Kp W : Addr) (KL : Nat) (X : Region) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨W, 240⟩, X, below (s.gpr .rsp) 16] s.mem s'.mem
+  out : Spec.Aes.bytesAt s'.mem W (16 * (Spec.Aes.rounds (KL / 4) + 1)) =
+    Spec.Aes.expandKey (Spec.Aes.bytesAt s.mem Kp KL)
+
+theorem EArgsF.full {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgsF s Kp W KL) (rcx : s.gpr .rcx = S)
+    (ks : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 512⟩) (ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 512⟩)
+    (stkS : (below (s.gpr .rsp) 16).Disjoint ⟨S, 512⟩) (cs : Covers [⟨S, 512⟩] s.wr) : EArgs s Kp W S KL :=
+  ⟨h.rdi, h.rsi, h.rdx, rcx, h.klen, h.kw, ks, ws, h.stkK, h.stkW, stkS, by
+    intro a n ⟨r, hr, hc⟩
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h.reads a n ⟨_, by simp, hc⟩
+    · exact h.reads a n ⟨_, by simp, hc⟩
+    · exact Covers.right cs a n ⟨_, by simp, hc⟩, Covers.cons h.writes cs⟩
+
+theorem EPost.x {s s' : State} {Kp W S : Addr} {KL : Nat} {X : Region} (h : EPost s Kp W S KL s')
+    (hX : Region.Sub ⟨S, 512⟩ X) : EPostX s Kp W KL X s' :=
+  ⟨h.rd, h.wr, h.saved, h.frame.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨X, by simp, hX⟩
+    · exact ⟨_, by simp, fun _ h => h⟩, h.out⟩
+
+/-- `vg_aes_expand_key_scratch_aesni`, which writes none of its working space. -/
+abbrev ekF : Impl.Aes.X86_64.ExpandKey := .aesni
+
+theorem EArgsF.pre {s : State} {Kp W : Addr} {KL : Nat} (h : EArgsF s Kp W KL) :
+    Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨W, 240⟩]) := by
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_arith)
+  simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, hK]
+  exact ⟨trivial, trivial, h.stkW.sub_left (ret_sub _), h.klen⟩
+
+theorem ek_callF {s : State} {Kp W : Addr} {KL : Nat} {X : Region} (h : EArgsF s Kp W KL) :
+    WP isa (.call ekF.name ekF.code) s (EPostX s Kp W KL X) := by
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_arith)
+  have hd : Code.depth Impl.Aes.X86_64.AesNi.expandKey = 0 := Ctr32Impl.aesni.expandDepth
+  refine WP.call (k := Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64)
+    Proof.Aes.X86_64.AesNi.Key.expandKey3_correct Ctr32Impl.aesni.expandNosp
+    (by rw [hd]; decide) (rd := [⟨Kp, KL⟩]) (wr := [⟨W, 240⟩]) h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [hd] at hf
+  refine ⟨hrd, hwr, hcs, (Frame.below_mono hf (b := 16) (by decide) (by decide)).mono fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl <;> simp, ?_⟩
+  simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, Proof.Aes.X86_64.AesNi.expandKeyX86_64,
+    State.withRegions_gpr,
+    State.withRegions_mem, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, hK] at hpost
+  rw [← hm₂, hpost, callEntry_bytes s h.stkK (by rcases h.klen with h | h | h <;> omega_arith)]
+
+theorem ek_relF {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kp W : Addr, ∃ KL : Nat,
+      EArgsF s₁ Kp W KL ∧ EArgsF s₂ Kp W KL ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call ekF.name ekF.code) fun _ _ => True := by
+  refine RelCT.callEx Proof.Aes.X86_64.AesNi.Key.expandKey3_correct Proof.Aes.X86_64.AesNi.Key.expandKey3_ct
+    fun s₁ s₂ hp => ?_
+  obtain ⟨Kp, W, KL, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, State.withRegions_gpr,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), h₁.rdi, h₁.rsi, h₁.rdx, h₂.rdi, h₂.rsi, h₂.rdx]
+  exact ⟨trivial, trivial, trivial⟩
+
+/-- What a call of `vg_cmac_aes_subkeys` needs, of its working space only the
+32 bytes at `S + 2048`. -/
+structure SArgsF (s : State) (W K S : Addr) (R : Nat) : Prop where
+  rdi : s.gpr .rdi = W
+  rsi : s.gpr .rsi = BitVec.ofNat 64 R
+  rdx : s.gpr .rdx = K
+  rcx : s.gpr .rcx = S
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  wk : (⟨W, 240⟩ : Region).Disjoint ⟨K, 32⟩
+  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 2048, 32⟩
+  ks : (⟨K, 32⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 2048, 32⟩
+  stkW : (below (s.gpr .rsp) 16).Disjoint ⟨W, 240⟩
+  stkK : (below (s.gpr .rsp) 16).Disjoint ⟨K, 32⟩
+  stkS : (below (s.gpr .rsp) 16).Disjoint ⟨S + BitVec.ofNat 64 2048, 32⟩
+  wrapK : K.toNat + 32 ≤ 2 ^ 64
+  wrapS : (S + BitVec.ofNat 64 2048).toNat + 32 ≤ 2 ^ 64
+  reads : Covers ([⟨W, 240⟩] ++ [⟨K, 32⟩, ⟨S + BitVec.ofNat 64 2048, 32⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨K, 32⟩, ⟨S + BitVec.ofNat 64 2048, 32⟩] s.wr
+
+/-- What a call of `vg_cmac_aes_subkeys` leaves, writing no more than `X` of
+its working space. -/
+structure SPostX (s : State) (W K : Addr) (R : Nat) (X : Region) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨K, 32⟩, X, below (s.gpr .rsp) 16] s.mem s'.mem
+  out : Spec.Aes.bytesAt s'.mem K 32 =
+    (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1)))) 16).1 ++
+      (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1)))) 16).2
+
+theorem SArgsF.full {s : State} {W K S : Addr} {R : Nat} (h : SArgsF s W K S R)
+    (ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 2176⟩) (ks : (⟨K, 32⟩ : Region).Disjoint ⟨S, 2176⟩)
+    (stkS : (below (s.gpr .rsp) 16).Disjoint ⟨S, 2176⟩) (wrapS : S.toNat + 2176 ≤ 2 ^ 64)
+    (cs : Covers [⟨S, 2176⟩] s.wr) : SArgs s W K S R where
+  rdi := h.rdi
+  rsi := h.rsi
+  rdx := h.rdx
+  rcx := h.rcx
+  rounds := h.rounds
+  wk := h.wk
+  ws := ws
+  ks := ks
+  stkW := h.stkW
+  stkK := h.stkK
+  stkS := stkS
+  wrapK := h.wrapK
+  wrapS := wrapS
+  reads := by
+    intro a n ⟨r, hr, hc⟩
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h.reads a n ⟨_, by simp, hc⟩
+    · exact h.reads a n ⟨_, by simp, hc⟩
+    · exact Covers.right cs a n ⟨_, by simp, hc⟩
+  writes := by
+    intro a n ⟨r, hr, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.writes a n ⟨_, by simp, hc⟩
+    · exact cs a n ⟨_, by simp, hc⟩
+
+theorem SPost.x {s s' : State} {W K S : Addr} {R : Nat} {X : Region} (h : SPost s W K S R s')
+    (hX : Region.Sub ⟨S, 2176⟩ X) : SPostX s W K R X s' :=
+  ⟨h.rd, h.wr, h.saved, h.frame.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨X, by simp, hX⟩
+    · exact ⟨_, by simp, fun _ h => h⟩, h.out⟩
+
+theorem SArgsF.pre {s : State} {W K S : Addr} {R : Nat} (h : SArgsF s W K S R) :
+    subkeysX86_64F.pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨K, 32⟩, ⟨S + BitVec.ofNat 64 2048, 32⟩]) := by
+  have hR := toNat_rounds h.rounds
+  simp only [subkeysX86_64F, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, hR]
+  exact ⟨trivial, trivial, h.wk, h.ws, h.ks, h.stkK.sub_left (ret_sub _),
+    h.stkS.sub_left (ret_sub _), h.stkW.sub_left (stk_sub _), h.stkK.sub_left (stk_sub _),
+    h.stkS.sub_left (stk_sub _), h.wrapK, h.wrapS, h.rounds⟩
+
+theorem sub_callF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (nm : String) {s : State}
+    {W K S : Addr} {R : Nat} (h : SArgsF s W K S R) :
+    WP isa (.call nm (Impl.CmacAes.X86_64.subkeys v.callee)) s
+      (SPostX s W K R ⟨S + BitVec.ofNat 64 2048, 32⟩) := by
+  have hR := toNat_rounds h.rounds
+  refine WP.call (k := subkeysX86_64F) (subkeysF_correct v f) (subkeys_nosp v) (by rw [subkeys_depth]; decide)
+    h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [subkeys_depth] at hf
+  refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
+  simp only [subkeysX86_64F, subkeysX86_64, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx, hR] at hpost
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
+  rw [← hm₂, hpost, X86_64.ciphAt, callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega_arith)]
+
+theorem sub_relF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (nm : String)
+    {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W K S : Addr, ∃ R : Nat,
+      SArgsF s₁ W K S R ∧ SArgsF s₂ W K S R ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call nm (Impl.CmacAes.X86_64.subkeys v.callee)) fun _ _ => True := by
+  refine RelCT.callEx (subkeysF_correct v f) (subkeysF_ct v f) fun s₁ s₂ hp => ?_
+  obtain ⟨W, K, S, R, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [subkeysX86_64F, subkeysX86_64, State.withRegions_gpr, State.callEntry_rsp,
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, hsp]

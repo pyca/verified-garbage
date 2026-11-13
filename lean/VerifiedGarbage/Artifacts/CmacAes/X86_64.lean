@@ -49,13 +49,7 @@ def artifacts : List Artifact :=
       verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
       spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorb_spSafe v) }]) ++
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
-    Spec.Cmac.aesInitApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
-        (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
-      stack := 2328
-      verified := Proof.CmacAes.Stream.X86_64.init_framed v
-      spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) },
+    Spec.Cmac.aesInitApi.artifact X86_64.target (Proof.CmacAes.Stream.X86_64.Scrub.initReg v),
     Spec.Cmac.aesFinishApi.artifact X86_64.target (Proof.CmacAes.Stream.X86_64.Scrub.finishReg v)])
 
 end VG.Artifacts.CmacAes.X86_64

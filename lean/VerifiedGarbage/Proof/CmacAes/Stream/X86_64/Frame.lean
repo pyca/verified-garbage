@@ -14,7 +14,9 @@ argument (`Verified.lean`), in a frame of 2312 bytes that allocates it
 (`Verified.stackScratch`): the 2304 bytes of working space, and 8 more to
 keep `rsp` aligned. Their own calls use at most 16 bytes below it: two
 return addresses, as `vg_aes_ctr32` and `vg_aes_expand_key_scratch` use no
-stack (and `vg_cmac_aes_update_aesni` none at all).
+stack (and `vg_cmac_aes_update_aesni` none at all). Over implementations of
+AES that need no working space, `init` (`initF`) needs only 152 bytes of it,
+in a frame of 168 (`initF_framed`).
 -/
 
 @[expose] public section
@@ -27,6 +29,11 @@ open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 theorem init_xdepth (v : Ctr32Impl) : (init v.expand v.callee v.suffix).x86_64Depth ≤ 16 := by
   simp only [init, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth, v.noStack, v.expandNoStack]
+  decide +kernel
+
+theorem initF_xdepth (v : Ctr32Impl) : (initF ekF v.callee v.suffix).x86_64Depth ≤ 16 := by
+  have h : ekF.code.x86_64Depth = 0 := Ctr32Impl.aesni.expandNoStack
+  simp only [initF, init, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth, v.noStack, h]
   decide +kernel
 
 theorem absorb_xdepth (v : UpdateImpl) : (absorb v.callee).x86_64Depth ≤ 16 := by
@@ -47,6 +54,10 @@ working space. -/
 def initFrameSat : State := { initSat with wr := [⟨0x1000, 304⟩] }
 
 theorem initFrameSat_pre : ∃ s, (Spec.Cmac.aesInitContract X86_64.abi 2328).pre s := by
+  implies_sat [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, Spec.Cmac.aesInitPre,
+    Spec.Cmac.aesInitPost, X86_64.abi, X86_64.argRegs] [initFrameSat, initSat] using initFrameSat
+
+theorem initFrameSatF_pre : ∃ s, (Spec.Cmac.aesInitContract X86_64.abi 184).pre s := by
   implies_sat [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, Spec.Cmac.aesInitPre,
     Spec.Cmac.aesInitPost, X86_64.abi, X86_64.argRegs] [initFrameSat, initSat] using initFrameSat
 
@@ -82,6 +93,19 @@ theorem init_framed (v : Ctr32Impl) :
     (post := Spec.Cmac.aesInitPost X86_64.abi.ptrBits) (wa := false) (stack := 16) (bytes := 2312)
     (init_verified v) (by decide) (by decide) (by decide) (init_spSafe v) (init_xdepth v)
     initFrameSat_pre
+
+/-- `init_framed`, over implementations of AES that need no working space
+(`initF`): a frame of the 152 bytes from `vg_cmac_aes_subkeys`'s counter
+block to the end of our saved registers, and 16 more to keep `rsp` aligned. -/
+theorem initF_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 168 .rcx (initF ekF v.callee v.suffix))
+      (Spec.Cmac.aesInitContract X86_64.abi 184) :=
+  X86_64.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+    (n := 19) (pre := Spec.Cmac.aesInitPre X86_64.abi.ptrBits)
+    (post := Spec.Cmac.aesInitPost X86_64.abi.ptrBits) (wa := false) (stack := 16) (bytes := 168)
+    (initF_verified v f) (by decide) (by decide) (by decide) (initF_spSafe v) (initF_xdepth v)
+    initFrameSatF_pre
 
 theorem absorb_framed (v : UpdateImpl) :
     Verified X86_64.target

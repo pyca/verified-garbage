@@ -52,13 +52,7 @@ open VG.Proof.AesSiv.X86_64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
-    Spec.Siv.initApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
-        (Impl.AesSiv.X86_64.init v.expand v.callee v.suffix)
-      stack := 2584
-      verified := init_framed v
-      spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v) }]) ++
+    Spec.Siv.initApi.artifact X86_64.target (initReg v)]) ++
   (VG.Proof.Variants.CmacAesUpdate.X86_64.variants.flatMap fun (v : Proof.CmacAes.X86_64.UpdateImpl) => [
     Spec.Siv.encryptApi.artifact X86_64.target {
       suffix := v.suffix
