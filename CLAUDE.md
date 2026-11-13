@@ -157,13 +157,15 @@ own changes are rebuilt either way, on top of the restored build.
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   CPU's microarchitecture, or on the compilation target. A
-  microarchitecture is a detected bit that no instruction needs
-  (`verified_garbage_cpu::TUNING`, such as `zen5`), which a registration
-  names as an `extra` feature: an implementation chosen by it may be the
-  base's code under a suffix of its own, listed before the variants it
-  beats there. Never use an unrelated instruction set feature as its
-  stand-in where a microarchitecture bit can say it, and name each core a
-  bit covers by its family and models, as Linux tells them apart.
+  microarchitecture bit is detected and no instruction needs it
+  (`verified_garbage_cpu::TUNING`). It names a property of the cores it
+  covers, never a core (`slowvec`: vector integer instructions slower
+  than scalar ones), and its detection lists those cores by family and
+  models, as Linux tells them apart, so another core with the property is
+  a line there. A registration names it as an `extra` feature of the
+  variant it chooses, listed before the variants it beats there. Never
+  use an unrelated instruction set feature as its stand-in where a
+  microarchitecture bit can say it.
   `VG_CPU_FEATURES` may name a microarchitecture on any CPU, so that every
   CI runner can test what it chooses. A choice by compilation target
   (`vg_poly1305_update_neon`, faster on Apple's cores and

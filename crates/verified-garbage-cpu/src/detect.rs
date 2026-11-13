@@ -20,7 +20,7 @@
 // features, and not those the compilation target enables (`COMPILED`), which
 // it is limited to the others of; it panics on a name this library does not
 // know or the CPU does not have, rather than quietly test another
-// configuration. The microarchitectures (`TUNING`, such as `zen5`) are the
+// configuration. The microarchitectures (`TUNING`, such as `slowvec`) are the
 // exception: no code needs one, so naming one reports it on any CPU, and
 // every runner can test the implementations chosen by it (not naming one,
 // in a value that names others, removes it, as for any feature). On x86 and x86-64,
@@ -81,7 +81,7 @@ pub const NAMES: [(&str, u32); 25] = [
     ("dit", feature::DIT),
     ("sb", feature::SB),
     ("avx512fp16", feature::AVX512FP16),
-    ("zen5", feature::ZEN5),
+    ("slowvec", feature::SLOWVEC),
 ];
 
 /// Each feature that `decode` reports only with others, and those others:
@@ -337,7 +337,7 @@ pub fn parse(names: &str) -> Option<u32> {
 /// ADX, bit 21 AVX512_IFMA and bit 31 AVX512VL, its ECX bit 9 VAES and bit 10
 /// VPCLMULQDQ, its EDX bit 23 AVX512_FP16, and its EAX the highest sub-leaf;
 /// leaf 7 sub-leaf 1 EAX bit 0 is SHA512; AMD reports them in the same bits;
-/// leaf 0 and leaf 1 EAX also tell a Zen 5 core, `is_zen5`). AVX, AVX2, SHA512, VAES and
+/// leaf 0 and leaf 1 EAX also tell a core with slow vector instructions, `is_zen5`). AVX, AVX2, SHA512, VAES and
 /// VPCLMULQDQ (whose instructions are VEX.256-encoded, so also need AVX,
 /// Intel SDM Vol. 2, "VSHA512RNDS2", "AESENC" and "PCLMULQDQ") also need the
 /// operating system to save the `ymm` registers: XCR0 bits 1 and 2, read with
@@ -403,7 +403,9 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
     let vpclmulqdq = (ecx7 >> 10) & avx;
     let avx512bw = (ebx >> 30) & avx & zmm;
     let avx512fp16 = (edx7 >> 23) & avx & zmm;
-    let zen5 = u32::from(is_zen5(
+    // The cores whose vector integer instructions are slower than their
+    // scalar ones (`feature::SLOWVEC`): Zen 5's.
+    let slowvec = u32::from(is_zen5(
         [vendor_b, vendor_d, vendor_c] == AMD_VENDOR,
         signature,
     ));
@@ -424,7 +426,7 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
         | (vpclmulqdq * feature::VPCLMULQDQ)
         | (avx512bw * feature::AVX512BW)
         | (avx512fp16 * feature::AVX512FP16)
-        | (zen5 * feature::ZEN5)
+        | (slowvec * feature::SLOWVEC)
 }
 
 /// `AuthenticAMD`, the vendor string AMD's CPUs return from `cpuid` leaf 0

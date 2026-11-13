@@ -50,9 +50,12 @@ pub mod feature {
     pub const DIT: u32 = 1 << 21;
     pub const SB: u32 = 1 << 22;
     pub const AVX512FP16: u32 = 1 << 23;
-    /// AMD's Zen 5 cores (see `detect::decode`): not an instruction set
-    /// feature, so no code needs it ([`TUNING`]).
-    pub const ZEN5: u32 = 1 << 24;
+    /// Cores whose vector integer instructions are slower than their scalar
+    /// ones (twice the latency, on AMD's Zen 5), so that code whose critical
+    /// path is one chain of them is faster with scalar instructions: those
+    /// `detect::decode` lists. Not an instruction set feature, so no code
+    /// needs it ([`TUNING`]).
+    pub const SLOWVEC: u32 = 1 << 24;
 }
 
 /// The bits of [`feature`] that are microarchitectures, not instruction
@@ -62,7 +65,7 @@ pub mod feature {
 /// chosen, never whether it can run it. So `VG_CPU_FEATURES` may name one
 /// on any CPU (see `detect.rs`), for the tests to choose those
 /// implementations on every runner.
-pub const TUNING: Features = Features(feature::ZEN5);
+pub const TUNING: Features = Features(feature::SLOWVEC);
 
 /// A set of CPU features.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
