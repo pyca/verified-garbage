@@ -230,12 +230,6 @@ def shrClBody : List Instr :=
     .alu .xor .rcx (.imm 63), .shiftCl .shl .rdx, .alu .xor .rcx (.imm 63), .alu .add .rax (.reg .rdx),
     .store (ix .rsi .r14) .rax]
 
-/-- Word `i ≥ 1` of `[r8] 2^cl` into `[rsi]` (`cl < 64`). -/
-def shlClBody : List Instr :=
-  [.mov .rax (.mem (ix .r8 .r14)), .shiftCl .shl .rax, .mov .rdx (.mem (ix .r8 .r14 (-8))), .shift .shr .rdx 1,
-    .alu .xor .rcx (.imm 63), .shiftCl .shr .rdx, .alu .xor .rcx (.imm 63), .alu .add .rax (.reg .rdx),
-    .store (ix .rsi .r14) .rax]
-
 /-- `[t] := [j] / 2^cl`, for `cl` that `pre` leaves in `rcx` (word `n` of `[j]` zero). -/
 def shrCl (wd : Bool) (j t : Nat) (pre : List Instr) : Prog isa :=
   .seq (.block (wsW wd ++ base j .r8 ++ base t .rsi ++ pre)) (wordLoop 0 shrClBody)

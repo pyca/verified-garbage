@@ -579,6 +579,13 @@ def zeroOut (sPtr sLen : Nat) : Prog isa :=
   .seq (.block [.mov .rsi (.mem (hdr sPtr)), .mov .rcx (.mem (hdr sLen)), .mov32 .rax (.imm 0)])
     (.loop (.block [.store8 (at0 .rsi) .rax, .alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]) .ne)
 
+/-- Word `i ≥ 1` of `[r8] 2^cl` into `[rsi]` (`cl < 64`): its word `i` shifted left and word
+`i - 1` right by `64 - cl`, as `(x / 2) / 2^(63 - cl)`. -/
+def shlClBody : List Instr :=
+  [.mov .rax (.mem (ix .r8 .r14)), .shiftCl .shl .rax, .mov .rdx (.mem (ix .r8 .r14 (-8))), .shift .shr .rdx 1,
+    .alu .xor .rcx (.imm 63), .shiftCl .shr .rdx, .alu .xor .rcx (.imm 63), .alu .add .rax (.reg .rdx),
+    .store (ix .rsi .r14) .rax]
+
 /-- The mask's low bit returned, and the saved registers restored. -/
 def retMask : List Instr := ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit
 
@@ -612,16 +619,30 @@ def start : Option Nat → List Instr
   | none => [.mov .rax (.reg .r12), .shift .shr .r12 1, .alu .sub .rax (.reg .r12), .alu .add .rax (.imm 1)]
   | some k => [.mov32 .rax (.imm (BitVec.ofNat 32 (k + 1))), .shift .shr .r12 1]
 
-/-- `rsi` at the dividend's word `j₀`, `rbx` at the remainder, `r12 = w / 2 - 1`. -/
-def seedSetup (top : Option Nat) : List Instr :=
-  ws ++ start top ++ [.shift .shl .rax 3] ++ base aD .rsi ++ [.alu .add .rsi (.reg .rax)] ++ base aR .rbx ++
+/-- `crt_values`' first digit's index `j₀ = ⌊K / 64⌋ + 2` into `rax`, for the dividend
+`x 2^K` of `⌊K / 64⌋ + w / 2 + 1` words (`x < 2^(64 (w / 2))`, `K = 15 n + 10` for
+`n = w / 2`); `r12` from `w` to `w / 2`. -/
+def startT : List Instr :=
+  [.shift .shr .r12 1, .mov .rax (.reg .r12), .shift .shl .rax 4, .alu .sub .rax (.reg .r12),
+    .alu .add .rax (.imm 10), .shift .shr .rax 6, .alu .add .rax (.imm 2)]
+
+/-- `rsi` at the dividend's word `j₀`, `rbx` at the remainder, `r12 = w / 2 - 1`, for `j₀`
+that `st` leaves in `rax`. -/
+def seedSetupWith (st : List Instr) : List Instr :=
+  ws ++ st ++ [.shift .shl .rax 3] ++ base aD .rsi ++ [.alu .add .rsi (.reg .rax)] ++ base aR .rbx ++
     [.alu .sub .r12 (.imm 1)]
 
-/-- The remainder's low `w / 2 - 1` words the dividend's from `j₀` on. -/
-def seed (top : Option Nat) : Prog isa := .seq (.block (seedSetup top)) copyWords
+def seedSetup (top : Option Nat) : List Instr := seedSetupWith (start top)
 
-def countSetup (top : Option Nat := none) : List Instr :=
-  ws ++ base aV .rbp ++ start top ++ [.store (wm 16) .rax]
+/-- The remainder's low `w / 2 - 1` words the dividend's from `j₀` on. -/
+def seedWith (st : List Instr) : Prog isa := .seq (.block (seedSetupWith st)) copyWords
+
+def seed (top : Option Nat) : Prog isa := seedWith (start top)
+
+def countSetupWith (st : List Instr) : List Instr :=
+  ws ++ base aV .rbp ++ st ++ [.store (wm 16) .rax]
+
+def countSetup (top : Option Nat := none) : List Instr := countSetupWith (start top)
 
 def stepLoad : List Instr :=
   ws ++ base aV .rbp ++ base aD .r11 ++ [.mov .rcx (.mem (wm 16))]
@@ -638,9 +659,13 @@ def next : List Instr :=
 
 def body : Prog isa := seqs [.block stepSetup, WordReduce.step, .block next]
 
-/-- `[aR] = [aD] mod [aM]` (`w / 2` words, its top bit set), for the dividend's words `start`'s. -/
-def code (top : Option Nat := none) : Prog isa := seqs [
-  zeroA aR, seed top, .block recipSetup, R2Words.recip, .block (countSetup top), .loop body .ne]
+/-- `[aR] = [aD] mod [aM]` (`w / 2` words, its top bit set), for the dividend's words that the
+first digit's index `st` computes gives. -/
+def codeWith (st : List Instr) : Prog isa := seqs [
+  zeroA aR, seedWith st, .block recipSetup, R2Words.recip, .block (countSetupWith st), .loop body .ne]
+
+/-- `codeWith`, for the dividend's words `start`'s. -/
+def code (top : Option Nat := none) : Prog isa := codeWith (start top)
 
 end VG.Impl.Rsa.X86_64.WordDivide
 
@@ -758,37 +783,24 @@ def guarded (a b : Prog isa) : Prog isa := .seq (.block wordGuardHead) (.seq (.b
 /-- The array that keeps `d` while `qTail` uses `WordDivide`'s dividend. -/
 def aSv : Nat := 10
 
-/-- `r13 := n = w / 2` and `rax := K - 1` for the inverse's `K = 5 B = 15 n + 10`,
-from `w` in `r12`. -/
-def tailK : List Instr :=
-  [.mov .r13 (.reg .r12), .shift .shr .r13 1, .mov .rax (.reg .r13), .shift .shl .rax 4,
-    .alu .sub .rax (.reg .r13), .alu .add .rax (.imm 9)]
-
-/-- `r11 := (K - 1) mod 64 + 1`, the doublings (`1` to `64`), and `r12 := n + 1`. -/
-def dblSetup : List Instr :=
-  ws ++ tailK ++ [.mov .r11 (.reg .rax), .alu .and .r11 (.imm 63), .alu .add .r11 (.imm 1),
-    .mov .r12 (.reg .r13), .alu .add .r12 (.imm 1)]
-
-/-- `[x₂] := 2 [x₂]` over its low `r12 = n + 1` words, and `r11` less one. -/
-def tailDbl : Prog isa :=
-  seqs [.block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base aX₂ .rbx), wordLoop 0 shlBody,
-    .block [.alu .sub .r11 (.imm 1)]]
-
-/-- `r13 := ⌊(K - 1) / 64⌋`, `r12 := w - r13`, `rsi` at `[x₂]` and `rbx` at
-word `r13` of `[d]`: `copyWords` then puts `[x₂] 2^(64 r13)` into `[d]`. -/
-def place : List Instr :=
-  ws ++ tailK ++ [.shift .shr .rax 6, .mov .r13 (.reg .rax), .alu .sub .r12 (.reg .r13), .shift .shl .r13 3] ++
-    base aX₂ .rsi ++ base aD .rbx ++ [.alu .add .rbx (.reg .r13)]
+/-- `rsi` at word `⌊K / 64⌋` of `[d]`, `r8` at `[x₂]`, `rcx := K mod 64` and `r12 := n + 1`
+for the inverse's `K = 5 B = 15 n + 10` and `n = w / 2`; then word 0 of `[x₂] 2^(K mod 64)`. -/
+def shSetup : List Instr :=
+  ws ++ [.shift .shr .r12 1, .mov .rax (.reg .r12), .shift .shl .rax 4, .alu .sub .rax (.reg .r12),
+    .alu .add .rax (.imm 10), .mov .rcx (.reg .rax), .alu .and .rcx (.imm 63), .shift .shr .rax 6,
+    .shift .shl .rax 3, .alu .add .r12 (.imm 1)] ++
+    base aX₂ .r8 ++ base aD .rsi ++ [.alu .add .rsi (.reg .rax)] ++
+    [.mov .rax (.mem (at0 .r8)), .shiftCl .shl .rax, .store (at0 .rsi) .rax]
 
 /-- On the guarded path, `[x₂] := [x₂] 2^K mod p` for the inverse's
-`K = 5 B = 15 n + 10`: `[x₂]` doubled `(K - 1) mod 64 + 1` times, placed
-`⌊(K - 1) / 64⌋` words up in `WordDivide`'s dividend `[d]` (kept in
-`[aSv]`), and reduced by `WordDivide` modulo `p` (normalized). -/
+`K = 5 B = 15 n + 10`: `[x₂] 2^(K mod 64)`, over its low `n + 1` words, written
+`⌊K / 64⌋` words up in `WordDivide`'s dividend `[d]` (kept in `[aSv]`), and
+reduced by `WordDivide` modulo `p` (normalized) from that dividend's top digit
+(`startT`). -/
 def qTail : List (Prog isa) := [
   zeroA aSv, copyA aSv aD,
-  .seq (.block dblSetup) (.loop tailDbl .ne),
-  zeroA aD, .seq (.block place) copyWords,
-  zeroA aC, copyA aC aP, .seq (.block WordDivide.normalize) WordDivide.code,
+  zeroA aD, .seq (.block shSetup) (wordLoop 1 shlClBody),
+  zeroA aC, copyA aC aP, .seq (.block WordDivide.normalize) (WordDivide.codeWith WordDivide.startT),
   zeroA aX₂, copyA aX₂ aV, copyA aD aSv]
 
 /-- The mask of `gcd(q, p) = 1`, from the inverse's `[v]`, and'ed into the mask. -/

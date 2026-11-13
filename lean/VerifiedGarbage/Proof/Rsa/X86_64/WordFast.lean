@@ -16,10 +16,10 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 /-- Normalization writes only the divisor array in addition to the reducer's ranges. -/
 def normRanges (W : Nat) : List (Nat × Nat) := (slot W aM, 8 * (W + 2)) :: allRanges W
 
-theorem fastAt_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) {top : Option Nat} (hk : ∀ k, top = some k → k ≤ W / 2) :
-    WP isa (.seq (.block normalize) (code top)) s fun t =>
-      (wv s.mem B (slot W aD) W < 2 ^ (64 * xw W top) →
+theorem fastAtWith_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) {st : List Instr} {j₀ : Nat} (hst : StartOk st W j₀) :
+    WP isa (.seq (.block normalize) (codeWith st)) s fun t =>
+      (wv s.mem B (slot W aD) W < 2 ^ (64 * (j₀ + (W / 2 - 1))) →
         2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat →
         wv t.mem B (slot W aR) (W + 1) =
           wv s.mem B (slot W aD) W % wv s.mem B (slot W aM) (W / 2)) ∧
@@ -45,7 +45,7 @@ theorem fastAt_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     rw [m₁, word_writeW_self]; exact high_or _
   have D₁ : wv s₁.mem B (slot W aD) W = wv s.mem B (slot W aD) W :=
     o₁.wv (by simp only [slot, aD, aM]; omega_arith) (by omega_arith)
-  refine WP.mono (code_ok (top := top) h₁ hZ hW hk htp (modulus_pos (by omega_arith) htp))
+  refine WP.mono (codeWith_ok h₁ hZ hW hst htp (modulus_pos (by omega_arith) htp))
     fun t ⟨v, ff, kk⟩ => ?_
   refine ⟨fun hX hd => ?_, f₁.trans (ff.mono (by intro r hr; exact List.mem_cons_of_mem _ hr)),
     (k₁.trans kk).mono (by simp)⟩
@@ -59,6 +59,18 @@ theorem fastAt_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     rw [he, wv]
     simp only [Nat.add_sub_cancel]
   rw [v (by rw [D₁]; exact hX), D₁, eM]
+
+theorem fastAt_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) {top : Option Nat} (hk : ∀ k, top = some k → k ≤ W / 2) :
+    WP isa (.seq (.block normalize) (code top)) s fun t =>
+      (wv s.mem B (slot W aD) W < 2 ^ (64 * xw W top) →
+        2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat →
+        wv t.mem B (slot W aR) (W + 1) =
+          wv s.mem B (slot W aD) W % wv s.mem B (slot W aM) (W / 2)) ∧
+      Frm B (normRanges W) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hw := h.w2
+  rw [← j0_add top (W := W) (by omega_arith)]
+  exact fastAtWith_ok h hZ hW (start_startOk hW (by omega_arith) hk)
 
 /-- A numerical high-bit bound implies the word kernel's normalization premise. -/
 theorem fast_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
