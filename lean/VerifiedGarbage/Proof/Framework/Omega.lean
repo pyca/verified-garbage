@@ -18,7 +18,8 @@ proof about machine states most hypotheses are facts about memory, regions
 or states that they cannot use, and looking at them costs a tenth of a second
 or more per call; and preprocessing each fact about `/` and `%` introduces
 new variables and constraints, which every call pays for and the kernel
-checks. Two ways to run them on less:
+checks. So in a module that imports this one a plain `omega` is
+`omega_arith` (the `macro_rules` below). The ways to run them on less:
 
 * `omega_arith` selects (in)equations between natural numbers, integers or
   bit vectors, and propositional combinations of them, that are connected to
@@ -289,6 +290,20 @@ elab "omega_arith" : tactic => VG.Omega.omegaArith
 
 /-- `omega_arith` without its retries (`omegaArithOnce`). -/
 elab "omega_arith_once" : tactic => VG.Omega.omegaArithOnce
+
+/-- A plain `omega` runs as `omega_arith`, and as Lean's `omega`, on every
+hypothesis, only where that fails: so it proves whatever Lean's does. The
+proofs' arithmetic goals are small (`a + 8 * i + 8 ≤ n`: a median of 22
+characters, in 14 modules taken at random), in contexts of a median 26
+hypotheses, 11 of them arithmetic, of which the goal needs one (none for one
+goal in five). Lean's `omega` normalizes every one of them, and the kernel
+checks what it made of them: in 88 modules taken at random, in proportion to
+their build times, running every plain `omega` this way took 6.5% of their
+CPU time away, and 10% of the kernel's.
+
+`omega` with any option (`omega (config := {})`) is Lean's own. -/
+macro_rules
+  | `(tactic| omega) => `(tactic| first | omega_arith | omega (config := {}))
 
 /-- `bv_omega`, after clearing the hypotheses it cannot use. -/
 macro "bv_omega_arith" : tactic => `(tactic| (clear_non_arith; bv_omega))

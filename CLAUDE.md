@@ -417,7 +417,8 @@ lemmas and tactics to use; read it before writing a proof:
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not
-  `bv_omega`; `omega_arith`/`omega_using` in a large context; `xs[i]'h` for
+  `bv_omega`; `omega_using`/`bv_omega_arith` in a large context (a plain
+  `omega` is `omega_arith` already); `xs[i]'h` for
   a non-literal index; witnesses' regions by
   `Region.disjoint_of_sep (by decide)`.
 * **Unfolding:** close goals about symbolic memory or hash values with

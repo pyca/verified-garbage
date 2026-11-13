@@ -152,11 +152,18 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `ofNat_sub_ofNat`, `sub_sub_eq`, …) are in `AddrArith.lean`, which `Mem`
   imports. A local lemma for a family's own ranges is one application of
   one of these, never a proof of its own.
-* **`omega` in a large context:** `omega` and `bv_omega` look at every
-  hypothesis, a tenth of a second or more each call in a long proof about
-  states. Clear what they cannot use: `omega_arith`, `bv_omega_arith`
-  (arithmetic hypotheses only) or `omega_using [h₁, …]`,
-  `bv_omega_using [h₁, …]` (those facts only), `Proof/Framework/Omega.lean`.
+* **`omega` in a large context:** Lean's `omega` and `bv_omega` look at
+  every hypothesis, a tenth of a second or more each call in a long proof
+  about states, and the kernel checks what `omega` made of each. So in a
+  module that imports `Proof/Framework/Omega.lean` (all but a few do) a
+  plain `omega` runs as `omega_arith`, which gives the solver only the
+  arithmetic hypotheses connected to the goal, and as Lean's only where
+  that fails. `bv_omega` still rewrites every hypothesis first: use
+  `bv_omega_arith` (arithmetic hypotheses only). Where you know the facts a
+  goal needs, name them: `omega_using [h₁, …]`, `bv_omega_using [h₁, …]`.
+  Arithmetic side goals are the largest single cost of the proofs: without
+  them, a sample of 86 modules took 29% less CPU time to build, and the
+  kernel 37% less.
 * **Index bounds:** `xs[i]` proves `i < xs.length` with `get_elem_tactic`,
   whose core rules rewrite every hypothesis and run `omega`.
   `Proof/Framework/GetElem.lean` (which `Mem` imports) tries `decide`
