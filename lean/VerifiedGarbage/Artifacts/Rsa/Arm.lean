@@ -31,10 +31,6 @@ def direct : List Artifact := [
     code := Impl.Rsa.Arm.CheckKey.code
     stack := 0
     verified := Proof.Rsa.Arm.CheckKey.check_key_verified },
-  Spec.Rsa.recoverPrimesDetApi.artifact Arm.target {
-    code := Impl.Rsa.Arm.RecoverDet.code
-    stack := 56
-    verified := Proof.Rsa.Arm.Recover.recover_primes_det_verified },
   Spec.Rsa.privatePrecomputeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Bignum.Arm.PrivPreFn.codeU
@@ -57,7 +53,12 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.Rsa.Arm.CrtValues.codeFor v.um
       stack := 0
-      verified := Proof.Rsa.Arm.CrtValues.crt_values_for_verified v.um }]) ++
+      verified := Proof.Rsa.Arm.CrtValues.crt_values_for_verified v.um },
+    Spec.Rsa.recoverPrimesDetApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Rsa.Arm.RecoverDet.codeFor v.um
+      stack := 56
+      verified := Proof.Rsa.Arm.Recover.recover_primes_det_for_verified v.um }]) ++
   direct ++
   (VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
     Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
