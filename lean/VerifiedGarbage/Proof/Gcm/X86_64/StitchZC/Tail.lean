@@ -29,7 +29,7 @@ setup and the powers of 48 blocks, in place or out of place
 (`Stitch.EPostM`): no block of the output is loaded back.
 
 * The first group is a group of `StitchZC.grpC` with nothing between its
-  rounds (`startC_ok`), which leaves it in the copies (`CInv`), and
+  rounds (`grpM_ok`), which leaves it in the copies (`CInv`), and
   `loopsC_ok` takes the groups after it.
 * `finalC_ok`: with no block after the last group, the copies are hashed
   by `lastC`, the GHASH work of a last group's rounds (`hooks_run`,
