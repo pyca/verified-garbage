@@ -1,8 +1,7 @@
 module
--- separate module: it imports the batches' and the end's algebra (`Proof/Divstep/TcS.lean`), which only the registrations reach
 
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
-public import VerifiedGarbage.Proof.Divstep.TcSBounds
+public import VerifiedGarbage.Proof.Divstep.TcSLaw
 import VerifiedGarbage.Proof.Rsa.Divstep.Bound
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 public import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
@@ -16,12 +15,10 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 public import VerifiedGarbage.Proof.Rsa.RISCV64.IbOps
-public import VerifiedGarbage.Proof.Divstep.TcS
 public import Mathlib.Algebra.Order.Ring.Abs
 public import VerifiedGarbage.Proof.Divstep.WordDef
 import VerifiedGarbage.Proof.Divstep.Word
 import VerifiedGarbage.Proof.Divstep.Batch
-import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.RangeCover
 import Mathlib.Tactic.NormNum
@@ -30,7 +27,7 @@ import Mathlib.Tactic.NormNum
 # The batched inverse on RISC-V: the batches
 
 `loop_ok`: `3 ν + 2` batches from the start of the inversion, counted in
-`s7`, as `Proof/Divstep/TcS.lean`'s `invRunS 59`; `loopG_ok`: as many
+`s7`, as `Proof/Divstep/BatchS.lean`'s `invRunS 59`; `loopG_ok`: as many
 batches of `f` and `g` alone.
 -/
 
@@ -39,11 +36,11 @@ batches of `f` and `g` alone.
 /-!
 # The batched inverse on RISC-V: a batch
 
-A batch (`batch_ok`) is `Proof/Divstep/TcS.lean`'s `batchS 59` on the window
+A batch (`batch_ok`) is `Proof/Divstep/BatchS.lean`'s `batchS 59` on the window
 and the arrays (`BS`, numbers modulo `2^(64 (ν + 1))`), as x86-64's
 (`Proof/Rsa/X86_64/InvB/Batch.lean`): 59 divsteps on the low words
-(`head_ok`), then `(f, g)` by `lin_ok` and `shr_ok` (`Divstep.shr_nat`),
-`(a, b)` by `lin_ok` and `mred_ok` (`Divstep.mredRaw_nat`).
+(`head_ok`), then `(f, g)` by `lin_ok` and `shr_ok` (`Divstep.TcSLaw.shr_nat`),
+`(a, b)` by `lin_ok` and `mred_ok` (`Divstep.TcSLaw.mredRaw_nat`).
 -/
 
 namespace VG.Proof.Rsa.RISCV64.InvBatch
@@ -55,6 +52,11 @@ open VG.RISCV64.RegUpd
 open VG.Proof.Divstep (MSt msteps)
 
 /-! ## Frames -/
+
+/-- A combination of congruent numbers. -/
+theorem cong_comb {Q u v X Y f g : Int} (hX : X % Q = f % Q) (hY : Y % Q = g % Q) :
+    (u * X + v * Y) % Q = (u * f + v * g) % Q :=
+  Int.ModEq.add (Int.ModEq.mul_left u hX) (Int.ModEq.mul_left v hY)
 
 /-- A word of `≤ 8` bytes inside an array outside a frame. -/
 theorem keep_word {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
@@ -240,7 +242,7 @@ theorem head_ok {s : State} {B : Addr} {Z w N n : Nat} {I : Divstep.IState}
 theorem pow_succ64 (k : Nat) : 2 ^ (64 * (k + 1)) = 2 ^ (64 * k) * 2 ^ 64 := by
   rw [Nat.mul_succ, Nat.pow_add]
 
-/-- `shr_ok`'s result as `Divstep.shr_nat` reads it: the shift of `y = 2^59 z`. -/
+/-- `shr_ok`'s result as `Divstep.TcSLaw.shr_nat` reads it: the shift of `y = 2^59 z`. -/
 theorem shr_val {D V k : Nat} {y z : Int}
     (hD : D = (V + 2 * (2 ^ (64 * k) * 2 ^ 63) * (if 2 ^ (64 * k) * 2 ^ 63 ≤ V then 2 ^ 64 - 1 else 0)) /
       2 ^ 59 % (2 * (2 ^ (64 * k) * 2 ^ 63)))
@@ -254,10 +256,10 @@ theorem shr_val {D V k : Nat} {y z : Int}
   have e2' : (2 : Int) ^ (64 * (k + 1)) = ((2 * (2 ^ (64 * k) * 2 ^ 63) : Nat) : Int) := by
     rw [← e2]; push_cast; rfl
   rw [e2'] at hT ⊢
-  exact Divstep.shr_nat (H := 2 ^ (64 * k) * 2 ^ 63) (V := V) (D := D) (c := 2 ^ 59) (B := 2 ^ 64)
+  exact Divstep.TcSLaw.shr_nat (H := 2 ^ (64 * k) * 2 ^ 63) (V := V) (D := D) (c := 2 ^ 59) (B := 2 ^ 64)
     rfl rfl (Nat.mul_pos (Nat.two_pow_pos _) (by decide)) (by rw [← e2]; exact hV) hT hy.1 hy.2 hz hD
 
-/-- `mred_ok`'s result as `Divstep.mredRaw_nat` reads it. -/
+/-- `mred_ok`'s result as `Divstep.TcSLaw.mredRaw_nat` reads it. -/
 theorem mred_val {R W w0 k p iv : Nat} {t : Int}
     (hR : R = (W + 2 ^ (64 * k) * 2 ^ 64 * (if 2 ^ (64 * k) * 2 ^ 63 ≤ W then 2 ^ 64 - 1 else 0) +
       w0 * iv % 2 ^ 64 * p) % (2 ^ (64 * k) * 2 ^ 64 * 2 ^ 64) / 2 ^ 64)
@@ -268,7 +270,7 @@ theorem mred_val {R W w0 k p iv : Nat} {t : Int}
   have eAB : (2 : Int) ^ (64 * (k + 1)) = ((2 ^ (64 * k) * 2 ^ 64 : Nat) : Int) := by
     rw [← pow_succ64]; push_cast; rfl
   rw [eAB] at hT ⊢
-  exact Divstep.mredRaw_nat (A := 2 ^ (64 * k)) (B := 2 ^ 64) (H := 2 ^ 63) (p := p) (m := iv) (W := W)
+  exact Divstep.TcSLaw.mredRaw_nat (A := 2 ^ (64 * k)) (B := 2 ^ 64) (H := 2 ^ 63) (p := p) (m := iv) (W := W)
     (k := w0 * iv % 2 ^ 64) (t := t)
     (E := (W + 2 ^ (64 * k) * 2 ^ 64 * (if 2 ^ (64 * k) * 2 ^ 63 ≤ W then 2 ^ 64 - 1 else 0) +
       w0 * iv % 2 ^ 64 * p) % (2 ^ (64 * k) * 2 ^ 64 * 2 ^ 64))
@@ -281,7 +283,7 @@ theorem comb_half {u v f g : Int} {k : Nat} (huv : |u| + |v| ≤ 2 ^ 59)
     (hf : |f| ≤ 2 ^ (64 * k) * 2 ^ 3) (hg : |g| ≤ 2 ^ (64 * k) * 2 ^ 3) :
     -((2 ^ (64 * k) * 2 ^ 63 : Nat) : Int) ≤ u * f + v * g ∧
       u * f + v * g < ((2 ^ (64 * k) * 2 ^ 63 : Nat) : Int) := by
-  have := Divstep.comb_le huv hf hg
+  have := Divstep.TcSLaw.comb_le huv hf hg
   rw [abs_le] at this
   have hA : (0 : Int) < 2 ^ (64 * k) := by positivity
   push_cast
@@ -436,7 +438,7 @@ theorem updateG_ok {s : State} {B : Addr} {Z w N n : Nat} {I : Divstep.IState}
     have eG : wordsVal y.mem B (arr w aG) (nu n + 1) = wordsVal s.mem B (arr w aG) (nu n + 1) := by
       rw [em, keep_wv Ku hk (by decide) (fit _ nG)]
     obtain ⟨V, hV, hT, hD⟩ := fg_end za (wordsVal_lt _ _ _ _)
-    rw [y5, y7, tu, tv, eF, eG, Divstep.cong_comb hf hg] at hT
+    rw [y5, y7, tu, tv, eF, eG, cong_comb hf hg] at hT
     rw [m2, m1, wv_step2 _ _ _ (by omega) (by omega) (by omega)]
     exact shr_val hD hV hT (comb_half bu hF hG) z₁
   · have eF : wordsVal y.mem B (arr w aF) (nu n + 1) = wordsVal s.mem B (arr w aF) (nu n + 1) := by
@@ -444,7 +446,7 @@ theorem updateG_ok {s : State} {B : Addr} {Z w N n : Nat} {I : Divstep.IState}
     have eG : wordsVal y.mem B (arr w aG) (nu n + 1) = wordsVal s.mem B (arr w aG) (nu n + 1) := by
       rw [em, keep_wv Ku hk (by decide) (fit _ nG)]
     obtain ⟨V, hV, hT, hD⟩ := fg_end zb (wordsVal_lt _ _ _ _)
-    rw [ys1, ys2, tq, tr, eF, eG, Divstep.cong_comb hf hg] at hT
+    rw [ys1, ys2, tq, tr, eF, eG, cong_comb hf hg] at hT
     rw [m2, m1, wv_step2' _ _ _ (by omega),
       (writeW_outside _ B _ (d := arr w aF + 8 * nu n) (by omega)).wordsVal (by omega) (by omega)]
     exact shr_val hD hV hT (comb_half bq hF hG) z₂
@@ -478,7 +480,7 @@ theorem ab_mred {c1 c2 : BitVec 64} {u v IA IB : Int} {K w0 Da Db P k R p iv FA 
           Nat) : Int) % 2 ^ (64 * (k + 1 + 1)) = Divstep.mredRaw p iv (u * IA + v * IB) % 2 ^ (64 * (k + 1 + 1)) := by
   obtain ⟨W, hW, hw0, hT, hRv⟩ := ab_end x y (by rw [hu]; omega) (by rw [hu]; omega) (by rw [hv]; omega)
     (by rw [hv]; omega) h hR
-  rw [hu, hv, hDA, hDB, show 64 * (k + 2) = 64 * (k + 1 + 1) by omega, Divstep.cong_comb hA hB] at hT
+  rw [hu, hv, hDA, hDB, show 64 * (k + 2) = 64 * (k + 1 + 1) by omega, cong_comb hA hB] at hT
   rw [hK, hP] at hRv
   rw [hRv]
   exact mred_val rfl hw0 hW hT hp hpA hm ht
@@ -690,8 +692,8 @@ theorem updateAB_tail {s u y : State} {B : Addr} {Z w N n p iv k w1 w2 : Nat} {I
   obtain ⟨bu, bq⟩ := Divstep.msteps_bnd I.d I.f I.g 59
   have ha2 : |I.a| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
   have hb2 : |I.b| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
-  have ht₁ := Divstep.comb_le2 (by norm_num) (by exact_mod_cast hp) bu ha2 hb2
-  have ht₂ := Divstep.comb_le2 (by norm_num) (by exact_mod_cast hp) bq ha2 hb2
+  have ht₁ := Divstep.TcSLaw.comb_le2 (by norm_num) (by exact_mod_cast hp) bu ha2 hb2
+  have ht₂ := Divstep.TcSLaw.comb_le2 (by norm_num) (by exact_mod_cast hp) bq ha2 hb2
   have nA : aA < N := by unfold aA; omega
   have nB : aB < N := by unfold aB; omega
   have n1 : aT1 < N := by unfold aT1; omega
@@ -960,7 +962,7 @@ theorem Ctx.of_keep7 {s t : State} {B : Addr} {Z w N n : Nat} (h : Ctx s B Z w N
     (k : Keep (.s7 :: kRegs) s t) : Ctx t B Z w N n :=
   ⟨h.ws.of_keep k, (k.gpr (by decide)).trans h.s8, h.npos, h.nw, h.room, h.wbig⟩
 
-/-- The bounds of a batch from the run's (`Divstep.invRunS_bounds`, `M = 2^(64 ν + 1)`). -/
+/-- The bounds of a batch from the run's (`Divstep.TcSLaw.invRunS_bounds`, `M = 2^(64 ν + 1)`). -/
 theorem run_bounds {n p iv x k : Nat} (odd : p % 2 = 1) (hinv : (p * iv + 1) % 2 ^ 64 = 0)
     (pc : p < 2 ^ (64 * nu n)) (xc : x < 2 * 2 ^ (64 * nu n)) :
     let I := Divstep.invRunS 59 p iv x k
@@ -971,7 +973,7 @@ theorem run_bounds {n p iv x k : Nat} (odd : p % 2 = 1) (hinv : (p * iv + 1) % 2
   have hM8 : (2 * 2 ^ (64 * nu n) : Int) ≤ 2 ^ (64 * nu n) * 2 ^ 3 := by
     have : 2 * 2 ^ (64 * nu n) ≤ 2 ^ (64 * nu n) * 2 ^ 3 := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by decide)
     exact_mod_cast this
-  obtain ⟨bd, bf1, bf, bg, ba0, ba1, bb0, bb1⟩ := Divstep.invRunS_bounds (N := 59) (by decide) (p := p) (m := iv)
+  obtain ⟨bd, bf1, bf, bg, ba0, ba1, bb0, bb1⟩ := Divstep.TcSLaw.invRunS_bounds (N := 59) (by decide) (p := p) (m := iv)
     (x := x) (M := 2 * 2 ^ (64 * nu n)) (by exact_mod_cast odd) (by omega) hmI (Int.natCast_nonneg _)
     (by have : p ≤ 2 * 2 ^ (64 * nu n) := by omega
         exact_mod_cast this)
@@ -1949,7 +1951,7 @@ theorem run_done {n m iv x : Nat} (hodd : m % 2 = 1) (hiv : (m * iv + 1) % 2 ^ 6
     (by have : oddInput m x ≤ 2 ^ (32 * (2 * nu n + 1)) := by omega
         exact_mod_cast this) (by omega)
   rw [Int.gcd_natCast_natCast, Rsa.Divstep.oddInput_gcd] at hdone
-  obtain ⟨-, hfI, hcong⟩ := Divstep.invRunS_done (N := 59) (B := 3 * nu n + 2) (by decide) hodd hmI hdone
+  obtain ⟨-, hfI, hcong⟩ := Divstep.TcSLaw.invRunS_done (N := 59) (B := 3 * nu n + 2) (by decide) hodd hmI hdone
   refine ⟨hfI, ?_⟩
   rw [show 5 * (3 * nu n + 2) = (64 - 59) * (3 * nu n + 2) by omega]
   exact hcong
@@ -2113,8 +2115,10 @@ end VG.Proof.Rsa.RISCV64.InvBatch
 
 namespace VG.Proof.Rsa.RISCV64
 
-/-- The batched inverse's and GCD's contract, supplied at the registrations. -/
-instance invLaw : InvLaw where
+/-- The batched inverse's and GCD's contract, supplied at the registrations, given the batches'
+algebra (`Divstep.TcSLaw`, whose instance they take from `Proof/Divstep/TcSBounds.lean`, so that only
+they import that algebra). -/
+instance invLaw [Divstep.TcSLaw] : InvLaw where
   inverse_ok := InvBatch.inverse_ok
   inverseS_ok := InvBatch.inverseS_ok
   gcd_ok := InvBatch.gcd_ok
