@@ -1190,6 +1190,8 @@ pub const VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES: verified_garbage_cpu::
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 2592 bytes.
@@ -1238,7 +1240,7 @@ call {vg_mldsa_ntt_avx2}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
@@ -1251,6 +1253,8 @@ pub const VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES: verified_garbage_cpu::Fe
 /// ML-DSA-87 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa87_sign_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1361,7 +1365,7 @@ call {vg_mldsa_ntt_avx2}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
 .p2align 6"#,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
@@ -1371,6 +1375,8 @@ jne 20b
 /// ML-DSA-87 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa87_verify_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1419,7 +1425,7 @@ call {vg_mldsa_ntt}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -1429,6 +1435,8 @@ jne 20b
 /// ML-DSA-87 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa87_sign_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1538,7 +1546,7 @@ call {vg_mldsa_ntt}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
 .p2align 6"#,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
