@@ -364,11 +364,6 @@ open VG.Proof.Rsa.Arm (CrtImpl)
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Sig.signApi.artifact Arm.target {
-      suffix := v.suffix
-      code := Proof.RsaPkcs1Sig.Arm.Sg.signCode v
-      stack := 4616
-      verified := (Proof.RsaPkcs1Sig.Arm.Sg.code_verified v) },
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
       code := Proof.RsaPkcs1Sig.Arm.Sg.signCodeP v

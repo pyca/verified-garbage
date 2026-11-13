@@ -37,11 +37,6 @@ open VG.Proof.RsaPkcs1Sig.AArch64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Sig.signApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.RsaPkcs1Sig.AArch64.Sign.code (privOf v).name (privOf v).code
-      stack := Sgn.stk (privOf v).stack
-      verified := Sgn.code_verified (privOf v) },
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.Sign.codeP (privPOf v).name (privPOf v).code

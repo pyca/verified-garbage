@@ -14,18 +14,11 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 namespace VG.Artifacts.RsaPss.Arm
 
 open VG.Proof.Rsa.Arm (CrtImpl)
-open VG.Proof.RsaPss.Arm (OK sign_ok signP_ok verify_ok)
+open VG.Proof.RsaPss.Arm (OK signP_ok verify_ok)
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars then [
-      Spec.RsaPss.signMdTableApi.artifact Arm.target {
-        suffix := v.suffix
-        tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
-          ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
-        code := Proof.RsaPss.Arm.Sg.signCode Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars v
-        stack := 3624
-        verified := sign_ok h v },
       Spec.RsaPss.signPrecomputedMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),

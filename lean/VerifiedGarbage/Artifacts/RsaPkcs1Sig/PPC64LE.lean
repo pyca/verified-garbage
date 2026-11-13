@@ -22,10 +22,6 @@ def artifacts : List Artifact := [
     code := Impl.RsaPkcs1Sig.PPC64LE.RecoverPrecomputed.code
     stack := 2224
     verified := Proof.RsaPkcs1Sig.PPC64LE.Rec.code_verified },
-  Spec.RsaPkcs1Sig.signApi.artifact PPC64LE.target {
-    code := Impl.RsaPkcs1Sig.PPC64LE.Sign.code
-    stack := Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes
-    verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.code_verified },
   Spec.RsaPkcs1Sig.signPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.Sign.codeP
     stack := Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes

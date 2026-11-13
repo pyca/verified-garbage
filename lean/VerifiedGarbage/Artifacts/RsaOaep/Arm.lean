@@ -14,18 +14,12 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 namespace VG.Artifacts.RsaOaep.Arm
 
 open VG.Proof.Rsa.Arm (CrtImpl)
-open VG.Proof.RsaOaep.Arm (OK dec_ok decP_ok enc_ok)
+open VG.Proof.RsaOaep.Arm (OK decP_ok enc_ok)
 open VG.Proof.HashTable.Arm (vars tables)
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK vars then [
-      Spec.RsaOaep.decryptMdTablesApi.artifact Arm.target {
-        suffix := v.suffix
-        tables := [("hash", tables vars), ("mgf1", tables vars)]
-        code := Proof.RsaOaep.Arm.Dec.decCode vars v
-        stack := 3624
-        verified := dec_ok vars h v },
       Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", tables vars), ("mgf1", tables vars)]

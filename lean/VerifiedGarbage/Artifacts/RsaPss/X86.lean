@@ -37,7 +37,7 @@ end VG.Artifacts.RsaPss.X86.AllSha1AllSha256
 -- RSASSA-PSS signing on x86, with the hash functions as tables
 namespace VG.Artifacts.RsaPss.X86.RsaPrivateCrtAllSha1AllSha256
 
-open VG.Proof.RsaPss.X86 (sign_ok signP_ok)
+open VG.Proof.RsaPss.X86 (signP_ok)
 open VG.Proof.Rsa.X86.PrivChecked (crtPBaseline)
 open VG.Proof.MdHashTable.X86 (mvars)
 open VG.Proof.HashTable.X86 (vars)
@@ -45,14 +45,6 @@ open VG.Proof.HashTable.X86 (vars)
 def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86.Variants.Backend)
     (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
   if h : Proof.RsaPss.X86.Sg.OK (mvars vs1 vs256) (vars vs1 vs256) then [
-    Spec.RsaPss.signMdTableApi.artifact X86.target {
-      suffix := qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
-        ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
-      code := Proof.RsaPss.X86.Sg.signCode (mvars vs1 vs256) (vars vs1 vs256) c
-      stack := Proof.RsaPss.X86.Sg.stackBytes
-      verified := sign_ok _ _ h c
-      spSafe := Proof.RsaPss.X86.Sg.code_sp h c },
     Spec.RsaPss.signPrecomputedMdTableApi.artifact X86.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),

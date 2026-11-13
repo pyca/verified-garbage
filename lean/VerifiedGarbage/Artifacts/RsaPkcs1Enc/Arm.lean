@@ -27,15 +27,9 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 namespace VG.Artifacts.RsaPkcs1Enc.Arm
 
 open VG.Proof.Rsa.Arm (CrtImpl)
-open VG.Proof.RsaPkcs1Enc.Arm (decFns)
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Enc.decryptApi.artifact Arm.target {
-      suffix := v.suffix
-      code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCode v
-      stack := 3592
-      verified := (Proof.RsaPkcs1Enc.Arm.Dec.code_verified v) },
     Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
       code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v
