@@ -30,7 +30,7 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
 open VG.Impl.Mgf1.X86_64.Table (Fns)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
-open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl privStack)
+open VG.Proof.RsaPkcs1Enc.X86_64 (privStack)
 open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
 open VG.Proof.HashTable.X86_64 (tables fnsOf Coh tabOK_of held_tableOf hashAt_tableOf fnsGood_of)
 
@@ -106,8 +106,6 @@ def DTabs (ts : List FnTable) (s : State) : Prop :=
 
 /-- `decK`'s precondition, by name. -/
 def DPreT (ts : List FnTable) (s : State) : Prop := DPre s ∧ DTabs ts s
-
-theorem DPreT.of {ts : List FnTable} {s : State} (h : (decK ts).pre s) : DPreT ts s := ⟨DPre.of ts h, DPre.tab ts h⟩
 
 include hc in
 /-- After the private-key operation (whose outcome is in `m` and `r`) and
@@ -237,30 +235,5 @@ theorem decFin {s s₂ : State} (hp : DPre s) {H G : Spec.Mgf1.Hash}
   obtain rfl := Option.some.inj hH'
   obtain rfl := Option.some.inj hG'
   rw [decrypt_eq hct]; exact d
-
-include hc in
-theorem dec_correct (v : PrivImpl) (s : State) (h : (decK (tables vs)).pre s) :
-    ∃ t s', Exec isa (decrypt (fnsOf vs) v.name v.code) s t s' ∧ abiPreserved s s' ∧
-      (decK (tables vs)).post s s' := by
-  have hp : DPre s := DPre.of _ h
-  have htab := DPre.tab _ h
-  obtain ⟨⟨T₁, hT₁, hheld₁⟩, -, hd⟩ := htab
-  obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
-  obtain ⟨hmL, -, hDmL⟩ := held_tableOf hheld₁
-  have okL := tabOK_of hc hd hw₁
-  suffices hw : WP isa (decrypt (fnsOf vs) v.name v.code) s
-      fun s' => abiPreserved s s' ∧ (decK (tables vs)).post s s' by
-    obtain ⟨t, s', he, hq⟩ := hw; exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by have := hp.sp1; unfold decStack privStack at this; unfold frameBytes at *; omega) ?_
-  unfold decBody seqs seqs seqs
-  refine WP.seq (WP.mono_syms (decHead_ok hp) fun t0 h0 sy0 => ?_)
-  refine WP.seq (WP.mono_syms (privD_call v hp h0) fun t1 ⟨he1, L1, R1, hw1⟩ sy1 => ?_)
-  -- The table of the label's hash function to its slot.
-  have TL := dtabL hp he1 (sy1.trans sy0) okL hmL hDmL
-  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (tabSlot_ok L1 R1 TL))
-    fun ta ⟨⟨ka, La, Ra, sya⟩, spa, mxa, fa⟩ _ => ?_)
-  exact decAfterTab_ok hc hp (DPre.tab _ h) hw1 (he1.step ka.2.1 ka.2.2 spa (keep_cs3 ka (by decide)) mxa fa)
-    (sya.trans (sy1.trans sy0)) La (ArgsD_privW s) Ra (ka.gpr (by decide))
-    fun s₂ _ _ hH hG he hw => decFin hp hH hG he hw
 
 end VG.Proof.RsaOaep.X86_64

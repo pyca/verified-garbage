@@ -14,10 +14,6 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.RsaPkcs1Enc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.RsaPkcs1Enc.decryptApi.artifact PPC64LE.target {
-    code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.code
-    stack := Proof.RsaPkcs1Enc.PPC64LE.Dec.stackBytes
-    verified := Proof.RsaPkcs1Enc.PPC64LE.Dec.dec_verified },
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP
     stack := Proof.RsaPkcs1Enc.PPC64LE.Dec.stackBytes

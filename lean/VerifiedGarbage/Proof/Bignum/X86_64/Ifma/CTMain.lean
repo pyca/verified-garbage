@@ -45,7 +45,10 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+meta import VerifiedGarbage.Proof.Bignum.CrtResult
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
@@ -114,50 +117,13 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Cr
 open VG.Proof.MlKem.X86_64
 open VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64.CrtIfma (Lay lay2048 lay3072 lay4096 sizes ifma vec result region sIfma)
-open VG.Proof.Bignum.X86_64 (NSafe nsafe_word preRanges_nsafe APost PrePub PrePre pre_ct PostPub PostPre
-  post_ct pins_eqs StageRel Stage stage_step two_stage R0 R1 R2 R3 R5 CrtPub RedcCT LoadCT
-  SetupCT ChecksCT QPhaseCT PPhaseCT setupS_ct checksS_ct qS_ct pS_ct nSetup_ct nPart_ok RelCT.seqs_append
-  pre_ok)
+open VG.Proof.Bignum.X86_64 (NSafe nsafe_word preRanges_nsafe APost PrePub PostPub
+  pins_eqs StageRel Stage stage_step two_stage R0 R1 R2 R3 R5 CrtPub RedcCT LoadCT
+  SetupCT ChecksCT QPhaseCT PPhaseCT setupS_ct checksS_ct qS_ct pS_ct nSetup_ct nPart_ok RelCT.seqs_append)
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-! ## The parts' hypotheses from a run's states -/
-
-/-- `pre_ok`'s hypotheses, after the checks. -/
-theorem prePre_of (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
-    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
-    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk)
-    (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
-    (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W) :
-    PrePre ⟨B, Z, (k + 7) / 8, minv, Spec.Rsa.os2ip nb, offP ((k + 7) / 8), offQ ((k + 7) / 8) pl, l.W⟩ t₀ := by
-  obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
-  have hk1 := h.k1
-  have hZq := h.z
-  obtain ⟨hW1, hW2⟩ := W_bounds hl
-  dsimp only [PrePre]
-  generalize Spec.Rsa.os2ip nb = N at *
-  generalize Spec.Rsa.os2ip xb = C at *
-  generalize Spec.Rsa.os2ip pb = P at *
-  generalize Spec.Rsa.os2ip qb = Q at *
-  generalize Spec.Rsa.os2ip qib = QI at *
-  obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
-  have hn := hr.good.scr.nowrap
-  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot l.W 8 + wsTab l.W := by
-    unfold offQ; rw [hpl]
-  rw [hql] at hZq
-  have pws := hr.pws
-  have pxv := hr.pxv
-  have qws := hr.qws
-  have qxv := hr.qxv
-  rw [hpl] at pws pxv
-  rw [hql] at qws qxv
-  exact ⟨mp, mq, _, _, C, hr.good, by omega_arith, Nat.le_refl _, by rw [hoq]; rfl, by omega_arith, by omega_arith, by omega_arith,
-    hr.wsP, hr.wsQ, pws, qws, hr.nv, hr.xm, pxv, hP'.1, hP'.2, qxv, hQ'.1, hQ'.2⟩
 
 /-- `ifma`'s hypotheses, after `pre` (as `branchA2_ok` runs it). -/
 theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
@@ -231,83 +197,6 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
     h.dq.congrK (hr.iscr.trans i₀₁) kk₁, by rw [h.dpl]; exact hpl1, by rw [h.dpl]; exact hpl',
     by rw [h.dql]; exact hql1, by rw [h.dql]; exact hql', h.dpl, h.dql⟩
 
-/-- `post`'s hypotheses, after `ifma` (as `branchB_ok` runs it). -/
-theorem postPre_of (hl : LayOk l) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
-    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
-    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
-    (hd : IDone l s t₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
-        (offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk)
-    (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
-    (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W) :
-    PostPre ⟨B, Z, (k + 7) / 8, offP ((k + 7) / 8), wsWords pl, offQ ((k + 7) / 8) pl, qip, pl⟩ t₁ := by
-  obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
-  have hk1 := h.k1
-  have hpl1 := h.pl1
-  have hZq := h.z
-  have hqil := h.qil
-  obtain ⟨hW1, hW2⟩ := W_bounds hl
-  dsimp only [PostPre]
-  generalize Spec.Rsa.os2ip nb = N at *
-  generalize Spec.Rsa.os2ip xb = C at *
-  generalize Spec.Rsa.os2ip pb = P at *
-  generalize Spec.Rsa.os2ip qb = Q at *
-  generalize hQIe : Spec.Rsa.os2ip qib = QI at *
-  obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
-  have hn := hd.good.scr.nowrap
-  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have hpl' : (pl + 7) / 8 ≤ l.W := by unfold wsWords at hpl; omega_arith
-  have hop : offP ((k + 7) / 8) = slot ((k + 7) / 8) 8 := rfl
-  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot (wsWords pl) 8 + wsTab (wsWords pl) := rfl
-  have hW8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega_arith
-  have hm := hd.im
-  exact ⟨minv, mp, mq, _, qib, Mk, hd.good, by omega_arith, by rw [hpl]; omega_arith, hm.wsQ, by rw [hpl]; exact hm.qws,
-    by have := hZq; rw [hql] at this; rw [hpl]; exact this, Nat.le_refl _, by rw [hoq, hop], by rw [hpl]; omega_arith,
-    hm.wsP, by rw [hpl]; exact hm.pws, by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩, hP'.1,
-    by rw [hpl]; exact hd.plt, hm.pmk, hd.qi, by rw [hqil]; exact hm.pl, h.qi.congrK hd.iscr hd.keep,
-    by rw [hqil]; exact hpl1, by rw [hqil]; omega_arith, by rw [hqil, hpl]; omega_arith,
-    fun hm' => by obtain ⟨_, _, hqi⟩ := hMk' hm'; simp only [hm', ↓reduceIte, hQIe]; exact hqi, hqil⟩
-
-/-- `pre`, from the checks: what `pre_ok` leaves. -/
-theorem pre_apost (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat}
-    {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
-    {minv mp mq : BitVec 64} {Mk : Bool}
-    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
-    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk)
-    (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
-    (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W) :
-    WP isa (seqs (CrtIfma.pre M.mm)) t₀ fun t => APost t₀ t B Z ((k + 7) / 8) (offP ((k + 7) / 8))
-      (offQ ((k + 7) / 8) pl) l.W minv mp mq (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3)
-      (if Mk then Spec.Rsa.os2ip qb else 3) (Spec.Rsa.os2ip xb) := by
-  obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
-  have hk1 := h.k1
-  have hZq := h.z
-  obtain ⟨hW1, hW2⟩ := W_bounds hl
-  generalize Spec.Rsa.os2ip nb = N at *
-  generalize Spec.Rsa.os2ip xb = C at *
-  generalize Spec.Rsa.os2ip pb = P at *
-  generalize Spec.Rsa.os2ip qb = Q at *
-  generalize Spec.Rsa.os2ip qib = QI at *
-  obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
-  have hn := hr.good.scr.nowrap
-  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot l.W 8 + wsTab l.W := by
-    unfold offQ; rw [hpl]
-  rw [hql] at hZq
-  have pws := hr.pws
-  have pxv := hr.pxv
-  have qws := hr.qws
-  have qxv := hr.qxv
-  rw [hpl] at pws pxv
-  rw [hql] at qws qxv
-  exact pre_ok M (wp := l.W) hr.good (by omega_arith) (Nat.le_refl _) (by rw [hoq]; exact Nat.le_refl _) (by omega_arith)
-    (by omega_arith) (by omega_arith) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2
-
 /-! ## The stages of the IFMA branch -/
 
 /-- After the checks, with the sizes of the IFMA branch. -/
@@ -330,14 +219,6 @@ def RID (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb
     (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) p.dpp p.dqp p.qip p.pl p.ql dpb dqb
     (p.mask xb pb qb qib) ∧ p.w = 2 * l.W ∧ wsWords p.pl = l.W ∧ wsWords p.ql = l.W
 
-theorem preS_ct (hl : LayOk l) (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm) :
-    RelCT isa (Two (Stage (R3I l))) (seqs (CrtIfma.pre M.mm)) (Two (Stage (RAp l))) :=
-  stage_step ((pre_ct M hR2 hXm).mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
-    offQ p.w p.pl, l.W⟩ : PrePub)) (fun _ _ _ _ _ _ _ _ _ h hv ⟨⟨minv, _, _, hr⟩, hw, hp, hq⟩ =>
-      ⟨minv, hr.nv, prePre_of hl h hv hr rfl hw hp hq⟩) h) fun _ _ h => h)
-    fun _ _ _ _ _ _ _ _ t h hv ⟨⟨minv, mp, mq, hr⟩, hw, hp, hq⟩ =>
-      WP.mono (pre_apost hl M h hv hr rfl hw hp hq) fun _ hA => ⟨minv, mp, mq, t, hr, hw, hp, hq, hA⟩
-
 theorem ifmaS_ct (hl : LayOk l) : RelCT isa (Two (Stage (RAp l))) (seqs (ifma l)) (Two (Stage (RID l))) :=
   stage_step ((ifma_ct hl).mono (fun _ _ h => two_stage (fun p _ => (⟨p.B, p.Z, p.w, offP p.w, offQ p.w p.pl,
     offQ p.w p.pl + slot l.W 8 + wsTab l.W, p.dpp, p.dqp, p.pl, p.ql⟩ : IfPub))
@@ -346,16 +227,6 @@ theorem ifmaS_ct (hl : LayOk l) : RelCT isa (Two (Stage (RAp l))) (seqs (ifma l)
     fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, mp, mq, _, hr, hw, hp, hq, hA⟩ =>
       WP.mono (branchA2_ok hl h hv hr rfl hw hp hq (ifmaZ_of hl h.zk hw hp) hA) fun _ ⟨hd, _⟩ =>
         ⟨minv, mp, mq, hd, hw, hp, hq⟩
-
-theorem postS_ct (hl : LayOk l) (M : Mont) (hR2 : RedcCT M Public.aR2) (hL : LoadCT aChunk sQinv sPlen)
-    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage (RID l))) (seqs (CrtIfma.post M.mm)) (Two (Stage R5)) :=
-  stage_step ((post_ct M hR2 hL).mono (fun _ _ h => two_stage (fun p _ => (⟨p.B, p.Z, p.w, offP p.w,
-    wsWords p.pl, offQ p.w p.pl, p.qip, p.pl⟩ : PostPub))
-    (fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, hd, hw, hp, hq⟩ =>
-      ⟨minv, hd.nv, postPre_of hl h hv hd rfl hw hp hq⟩) h) fun _ _ h => h)
-    fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, mp, mq, hd, hw, hp, hq⟩ =>
-      WP.mono (branchB_ok hl M h hv hd rfl hw hp hq hpost) fun _ ⟨hp', _⟩ => ⟨minv, mp, mq, hp'⟩
 
 /-- After the sizes' check. -/
 def R3Z (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
@@ -402,22 +273,6 @@ theorem layOf_two {l2 : CLay} (h2 : Lay2 l2) (hl : LayOf l2 l) : layOf l2 (2 * l
 
 /-- A relation of each layout, for the layout of the key's sizes. -/
 def AtLay (l2 : CLay) (R : CLay → StageRel) : StageRel := fun p => R (layOf l2 p.w) p
-
-/-- A part constant time from each layout's stage to the next, for the layout of the sizes. -/
-theorem atLay_ct {l2 : CLay} (h2 : Lay2 l2) {R R' : CLay → StageRel} {c : Prog isa}
-    (h : ∀ l, LayOk l → RelCT isa (Two (Stage (R l))) c (Two (Stage (R' l))))
-    (hw : ∀ l p σ xb pb qb dpb dqb qib t, LayOk l → R' l p σ xb pb qb dpb dqb qib t → p.w = 2 * l.W) :
-    RelCT isa (Two (Stage (AtLay l2 R))) c (Two (Stage (AtLay l2 R'))) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨p, h₁, h₂⟩ e₁ e₂
-  obtain ⟨ht, p', ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr⟩, ⟨σ', xb', pb', qb', dpb', dqb', qib', hσ', hv', hr'⟩⟩ :=
-    h (layOf l2 p.w) (layOf_ok h2 _) s₁ s₂ t₁ t₂ s₁' s₂' ⟨p, h₁, h₂⟩ e₁ e₂
-  have e : layOf l2 p'.w = layOf l2 p.w := by
-    rw [hw _ _ _ _ _ _ _ _ _ _ (layOf_ok h2 _) hr, layOf_two h2 (layOf_of _ _)]
-  refine ⟨ht, p', ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, ?_⟩, ⟨σ', xb', pb', qb', dpb', dqb', qib', hσ', hv', ?_⟩⟩
-  · show R' (layOf l2 p'.w) p' σ xb pb qb dpb dqb qib s₁'
-    rw [e]; exact hr
-  · show R' (layOf l2 p'.w) p' σ' xb' pb' qb' dpb' dqb' qib' s₂'
-    rw [e]; exact hr'
 
 /-- The sizes of one of the layouts. -/
 abbrev AnyOf (w pl ql : Nat) : Prop := SizesOf lay2048 w pl ql ∨ SizesOf lay3072 w pl ql ∨ SizesOf lay4096 w pl ql
@@ -533,59 +388,6 @@ theorem ifmaAny_ct {l2 : CLay} (h2 : Lay2 l2) :
   · exact absurd hs n2
   · exact hs
 
-/-- The IFMA computation, after `anySizes` found the sizes of a layout. -/
-theorem ifmaPart_ct {l2 : CLay} (h2 : Lay2 l2) (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm)
-    (hL : LoadCT aChunk sQinv sPlen)
-    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage (AtLay l2 R3I)))
-      (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny l2] : List (Prog isa)) ++ CrtIfma.post M.mm)) (Two (Stage R5)) := by
-  rw [List.append_assoc]
-  refine RelCT.seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp)
-    (RelCT.seq (atLay_ct h2 (fun l hl => preS_ct hl M hR2 hXm)
-      fun _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, _, _, _, hw, _⟩ => hw) ?_)
-  refine RelCT.seqs_append (by simp) (by simp [CrtIfma.post]) (RelCT.seq (ifmaAny_ct h2) ?_)
-  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨p, h₁, h₂⟩ e₁ e₂
-  exact postS_ct (layOf_ok h2 p.w) M hR2 hL hpost s₁ s₂ t₁ t₂ s₁' s₂' ⟨p, h₁, h₂⟩ e₁ e₂
-
-/-- `anySizes` and the branch on it: the IFMA computation or the CRT one. -/
-theorem dispatch_ct {l2 : CLay} (h2 : Lay2 l2) (M : Mont) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M)) (hR2 : RedcCT M Public.aR2)
-    (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
-    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage R3)) (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny l2] : List (Prog isa)) ++
-      CrtIfma.post M.mm)) (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)))) (Two (Stage R5)) := by
-  refine RelCT.seq anySizes_ct (two_ite (fun p s₁ s₂ h₁ h₂ => ?_) ?_ ?_)
-  · obtain ⟨_, _, _, _, _, _, _, _, _, _, z₁⟩ := h₁
-    obtain ⟨_, _, _, _, _, _, _, _, _, _, z₂⟩ := h₂
-    simp only [eval, z₁, z₂]
-  · refine (ifmaPart_ct h2 M hR2 hXm hL hpost).mono (fun _ _ h => two_mono (fun p s h => ?_) h) fun _ _ h => h
-    obtain ⟨⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, hz⟩, he⟩ := h
-    simp only [eval, hz, Option.some.injEq, decide_eq_true_eq] at he
-    have hs := sizesOf_layOf h2 he
-    obtain ⟨hW1, -⟩ := W_bounds (layOf_ok h2 p.w)
-    exact ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, hs.1, by unfold wsWords; omega, by unfold wsWords; omega⟩
-  · refine (RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M (CrtExpL.w4 M) hQ) (pS_ct M (CrtExpL.w4 M) hP))).mono
-      (fun _ _ h => two_mono (fun p s h => ?_) h) fun _ _ h => h
-    obtain ⟨⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, _⟩, _⟩ := h
-    exact ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr⟩
-
 /-! ## `main` -/
-
-/-- `main` leaks the same in runs that agree on the public data, given that
-its parts do. -/
-theorem main_ct {l2 : CLay} (h2 : Lay2 l2) (M : Mont) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
-    (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
-    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage R0)) (CrtIfma.main l2 M.mm) fun _ _ => True := by
-  rw [main_eq]
-  refine RelCT.seqs_append (by simp [nSetup]) (by simp) (RelCT.seq (R := Two (Stage R3)) ?_ ?_)
-  · refine RelCT.seqs_append (by simp [nSetup]) (by simp [checks])
-      (RelCT.seq (R := Two (Stage R2)) ?_ (checksS_ct hC))
-    refine RelCT.seqs_append (by simp [nSetup]) (by simp [primesSetup])
-      (RelCT.seq (R := Two (Stage R1)) ?_ (setupS_ct hS))
-    exact stage_step (nSetup_ct M) fun p σ xb _ _ _ _ _ t h hv ht => by
-      subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
-  refine RelCT.seqs_append (by simp) (by simp [finish]) (RelCT.seq ?_ hF)
-  exact dispatch_ct h2 M hQ hP hR2 hXm hL hpost
 
 end VG.Proof.Bignum.X86_64.Ifma

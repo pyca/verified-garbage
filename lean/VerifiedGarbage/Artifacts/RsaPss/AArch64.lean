@@ -16,18 +16,11 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.RsaPss.AArch64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaPkcs1Sig.AArch64 (privOf privPOf)
-open VG.Proof.RsaPss.AArch64 (sign_ok signP_ok OK)
+open VG.Proof.RsaPkcs1Sig.AArch64 (privPOf)
+open VG.Proof.RsaPss.AArch64 (signP_ok OK)
 
 def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.signMdTableApi.artifact AArch64.target {
-      suffix := qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.MdHashTable.AArch64.tables vs)]
-      code := Impl.RsaPss.AArch64.signC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
-        (privOf c).name (privOf c).code
-      stack := Proof.RsaPss.AArch64.Sgn.stk (privOf c).stack
-      verified := sign_ok h c },
     Spec.RsaPss.signPrecomputedMdTableApi.artifact AArch64.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.MdHashTable.AArch64.tables vs)]

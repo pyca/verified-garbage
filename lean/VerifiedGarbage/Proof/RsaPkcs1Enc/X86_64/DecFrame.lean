@@ -119,22 +119,6 @@ structure DPre (s : State) : Prop where
   hdql : (stackArg s 12).toNat = (stackArg s 8).toNat
   hsl : 16 * (s.gpr .r8).toNat + 32 ≤ (stackArg s 16).toNat
 
-theorem dPre_of {s : State} (h : decK.pre s) : DPre s := by
-  simp only [decK] at h
-  sig_split h
-  rename_i sp1 sp2 hrd hwr dOm dOn dOe dOd dOi dOp dOq dOdp dOdq dOqi dOs dOa dMn dMe dMd dMi dMp dMq dMdp
-    dMdq dMqi dMs dMa dns des dds dis dps dqs ddps ddqs dqis dsa dRo dRm dRs dKo dKm dKn dKe dKd dKi dKp dKq
-    dKdp dKdq dKqi dKs dKa wO wM wN wE wD wI wP wQ wDp wDq wQi wS hsplit1 hsi hil L1 L2 dl1 dl2 pl1 pl2 ql1
-    ql2 hdpl hqil hdql
-  obtain ⟨k1, k2⟩ := hsplit1
-  have hsl := h
-  clear h
-  exact ⟨sp1, sp2, fun r hr => by rw [hrd]; exact List.mem_append_left [⟨stackArgAddr s 0, 136⟩] hr,
-    ⟨136, Nat.le_refl _, by decide, by rw [hrd]; simp⟩, hwr, dOm, dOn, dOe, dOd, dOi, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dMn, dMe, dMd, dMi,
-    dMp, dMq, dMdp, dMdq, dMqi, dMs, dMa, dns, des, dds, dis, dps, dqs, ddps, ddqs, dqis, dsa, dRo, dRm, dRs,
-    dKo, dKm, dKn, dKe, dKd, dKi, dKp, dKq, dKdp, dKdq, dKqi, dKs, dKa, wO, wM, wN, wE, wD, wI, wP, wQ, wDp, wDq,
-    wQi, wS, k1, k2, hsi, hil, L1, L2, dl1, dl2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsl⟩
-
 /-! ## The frame -/
 
 /-- The frame's base: `rsp` in the frame. -/
@@ -316,9 +300,6 @@ structure CallAt (s t : State) : Prop where
   rcx : t.gpr .rcx = s.gpr .r8
   r8 : t.gpr .r8 = s.gpr .r9
   r9 : t.gpr .r9 = stackArg s 0
-
-theorem Setup.call {s t : State} (h : Setup s t) : CallAt s t :=
-  ⟨h.rsp, h.rd, h.wr, h.out, h.args, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9⟩
 
 theorem argMoves_ok : ∀ p ∈ argMoves, p.1 < 17 ∧ p.2 % 8 = 0 ∧ p.2 + 8 ≤ frameBytes := by decide
 

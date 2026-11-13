@@ -748,18 +748,6 @@ def result (p : Nat) : List (Prog isa) :=
 
 /-! ## The phases -/
 
-/-- A prime's bases, in its workspace (`rdi := [sl]`), from `n`'s `R_n² mod
-n` and `c R_n mod n` (`R_n = R_X²`, as `n` has twice the prime's words):
-`aY := R_X² mod X` (`redc`, which multiplies by `R_X⁻²`), `aXc := c mod X`,
-then `aXc := c R_X mod X` (through `aT`) and `aY := R_X mod X`. -/
-def prep (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : List (Prog isa) :=
-  [.block [.mov .rdi (.mem (hdr sl))]] ++ redc mul aR2 ++ copyArr aY aXc ++ redc mul aXm ++ [mul aT aY aXc] ++
-    copyArr aXc aT ++ [mul aY aY aOne, .block [leave]]
-
-/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`). -/
-def pre (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  prep mul sWsQ ++ prep mul sWsP
-
 /-- The IFMA area after `q`'s workspace, its base into both prime
 workspaces; the regions; the vector code; the results. -/
 def ifma : List (Prog isa) :=
@@ -768,17 +756,6 @@ def ifma : List (Prog isa) :=
   region l 0 sDp sPlen ++ [.block [leave, enterQ]] ++ region l 1 sDq sQlen ++
   [.block [.mov .rbx (.mem (hdr sIfma))], vec l] ++
   result l 1 ++ [.block [leave, enterP]] ++ result l 0 ++ [.block [leave]]
-
-/-- `p`'s phase after its exponentiation: `aXc := R_p² mod p` as in `prep`,
-`m_q` (`q`'s `aY`, of as many words) into `aChunk` and `aXc := m_q R_p mod
-p` (through `aChunk`); then `h = (m_p - m_q) qInv mod p` into `aY`, as
-`pPhase` computes it. -/
-def post (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  [.block [enterP]] ++ redc mul aR2 ++
-  [.block [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))),
-      .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aChunk)))],
-    copyWords, mul aChunk aChunk aXc] ++ copyArr aXc aChunk ++
-  subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
 
 /-! ## With the key's precomputed values
 
@@ -857,21 +834,6 @@ def anySizes : Prog isa :=
 def ifmaAny (l2 : Lay) : Prog isa :=
   .seq (.block (sizes lay2048)) (.ite .e (seqs (ifma l2))
     (.seq (.block (sizes lay3072)) (.ite .e (seqs (ifma lay3072)) (seqs (ifma lay4096)))))
-
-/-- The IFMA computation for 2048-, 3072- and 4096-bit keys, the CRT one
-otherwise: `pre` and `post` do not depend on the layout, so only the vector
-code is chosen by it. -/
-def main (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (nSetup mul ++ primesSetup ++ checks ++
-    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny l2] ++ post mul))
-      (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
-    finish)
-
-/-- `vg_rsa_private_crt_ifma` (`l2 = lay2048`) and
-`vg_rsa_private_crt_ifma512` (`l2 = lay2048z`). -/
-def code (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
-    (.ite .ne fail (main l2 mul))
 
 /-- `main` with `R² mod n` from the key's precomputed values (`nSetupP`). -/
 def mainP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=

@@ -35,12 +35,6 @@ open VG.Proof.Sha256.X86.Variants (Backend)
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl)
 
 def artifacts (v : Backend) (c : CrtImpl) : List Artifact := [
-  Spec.RsaPkcs1Enc.decryptApi.artifact X86.target {
-    suffix := qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
-    code := Proof.RsaPkcs1Enc.X86.Dec.decryptCode v c
-    stack := Proof.RsaPkcs1Enc.X86.Dec.stackBytes
-    verified := Proof.RsaPkcs1Enc.X86.Dec.code_verified v c
-    spSafe := Proof.RsaPkcs1Enc.X86.Dec.code_sp v c },
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86.target {
     suffix := qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
     code := Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c Proof.Rsa.X86.PrivChecked.crtPBaseline

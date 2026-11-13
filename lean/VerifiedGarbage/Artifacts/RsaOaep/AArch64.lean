@@ -33,21 +33,13 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaOaep.AArch64 (dec_ok decP_ok OK)
-open VG.Proof.RsaOaep.AArch64.Dec (decStack)
-open VG.Proof.RsaPkcs1Enc.AArch64 (privOf)
+open VG.Proof.RsaOaep.AArch64 (decP_ok OK)
 open VG.Proof.RsaPkcs1Sig.AArch64 (privPOf)
 open VG.Proof.MdHashTable.AArch64 (tables)
 open VG.Proof.HashTable.AArch64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.decryptMdTablesApi.artifact AArch64.target {
-      suffix := qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.AArch64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
-      stack := decStack (privOf c)
-      verified := dec_ok vs h c },
     Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact AArch64.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]

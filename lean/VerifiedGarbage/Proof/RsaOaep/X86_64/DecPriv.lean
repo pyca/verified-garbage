@@ -23,7 +23,7 @@ namespace VG.Proof.RsaOaep.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Proof.MlKem.X86_64 (Keep)
-open VG.Proof.RsaPkcs1Enc.X86_64 (privStack privK PrivImpl)
+open VG.Proof.RsaPkcs1Enc.X86_64 (privStack privK)
 
 /-- The base of the stack the function uses. -/
 abbrev kbD (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 decStack
@@ -276,15 +276,5 @@ theorem privDW_call {name : String} {code : Prog isa} {k : Contract isa} (hk : �
     rw [show (stackArg s 10).toNat = (stackArg s 2).toNat from hp.hqil,
       show (stackArg s 8).toNat = (stackArg s 4).toNat from hp.hdql] at hpost
     exact hpost
-
-theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
-    WP isa (.call v.name v.code) t fun t' => EnvD s t' ∧ Lay t' (fb s) (stackArg s 15) ∧
-      Rep t'.mem (fb s) (stackArg s 15) (fun o => t'.mem (off (stackArg s 15) o)) (privW s) ∧
-      Spec.Rsa.writtenOutcome t'.mem (off (stackArg s 15) oEm) (s.gpr .r8).toNat ((t'.gpr .rax).setWidth 32)
-        (privOutD s) :=
-  let ⟨hc, hw⟩ := privD_covers hp h.call
-  WP.mono (privDW_call (k := privK) (fun _ _ h => h) v.ok v.spSafe v.depth hp h.call (privD_pre hp h.call) hc hw)
-    fun _ ⟨he, hk, R, o⟩ => ⟨he, h.L.congr (he.rsp.trans h.he.rsp.symm) (he.wr.trans h.he.wr.symm)
-      (by rw [slot_eq sScr 14 rfl, slot_eq sScr 14 rfl]; exact hk (by decide)), R, o⟩
 
 end VG.Proof.RsaOaep.X86_64

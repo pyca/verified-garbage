@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.RsaPss.RISCV64
 
-open VG.Proof.RsaPss.RISCV64 (OK verify_ok sign_ok signP_ok)
+open VG.Proof.RsaPss.RISCV64 (OK verify_ok signP_ok)
 open VG.Proof.MdHashTable.RISCV64 (vars tables fnsOf fns3)
 
 def artifacts : List Artifact :=
@@ -22,11 +22,6 @@ def artifacts : List Artifact :=
         (fns3 vars)
       stack := 336
       verified := verify_ok h },
-    Spec.RsaPss.signMdTableApi.artifact RISCV64.target {
-      tables := [("hash", tables vars), ("mgf1", tables vars)]
-      code := Impl.RsaPss.RISCV64.Sign.sign (fnsOf vars) (fns3 vars)
-      stack := 3472
-      verified := sign_ok h },
     Spec.RsaPss.signPrecomputedMdTableApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.Sign.signP (fnsOf vars) (fns3 vars)

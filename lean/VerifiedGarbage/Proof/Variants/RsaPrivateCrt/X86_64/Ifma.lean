@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Precomputed
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
@@ -67,7 +66,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
@@ -193,7 +191,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
@@ -277,22 +274,7 @@ namespace VG.Proof.Variants.RsaPrivateCrt.X86_64.Ifma
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : CrtImpl where
-  name := "vg_rsa_private_crt" ++ "_ifma"
-  code := Impl.Rsa.X86_64.CrtIfma.code Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
-  depth := by lit_decide
-  ok := crt_call_ok (by lit_decide) (Ifma.code_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
-  ct := crt_call_ct (by lit_decide) (Ifma.code_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.code_constantTime (.inl rfl) Mont.fnAdx (by decide +kernel))
-  nosp := noSp_of (by lit_decide)
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  montSuffix := "_adx"
-  pc := Impl.Rsa.X86_64.Precompute.code CallMont.adx.mm (Impl.Bignum.X86_64.R2Adx.choice CallMont.adx.mm)
-  pcOk := pc_call_ok Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
-  pcCt := pc_call_ct Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
-  pcMx := by decide +kernel
   pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma.variant
-  pcNosp := noSp_of (by decide +kernel)
-  pcDepth := by decide +kernel
-  pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
   nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma"
   codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
   depthP := by lit_decide
@@ -307,22 +289,7 @@ def variant : CrtImpl where
 of the CPUs with AVX512_IFMA, those that multiply in two 512-bit units,
 where it is the faster. -/
 def variant512 : CrtImpl where
-  name := "vg_rsa_private_crt" ++ "_ifma512"
-  code := Impl.Rsa.X86_64.CrtIfma.code Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm
-  depth := by lit_decide
-  ok := crt_call_ok (by lit_decide) (Ifma.code_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
-  ct := crt_call_ct (by lit_decide) (Ifma.code_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.code_constantTime (.inr rfl) Mont.fnAdx (by decide +kernel))
-  nosp := noSp_of (by lit_decide)
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  montSuffix := "_adx"
-  pc := Impl.Rsa.X86_64.Precompute.code CallMont.adx.mm (Impl.Bignum.X86_64.R2Adx.choice CallMont.adx.mm)
-  pcOk := pc_call_ok Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
-  pcCt := pc_call_ct Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
-  pcMx := by decide +kernel
   pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma.variant
-  pcNosp := noSp_of (by decide +kernel)
-  pcDepth := by decide +kernel
-  pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
   nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma512"
   codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm
   depthP := by lit_decide

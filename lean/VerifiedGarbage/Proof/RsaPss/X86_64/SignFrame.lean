@@ -109,12 +109,6 @@ structure SPre (s : State) : Prop where
   hsw : Spec.RsaPss.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 15).toNat
   hdl : Spec.RsaPss.digestLenOk 64 s.mem (stackArg s 16) (stackArg s 11)
 
-theorem SPre.of {s : State} (h : (signK tsH tsG).pre s) : SPre tsH tsG s := by
-  simp only [signK] at h
-  obtain ⟨sp1, sp2, tabH, tabG, hsy, hrd, hwr, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOdg, dOsa, dOs, dOtH, dOtG, dOa, dns, des, dps, dqs, ddps, ddqs, dqis, ddgs, dsas, dstH, dstG, dsa, dRo, dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRdg, dRsa, dRs, dRtH, dRtG, dRa, dKo, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKdg, dKsa, dKs, dKtH, dKtG, dKa, wO, wN, wE, wP, wQ, wDp, wDq, wQi, wDg, wSa, wS, wTH, wTG, lv, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, hdl⟩ := h
-  exact ⟨sp1, sp2, tabH, tabG, hsy, fun r hr => by rw [hrd]; exact List.mem_append_left _ hr,
-    ⟨144, Nat.le_refl _, by rw [hrd]; simp⟩, hwr, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOdg, dOsa, dOs, dOtH, dOtG, dOa, dns, des, dps, dqs, ddps, ddqs, dqis, ddgs, dsas, dstH, dstG, dsa, dRo, dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRdg, dRsa, dRs, dRtH, dRtG, dRa, dKo, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKdg, dKsa, dKs, dKtH, dKtG, dKa, wO, wN, wE, wP, wQ, wDp, wDq, wQi, wDg, wSa, wS, wTH, wTG, lv, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw, hdl⟩
-
 variable {tsH tsG}
 
 /-- A stack argument is in a region the caller reads. -/

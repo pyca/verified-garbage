@@ -106,21 +106,6 @@ structure PreS (s : State) : Prop where
   hdql : (stackArg s 10).toNat = (stackArg s 6).toNat
   hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 14).toNat
 
-theorem preS_of {s : State} (h : sigContract.pre s) : PreS s := by
-  simp only [sigContract] at h
-  sig_split h
-  rename_i sp1 sp2 hrd hwr dOn dOe dOd dOp dOq dOdp dOdq dOqi dOs dOa dns des dds dps dqs ddps ddqs dqis dsa
-    dRo hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 dRs hdrop9 dKo dKn dKe dKd dKp dKq dKdp dKdq
-    dKqi dKs dKa wO wN wE wD wP wQ wDp wDq wQi wS hsplit10 hsi L1 L2 pl1 pl2 ql1 ql2 hdpl hqil hdql
-  clear hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9
-  obtain ⟨k1, k2⟩ := hsplit10
-  have hsl := h
-  clear h
-  exact ⟨sp1, sp2, fun r hr => by rw [hrd]; exact List.mem_append_left [⟨stackArgAddr s 0, 120⟩] hr,
-    ⟨120, Nat.le_refl _, by decide, by rw [hrd]; simp⟩, hwr, dOn, dOe, dOd, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, des, dds, dps, dqs, ddps,
-    ddqs, dqis, dsa, dRo, dRs, dKo, dKn, dKe, dKd, dKp, dKq, dKdp, dKdq, dKqi, dKs, dKa, wO, wN, wE, wD, wP, wQ, wDp,
-    wDq, wQi, wS, k1, k2, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsl⟩
-
 /-! ## The frame -/
 
 abbrev fb (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 frameBytes

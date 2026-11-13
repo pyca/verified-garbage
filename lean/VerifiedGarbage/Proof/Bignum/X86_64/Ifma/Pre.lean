@@ -27,38 +27,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-- Into a prime's workspace (`rdi := [sl]`), and `aXc := [j] R^-K mod X`. -/
-theorem enterRedc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {X : Nat}
-    {sl o wx j : Nat} (hj : j < 8) (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
-    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32)
-    (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X)
-    (hX1 : 1 < X) :
-    WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm j)) s fun t =>
-      SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧ wv t.mem (off B o) (slot wx aXc) wx < X ∧
-      wv t.mem (off B o) (slot wx aXc) wx * 2 ^ (64 * wx * nChunks w wx) % X =
-        wv s.mem B (slot w j) w % X ∧
-      Frm B [xRange o wx] s.mem t.mem ∧ Frm (off B o) (redcRanges wx) s.mem t.mem ∧
-      Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
-  have hs := hg.scr
-  have hn := hs.nowrap
-  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
-  have ho64 : o < 2 ^ 64 := by omega_using [hhi, hn, hX8]
-  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by omega_using [hhi, hn]
-  refine wp_seqs_append (by simp) (by simp [redc]) ?_
-  refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off B o ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sl) (by omega_using [hhi, hsl, hX8]), hslv]) rfl)
-    fun s₂ ⟨⟨hdi₂, hm₂⟩, k₂⟩ => ?_
-  have hc₂ : SubCtx s₂ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k₂.2.2) (by rw [hm₂]; exact hg.hdr) (by rw [hm₂]; exact hws) hdi₂ hlo (by have := tabBytes_le_wsTab wx; omega)
-  have hX₂ : XVals s₂ B o wx mx X := by
-    rw [show s₂ = { s₂ with mem := s.mem } by rw [← hm₂]] ; exact ⟨hX.n, hX.inv, hX.one⟩
-  refine WP.mono (redc_ok M hc₂ hX₂ hwx2 hwx (by omega_using [hw28]) hX1 hj)
-    fun s₃ ⟨hc₃, hX₃, hlt₃, hv₃, f₃, k₃⟩ => ⟨hc₃, hX₃, hlt₃, by rw [← hm₂]; exact hv₃, ?_, ?_, ?_⟩
-  · rw [← hm₂]; exact f₃.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)
-  · rw [← hm₂]; exact f₃
-  · exact (k₂.trans k₃).mono (by decide)
-
 /-- Back to `n`'s workspace, whose header the prime's phase kept. -/
 theorem leaveBack_ok {s₀ t : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {o wx : Nat}
     (hg : Good s₀ B Z w minv) (hc : SubCtx t B Z o w wx mx) (hf : Frm B [xRange o wx] s₀.mem t.mem)
@@ -199,60 +167,6 @@ theorem prepTail_ok (M : Mont) {s s₂ : State} {B : Addr} {Z w : Nat} {minv mx 
   · have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
     rw [hm', ha₆.hslot (by decide), ho₅.word (.inl (by omega_using [hC0, hmx])) (by omega_using [hmx]), ha₄.hslot (by decide),
       r₃.word_eq hrm (by omega_using [hmx]), hmk]
-
-theorem prep_split (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : CrtIfma.prep mul sl =
-    (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc mul Public.aR2) ++ (copyArr Public.aY aXc ++
-      (redc mul Public.aXm ++ (([mul aT Public.aY aXc] : List (Prog isa)) ++
-        (copyArr aXc aT ++ [mul Public.aY Public.aY Public.aOne, .block [leave]])))) := by
-  simp only [CrtIfma.prep, List.append_assoc]
-
-/-- `prep`: `R_X` into the prime's `aY`, `x R_X` into its `aXc`, from `n`'s
-`R_n² mod n` and `x R_n mod n` (`R_n = R_X²`). Only the prime's workspace
-changes. -/
-theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
-    {sl o wx : Nat} (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
-    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hw2 : w = 2 * wx) (hsl : sl < 32)
-    (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx) (hN : NVals s B w minv N)
-    (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
-    (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1) :
-    WP isa (seqs (CrtIfma.prep M.mm sl)) s (PrepPost s B Z w minv mx N X C o wx) := by
-  have hs := hg.scr
-  have hn := hs.nowrap
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
-  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by omega_using [hhi, hn]
-  have hwx : wx ≤ w := by omega_using [hw2]
-  have hK := nChunks_two hw2 (by omega_using [hwx2])
-  have hRR : Nat.Coprime (2 ^ (64 * wx * 2)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
-  have e2 : 2 ^ (64 * w) = 2 ^ (64 * wx * 2) := by rw [hw2]; congr 1; omega_using []
-  have lY := slot_le (w := wx) (show Public.aY < 8 by decide)
-  have hY0 := hdr_lt_slot wx Public.aY (show 31 < 32 by decide)
-  have hrm : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMaskX := fun r hr => by
-    simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn, slot, hdrBytes] <;>
-      omega_using []
-  rw [prep_split]
-  -- `aXc := R_n² R_X^-2 = R_X²`.
-  refine wp_seqs_append (by simp) (by simp [copyArr]) (WP.mono (enterRedc_ok M (j := Public.aR2) (by decide) hg
-    hw28 hlo hhi hwx2 hwx hsl hslv hws hX hX1) fun s₁ ⟨hc₁, hX₁, _, hv₁, f₁, r₁, k₁⟩ => ?_)
-  -- `aY := aXc`.
-  refine wp_seqs_append (by simp [copyArr]) (by simp [redc]) (WP.mono (copyArr_ok hc₁.good (Nat.le_refl _)
-    (by omega_using [hwx2]) (by omega_using [hw28, hwx]) (o := Public.aY) (a := aXc) (by decide) (by decide) (by decide))
-    fun s₂ ⟨hv₂, ho₂, k₂⟩ => ?_)
-  rw [hK] at hv₁
-  have hc₂ := hc₁.of_frm (rs := [(slot wx Public.aY, 8 * wx)]) (Frm.of_outside ho₂ (by simp)) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; simp only; omega_using [lY, hY0]) k₂.2.2 (k₂.gpr (by decide))
-  have hX₂ : XVals s₂ B o wx mx X := hX₁.of_outside ho₂ (by decide) (by decide) (by decide) (by omega_using [])
-    (by have := hc₁.good.scr.nowrap; omega_using [this])
-  have fx₂ : Frm B [xRange o wx] s₁.mem s₂.mem :=
-    (ho₂.mono (o' := slot wx Public.aY) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_using [])).to_x
-      (by decide) hoL (List.mem_singleton_self _)
-  have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
-  exact prepTail_ok M hg hw28 hlo hhi hwx2 hw2 hXm hX1 hXodd hc₂ hX₂ (f₁.trans fx₂) ((k₁.trans k₂).mono (by decide))
-    (fun hd => by
-      rw [hv₂]
-      exact VG.Proof.Bignum.mont_cancel hRR (by
-        rw [hv₁, ← Nat.mod_mod_of_dvd _ hd, hN.r2, Nat.mod_mod_of_dvd _ hd, e2, ← Nat.pow_add]))
-    (by rw [ho₂.word (.inl (by omega_using [hY0, hmx])) (by omega_using [hmx]), r₁.word_eq hrm (by omega_using [hmx])])
 
 /-- Into a prime's workspace (`rdi := [sl]`). -/
 theorem enter_ok {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {X sl o wx : Nat}
@@ -452,27 +366,6 @@ theorem primeP_of {s s₁ : State} {B : Addr} {Z : Nat} {mp : BitVec 64} {P op w
   exact ⟨by rw [hb _ (by unfold sWsP sFn; omega_using [hpq, hX8])]; exact hsp,
     hwsp.of_disj fQ (fun r hr => by rcases hQd r hr with h | h <;> omega_using [h, hX8]) (by omega_using [hpq, hX8, ho64]),
     hP.of_disj fQ hQd (by omega_using [hpq, ho64]), hb⟩
-
-/-- `pre`: both primes ready; only their workspaces change. -/
-theorem pre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {N P Q C op wp oq : Nat}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ op)
-    (hpq : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wp 8 + wsTab wp ≤ Z) (hwp2 : 2 ≤ wp)
-    (hw2 : w = 2 * wp) (hsp : word s.mem B (8 * sWsP) = off B op) (hsq : word s.mem B (8 * sWsQ) = off B oq)
-    (hwsp : WsAt s.mem B op wp mp) (hwsq : WsAt s.mem B oq wp mq) (hN : NVals s B w minv N)
-    (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
-    (hP : XVals s B op wp mp P) (hP1 : 1 < P) (hPodd : P % 2 = 1)
-    (hQ : XVals s B oq wp mq Q) (hQ1 : 1 < Q) (hQodd : Q % 2 = 1) :
-    WP isa (seqs (CrtIfma.pre M.mm)) s (PrePost s B Z w minv mp mq N P Q C op wp oq) := by
-  have hn := hg.scr.nowrap
-  have hX8 : 256 ≤ slot wp 8 := by unfold slot hdrBytes; omega_using []
-  refine preWith_ok (by simp [CrtIfma.prep]) (by simp [CrtIfma.prep]) hg hlo hpq hoq hwp2 hw2 hN
-    (prep_ok M hg hw28 (by omega_using [hlo, hpq]) hoq hwp2 hw2 (by decide) hsq hwsq hN hXm hQ hQ1 hQodd)
-    fun s₁ hg₁ fQ _ hN₁ => ?_
-  obtain ⟨hsp₁, hwsp₁, hP₁, hb⟩ := primeP_of hpq hoq hn fQ hsp hwsp hP
-  have hXm₁ : wv s₁.mem B (slot w Public.aXm) w = wv s.mem B (slot w Public.aXm) w :=
-    wv_congr fun i hi => hb _ (by have := slot_le (w := w) (show Public.aXm < 8 by decide); omega_using [hlo, hpq, hi, this])
-  exact prep_ok M hg₁ hw28 hlo (by omega_using [hpq, hoq]) hwp2 hw2 (by decide) hsp₁ hwsp₁ hN₁
-    (by rw [hXm₁]; exact hXm) hP₁ hP1 hPodd
 
 /-- `preP`: `pre` with `R_q² mod q` and `R_p² mod p` from `pre`'s words
 (whose values `VQ`, `VP` are them where `n`'s mask `c` is set; where it is

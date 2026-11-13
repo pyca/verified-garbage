@@ -400,14 +400,6 @@ def decTail : Prog isa :=
 
 variable (privN : String) (privC : Prog isa)
 
-def decBody : Prog isa :=
-  seqs [.block (decPrologue ++ privArgs), .call privN privC,
-    .block (tabSlot 17), .block lenLoad,
-    byLen (fun d => decTail (ofLen d) f) lens]
-
-/-- `vg_rsa_oaep_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody f privN privC) (.free frameBytes)
-
 /-- `scratch` (the stack argument 15) back to `sScr`, by `r11`, which keeps
 the private operation's result in `rax`. -/
 def scrSlot : List Instr := [.mov .r11 (.mem (arg 15)), .store (sp sScr) .r11]

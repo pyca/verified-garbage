@@ -95,39 +95,6 @@ theorem afterEncWith_ok {args : List Instr} {privName : String} {priv : Prog isa
         hcs₅ r hr, hs₃.1]
     · rw [hmxu, hmx₅, hmx₃]
 
-/-- The arguments of `vg_rsa_private_checked` and its call, on `EM`. -/
-theorem callStep_ok (v : CrtImpl) {s t₃ : State} (hp : PreS s) (he₃ : Env s t₃) {em : List Byte}
-    (hEM₃ : Spec.Rsa.bytesAt t₃.mem (off (fb s) oEM) (s.gpr .rcx).toNat = em) :
-    WP isa (.block callArgs) t₃ fun u => WP isa (.call (privName v) (privCode v)) u (CallOut s t₃ em) := by
-  have hk1 := hp.k1
-  have hk2 := hp.k2
-  have hF := fb_toNat hp
-  refine WP.mono_mx (by decide) (callArgs_ok hp he₃)
-    fun t₄ ⟨he₄, hw₄, hdi, hsi, hdx, hcx, h8, h9, hf₄, k₄⟩ hmx₄ => ?_
-  have hEM : Spec.Rsa.bytesAt t₄.mem (off (fb s) oEM) (s.gpr .rcx).toNat = em := by
-    rw [← hEM₃]
-    simp only [Spec.Rsa.bytesAt]
-    refine List.map_congr_left fun i hi => hf₄.bytes (R := ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩)
-      (fun r hr => ?_) (by dsimp only; omega) (List.mem_range.mp hi)
-    rw [List.mem_singleton.mp hr]
-    exact (Offset.base_disjoint (fb s) (e := oEM) (n := (s.gpr .rcx).toNat) (k := 112) (by decide)
-      (by unfold oEM frameBytes at *; omega)).symm
-  refine WP.mono (priv_call v hp he₄ hw₄ hdi hsi hdx hcx h8 h9) fun t₅ ⟨_, he₅, hout₅, _, hcs₅, hmx₅⟩ =>
-    ⟨he₅, by rw [hEM] at hout₅; exact hout₅, fun r hr => ?_, by rw [hmx₅, hmx₄]⟩
-  have hr' : r ∉ [Reg.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] := by
-    simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
-  rw [hcs₅ r hr, k₄.gpr hr']
-
-/-- After the encoding, whose result is `o`. -/
-theorem afterEnc_ok (v : CrtImpl) {s t₁ t₂ : State} (hp : PreS s) (he₁ : Env s t₁)
-    (h8₁ : t₁.gpr .r8 = off (fb s) oEM) (hK₂ : Keep clob t₁ t₂) {o : Option (List Byte)}
-    (hlen : ∀ em, o = some em → em.length = (s.gpr .rcx).toNat) (hpost : EOut t₁ t₂ o) :
-    WP isa (afterEnc (privName v) (privCode v)) t₂ fun u => EnvC s u ∧
-      Spec.Rsa.writtenOutcome u.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((u.gpr .rax).setWidth 32)
-        (privOut s o) ∧
-      (∀ r ∈ calleeSaved, u.gpr r = t₂.gpr r) ∧ u.mxcsr.extractLsb' 6 10 = t₂.mxcsr.extractLsb' 6 10 :=
-  afterEncWith_ok hp he₁ h8₁ hK₂ hlen hpost fun _ _ he hEM => callStep_ok v hp he hEM
-
 /-- The frame: its body runs from `allocState frameBytes s` and ends with
 `rsp` and the writable regions as the push left them. -/
 theorem wp_alloc {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frameBytes ≤ (s.gpr .rsp).toNat)
@@ -205,10 +172,5 @@ theorem codeWith_ok {ae : Prog isa} {s : State} (hp : PreS s)
       exact bytes_of_frame he₁.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega)
     rw [signId_eq, bytesAt_length, ← hH]
     exact hwu
-
-theorem code_correct (v : CrtImpl) (s : State) (h : sigContract.pre s) :
-    ∃ t s', Exec isa (code (privName v) (privCode v)) s t s' ∧ abiPreserved s s' ∧ sigContract.post s s' := by
-  have hp := preS_of h
-  exact codeWith_ok hp fun he₁ h8₁ hK₂ _ hlen hout => afterEnc_ok v hp he₁ h8₁ hK₂ hlen hout
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Sgn

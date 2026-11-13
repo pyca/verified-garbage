@@ -318,15 +318,6 @@ def afterPriv : Prog isa :=
   .seq dBuild (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H) (.seq (amLoop H) (.seq maskPart (.seq alPart
     (.seq scanPart selPart)))))))
 
-/-- The body of the frame, with the private-key operation `priv` (by its
-name `privN`). -/
-def body (privN : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block setup) (.seq (.call privN priv) (afterPriv H))
-
-/-- `vg_rsa_pkcs1_decrypt`. -/
-def code (privN : String) (priv : Prog isa) : Prog isa :=
-  .frame (.alloc frameBytes) (body H privN priv) (.free frameBytes)
-
 /-! ## With the key's precomputed values
 
 `vg_rsa_pkcs1_decrypt_precomputed(…, scratch, scratch_len, pre, pre_len)`

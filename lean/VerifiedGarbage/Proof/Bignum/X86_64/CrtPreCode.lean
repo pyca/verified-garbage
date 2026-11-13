@@ -3,7 +3,10 @@ module
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreR2
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+import VerifiedGarbage.Proof.Bignum.CrtResult
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail

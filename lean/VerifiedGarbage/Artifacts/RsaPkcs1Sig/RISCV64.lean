@@ -22,10 +22,6 @@ def artifacts : List Artifact := [
     code := Impl.RsaPkcs1Sig.RISCV64.RecoverPrecomputed.code
     stack := 2128
     verified := Proof.RsaPkcs1Sig.RISCV64.Rec.code_verified },
-  Spec.RsaPkcs1Sig.signApi.artifact RISCV64.target {
-    code := Impl.RsaPkcs1Sig.RISCV64.Sign.code
-    stack := Proof.RsaPkcs1Sig.RISCV64.Sign.stackBytes
-    verified := Proof.RsaPkcs1Sig.RISCV64.Sign.code_verified },
   Spec.RsaPkcs1Sig.signPrecomputedApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Sig.RISCV64.Sign.codeP
     stack := Proof.RsaPkcs1Sig.RISCV64.Sign.stackBytes

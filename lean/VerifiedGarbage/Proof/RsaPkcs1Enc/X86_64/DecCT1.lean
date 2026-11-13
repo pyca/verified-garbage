@@ -28,19 +28,7 @@ variable {X : State → State → Prop}
 def CS (s t : State) : Prop := ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r
 
 def J0 (s t : State) : Prop := t = allocState frameBytes s
-def JS (s t : State) : Prop := Setup s t ∧ CS s t
 def JP (s t : State) : Prop := PostPriv s t ∧ CS s t
-
-theorem setup_two : RelCT isa (Two (At X J0)) (.block setup) (Two (At X JS)) :=
-  two_blk [.rsp] (pins (J := J0) [(.rsp, fb)] (by
-      simp only [List.mem_singleton]; rintro p rfl s t h; rw [h]; rfl)
-    (by simp only [List.mem_singleton]; rintro p rfl; exact fb_pin)) (by taint_decide)
-    fun s t hp h => by
-      subst h
-      exact WP.mono (WP.keep [.rax, .rsi, .rdx, .rcx, .r8, .r9] (setup_run hp) (by decide +kernel))
-        fun t' ⟨h₁, k₁⟩ => ⟨h₁, fun r hr hr' => by
-          rw [k₁.cs (by decide) r hr]; simp only [allocState_gpr, hr', ↓reduceIte]⟩
-
 
 /-- A buffer the function only reads, as a callee from the frame sees it. -/
 theorem entryBytes {s t : State} (hp : DPre s) (h : CallAt s t) (rd wr : List Region) {p : Addr} {len : Nat}
@@ -83,21 +71,6 @@ theorem priv_view {a s t : State} {rds : List Region} (S : Sib X a s) (h : CallA
   · rw [g (by decide), g (by decide), h.r8, h.r9, entryBytes hp h _ _ hp.dKe
       (by have := hp.dOe; rw [outR]; exact this) hp.dMe hp.des (by have := hp.wE; omega)]
     exact S.e
-
-theorem priv_ct (pv : PrivImpl) : RelCT isa (Two (At X JS)) (.call pv.name pv.code) fun _ _ => True := by
-  refine RelCT.callEx (k := privK) pv.ok pv.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁, _⟩, ⟨s₂, S₂, j₂, _⟩⟩ => ?_
-  obtain ⟨r₁, a₁, n₁, e₁⟩ := priv_view (rds := privRd s₁) S₁ j₁.call
-  obtain ⟨r₂, a₂, n₂, e₂⟩ := priv_view (rds := privRd s₂) S₂ j₂.call
-  obtain ⟨c₁, w₁⟩ := priv_covers S₁.p j₁.call
-  obtain ⟨c₂, w₂⟩ := priv_covers S₂.p j₂.call
-  exact ⟨privRd s₁, privWr s₁, privRd s₂, privWr s₂, priv_pre S₁.p j₁.call, priv_pre S₂.p j₂.call,
-    ⟨List.map_inj_left.mp (r₁.trans r₂.symm), a₁.trans a₂.symm, n₁.trans n₂.symm, e₁.trans e₂.symm⟩,
-    c₁, w₁, c₂, w₂, by rw [j₁.rsp, j₂.rsp, S₁.fb, S₂.fb]⟩
-
-theorem priv_two (pv : PrivImpl) : RelCT isa (Two (At X JS)) (.call pv.name pv.code) (Two (At X JP)) :=
-  two_then (priv_ct pv) fun _ _ hp ⟨h, hcs⟩ => WP.mono (priv_call pv hp h) fun _ ⟨hpost, hcs', _⟩ =>
-    ⟨hpost, fun r hr hr' => (hcs' r hr).trans (hcs r hr hr')⟩
-
 
 /-! ## `D` -/
 

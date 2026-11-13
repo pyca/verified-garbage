@@ -31,16 +31,6 @@ theorem pc_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : pcContra
   rw [patch_mem, wordsAt_overlay fun i hi => hm i (by omega)]
   exact hp
 
-theorem crt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : crtContract.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) (hp : crtContract.post s b) :
-    crtContract.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  have hn : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 := hs.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  obtain ⟨-, -, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hl, -⟩ := hs
-  have hm := Clear.miss_wr hc (by rw [hwr]; simp) hn (Nat.le_of_eq hl.symm)
-  simp only [crtContract, State.patch_gpr] at hp ⊢
-  rw [patch_mem, written_overlay hm]
-  exact hp
-
 theorem crtP_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : crtContractP.pre s)
     (hc : Clear (hole (s.gpr .rsp)) s) (hp : crtContractP.post s b) :
     crtContractP.post s (b.patch (hole (s.gpr .rsp)) hv u) := by

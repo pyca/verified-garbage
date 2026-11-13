@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
+public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPost
@@ -20,7 +23,10 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
+meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
+meta import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPost

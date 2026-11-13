@@ -2,7 +2,10 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+import VerifiedGarbage.Proof.Bignum.CrtResult
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Bignum.CrtResult
@@ -74,35 +77,6 @@ structure CrtCtx (s : State) : Prop where
     (stackArg s 11).toNat * 8 ≤ ofs (stackArg s 10) (s.gpr .rdi + BitVec.ofNat 64 j)
   hret : ∀ b < 8, (stackArg s 11).toNat * 8 ≤ ofs (stackArg s 10) (s.gpr .rsp + BitVec.ofNat 64 b) ∧
     ∀ j < (s.gpr .rcx).toNat, s.gpr .rsp + BitVec.ofNat 64 b ≠ s.gpr .rdi + BitVec.ofNat 64 j
-
-theorem crtCtx_of {s : State} (h : crtContract.pre s) : CrtCtx s := by
-  simp only [crtContract] at h
-  sig_split h
-  rename_i hsp hrd hwr dOn dOi dOp dOq dOdp dOdq dOqi dOs dOa dns dis dps dqs ddps ddqs dqis dsa dRo
-    dRn dRi dRp dRq dRdp dRdq dRqi dRs dRa wO wN wI wP wQ wDp wDq wQi wS hk hol hil hpl1 hpl2 hql1
-    hql2 hdpl hqil hdql
-  have hsl := h
-  obtain ⟨hk1, hk2⟩ := hk
-  unfold Spec.Rsa.scratchWords at hsl
-  have hs : Scr s (stackArg s 10) ((stackArg s 11).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
-  have hn := hs.nowrap
-  have hargs : (⟨stackArgAddr s 0, 96⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  refine ⟨hk1, hk2, hpl1, hpl2, hql1, hql2, by omega_arith, hs,
-    fun j hj => ⟨_, hargs, by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
-    fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 96) (by omega_arith) (by omega_arith))
-      rw [← stackArgAddr_add s j b] at this; omega_arith)),
-    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
-    src_of_region (by rw [hrd, ← hil]; simp) (by omega_arith) (by rw [← hil]; exact dis),
-    src_of_region (by rw [hrd]; simp) (by omega_arith) dps,
-    src_of_region (by rw [hrd]; simp) (by omega_arith) dqs,
-    src_of_region (by rw [hrd, ← hdpl]; simp) (by omega_arith) (by rw [← hdpl]; exact ddps),
-    src_of_region (by rw [hrd, ← hdql]; simp) (by omega_arith) (by rw [← hdql]; exact ddqs),
-    src_of_region (by rw [hrd, ← hqil]; simp) (by omega_arith) (by rw [← hqil]; exact dqis),
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self, contains_byte _ (by omega_arith) (by omega_arith)⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega_arith) (by omega_arith)), fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
-  exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_arith) (by omega_arith))⟩
 
 /-- After `entry` and the reloads of `n` and `k`, from `s`. -/
 structure CrtHeadPost (s t : State) : Prop where
@@ -218,38 +192,5 @@ theorem crtCode_fin {s t₁ t₂ t : State} (c : CrtCtx s) (h : CrtHeadPost s t�
     · exact (hp.saved 5 (by decide)).trans (by rw [hm]; exact h.saved 5 (by decide))
   · obtain ⟨hZx, hne⟩ := c.hret b hb
     rw [hp.frame _ hZx hne, hm, h.inScr _ hZx]
-
-/-- `vg_rsa_private_crt` with Montgomery multiplication `M`, given that its
-code never loads MXCSR (which the registration file evaluates). -/
-theorem crtCode_correct (M : Mont) (E : CrtExpL M) (hmx : (Crt.code M.mm E.code).allInstrs (fun i => !loadsMxcsr i) = true)
-    (s : State) (h : crtContract.pre s) :
-    ∃ t s', Exec isa (Crt.code M.mm E.code) s t s' ∧ abiPreserved s s' ∧ crtContract.post s s' := by
-  have c := crtCtx_of h
-  clear h
-  have hZ' := c.hZ
-  have hk1 := c.hk1
-  have hk2 := c.hk2
-  suffices hwp : WP isa (Crt.code M.mm E.code) s fun s' => gprPreserved s s' ∧ crtContract.post s s' by
-    obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
-  unfold Crt.code
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (crtHead_ok c) fun t₁ h₁ => ?_
-  have hnb₁ := c.hnb.congrK h₁.inScr h₁.keep
-  refine WP.mono (invalid_ok h₁.rdx h₁.rcx hk1 hk2 (bytesAt_length _ _ _) (fun i hi => hnb₁.rd i (by
-    rw [bytesAt_length]; exact hi)) (fun i hi => hnb₁.val i _)) fun t₂ ⟨hz₂, hm₂, k₂⟩ => ?_
-  have hpre := crtPre_of c h₁ hm₂ k₂
-  refine WP.ite (!Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
-    (s.gpr .rcx).toNat) (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
-  · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
-        (s.gpr .rcx).toNat = false := by simpa using hb
-    exact WP.mono (fail_ok hpre.scr hpre.rdi (by omega_arith)
-      (by omega_arith) (by omega_arith) hpre.hO hpre.hK hpre.out hpre.outSep)
-      fun t hp => crtCode_fin c h₁ hm₂ k₂ hp (fun h => absurd h (by rw [hv]; decide)) fun _ => ⟨rfl, rfl⟩
-  · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
-        (s.gpr .rcx).toNat = true := by simpa using hb
-    exact WP.mono (crtMain_ok M E hpre hv) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin c h₁ hm₂ k₂ hp
-      (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide)
 
 end VG.Proof.Bignum.X86_64

@@ -177,11 +177,6 @@ theorem J3_rsp {s t : State} (h : J3 s t) : t.gpr .rsp = fb s := by
   obtain ⟨t₂, ⟨t₁, ⟨he₁, -⟩, hK, -⟩, hs, -⟩ := h
   rw [hs.1, hK.gpr (by decide), he₁.rsp]
 
-def J4 (s t : State) : Prop :=
-  Env s t ∧ (∀ i < 14, word t.mem (fb s) (8 * i) = callArg s i) ∧
-    t.gpr .rdi = s.gpr .rdi ∧ t.gpr .rsi = s.gpr .rsi ∧ t.gpr .rdx = s.gpr .rdx ∧
-    t.gpr .rcx = s.gpr .rcx ∧ t.gpr .r8 = s.gpr .r8 ∧ t.gpr .r9 = s.gpr .r9
-
 def J6 (s t : State) : Prop :=
   t.gpr .r11 = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧ t.gpr .r10 = off (fb s) oEM
 
@@ -233,39 +228,6 @@ theorem privView_of {a s t : State} {rds : List Region} (S : Sib X a s) (he : En
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
     rw [entryBytes he _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega), S.e]
-
-/-- What `vg_rsa_private_checked`'s contract makes public. -/
-theorem priv_view {a s t : State} (S : Sib X a s) (h : J4 s t) :
-    [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp].map (t.callEntry.withRegions (privRd s) (privWr s)).gpr =
-      [a.gpr .rdi, a.gpr .rsi, a.gpr .rdx, a.gpr .rcx, a.gpr .r8, a.gpr .r9, fb a - 8] ∧
-    (List.range 14).map (stackArg (t.callEntry.withRegions (privRd s) (privWr s))) =
-      (List.range 14).map (callArg a) ∧
-    Spec.Rsa.bytesAt (t.callEntry.withRegions (privRd s) (privWr s)).mem
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .rdx)
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .rcx).toNat =
-      Spec.Rsa.bytesAt a.mem (a.gpr .rdx) (a.gpr .rcx).toNat ∧
-    Spec.Rsa.bytesAt (t.callEntry.withRegions (privRd s) (privWr s)).mem
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .r8)
-      ((t.callEntry.withRegions (privRd s) (privWr s)).gpr .r9).toNat =
-      Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat :=
-  let ⟨he, hw, hdi, hsi, hdx, hcx, h8, h9⟩ := h
-  privView_of S he.core hw hdi hsi hdx hcx h8 h9
-
-theorem call_ct (v : CrtImpl) : RelCT isa (Two (At X J4)) (.call (privName v) (privCode v)) fun _ _ => True := by
-  refine RelCT.callEx (k := chkContract) (Rsa.X86_64.code_correct v (pcName v) (pdName v))
-    (Rsa.X86_64.code_constantTime v _ _)
-    fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
-  obtain ⟨r₁, g₁, n₁, e₁⟩ := priv_view S₁ j₁
-  obtain ⟨r₂, g₂, n₂, e₂⟩ := priv_view S₂ j₂
-  obtain ⟨c₁, w₁⟩ := priv_covers (S₁.1.1) j₁.1
-  obtain ⟨c₂, w₂⟩ := priv_covers (S₂.1.1) j₂.1
-  obtain ⟨he₁, hw₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁⟩ := j₁
-  obtain ⟨he₂, hw₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂⟩ := j₂
-  exact ⟨privRd s₁, privWr s₁, privRd s₂, privWr s₂,
-    priv_pre (S₁.1.1) he₁.rsp hw₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁,
-    priv_pre (S₂.1.1) he₂.rsp hw₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂,
-    ⟨regs_eq (r₁.trans r₂.symm), g₁.trans g₂.symm, n₁.trans n₂.symm, e₁.trans e₂.symm⟩, c₁, w₁, c₂, w₂,
-    by rw [he₁.rsp, he₂.rsp, S₁.fb, S₂.fb]⟩
 
 /-! ## The pieces -/
 
@@ -324,17 +286,7 @@ theorem zeroSlots_ct {J : State → State → Prop} (hJ : ∀ s t, PreS s → J 
   · exact pin (fun s => s.gpr .rdi) (fun _ _ h => h.1) (fun _ _ S => S.gpr (by decide)) h₁ h₂
   · exact pin (fun s => s.gpr .rsi) (fun _ _ h => h.2) (fun _ _ S => S.gpr (by decide)) h₁ h₂
 
-theorem callArgs_two :
-    RelCT isa (Two fun a t => At X J3 a t ∧ isa.eval .e t = some false) (.block callArgs) (Two (At X J4)) :=
-  two_and (two_piece [.rsp] (pins_rsp fun _ _ _ h => J3_rsp h.1) (by taint_decide)
-    fun _ t ⟨s, S, j, _⟩ => WP.mono (callArgs_ok (S.1.1) (J3_env (S.1.1) j))
-      fun _ ⟨he, hw, hdi, hsi, hdx, hcx, h8, h9, _, _⟩ => ⟨s, S, he, hw, hdi, hsi, hdx, hcx, h8, h9⟩)
-
 def J5 (s t : State) : Prop := EnvC s t
-
-theorem call_two (v : CrtImpl) : RelCT isa (Two (At X J4)) (.call (privName v) (privCode v)) (Two (At X J5)) :=
-  two_post (call_ct v) fun _ _ ⟨s, S, he, hw, hdi, hsi, hdx, hcx, h8, h9⟩ =>
-    WP.mono (priv_call v (S.1.1) he hw hdi hsi hdx hcx h8 h9) fun _ h => ⟨s, S, h.2.1⟩
 
 theorem wipe_ct : RelCT isa (Two (At X J5)) wipe fun _ _ => True := by
   unfold wipe
@@ -348,19 +300,6 @@ theorem wipe_ct : RelCT isa (Two (At X J5)) wipe fun _ _ => True := by
       (fun _ _ S => by rw [S.gpr (r := .rcx) (by decide)]) h₁ h₂
 
 /-! ## The composition -/
-
-theorem afterEnc_ct (v : CrtImpl) : RelCT isa (Two (At X J2)) (afterEnc (privName v) (privCode v)) fun _ _ => True := by
-  unfold afterEnc afterEncWith
-  refine RelCT.seq test0_two (two_ite ?_ (two_and (zeroSlots_ct fun _ _ hs h => J3_env hs h.1))
-    (RelCT.seq callArgs_two (RelCT.seq (call_two v) wipe_ct)))
-  refine pinEval (fun s => some !(encOut s).isSome) (fun s t h => by
-    obtain ⟨_, _, _, hz⟩ := h
-    simp only [eval, hz]) ?_
-  intro a s S
-  rw [encOut_sib S]
-
-theorem body_ct (v : CrtImpl) : RelCT isa (Two (At X JA)) (body (privName v) (privCode v)) fun _ _ => True :=
-  RelCT.seq head_two (RelCT.seq encode_two (afterEnc_ct v))
 
 /-! ## The frame -/
 
@@ -387,34 +326,7 @@ theorem relCT_alloc {body : Prog isa} {P R : State → State → Prop}
 
 def J0 (s t : State) : Prop := t = s
 
-theorem code_ct (v : CrtImpl) : RelCT isa (Two (At X J0)) (code (privName v) (privCode v)) fun _ _ => True := by
-  unfold code
-  refine relCT_alloc ((body_ct (X := X) v).mono ?_ fun _ _ h => h)
-  rintro _ _ ⟨t₁, t₂, ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩, rfl, rfl⟩
-  exact ⟨a, ⟨s₁, S₁, by rw [show t₁ = s₁ from j₁]; rfl⟩, ⟨s₂, S₂, by rw [show t₂ = s₂ from j₂]; rfl⟩⟩
-
-theorem code_constantTime (v : CrtImpl) :
-    ConstantTime isa sigContract.pre sigContract.pub (code (privName v) (privCode v)) :=
-  RelCT.constantTime ((code_ct v).mono
-    (fun s₁ s₂ ⟨h₁, h₂, hpub⟩ => ⟨s₁, ⟨s₁, ⟨⟨preS_of h₁, pub_refl s₁⟩, trivial⟩, rfl⟩,
-      ⟨s₂, ⟨⟨preS_of h₂, hpub⟩, trivial⟩, rfl⟩⟩) fun _ _ h => h)
-
 /-! ## `Verified` -/
-
-/-- `vg_rsa_pkcs1_sign`, calling `vg_rsa_private_checked` for the
-implementation `v` of the CRT, meets the shared contract. -/
-theorem code_verified (v : CrtImpl) :
-    Verified target (code (privName v) (privCode v)) (Spec.RsaPkcs1Sig.signContract abi sigStack) :=
-  have hct : ConstantTime isa sigContract.pre sigContract.pub (code (privName v) (privCode v)) :=
-    code_constantTime v
-  Verified.of_correct (k := sigContract) (code_correct v) hct sign_implies
-
-/-- It writes `rsp` only in its frame's push and pop, and its callee in its
-own. -/
-theorem code_spSafe (v : CrtImpl) : (code (privName v) (privCode v)).all (fun i => !isa.writesSp i) = true := by
-  have h := Rsa.X86_64.code_spSafe v (pcName v) (pdName v)
-  simp only [code, body, afterEnc, afterEncWith, Code.all, privCode, h, Bool.true_and]
-  decide +kernel
 
 /-! ## Without secret residue
 
@@ -423,65 +335,5 @@ which clears the registers its code writes and wipes all the stack its
 frames and calls use: the residue analysis (`X86_64.RTaint`) does not follow
 its code, so nothing of that stack is kept. This is what that needs of the
 contract. -/
-
-/-- The postcondition reads the memory on return only in `out`. -/
-theorem sign_postOut (stack : Nat) :
-    VG.X86_64.Scrub.PostOut (Spec.RsaPkcs1Sig.signContract abi stack) (Spec.RsaPkcs1Sig.signSig.retBits 64) :=
-  VG.X86_64.Scrub.postOut_of_local_pre (leak := some _) VG.X86_64.Scrub.ScrubAbi.plain
-    fun vs m m₁ m₂ r hlen hpre hb h => by
-    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 20) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨nLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨e, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨eLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨hash, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨digest, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨digestLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨p, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨pLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨q, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨qLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dp, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dpLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dq, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dqLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨qinv, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨qinvLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨scratch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨scratchLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero hlen
-    simp only [Spec.RsaPkcs1Sig.signSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    have hol : outLen.toNat = nLen.toNat := hpre.2.1
-    have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
-      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
-        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
-    replace h : Spec.Rsa.writtenOutcome m₁ out nLen.toNat r _ := h
-    show Spec.Rsa.writtenOutcome m₂ out nLen.toNat r _
-    revert h
-    generalize Spec.RsaPkcs1Sig.signId _ _ _ _ _ _ _ _ _ = o
-    cases o <;> simp only [Spec.Rsa.writtenOutcome, hby] <;> exact id
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Sgn

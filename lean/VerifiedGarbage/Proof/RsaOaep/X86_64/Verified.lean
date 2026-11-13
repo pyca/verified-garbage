@@ -26,7 +26,6 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink MdHash)
-open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl)
 open VG.Proof.Rsa.X86_64 (PublicImpl)
 open VG.Proof.HashTable.X86_64 (tables fnsOf names Coh tableOf held_tableOf hashAt_tableOf)
 open VG.Proof.HashTable (symsOf symsOf_distinct symsOf_distinct2 putWs putWs_out putWs_held)
@@ -82,60 +81,6 @@ theorem withTable_held (s : State) (vs : List MdHash) (w : MdHash) :
   held_twL _ _ _ rfl
 
 /-! ## Decryption -/
-
-/-- A state meeting `decK.pre` but for the tables: a 512-bit modulus, one-byte
-`e`, primes, exponents and `qInv`, an empty label, the stack arguments at
-`0x10008`, and both tables' address `0x300000`. -/
-def decSatBase : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 64 | .rdx => 0x1800 | .rcx => 0x2000 | .r8 => 64 | .r9 => 0x3000
-    | .rsp => 0x10000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := bif Nat.beq a.toNat 0x10088 then 0x20
-    else bif Nat.beq a.toNat 0x10008 then 1 else bif Nat.beq a.toNat 0x10011 then 0x41
-    else bif Nat.beq a.toNat 0x10018 then 1 else bif Nat.beq a.toNat 0x10021 then 0x42
-    else bif Nat.beq a.toNat 0x10028 then 1 else bif Nat.beq a.toNat 0x10031 then 0x43
-    else bif Nat.beq a.toNat 0x10038 then 1 else bif Nat.beq a.toNat 0x10041 then 0x44
-    else bif Nat.beq a.toNat 0x10048 then 1 else bif Nat.beq a.toNat 0x10051 then 0x45
-    else bif Nat.beq a.toNat 0x10058 then 1 else bif Nat.beq a.toNat 0x10061 then 0x46
-    else bif Nat.beq a.toNat 0x10071 then 0x47 else bif Nat.beq a.toNat 0x10078 then 64
-    else bif Nat.beq a.toNat 0x10082 then 0x02 else bif Nat.beq a.toNat 0x10089 then 0x08
-    else bif Nat.beq a.toNat 0x10092 then 0x30 else bif Nat.beq a.toNat 0x1009A then 0x30 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩,
-    ⟨0x4600, 0⟩, ⟨0x4700, 64⟩, ⟨0x300000, 88⟩, ⟨0x300000, 88⟩, ⟨0x10008, 152⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 2080 * 8⟩]
-
-theorem dec_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs)
-    (hl : (names vs).length < 2 ^ 32) : ∃ s, (decC (tables vs)).pre s := by
-  refine ⟨withTable decSatBase vs w, ?_⟩
-  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq]
-  have hA : ∀ j < 19, (stackArgAddr decSatBase j).toNat + 8 ≤ 0x300000 := by decide
-  simp only [withTable_arg _ vs w (hA 0 (by decide)), withTable_arg _ vs w (hA 1 (by decide)), withTable_arg _ vs w (hA 2 (by decide)), withTable_arg _ vs w (hA 3 (by decide)), withTable_arg _ vs w (hA 4 (by decide)), withTable_arg _ vs w (hA 5 (by decide)), withTable_arg _ vs w (hA 6 (by decide)), withTable_arg _ vs w (hA 7 (by decide)), withTable_arg _ vs w (hA 8 (by decide)), withTable_arg _ vs w (hA 9 (by decide)), withTable_arg _ vs w (hA 10 (by decide)), withTable_arg _ vs w (hA 11 (by decide)), withTable_arg _ vs w (hA 12 (by decide)), withTable_arg _ vs w (hA 13 (by decide)), withTable_arg _ vs w (hA 14 (by decide)), withTable_arg _ vs w (hA 15 (by decide)), withTable_arg _ vs w (hA 16 (by decide)), withTable_arg _ vs w (hA 17 (by decide)), withTable_arg _ vs w (hA 18 (by decide))]
-  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-    List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
-  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq]
-  sig_and_intros
-  all_goals first
-    | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-        rw [show stackArg decSatBase 17 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
-    | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-        rw [show stackArg decSatBase 18 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-    | exact symsOf_distinct2 hl
-    | (simp only [Spec.Rsa.lenValid]; decide)
-    | (intro a h₁ h₂
-       set_option linter.unusedSimpArgs false in
-       sig_simp_only [Region.Contains, decSatBase, stackArg, stackArgAddr, Mem.readW, Mem.read] at h₁ h₂
-       bv_omega)
 
 /-! ## Encryption with a precomputed key -/
 
@@ -212,82 +157,6 @@ def OK (vs : List MdHash) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs
 instance (vs : List MdHash) : Decidable (OK vs) := by unfold OK; infer_instance
 
 theorem OK.mem {vs : List MdHash} (h : OK vs) : ∃ w, w ∈ vs := List.exists_mem_of_ne_nil _ h.2.2
-
-/-- `vg_rsa_oaep_decrypt`, with the tables of `vs`. -/
-theorem dec_ok (vs : List MdHash) (h : OK vs) (v : PrivImpl) :
-    Verified target (Impl.RsaOaep.X86_64.decrypt (fnsOf vs) v.name v.code) (decC (tables vs)) :=
-  dec_verified h.1 v (let ⟨_, hw⟩ := h.mem; dec_sat hw h.2.1)
-
-/-- `vg_rsa_oaep_decrypt`'s postcondition reads the memory on return only in
-`out` and `msg_len`. -/
-theorem dec_postOut (ts : List FnTable) :
-    VG.X86_64.Scrub.PostOut (decC ts) (Spec.RsaOaep.decryptMdTablesSig.retBits 64) :=
-  VG.X86_64.Scrub.postOut_of_local_pre (leak := some _) (VG.X86_64.Scrub.ScrubAbi.plain.tables _ _)
-    fun vs m m₁ m₂ r hlen hpre hb h => by
-    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 24) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨msgLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨nLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨e, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨eLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨p, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨pLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨q, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨qLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dp, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dpLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dq, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dqLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨qinv, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨qinvLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨label, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨labelLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨ctLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨scratch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨scratchLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨hash, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨mgf1, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero hlen
-    simp only [Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig, List.cons_append, List.nil_append,
-      Sig.bufs, List.mem_cons, forall_eq_or_imp] at hb
-    have hol : outLen.toNat = nLen.toNat := hpre.2.1
-    have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
-      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
-        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
-    have hw : m₂.readW msgLen 64 = m₁.readW msgLen 64 := VG.Proof.Rsa.X86_64.readW_agree (by decide) (by decide) hb.2.1
-    intro H G hH hG
-    have h' : Spec.RsaOaep.writtenDecrypt m₁ out msgLen nLen.toNat r _ := h H G hH hG
-    show Spec.RsaOaep.writtenDecrypt m₂ out msgLen nLen.toNat r _
-    revert h'
-    generalize Spec.RsaOaep.decrypt _ _ _ _ _ _ _ _ _ _ _ = o
-    cases o <;> simp only [Spec.RsaOaep.writtenDecrypt, hby, hw] <;> exact id
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs`. -/
 theorem enc_ok (vs : List MdHash) (h : OK vs) (v : PublicImpl) :

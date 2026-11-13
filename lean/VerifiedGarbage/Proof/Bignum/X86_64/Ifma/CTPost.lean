@@ -56,7 +56,6 @@ structure PostPub where
   qp : Addr
   len : Nat
 
-abbrev PostPub.x (p : PostPub) : XPub := ⟨p.B, p.Z, p.op, p.w, p.wx⟩
 abbrev PostPub.pw (p : PostPub) : Ws := ⟨off p.B p.op, slot p.wx 8, p.wx⟩
 abbrev PostPub.h (p : PostPub) : HPub := ⟨p.B, p.Z, p.w, p.op, p.wx, p.qp, p.len⟩
 
@@ -65,14 +64,6 @@ def postBlk1 : List Instr := [.mov .rax (.mem (hdr sLink))]
 def postBlk2 : List Instr := [.mov .rax (.mem (ws .rax sWsQ))]
 def postBlk3 : List Instr :=
   [.mov .rsi (.mem (ws .rax (sArr Public.aY))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aChunk)))]
-
-theorem post_eqCT (mul : Nat → Nat → Nat → Prog isa) :
-    CrtIfma.post mul = ([.block [.mov .rdi (.mem (hdr sWsP))]] : List (Prog isa)) ++ (redc mul Public.aR2 ++
-      (.block (postBlk1 ++ (postBlk2 ++ postBlk3)) :: copyWords :: mul aChunk aChunk aXc ::
-        (copyArr aXc aChunk ++ (subModArr aT Public.aY aXc ++ (loadArr aChunk sQinv sPlen ++ (maskArr aChunk ++
-          [mul Public.aY aT aChunk, .block [leave]])))))) := by
-  simp only [CrtIfma.post, enterP, postBlk1, postBlk2, postBlk3, List.append_assoc, List.cons_append,
-    List.nil_append]
 
 /-- Before `aXc := aChunk`. -/
 def Q7 (M : Mont) (p : PostPub) (s : State) : Prop :=
@@ -98,27 +89,6 @@ def Q3 (M : Mont) (p : PostPub) (s : State) : Prop :=
 /-- Before the load of `n`'s base. -/
 def Q2 (M : Mont) (p : PostPub) (s : State) : Prop :=
   s.gpr .rdi = off p.B p.op ∧ WP isa (.block postBlk1) s (Q3 M p)
-
-/-- Before the `redc`. -/
-def Q1 (M : Mont) (p : PostPub) (s : State) : Prop :=
-  RPre Public.aR2 p.x s ∧ WP isa (seqs (redc M.mm Public.aR2)) s (Q2 M p)
-
-/-- Before `post`. -/
-def Q0 (M : Mont) (p : PostPub) (s : State) : Prop :=
-  s.gpr .rdi = p.B ∧ WP isa (.block [.mov .rdi (.mem (hdr sWsP))]) s (Q1 M p)
-
-/-- `post_ok`'s hypotheses, with what `post` reads of them public. -/
-def PostPre (p : PostPub) (s : State) : Prop :=
-  ∃ (minv mx mq : BitVec 64) (X : Nat) (qib : List Byte) (c : Bool),
-    Good s p.B p.Z p.w minv ∧ p.w < 2 ^ 28 ∧ p.w = 2 * p.wx ∧
-    word s.mem p.B (8 * sWsQ) = off p.B p.oq ∧ WsAt s.mem p.B p.oq p.wx mq ∧
-    p.oq + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ slot p.w 8 ≤ p.op ∧
-    p.op + slot p.wx 8 + wsTab p.wx ≤ p.oq ∧ 2 ≤ p.wx ∧
-    word s.mem p.B (8 * sWsP) = off p.B p.op ∧ WsAt s.mem p.B p.op p.wx mx ∧ XVals s p.B p.op p.wx mx X ∧
-    1 < X ∧ wv s.mem (off p.B p.op) (slot p.wx Public.aY) p.wx < X ∧
-    word s.mem (off p.B p.op) (8 * sMaskX) = mask c ∧ word s.mem p.B (8 * sQinv) = p.qp ∧
-    word s.mem p.B (8 * sPlen) = BitVec.ofNat 64 qib.length ∧ Src s p.B p.Z p.qp qib ∧ 1 ≤ qib.length ∧
-    qib.length < 2 ^ 31 ∧ (qib.length + 7) / 8 ≤ p.wx ∧ (c = true → Spec.Rsa.os2ip qib < X) ∧ qib.length = p.len
 
 /-- `post` after its start, from `s₂` in `p`'s workspace with `R_p²` in its
 `aXc` (`PostHead`): `Q2`, as `postWith_ok` runs the pieces. -/
@@ -241,44 +211,6 @@ theorem post_chain2 (M : Mont) {s s₂ : State} {B : Addr} {Z w op wx oq : Nat} 
     (hqs.congrK i08 ((((k02.trans k25).trans k₆).trans k₇).trans k₈)) hq1 hq2 hqw hqi
 
 
-/-- `post_ok`'s hypotheses give `Q0`, as `post_ok` runs the pieces. -/
-theorem post_chain (M : Mont) {p : PostPub} {s : State} (h : PostPre p s) : Q0 M p s := by
-  obtain ⟨B, Z, w, op, wx, oq, qp, len⟩ := p
-  dsimp only [PostPre] at h
-  obtain ⟨minv, mx, mq, X, qib, c, hg, hw28, hw2, hq, hwsq, hhiq, hlo, hhi, hwx2, hsp, hws, hX, hX1, hyl, hmask,
-    hqp, hql, hqs, hq1, hq2, hqw, hqi, rfl⟩ := h
-  have hs := hg.scr
-  have hn := hs.nowrap
-  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
-  have hoL : op + slot wx 8 ≤ 2 ^ 64 := by omega_arith
-  have hwx : wx ≤ w := by omega_arith
-  have lY := slot_le (w := wx) (show Public.aY < 8 by decide)
-  have hrm : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMaskX := fun r hr => by
-    simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn, slot, hdrBytes] <;>
-      omega_arith
-  have rY := redcRanges_arr wx (j := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide)
-  have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_arith
-  -- Into `p`'s workspace.
-  refine ⟨hg.rdi, WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off B op ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sWsP) (by unfold sWsP sFn; omega_arith), hsp]) rfl)
-    fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_⟩
-  have hc₁ : SubCtx s₁ B Z op w wx mx :=
-    SubCtx.mk' (hs.congr k₁.2.2) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega_arith)
-  have hX₁ : XVals s₁ B op wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
-  refine ⟨⟨mx, X, hc₁, hX₁, hwx2, hwx, show w < 2 ^ 30 by omega_arith, hX1, by decide⟩, ?_⟩
-  -- `redc` of `R_n²`.
-  refine WP.mono (redc_ok M hc₁ hX₁ hwx2 hwx (by omega_arith) hX1 (j := Public.aR2) (by decide))
-    fun s₂ ⟨hc₂, hX₂, hlt₂, _, r₂, k₂⟩ => ?_
-  have hz₂ : (off B op).toNat + slot wx 8 ≤ 2 ^ 64 := by have := hc₂.good.scr.nowrap; omega_arith
-  exact post_chain2 (N := 1) M hg hw28 hw2 hq hwsq hhiq hlo hhi hwx2 hX1 hyl hmask hqp hql hqs hq1 hq2 hqw hqi
-    ⟨hc₂, hX₂, hlt₂, fun h0 => absurd (Nat.le_of_dvd (by decide) h0) (by omega_arith),
-      by rw [← hm₁]; exact r₂.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _),
-      by rw [r₂.wv_eq (fun r hr => by have := rY r hr; omega_arith) (by omega_arith), hm₁],
-      by rw [r₂.word_eq hrm (by omega_arith), hm₁], (k₁.trans k₂).mono (by decide)⟩
-
 /-- `post` after its start. -/
 def postRestCT (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   .block (postBlk1 ++ (postBlk2 ++ postBlk3)) :: copyWords :: mul aChunk aChunk aXc ::
@@ -317,17 +249,6 @@ theorem postTail_ct (M : Mont) (hL : LoadCT aChunk sQinv sPlen) :
   exact ct_steps (by simp [copyArr]) (by simp [subModArr]) PostPub.pw (fun _ _ h => h.1) (fun _ _ h => h.2)
     (copyArr_ct (by decide) (by decide) (by taint_decide)) (two_map PostPub.h (fun _ _ h => h) (h2_ct M hL))
 
-
-/-- `post` is constant time. -/
-theorem post_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hL : LoadCT aChunk sQinv sPlen) :
-    RelCT isa (Two PostPre) (seqs (CrtIfma.post M.mm)) fun _ _ => True := by
-  refine two_map id (fun _ _ h => post_chain M h) ?_
-  rw [show CrtIfma.post M.mm = ([.block [.mov .rdi (.mem (hdr sWsP))]] : List (Prog isa)) ++
-      (redc M.mm Public.aR2 ++ postRestCT M.mm) by rw [post_eqCT]; rfl]
-  refine RelCT.seqs_app (by simp) (by simp [redc]) (ct_taint [.rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1, h₂.1]) (by taint_decide) (fun _ _ h => h.2) ?_)
-  exact ct_steps (by simp [redc]) (by simp [postRestCT]) PostPub.x (fun _ _ h => h.1) (fun _ _ h => h.2) hR2
-    (postTail_ct M hL)
 
 /-! ## `postP` -/
 

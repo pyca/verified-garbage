@@ -117,47 +117,4 @@ def signK : Contract isa where
       ∀ T ∈ tsG, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 17) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 17) (FnTable.words isa s₂ T))
 
-/-- The contract, with the tables `tsH` and `tsG`. -/
-abbrev signC : Contract isa :=
-  Spec.RsaPss.signMdTableContract (abi.withTables Spec.RsaPss.signMdTableSig [("hash", tsH), ("mgf1", tsG)]) signStack
-
-theorem sign_implies (hsat : ∃ s, (signC tsH tsG).pre s) : (signK tsH tsG).Implies (signC tsH tsG) where
-  pre := by
-    intro s h
-    sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-      argRegs, signK, signStack, stackArgs_eighteen, List.append_eq, tabFns] at h
-    sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-      argRegs, signK, signStack, stackArgs_eighteen, List.append_eq, tabFns, Sig.tableRegion] at h
-    simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
-    sig_split h
-    sig_reduce [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-      argRegs, signK, signStack, stackArgs_eighteen, List.append_eq, tabFns, Sig.tableRegion]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
-      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param, 
-      Abi.withTables, Sig.wordIndex, abi, argRegs, signK, signStack, stackArgs_eighteen,
-      List.append_eq, tabFns]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
-      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param, 
-      Abi.withTables, Sig.wordIndex, abi, argRegs, signK, signStack, stackArgs_eighteen,
-      List.append_eq, tabFns] at h
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
-      Option.some.injEq] at h
-    obtain ⟨hsp, hsy, htab, htab', hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
-      a13, a14, a15, a16, a17⟩ := h
-    obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hl
-    refine ⟨?_, by simp only [stackArgs_eighteen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16, a17], hn, he, hsy, fun T hT => htab _ _ rfl rfl T hT, fun T hT => htab' _ _ rfl rfl T hT⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := hsat
-
 end VG.Proof.RsaPss.X86_64

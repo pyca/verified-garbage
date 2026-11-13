@@ -285,17 +285,4 @@ theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
     rw [hl, hp.hqil, hp.hdql] at hpost
     exact hpost
 
-/-- The call of `vg_rsa_private_checked` (or the code `v`). -/
-theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
-    WP isa (.call v.name v.code) t fun t' => PostPriv s t' ∧ (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
-      t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
-  obtain ⟨hc, hw⟩ := priv_covers hp h.call
-  refine WP.mono (privWith_call v.ok (fun _ _ h => h) v.spSafe v.depth hp h.call (priv_pre hp h.call) hc hw)
-    fun t' ⟨c, hcs, hmx⟩ => ⟨⟨c.rsp, c.rd, c.wr, c.mem, ?_, c.res⟩, hcs, hmx⟩
-  exact ⟨(c.keep (by decide)).trans h.slots.sOut, (c.keep (by decide)).trans h.slots.sML,
-    (c.keep (by decide)).trans h.slots.sN, (c.keep (by decide)).trans h.slots.sK,
-    (c.keep (by decide)).trans h.slots.sE, (c.keep (by decide)).trans h.slots.sEl,
-    (c.keep (by decide)).trans h.slots.sD, (c.keep (by decide)).trans h.slots.sDl,
-    (c.keep (by decide)).trans h.slots.sIn, (c.keep (by decide)).trans h.slots.sScr⟩
-
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

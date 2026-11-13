@@ -406,22 +406,6 @@ theorem ctest_ct : RelCT isa (Two (SAt tsH tsG Xs (CJC H))) (.block [.alu32 .tes
   rw [hz, hax]
   by_cases hf : sfits s <;> simp [hf]
 
-theorem cpriv_ct : RelCT isa (Two fun a t => SAt tsH tsG Xs (CJT H) a t ∧ isa.eval .e t = some false) (.block privArgs)
-    (Two (SAt tsH tsG Xs (SJP H))) := by
-  obtain ⟨_, hc⟩ := sFixed.privArgs
-  refine two_post (stwo (H := H) [] [] (fun _ => [])
-    (fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) [] (fun _ hp => by cases hp) fun _ _ x => x⟩)
-    (fun _ => rfl) (by decide) hc) fun a t ⟨⟨s, S, h⟩, _⟩ => ?_
-  obtain ⟨v, hrd, hM, _⟩ := h
-  obtain ⟨V, W, R, hw, -⟩ := v.W
-  have hp := S.ps
-  exact X86_64.WP.mono_syms (WP.keepIn (by decide) (by exact Nat.zero_le 16)
-    (privArgs_ok hp v.L hrd (argsKept_of hp hM) R (hw 16 (by decide)) (hw 17 (by decide)) (hw 18 (by decide))
-      (hw 19 (by decide)) (hw 20 (by decide)) (hw 22 (by decide))))
-    fun u ⟨⟨k', L', ⟨W', R', ha, _⟩, di, si, dx, cx, r8, r9⟩, f⟩ sy =>
-    ⟨s, S, v.next L' k'.2.2 R' (fun _ h => by cases h) trivial sy, k'.2.1.trans hrd, frame_keep hp v.wr v.L.rsp hM f,
-      fun i hi => (R'.fr i (by unfold nW frameBytes; omega_arith)).trans (ha i hi), di, si, dx, cx, r8, r9⟩
-
 /-- An input, at the call, as on entry. -/
 theorem sentry_bytes {s t : State} (hst : t.gpr .rsp = fb s) (hM : Frame (wrR s) s.mem t.mem)
     {R : Region} (hK : (stkR s).Disjoint R) (hO : (outR s).Disjoint R) (hS : R.Disjoint (scrR s))
@@ -500,26 +484,6 @@ variable {privN : String} {privC : Prog isa}
   (hct : ConstantTime isa chkContract.pre chkContract.pub privC) (hspC : SpSafe privC)
   (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
 
-include hv hct hspC hdC in
-theorem scall_ct : RelCT isa (Two (SAt tsH tsG Xs (SJP H))) (.call privN privC) (Two (SAt tsH tsG Xs (SJR H))) := by
-  refine two_post (RelCT.callEx (k := chkContract) hv hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, h₁⟩, ⟨s₂, S₂, h₂⟩⟩ => ?_)
-    fun a t ⟨s, S, h⟩ => ?_
-  · obtain ⟨c₁, w₁⟩ := priv_covers S₁.ps h₁.2.1 h₁.1.wr
-    obtain ⟨c₂, w₂⟩ := priv_covers S₂.ps h₂.2.1 h₂.1.wr
-    have hpub := scall_pub S₁ h₁ S₂ h₂
-    obtain ⟨v₁, -, -, ha₁, di₁, si₁, dx₁, cx₁, r8₁, r9₁⟩ := h₁
-    obtain ⟨v₂, -, -, ha₂, di₂, si₂, dx₂, cx₂, r8₂, r9₂⟩ := h₂
-    exact ⟨_, _, _, _, priv_pre S₁.ps v₁.L.rsp ha₁ di₁ si₁ dx₁ cx₁ r8₁ r9₁,
-      priv_pre S₂.ps v₂.L.rsp ha₂ di₂ si₂ dx₂ cx₂ r8₂ r9₂, hpub, c₁, w₁, c₂, w₂,
-      by rw [v₁.L.rsp, v₂.L.rsp, S₁.fb, S₂.fb]⟩
-  · obtain ⟨v, hrd, hM, ha, di, si, dx, cx, r8, r9⟩ := h
-    obtain ⟨V, W, R, hw, -⟩ := v.W
-    have hp := S.ps
-    refine X86_64.WP.mono_syms (priv_call hv hspC hdC hp v.L.rsp hrd v.wr hM ha di si dx cx r8 r9)
-      fun u ⟨rd', wr', cs', _, _, hk', _⟩ sy => ?_
-    have R' := R.of_keep v.L.geo fun x hx => hk' x hx
-    exact ⟨s, S, v.next (v.L.of_rep' R R' rfl (cs' .rsp (by decide)) wr') wr' R' hw trivial sy⟩
-
 theorem srestore_ct : RelCT isa (Two (SAt tsH tsG Xs (SJR H))) (.block restoreRegs) fun _ _ => True := by
   obtain ⟨_, hc⟩ := sFixed.restore
   exact stwo (H := H) [] [] (fun _ => []) (fun a t ⟨s, S, v⟩ => ⟨s, _, S, v⟩) (fun _ => rfl) (by decide) hc
@@ -545,38 +509,5 @@ theorem scbodyWith_ct (H : Hash) {args : List Instr}
         (sfail_ct (Φ := fun a t => SAt tsH tsG Xs (CJT H) a t ∧ isa.eval .e t = some true)
           fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) [] (fun _ hp => by cases hp) fun _ _ x => x⟩)
         hpriv))))).seq srestore_ct))
-
-include hsel hspE hdE hv hct hspC hdC in
-theorem scbody_ct (H : Hash) :
-    RelCT isa (Two (SAt tsH tsG Xs J0)) (signCBody f g privN privC) fun _ _ => True :=
-  scbodyWith_ct hsel hspE hdE H (cpriv_ct.seq (scall_ct hv hct hspC hdC))
-
-include hsel hspE hdE hv hct hspC hdC in
-/-- `signC` is constant time. -/
-theorem signC_ct (H : Hash) :
-    ConstantTime isa (signK tsH tsG).pre (signK tsH tsG).pub (Impl.RsaPss.X86_64.signC f g privN privC) :=
-  RelCT.constantTime (valloc ((scbody_ct (Xs := fun _ _ => True) hsel hspE hdE hv hct hspC hdC H).mono
-    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => by
-      have p₁ := SPre.of tsH tsG h₁
-      have p₂ := SPre.of tsH tsG h₂
-      obtain ⟨T, Hs, Gs, G⟩ := hsel s₁ p₁
-      have hi : idxWord s₂ = idxWord s₁ := by
-        have e₂' := (G.sel s₂ hpub p₂).idx
-        have e₁' := (G.sel s₁ (spub_refl tsH tsG s₁) p₁).idx
-        exact e₂'.trans e₁'.symm
-      exact ⟨s₁, ⟨s₁, ⟨p₁, spub_refl tsH tsG s₁, p₁, rfl, trivial⟩, e₁⟩, ⟨s₂, ⟨p₁, hpub, p₂, hi, trivial⟩, e₂⟩⟩)
-    fun _ _ h => h))
-
-include hsel hspE hdE hct hdC in
-/-- `signC` meets the contract with the tables `tsH` and `tsG`. -/
-theorem signC_verified (H : Hash) (hsat : ∃ s, (signC tsH tsG).pre s)
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hC : SpSafe privC) :
-    Verified X86_64.target (Impl.RsaPss.X86_64.signC f g privN privC) (signC tsH tsG) :=
-  Verified.of_correct (k := signK tsH tsG)
-    (signC_correct (fun s h => let ⟨T, Hs, Gs, G⟩ := hsel s (SPre.of tsH tsG h)
-      ⟨_, T, Hs, Gs, G.sel s (spub_refl tsH tsG s) (SPre.of tsH tsG h)⟩)
-      hspE hdE hv hC hdC)
-    (signC_ct hsel hspE hdE hv hct hC hdC H) (sign_implies tsH tsG hsat)
 
 end VG.Proof.RsaPss.X86_64

@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 public import VerifiedGarbage.TCB.X86.Print
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackSafety
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignP.Verified
 public import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 public import VerifiedGarbage.Proof.Bignum.FrameOutside
@@ -124,15 +122,12 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodePadding
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeWrite
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignABI
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBody
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBodyTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignCallPublic
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContractInput
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncArgs
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEntryReady
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEraseTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFn
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignLocalArgument
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignNoSp
@@ -173,18 +168,12 @@ end VG.Artifacts.RsaPkcs1Sig.X86
 
 namespace VG.Artifacts.RsaPkcs1Sig.X86
 
-open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCode privCodeP crtPBaseline)
+open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCodeP crtPBaseline)
 open VG.Proof.RsaPkcs1Sig.X86.Sgn
 
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Sig.signApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.RsaPkcs1Sig.X86.Sign.code (privName v) (privCode v)
-      stack := sigStack
-      verified := sign_verified v
-      spSafe := code_sp v },
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.X86.Sign.code (privNameP v) (privCodeP v crtPBaseline)
