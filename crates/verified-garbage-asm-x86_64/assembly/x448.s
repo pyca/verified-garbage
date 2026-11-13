@@ -128,8 +128,8 @@ vg_x448_exchange_adx:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	mov eax, eax
 	xor ecx, ecx
@@ -5173,8 +5173,8 @@ vg_x448_exchange:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	mov eax, eax
 	xor ecx, ecx

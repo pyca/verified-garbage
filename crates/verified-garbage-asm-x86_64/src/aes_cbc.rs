@@ -30,7 +30,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_vaes_avx512(schedule: *c
 call {vg_aes_cbc_decrypt_unwiped_vaes_avx512}
 .base64 "SIkEJEiLfCQIvuAAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgMcAxyTHSMfYx/0UxwEUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+jmp 21f
+20:
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+21:
+.base64 "McAxyTHSMfYx/0UxwEUx0kUx28M="
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped_vaes_avx512 = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_vaes_avx512::vg_aes_cbc_decrypt_unwiped_vaes_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -64,7 +71,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_vaes(schedule: *const [u
 call {vg_aes_cbc_decrypt_unwiped_vaes}
 .base64 "SIkEJEiLfCQIvuAAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgMcAxyTHSMfYx/0UxwEUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+jmp 21f
+20:
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+21:
+.base64 "McAxyTHSMfYx/0UxwEUx0kUx28M="
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped_vaes = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_vaes::vg_aes_cbc_decrypt_unwiped_vaes,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -98,7 +112,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_aesni_avx(schedule: *con
 call {vg_aes_cbc_decrypt_unwiped_aesni}
 .base64 "SIkEJEiLfCQIvuAAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgMcAxyTHSMfYx/0UxwEUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+jmp 21f
+20:
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+21:
+.base64 "McAxyTHSMfYx/0UxwEUx0kUx28M="
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped_aesni = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_aesni::vg_aes_cbc_decrypt_unwiped_aesni,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -191,7 +212,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_aesni(schedule: *const [
 call {vg_aes_cbc_decrypt_unwiped_aesni}
 .base64 "SIkEJEiLfCQIvuAAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJODzD39EJBDzD38EJEiNZCQgMcAxyTHSMfYx/0UxwEUx0kUx28M="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIDHAMckx0jH2Mf9FMcBFMdJFMdvD"
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped_aesni = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_aesni::vg_aes_cbc_decrypt_unwiped_aesni,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -225,7 +246,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt_avx(schedule: *const [u8
 call {vg_aes_cbc_encrypt_unwiped}
 .base64 "SIkEJEiLfCQIvoAIAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+jmp 21f
+20:
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+21:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -259,7 +287,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_avx(schedule: *const [u8
 call {vg_aes_cbc_decrypt_unwiped}
 .base64 "SIkEJEiLfCQIvoAIAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+jmp 21f
+20:
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+21:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -289,7 +324,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt(schedule: *const [u8; 24
 call {vg_aes_cbc_encrypt_unwiped}
 .base64 "SIkEJEiLfCQIvoAIAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQZg/vwEUx20iNZCTg8w9/RCQQ8w9/BCRIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SIsEJEiNZCQQZg/vwEUx20iNZCTgTIlcJBjzD39EJAhMiRwkSI1kJCAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -319,7 +354,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt(schedule: *const [u8; 24
 call {vg_aes_cbc_decrypt_unwiped}
 .base64 "SIkEJEiLfCQIvoAIAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQZg/vwEUx20iNZCTg8w9/RCQQ8w9/BCRIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SIsEJEiNZCQQZg/vwEUx20iNZCTgTIlcJBjzD39EJAhMiRwkSI1kJCAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,

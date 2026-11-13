@@ -42,7 +42,14 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 25f
+.base64 "RTHbSI1kJPhMiRwkSI1kJAg="
+jmp 26f
+25:
+.base64 "RTHbSI1kJPhMiRwkSI1kJAg="
+26:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
@@ -84,7 +91,14 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJKDF/n9EJEDF/n9EJCDF/n8EJEiNZCRgMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 23f
+.base64 "RTHbSI1kJKBMiVwkWPMPf0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkYA=="
+jmp 24f
+23:
+.base64 "RTHbSI1kJKBMiVwkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkYA=="
+24:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_aes_ctr_vaes_core = sym super::aes_ctr::vg_aes_ctr_vaes_core::vg_aes_ctr_vaes_core,
     )
@@ -171,7 +185,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJKDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRgMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJKBMiVwkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkYDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_aes_ctr_aesni_core = sym super::aes_ctr::vg_aes_ctr_aesni_core::vg_aes_ctr_aesni_core,
     )
@@ -250,7 +264,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJKDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRgMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEiNZCRQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJKBMiVwkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkYDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_aes_ctr_core = sym super::aes_ctr::vg_aes_ctr_core::vg_aes_ctr_core,
     )

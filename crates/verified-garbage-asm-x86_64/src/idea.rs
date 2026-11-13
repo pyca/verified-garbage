@@ -140,7 +140,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SI1kJBhmD+/ARTHbSI1kJOjzD39EJAhMiRwkSI1kJBgxwDHJMdIx9kUxwEUxyUUx0kUx28M="
+.base64 "SI1kJBhmD+/ARTHbSI1kJOhMiVwkEPMPfwQkSI1kJBgxwDHJMdIx9kUxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }

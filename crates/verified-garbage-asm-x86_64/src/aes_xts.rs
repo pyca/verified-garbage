@@ -883,7 +883,14 @@ call {vg_aes_xts_encrypt_vaes}
 jmp 21f
 20:
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPDzD38EJEiNZCQQMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 23f
+.base64 "RTHbSI1kJPBMiVwkCEyJHCRIjWQkEA=="
+jmp 24f
+23:
+.base64 "RTHbSI1kJPBMiVwkCEyJHCRIjWQkEA=="
+24:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_aes_xts_encrypt_vaes = sym super::aes_xts::vg_aes_xts_encrypt_vaes::vg_aes_xts_encrypt_vaes,
     )
@@ -933,7 +940,14 @@ jmp 21f
 .base64 "SInfSInuTIn6SIHCgAgAAEyJ4U2J6EnB6ARNifk="
 call {vg_aes_xts_decrypt_vaes}
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPDzD38EJEiNZCQQMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 23f
+.base64 "RTHbSI1kJPBMiVwkCEyJHCRIjWQkEA=="
+jmp 24f
+23:
+.base64 "RTHbSI1kJPBMiVwkCEyJHCRIjWQkEA=="
+24:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_aes_xts_encrypt_vaes = sym super::aes_xts::vg_aes_xts_encrypt_vaes::vg_aes_xts_encrypt_vaes,
         vg_aes_xts_decrypt_vaes = sym super::aes_xts::vg_aes_xts_decrypt_vaes::vg_aes_xts_decrypt_vaes,
@@ -1022,7 +1036,14 @@ call {vg_aes_xts_encrypt_vaes}
 jmp 215f
 214:
 215:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 217f
+.base64 "RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBg="
+jmp 218f
+217:
+.base64 "RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBg="
+218:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_aes_xts_encrypt_vaes = sym super::aes_xts::vg_aes_xts_encrypt_vaes::vg_aes_xts_encrypt_vaes,
         vg_aes_xts_encrypt_to_vaes = sym super::aes_xts::vg_aes_xts_encrypt_to_vaes::vg_aes_xts_encrypt_to_vaes,
@@ -1115,7 +1136,14 @@ jmp 21f
 .base64 "SInfSInuTIn6SIHCgAgAAEyJ8U2J6EnB6ARNiflNieI="
 call {vg_aes_xts_decrypt_to_vaes}
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 217f
+.base64 "RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBg="
+jmp 218f
+217:
+.base64 "RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBg="
+218:
+.base64 "McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_aes_xts_encrypt_vaes = sym super::aes_xts::vg_aes_xts_encrypt_vaes::vg_aes_xts_encrypt_vaes,
         vg_aes_xts_decrypt_to_vaes = sym super::aes_xts::vg_aes_xts_decrypt_to_vaes::vg_aes_xts_decrypt_to_vaes,
@@ -1163,7 +1191,7 @@ call {vg_aes_xts_encrypt_aesni}
 jmp 21f
 20:
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPDzD38EJEiNZCQQMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPBMiVwkCEyJHCRIjWQkEDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
     )
@@ -1213,7 +1241,7 @@ jmp 21f
 .base64 "SInfSInuTIn6SIHCgAgAAEyJ4U2J6EnB6ARNifk="
 call {vg_aes_xts_decrypt_aesni}
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPDzD38EJEiNZCQQMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPBMiVwkCEyJHCRIjWQkEDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
         vg_aes_xts_decrypt_aesni = sym super::aes_xts::vg_aes_xts_decrypt_aesni::vg_aes_xts_decrypt_aesni,
@@ -1302,7 +1330,7 @@ call {vg_aes_xts_encrypt_aesni}
 jmp 215f
 214:
 215:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
         vg_aes_xts_encrypt_to_aesni = sym super::aes_xts::vg_aes_xts_encrypt_to_aesni::vg_aes_xts_encrypt_to_aesni,
@@ -1395,7 +1423,7 @@ jmp 21f
 .base64 "SInfSInuTIn6SIHCgAgAAEyJ8U2J6EnB6ARNiflNieI="
 call {vg_aes_xts_decrypt_to_aesni}
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
         vg_aes_xts_decrypt_to_aesni = sym super::aes_xts::vg_aes_xts_decrypt_to_aesni::vg_aes_xts_decrypt_to_aesni,
@@ -1439,7 +1467,7 @@ call {vg_aes_xts_encrypt}
 jmp 21f
 20:
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwEUx20iNZCTw8w9/BCRIjWQkEDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwEUx20iNZCTwTIlcJAhMiRwkSI1kJBAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
     )
@@ -1485,7 +1513,7 @@ jmp 21f
 .base64 "SInfSInuTIn6SIHCgAgAAEyJ4U2J6EnB6ARNifk="
 call {vg_aes_xts_decrypt}
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwEUx20iNZCTw8w9/BCRIjWQkEDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwEUx20iNZCTwTIlcJAhMiRwkSI1kJBAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
         vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,
@@ -1570,7 +1598,7 @@ call {vg_aes_xts_encrypt}
 jmp 215f
 214:
 215:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
         vg_aes_xts_encrypt_to = sym super::aes_xts::vg_aes_xts_encrypt_to::vg_aes_xts_encrypt_to,
@@ -1659,7 +1687,7 @@ jmp 21f
 .base64 "SInfSInuTIn6SIHCgAgAAEyJ8U2J6EnB6ARNiflNieI="
 call {vg_aes_xts_decrypt_to}
 21:
-.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOjzD39EJAhMiRwkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYufoAgAAEmLr6gIAABNi6ewCAAATYuvuAgAAE2Lt8AIAABNi7/ICAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOhMiVwkEPMPfwQkSI1kJBgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
         vg_aes_xts_decrypt_to = sym super::aes_xts::vg_aes_xts_decrypt_to::vg_aes_xts_decrypt_to,

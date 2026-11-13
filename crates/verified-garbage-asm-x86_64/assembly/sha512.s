@@ -532,9 +532,20 @@ vg_sha384_digest_shani:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 216f
+	xor r11d, r11d
 	lea rsp, [rsp-272]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+272]
+	jmp 217f
+216:
+	xor r11d, r11d
+	lea rsp, [rsp-272]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+272]
+217:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1123,15 +1134,15 @@ vg_sha384_finalize:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-256]
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+256]
 	xor eax, eax
 	xor ecx, ecx
@@ -1401,15 +1412,16 @@ vg_sha384_digest:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-464]
-	movdqu XMMWORD PTR [rsp+320], xmm0
-	movdqu XMMWORD PTR [rsp+304], xmm0
-	movdqu XMMWORD PTR [rsp+288], xmm0
-	movdqu XMMWORD PTR [rsp+272], xmm0
-	movdqu XMMWORD PTR [rsp+256], xmm0
-	movdqu XMMWORD PTR [rsp+240], xmm0
-	movdqu XMMWORD PTR [rsp+224], xmm0
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+464]
 	xor eax, eax
 	xor ecx, ecx
@@ -2059,9 +2071,20 @@ vg_sha512_digest_shani:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 216f
+	xor r11d, r11d
 	lea rsp, [rsp-272]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+272]
+	jmp 217f
+216:
+	xor r11d, r11d
+	lea rsp, [rsp-272]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+272]
+217:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2803,16 +2826,15 @@ vg_sha512_update:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-256]
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+256]
 	xor eax, eax
 	xor ecx, ecx
@@ -3007,15 +3029,15 @@ vg_sha512_finalize:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-256]
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+256]
 	xor eax, eax
 	xor ecx, ecx
@@ -3291,15 +3313,16 @@ vg_sha512_digest:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-464]
-	movdqu XMMWORD PTR [rsp+320], xmm0
-	movdqu XMMWORD PTR [rsp+304], xmm0
-	movdqu XMMWORD PTR [rsp+288], xmm0
-	movdqu XMMWORD PTR [rsp+272], xmm0
-	movdqu XMMWORD PTR [rsp+256], xmm0
-	movdqu XMMWORD PTR [rsp+240], xmm0
-	movdqu XMMWORD PTR [rsp+224], xmm0
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+464]
 	xor eax, eax
 	xor ecx, ecx
@@ -3741,9 +3764,20 @@ vg_sha512_224_digest_shani:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 216f
+	xor r11d, r11d
 	lea rsp, [rsp-272]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+272]
+	jmp 217f
+216:
+	xor r11d, r11d
+	lea rsp, [rsp-272]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+272]
+217:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4314,15 +4348,15 @@ vg_sha512_224_finalize:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-256]
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+256]
 	xor eax, eax
 	xor ecx, ecx
@@ -4586,15 +4620,16 @@ vg_sha512_224_digest:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-464]
-	movdqu XMMWORD PTR [rsp+320], xmm0
-	movdqu XMMWORD PTR [rsp+304], xmm0
-	movdqu XMMWORD PTR [rsp+288], xmm0
-	movdqu XMMWORD PTR [rsp+272], xmm0
-	movdqu XMMWORD PTR [rsp+256], xmm0
-	movdqu XMMWORD PTR [rsp+240], xmm0
-	movdqu XMMWORD PTR [rsp+224], xmm0
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+464]
 	xor eax, eax
 	xor ecx, ecx
@@ -5036,9 +5071,20 @@ vg_sha512_256_digest_shani:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 216f
+	xor r11d, r11d
 	lea rsp, [rsp-272]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+272]
+	jmp 217f
+216:
+	xor r11d, r11d
+	lea rsp, [rsp-272]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+272]
+217:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5609,15 +5655,15 @@ vg_sha512_256_finalize:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-256]
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+256]
 	xor eax, eax
 	xor ecx, ecx
@@ -5881,15 +5927,16 @@ vg_sha512_256_digest:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-464]
-	movdqu XMMWORD PTR [rsp+320], xmm0
-	movdqu XMMWORD PTR [rsp+304], xmm0
-	movdqu XMMWORD PTR [rsp+288], xmm0
-	movdqu XMMWORD PTR [rsp+272], xmm0
-	movdqu XMMWORD PTR [rsp+256], xmm0
-	movdqu XMMWORD PTR [rsp+240], xmm0
-	movdqu XMMWORD PTR [rsp+224], xmm0
-	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+464]
 	xor eax, eax
 	xor ecx, ecx

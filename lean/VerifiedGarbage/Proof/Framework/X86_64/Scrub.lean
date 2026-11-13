@@ -40,29 +40,37 @@ open VG.X86_64 VG.X86_64.Residue
 def store1Tr (ks : List Nat) (off : Nat) (p : Addr) (base k : Nat) : List Leak :=
   if ks.contains (off + base + 16 * k) then [.addr (p + BitVec.ofNat 64 (base + 16 * k))] else []
 
-/-- The trace of `stores16 w ks off base k` from `rsp = p`. -/
-def storesTr (w : Bool) (ks : List Nat) (off : Nat) (p : Addr) (base : Nat) : Nat → List Leak
+/-- The trace of `stores16 w ks off base e k` from `rsp = p`. -/
+def storesTr (w : Bool) (ks : List Nat) (off : Nat) (p : Addr) (base e : Nat) : Nat → List Leak
   | 0 => []
   | 1 => store1Tr ks off p base 0
   | k + 2 =>
-    if w && ks.contains (off + base + 16 * (k + 1)) && ks.contains (off + base + 16 * k) then
-      .addr (p + BitVec.ofNat 64 (base + 16 * k)) :: storesTr w ks off p base k
-    else store1Tr ks off p base (k + 1) ++ storesTr w ks off p base (k + 1)
+    if w && (k + e) % 2 == 0 && ks.contains (off + base + 16 * (k + 1)) && ks.contains (off + base + 16 * k) then
+      .addr (p + BitVec.ofNat 64 (base + 16 * k)) :: storesTr w ks off p base e k
+    else store1Tr ks off p base (k + 1) ++ storesTr w ks off p base e (k + 1)
 
-/-- The trace of `chunkStores w ks off b` from `rsp = p`. -/
-def chunkTr (w : Bool) (ks : List Nat) (off : Nat) (p : Addr) (b : Nat) : List Leak :=
-  storesTr w ks off p (b % 16) (b / 16) ++ (if b % 16 = 8 && ks.contains off then [.addr p] else [])
+/-- The trace of `chunkStores w ks n s off b` from `rsp = p`. -/
+def chunkTr (w : Bool) (ks : List Nat) (n s off : Nat) (p : Addr) (b : Nat) : List Leak :=
+  (if (b - phase n off) % 16 = 8 && ks.contains (off + b - 8) then [.addr (p + BitVec.ofNat 64 (b - 8))] else []) ++
+    storesTr w ks off p (phase n off) (pairPar n s off) ((b - phase n off) / 16) ++
+    (if phase n off = 8 && ks.contains off then [.addr (p + BitVec.ofNat 64 0)] else [])
 
-/-- Whether `chunkStores ks off b` zeroes the byte at offset `d` of its frame. -/
-def covC (ks : List Nat) (off b d : Nat) : Bool :=
-  if d < b % 16 then b % 16 == 8 && ks.contains off
-  else ks.contains (off + b % 16 + 16 * ((d - b % 16) / 16))
+/-- Whether `chunkStores _ ks n _ off b` zeroes the byte at offset `d < b` of
+its frame: whether the granule that holds it is in `ks`. -/
+def covC (ks : List Nat) (n off b d : Nat) : Bool :=
+  if d < phase n off then ks.contains off
+  else if phase n off + 16 * ((b - phase n off) / 16) ≤ d then ks.contains (off + b - 8)
+  else ks.contains (off + phase n off + 16 * ((d - phase n off) / 16))
 
-/-- Whether `wipe ks cs` zeroes the byte at offset `i` from the bottom of the
-`cs.sum` bytes it wipes. -/
-def cov (ks : List Nat) : List Nat → Nat → Bool
+/-- Whether `wipeF _ ks n _ cs` zeroes the byte at offset `i` from the bottom
+of the `cs.sum` bytes it wipes. -/
+def covN (ks : List Nat) (n : Nat) : List Nat → Nat → Bool
   | [], _ => false
-  | b :: bs, i => if i < bs.sum then cov ks bs i else decide (i - bs.sum < b) && covC ks bs.sum b (i - bs.sum)
+  | b :: bs, i => if i < bs.sum then covN ks n bs i else decide (i - bs.sum < b) && covC ks n bs.sum b (i - bs.sum)
+
+/-- Whether `wipe _ ks cs` zeroes the byte at offset `i` from the bottom of
+the `cs.sum` bytes it wipes. -/
+def cov (ks cs : List Nat) (i : Nat) : Bool := covN ks cs.sum cs i
 
 theorem ea_rsp (u : State) (off : Nat) :
     u.ea { base := .rsp, disp := (off : Int) } = u.gpr .rsp + BitVec.ofNat 64 off := by
@@ -156,11 +164,11 @@ theorem store1_run (w : Bool) (ks : List Nat) (off b base : Nat) (hb : b < 2 ^ 6
         exact absurd h3 hkeep
     · exact hu x fun h' => h ⟨h'.1, by have := h'.2.1; omega, h'.2.2⟩
 
-theorem stores16_run (w : Bool) (ks : List Nat) (off b base : Nat) (hb : b < 2 ^ 64) : ∀ (k : Nat) (u : State),
+theorem stores16_run (w : Bool) (ks : List Nat) (off b base e : Nat) (hb : b < 2 ^ 64) : ∀ (k : Nat) (u : State),
     ⟨u.gpr .rsp, b⟩ ∈ u.wr → (ks ≠ [] → u.xmm .xmm0 = 0) → (w = true → ks ≠ [] → u.ymmHi .xmm0 = 0) →
     base + 16 * k ≤ b →
-    ∃ m', execBlock isa (stores16 w ks off base k) u =
-        some ({ u with mem := m' }, storesTr w ks off (u.gpr .rsp) base k) ∧
+    ∃ m', execBlock isa (stores16 w ks off base e k) u =
+        some ({ u with mem := m' }, storesTr w ks off (u.gpr .rsp) base e k) ∧
       (∀ x, SCov ks off base k (x - u.gpr .rsp).toNat → m' x = 0) ∧
       (∀ x, ¬ SCov ks off base k (x - u.gpr .rsp).toNat → m' x = u.mem x)
   | 0, u, _, _, _, _ => ⟨u.mem, rfl, fun _ h => absurd h.2.1 (by have := h.1; omega), fun _ _ => rfl⟩
@@ -169,10 +177,12 @@ theorem stores16_run (w : Bool) (ks : List Nat) (off b base : Nat) (hb : b < 2 ^
       (fun u _ _ _ => ⟨u.mem, rfl, fun _ h => absurd h.2.1 (by have := h.1; omega), fun _ _ => rfl⟩) u hR hx hy hk
     simpa only [List.append_nil, stores16, storesTr] using this
   | k + 2, u, hR, hx, hy, hk => by
-    by_cases hp : (w && ks.contains (off + base + 16 * (k + 1)) && ks.contains (off + base + 16 * k)) = true
+    by_cases hp : (w && (k + e) % 2 == 0 && ks.contains (off + base + 16 * (k + 1)) &&
+        ks.contains (off + base + 16 * k)) = true
     · -- Two granules, one store.
-      simp only [Bool.and_eq_true] at hp
-      obtain ⟨⟨hw', hk1⟩, hk0⟩ := hp
+      have hq := hp
+      simp only [Bool.and_eq_true] at hq
+      obtain ⟨⟨⟨hw', -⟩, hk1⟩, hk0⟩ := hq
       subst hw'
       have hne : ks ≠ [] := fun h => by rw [h] at hk0; cases hk0
       have hx0 := hx hne
@@ -187,12 +197,12 @@ theorem stores16_run (w : Bool) (ks : List Nat) (off b base : Nat) (hb : b < 2 ^
         simp only [State.ymm, hx0, hy0]; rfl
       let a := u.gpr .rsp + BitVec.ofNat 64 (base + 16 * k)
       let u₁ : State := { u with mem := u.mem.writeW a (0 : BitVec 256) }
-      obtain ⟨m', he, hz, hu⟩ := stores16_run true ks off b base hb k u₁ hR hx hy (by omega)
+      obtain ⟨m', he, hz, hu⟩ := stores16_run true ks off b base e hb k u₁ hR hx hy (by omega)
       have hwm : ∀ x, u₁.mem x = if base + 16 * k ≤ (x - u.gpr .rsp).toNat ∧
           (x - u.gpr .rsp).toNat < base + 16 * k + 32 then 0 else u.mem x := fun x => by
         simp only [u₁, writeW_zero256, a, off_lt _ _ _ _ (show base + 16 * k + 32 < 2 ^ 64 by omega)]
       refine ⟨m', ?_, fun x h => ?_, fun x h => ?_⟩
-      · simp only [stores16, storesTr, hk1, hk0, Bool.and_self, ↓reduceIte, execBlock, isa, reduceExec,
+      · simp only [stores16, storesTr, hp, ↓reduceIte, execBlock, isa, reduceExec,
           zero32, ea_rsp, State.store256, hin, hymm]
         rw [show ({ u with mem := u.mem.writeW a (0 : BitVec 256) } : State) = u₁ from rfl, he]
         simp [addrs, ea_rsp2, u₁]
@@ -206,9 +216,9 @@ theorem stores16_run (w : Bool) (ks : List Nat) (off b base : Nat) (hb : b < 2 ^
             omega) with e | e <;> rw [e]
           · exact hk0
           · exact hk1⟩]
-    · have := store1_run w ks off b base hb (k + 1) (stores16 w ks off base (k + 1))
-        (fun p => storesTr w ks off p base (k + 1))
-        (fun u hR hx hy => stores16_run w ks off b base hb (k + 1) u hR hx hy (by omega)) u hR hx hy hk
+    · have := store1_run w ks off b base hb (k + 1) (stores16 w ks off base e (k + 1))
+        (fun p => storesTr w ks off p base e (k + 1))
+        (fun u hR hx hy => stores16_run w ks off b base e hb (k + 1) u hR hx hy (by omega)) u hR hx hy hk
       simpa only [stores16, storesTr, hp, Bool.false_eq_true, ↓reduceIte] using this
 
 theorem writeW_zero64 (m : Mem) (a x : Addr) :
@@ -216,57 +226,104 @@ theorem writeW_zero64 (m : Mem) (a x : Addr) :
   simp only [Mem.writeW, Mem.write]
   split <;> simp
 
-/-- What `chunkStores ks off b` zeroes, at offset `d` of `rsp`. -/
-def CCov (ks : List Nat) (off b d : Nat) : Prop := d < b ∧ covC ks off b d = true
+/-- An 8-byte granule's store, if `c`. -/
+theorem opt8_run (c : Bool) (d b : Nat) (hb : b < 2 ^ 64) (u : State) (hR : ⟨u.gpr .rsp, b⟩ ∈ u.wr)
+    (hd : c = true → d + 8 ≤ b) (hr : c = true → u.gpr .r11 = 0) :
+    ∃ m', execBlock isa (if c then [zero8 d] else []) u =
+        some ({ u with mem := m' }, if c then [.addr (u.gpr .rsp + BitVec.ofNat 64 d)] else []) ∧
+      ∀ x, m' x = if c = true ∧ d ≤ (x - u.gpr .rsp).toNat ∧ (x - u.gpr .rsp).toNat < d + 8 then 0 else u.mem x := by
+  cases c
+  · exact ⟨u.mem, rfl, fun x => by simp⟩
+  · have hd := hd rfl
+    have hr := hr rfl
+    have hin : InRegions u.wr (u.gpr .rsp + BitVec.ofNat 64 d) 8 := by
+      refine ⟨_, hR, ?_⟩
+      simp only [Region.Contains]
+      rw [show u.gpr .rsp + BitVec.ofNat 64 d - u.gpr .rsp = BitVec.ofNat 64 d by bv_omega]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+    refine ⟨u.mem.writeW (u.gpr .rsp + BitVec.ofNat 64 d) (0 : BitVec 64), ?_, fun x => ?_⟩
+    · simp only [↓reduceIte, execBlock, isa, reduceExec, zero8, State.store64, ea_rsp, hin, hr]
+      simp [addrs, ea_rsp]
+    · simp only [writeW_zero64, off_lt _ _ _ _ (show d + 8 < 2 ^ 64 by omega), true_and]
 
-theorem chunk_run (w : Bool) (ks : List Nat) (off b : Nat) (hb : b < 2 ^ 64) (h8 : b % 8 = 0) (u : State)
-    (hR : ⟨u.gpr .rsp, b⟩ ∈ u.wr) (hx : ks ≠ [] → u.xmm .xmm0 = 0) (hy : w = true → ks ≠ [] → u.ymmHi .xmm0 = 0)
-    (hr : ks ≠ [] → u.gpr .r11 = 0) :
-    ∃ m', execBlock isa (chunkStores w ks off b) u = some ({ u with mem := m' }, chunkTr w ks off (u.gpr .rsp) b) ∧
-      (∀ x, CCov ks off b (x - u.gpr .rsp).toNat → m' x = 0) ∧
-      (∀ x, ¬ CCov ks off b (x - u.gpr .rsp).toNat → m' x = u.mem x) := by
-  obtain ⟨m₁, he, hz, hu⟩ := stores16_run w ks off b (b % 16) hb (b / 16) u hR hx hy (by omega)
-  have hbb : b % 16 + 16 * (b / 16) = b := by omega
-  -- `SCov` within the chunk is `CCov` above its 8-byte granule.
-  have hsc : ∀ d, SCov ks off (b % 16) (b / 16) d ↔ b % 16 ≤ d ∧ CCov ks off b d := by
-    intro d
-    simp only [SCov, CCov, covC, hbb]
+/-- What `chunkStores _ ks n _ off b` zeroes, at offset `d` of `rsp`. -/
+def CCov (ks : List Nat) (n off b d : Nat) : Prop := d < b ∧ covC ks n off b d = true
+
+/-- The bytes the stores of `chunkStores` zero are those of the granules in `ks`. -/
+theorem ccov_iff {ks : List Nat} {n off b D : Nat} (hb8 : b % 8 = 0) (hb0 : 0 < b) :
+    (((phase n off = 8 && ks.contains off) = true ∧ 0 ≤ D ∧ D < 0 + 8) ∨
+      SCov ks off (phase n off) ((b - phase n off) / 16) D ∨
+      (((b - phase n off) % 16 = 8 && ks.contains (off + b - 8)) = true ∧ b - 8 ≤ D ∧ D < b - 8 + 8)) ↔
+    CCov ks n off b D := by
+  have ha : phase n off = 0 ∨ phase n off = 8 := by unfold phase; split <;> simp
+  unfold CCov covC SCov
+  generalize phase n off = a at *
+  simp only [Bool.and_eq_true, decide_eq_true_eq]
+  by_cases h1 : D < a
+  · rw [ite_t h1]
     constructor
-    · rintro ⟨h1, h2, h3⟩; exact ⟨h1, h2, by simp only [show ¬ d < b % 16 by omega, ↓reduceIte]; exact h3⟩
-    · rintro ⟨h1, h2, h3⟩; simp only [show ¬ d < b % 16 by omega, ↓reduceIte] at h3; exact ⟨h1, h2, h3⟩
-  unfold chunkStores store8s
-  rw [execBlock_append, he]
-  by_cases h16 : (b % 16 = 8 && ks.contains off) = true
-  · have h0 : BitVec.ofInt 64 0 = 0 := rfl
-    simp only [Bool.and_eq_true, decide_eq_true_eq] at h16
-    have hr := hr (fun h => by have := h16.2; rw [h] at this; cases this)
-    have hin8 : InRegions u.wr (u.gpr .rsp) 8 := by
-      refine ⟨_, hR, ?_⟩; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
-    have hea : u.gpr .rsp + BitVec.ofInt 64 0 = u.gpr .rsp := by rw [h0]; bv_omega
-    refine ⟨m₁.writeW (u.gpr .rsp) (u.gpr .r11), ?_, fun x h => ?_, fun x h => ?_⟩
-    · simp only [h16, decide_true, Bool.and_self, ↓reduceIte, Option.bind_some, execBlock, isa, reduceExec,
-        State.store64, State.ea, hea, hin8]
-      simp [chunkTr, addrs, State.ea, h16, List.contains_iff_mem.mp h16.2]
-    · rw [hr, writeW_zero64]
-      split
-      · rfl
-      · exact hz x ((hsc _).mpr ⟨by omega, h⟩)
-    · rw [hr, writeW_zero64]
-      split
-      · exact absurd ⟨by omega, by
-          unfold covC; rw [h16.1]
-          simp only [show (x - u.gpr .rsp).toNat < 8 by omega, ↓reduceIte, beq_self_eq_true, h16.2,
-            Bool.and_self]⟩ h
-      · exact hu x fun h' => h ((hsc _).mp h').2
-  · refine ⟨m₁, ?_, fun x h => ?_, fun x h => hu x fun h' => h ((hsc _).mp h').2⟩
-    · have h16' : ¬ (b % 16 = 8 ∧ off ∈ ks) := fun ⟨a, c⟩ => h16 (by simp [a, c])
-      simp [h16', chunkTr, execBlock]
-    · by_cases hd : (x - u.gpr .rsp).toNat < b % 16
-      · obtain ⟨-, h2⟩ := h
-        simp only [covC, hd, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at h2
-        simp only [Bool.and_eq_true, decide_eq_true_eq, not_and] at h16
-        exact absurd h2.2 (by simpa using h16 h2.1)
-      · exact hz x ((hsc _).mpr ⟨by omega, h⟩)
+    · rintro (⟨⟨h3, h⟩, h4, h5⟩ | ⟨h3, h4, h5⟩ | ⟨⟨h3, h⟩, h4, h5⟩)
+      · exact ⟨by omega, h⟩
+      · omega
+      · omega
+    · rintro ⟨h3, h⟩; exact .inl ⟨⟨by omega, h⟩, by omega, by omega⟩
+  · rw [ite_f h1]
+    by_cases h2 : a + 16 * ((b - a) / 16) ≤ D
+    · rw [ite_t h2]
+      constructor
+      · rintro (⟨⟨h3, h⟩, h4, h5⟩ | ⟨h3, h4, h5⟩ | ⟨⟨h3, h⟩, h4, h5⟩)
+        · omega
+        · omega
+        · exact ⟨by omega, h⟩
+      · rintro ⟨h3, h⟩; exact .inr (.inr ⟨⟨by omega, h⟩, by omega, by omega⟩)
+    · rw [ite_f h2]
+      constructor
+      · rintro (⟨⟨h3, h⟩, h4, h5⟩ | ⟨h3, h4, h⟩ | ⟨⟨h3, h⟩, h4, h5⟩)
+        · omega
+        · exact ⟨by omega, h⟩
+        · omega
+      · rintro ⟨h3, h⟩; exact .inr (.inl ⟨by omega, by omega, h⟩)
+
+theorem chunk_run (w : Bool) (ks : List Nat) (n s off b : Nat) (hb : b < 2 ^ 64) (h8 : b % 8 = 0) (hb0 : 0 < b)
+    (u : State) (hR : ⟨u.gpr .rsp, b⟩ ∈ u.wr) (hx : ks ≠ [] → u.xmm .xmm0 = 0)
+    (hy : w = true → ks ≠ [] → u.ymmHi .xmm0 = 0) (hr : ks ≠ [] → u.gpr .r11 = 0) :
+    ∃ m', execBlock isa (chunkStores w ks n s off b) u =
+        some ({ u with mem := m' }, chunkTr w ks n s off (u.gpr .rsp) b) ∧
+      (∀ x, CCov ks n off b (x - u.gpr .rsp).toNat → m' x = 0) ∧
+      (∀ x, ¬ CCov ks n off b (x - u.gpr .rsp).toNat → m' x = u.mem x) := by
+  have ha : phase n off = 0 ∨ phase n off = 8 := by unfold phase; split <;> simp
+  have hne : ∀ {c : Bool} {j : Nat}, (c && ks.contains j) = true → ks ≠ [] := fun h e => by
+    simp [e] at h
+  obtain ⟨mT, eT, hT⟩ := opt8_run ((b - phase n off) % 16 = 8 && ks.contains (off + b - 8)) (b - 8) b hb u hR
+    (fun _ => by omega) (fun h => hr (hne h))
+  obtain ⟨m₁, e₁, hz₁, hu₁⟩ := stores16_run w ks off b (phase n off) (pairPar n s off) hb
+    ((b - phase n off) / 16) { u with mem := mT } hR hx hy (by omega)
+  obtain ⟨mB, eB, hB⟩ := opt8_run (phase n off = 8 && ks.contains off) 0 b hb { u with mem := m₁ } hR
+    (fun _ => by omega) (fun h => hr (hne h))
+  have hc := fun x => ccov_iff (ks := ks) (n := n) (off := off) (D := (x - u.gpr .rsp).toNat) h8 hb0
+  dsimp only at hz₁ hu₁ hB
+  refine ⟨mB, ?_, fun x h => ?_, fun x h => ?_⟩
+  · unfold chunkStores
+    rw [execBlock_append, execBlock_append, eT]
+    simp only [Option.bind_some]
+    rw [e₁]
+    simp only [Option.map_some, Option.bind_some]
+    rw [eB]
+    rfl
+  · rw [hB x]
+    split
+    · rfl
+    · rename_i hn
+      by_cases hs : SCov ks off (phase n off) ((b - phase n off) / 16) (x - u.gpr .rsp).toNat
+      · exact hz₁ x hs
+      · rw [hu₁ x hs, hT x]
+        rcases (hc x).mpr h with h' | h' | h'
+        · exact absurd h' hn
+        · exact absurd h' hs
+        · rw [ite_t h']
+  · have h' := fun h'' => h ((hc x).mp h'')
+    rw [hB x, ite_f (fun h'' => h' (.inl h'')), hu₁ x (fun h'' => h' (.inr (.inl h''))),
+      hT x, ite_f (fun h'' => h' (.inr (.inr h'')))]
 
 theorem below_split (p : Addr) (b n : Nat) (h : b + n ≤ p.toNat) (x : Addr) :
     (⟨p - BitVec.ofNat 64 (b + n), b + n⟩ : Region).Contains x 1 ↔
@@ -298,24 +355,29 @@ theorem below_idx (p : Addr) (b n : Nat) (h : b + n ≤ p.toNat) (x : Addr) :
     Nat.mod_eq_of_lt (a := n) (by omega)]
   refine ⟨by congr 1; omega, fun h' => by omega, fun h' => by omega⟩
 
-/-- What `wipe ks cs` from `rsp = p` zeroes. -/
+/-- What `wipeF _ ks n _ cs` from `rsp = p` zeroes. -/
+def WCovN (ks : List Nat) (n : Nat) (cs : List Nat) (p x : Addr) : Prop :=
+  (⟨p - BitVec.ofNat 64 cs.sum, cs.sum⟩ : Region).Contains x 1 ∧
+    covN ks n cs (x - (p - BitVec.ofNat 64 cs.sum)).toNat = true
+
+/-- What `wipe _ ks cs` from `rsp = p` zeroes. -/
 def WCov (ks cs : List Nat) (p x : Addr) : Prop :=
   (⟨p - BitVec.ofNat 64 cs.sum, cs.sum⟩ : Region).Contains x 1 ∧
     cov ks cs (x - (p - BitVec.ofNat 64 cs.sum)).toNat = true
 
-/-- The trace of `wipe ks cs` from `rsp = p`. -/
-def wipeTr (w : Bool) (ks : List Nat) : List Nat → Addr → List Leak
+/-- The trace of `wipeF w ks n s cs` from `rsp = p`. -/
+def wipeFTr (w : Bool) (ks : List Nat) (n s : Nat) : List Nat → Addr → List Leak
   | [], _ => []
-  | b :: bs, p => chunkTr w ks bs.sum (p - BitVec.ofNat 64 b) b ++ wipeTr w ks bs (p - BitVec.ofNat 64 b)
+  | b :: bs, p => chunkTr w ks n s bs.sum (p - BitVec.ofNat 64 b) b ++ wipeFTr w ks n s bs (p - BitVec.ofNat 64 b)
 
-theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
+theorem wipeF_run (w : Bool) (ks : List Nat) (n s : Nat) : ∀ (cs : List Nat) (u : State),
     (∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0) →
     cs.sum ≤ (u.gpr .rsp).toNat → (ks ≠ [] → u.xmm .xmm0 = 0) → (w = true → ks ≠ [] → u.ymmHi .xmm0 = 0) →
     (ks ≠ [] → u.gpr .r11 = 0) →
-    ∃ m', Exec isa (wipe w ks cs) u (wipeTr w ks cs (u.gpr .rsp)) { u with mem := m' } ∧
-      (∀ x, WCov ks cs (u.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCov ks cs (u.gpr .rsp) x → m' x = u.mem x)
+    ∃ m', Exec isa (wipeF w ks n s cs) u (wipeFTr w ks n s cs (u.gpr .rsp)) { u with mem := m' } ∧
+      (∀ x, WCovN ks n cs (u.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCovN ks n cs (u.gpr .rsp) x → m' x = u.mem x)
   | [], u, _, _, _, _, _ =>
-    ⟨u.mem, .block rfl, fun x h => by simp [WCov, cov] at h, fun _ _ => rfl⟩
+    ⟨u.mem, .block rfl, fun x h => by simp [WCovN, covN] at h, fun _ _ => rfl⟩
   | b :: bs, u, hv, hs, hx, hy, hr => by
     obtain ⟨hb0, hb4, hb8⟩ := hv b (List.mem_cons_self ..)
     simp only [List.sum_cons] at hs
@@ -325,7 +387,7 @@ theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
     have hpush : isa.push (.alloc b) u = some u₁ := by
       simp only [isa, push, u₁, q, p]; rw [ite_eq_left ⟨hb0, hb4, hb8, by omega⟩]
     have hq : u₁.gpr .rsp = q := by simp [u₁, State.setReg]
-    obtain ⟨m₁, he₁, hz₁, hu₁⟩ := chunk_run w ks bs.sum b (by omega) hb8 u₁ (by rw [hq]; simp [u₁])
+    obtain ⟨m₁, he₁, hz₁, hu₁⟩ := chunk_run w ks n s bs.sum b (by omega) hb8 hb0 u₁ (by rw [hq]; simp [u₁])
       (by simpa [u₁, State.setReg] using hx) (by simpa [u₁, State.setReg] using hy)
       (by simpa [u₁, State.setReg] using hr)
     let u₂ : State := { u₁ with mem := m₁ }
@@ -336,7 +398,7 @@ theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
       generalize p.toNat = P at *
       rw [Nat.mod_eq_of_lt (a := b) (by omega)]
       omega
-    obtain ⟨m₂, he₂, hz₂, hu₂⟩ := wipe_run w ks bs u₂ (fun b' h => hv b' (List.mem_cons_of_mem _ h))
+    obtain ⟨m₂, he₂, hz₂, hu₂⟩ := wipeF_run w ks n s bs u₂ (fun b' h => hv b' (List.mem_cons_of_mem _ h))
       (by simpa [u₂, hq] using hqn) (by simpa [u₂, u₁, State.setReg] using hx)
       (by simpa [u₂, u₁, State.setReg] using hy) (by simpa [u₂, u₁, State.setReg] using hr)
     have hpop : isa.pop (.free b) u₁ { u₂ with mem := m₂ } = some { u with mem := m₂ } := by
@@ -352,10 +414,10 @@ theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
       · simp [h]
     refine ⟨m₂, ?_, fun x hx' => ?_, fun x hx' => ?_⟩
     · have e := Exec.frame (M := isa) hpush (.seq (.block he₁) he₂) hpop
-      have htr : wipeTr w ks (b :: bs) p = (isa.addrs (.alloc b) u).map Leak.addr ++
-          (chunkTr w ks bs.sum (u₁.gpr .rsp) b ++ wipeTr w ks bs (u₂.gpr .rsp)) ++
+      have htr : wipeFTr w ks n s (b :: bs) p = (isa.addrs (.alloc b) u).map Leak.addr ++
+          (chunkTr w ks n s bs.sum (u₁.gpr .rsp) b ++ wipeFTr w ks n s bs (u₂.gpr .rsp)) ++
           (isa.addrs (.free b) { u₂ with mem := m₂ }).map Leak.addr := by
-        simp [wipeTr, addrs, u₂, hq, q]
+        simp [wipeFTr, addrs, u₂, hq, q]
       rw [htr]; exact e
     all_goals
       have hs' : b + bs.sum ≤ p.toNat := hs
@@ -372,12 +434,12 @@ theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
       have hu₂ := hu₂ x
       have hz₁ := hz₁ x
       have hu₁ := hu₁ x
-      simp only [WCov, List.sum_cons, e₂, hq, Region.Contains, CCov] at hx' hz₂ hu₂ hz₁ hu₁ hsplit ⊢
+      simp only [WCovN, List.sum_cons, e₂, hq, Region.Contains, CCov] at hx' hz₂ hu₂ hz₁ hu₁ hsplit ⊢
       rw [hi1] at hz₂ hu₂ hsplit
       generalize (x - (p - BitVec.ofNat 64 (b + bs.sum))).toNat = I at hi2 hi3 hsplit hx' hz₂ hu₂
     · -- Zeroed.
       obtain ⟨h1, h2⟩ := hx'
-      try simp only [cov] at h2
+      try simp only [covN] at h2
       by_cases hlt : I < bs.sum
       · simp only [hlt, ↓reduceIte] at h2
         exact hz₂ ⟨by omega, h2⟩
@@ -385,9 +447,9 @@ theorem wipe_run (w : Bool) (ks : List Nat) : ∀ (cs : List Nat) (u : State),
         rw [hu₂ (fun h => by omega)]
         exact hz₁ ⟨by rw [hi2 (by omega)]; omega, by rw [hi2 (by omega)]; exact h2.2⟩
     · -- Kept.
-      rw [hu₂ (fun ⟨h1, h2⟩ => hx' ⟨by omega, by simp only [cov, show I < bs.sum by omega, ↓reduceIte]; exact h2⟩)]
+      rw [hu₂ (fun ⟨h1, h2⟩ => hx' ⟨by omega, by simp only [covN, show I < bs.sum by omega, ↓reduceIte]; exact h2⟩)]
       exact hu₁ (fun ⟨h1, h2⟩ => hx' ⟨by rw [hi3 h1]; omega, by
-        simp only [cov, hi3 h1, show ¬ (bs.sum + (x - q).toNat < bs.sum) by omega, ↓reduceIte,
+        simp only [covN, hi3 h1, show ¬ (bs.sum + (x - q).toNat < bs.sum) by omega, ↓reduceIte,
           Nat.add_sub_cancel_left, h1, decide_true, Bool.true_and]
         exact h2⟩)
 
@@ -470,6 +532,84 @@ theorem execBlock_gprs (rs : List Reg) (hrs : rs ≠ []) (s : State) :
       simp only [clearedG, arithFlags, State.setFlags, State.setReg32, State.setReg, List.mem_cons]
       simp only [State.mk.injEq, and_true]
       funext y; by_cases h1 : y = r <;> by_cases h2 : y ∈ rs <;> simp [h1, h2]
+
+/-! ## The wipe -/
+
+/-- The flags `wipe`'s branch leaves do not matter to the clearing after it. -/
+theorem clearedG_r11 (gs : List Reg) (Y : State) (m' : Mem) (v : BitVec 64) (h : Y.gpr .r11 = 0) :
+    clearedG gs (({ clearedG [.r11] Y with mem := m' } : State).setReg .rax v) =
+      clearedG gs (({ Y with mem := m' } : State).setReg .rax v) := by
+  simp only [clearedG, State.setReg, List.mem_singleton]
+  congr 1
+  funext r
+  by_cases h1 : r = .rax
+  · simp [h1]
+  · by_cases h2 : r = .r11 <;> simp [h1, h2, h]
+
+/-- Whether bit 4 of `p` is clear (`wipe`'s branch). -/
+def bit4z (p : Addr) : Bool := (16#32 &&& p.setWidth 32) == 0
+
+/-- The trace of `wipe w ks cs` from `rsp = p`. -/
+def wipeTr (w : Bool) (ks cs : List Nat) (p : Addr) : List Leak :=
+  if (w && !ks.isEmpty) = true then
+    .branch (bit4z p) :: wipeFTr true ks cs.sum (if bit4z p then 8 else 24) cs p
+  else wipeFTr false ks cs.sum 8 cs p
+
+/-- The state `wipe w ks cs` leaves, but its memory: its branch leaves `r11`
+zero and the flags of `xor`. -/
+def wipeEnd (w : Bool) (ks : List Nat) (u : State) : State :=
+  if (w && !ks.isEmpty) = true then clearedG [.r11] u else u
+
+theorem wipe_run (w : Bool) (ks cs : List Nat) (u : State)
+    (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hs : cs.sum ≤ (u.gpr .rsp).toNat) (hx : ks ≠ [] → u.xmm .xmm0 = 0)
+    (hy : w = true → ks ≠ [] → u.ymmHi .xmm0 = 0) (hr : ks ≠ [] → u.gpr .r11 = 0) :
+    ∃ m', Exec isa (wipe w ks cs) u (wipeTr w ks cs (u.gpr .rsp)) { wipeEnd w ks u with mem := m' } ∧
+      (∀ x, WCov ks cs (u.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCov ks cs (u.gpr .rsp) x → m' x = u.mem x) := by
+  by_cases hb : (w && !ks.isEmpty) = true
+  · have hne : ks ≠ [] := fun e => by simp [e] at hb
+    have hw : w = true := by cases w <;> simp_all
+    subst hw
+    let u' := arithFlags (u.setReg32 .r11 16)
+      (BitVec.setWidth 32 ((u.setReg32 .r11 16).gpr .r11) &&& BitVec.setWidth 32 ((u.setReg32 .r11 16).gpr .rsp))
+      false false
+    have e₀ : execBlock isa [.mov32 .r11 (.imm 16), .alu32 .test .r11 (.reg .rsp)] u = some (u', []) := by
+      simp only [execBlock, isa, reduceExec, addrs, srcAddrs, execAlu32, readSrc32, Option.bind_some,
+        Option.map_some, List.map_nil, List.nil_append, u']
+    have hz₀ : isa.eval .e u' = some (bit4z (u.gpr .rsp)) := by
+      simp [eval, u', arithFlags, State.setFlags, State.setReg32, State.setReg, bit4z]
+    have hc₀ : clearedG [.r11] u' = clearedG [.r11] u := by
+      simp only [clearedG, u', arithFlags, State.setFlags, State.setReg32, State.setReg, List.mem_singleton]
+      congr 1
+      funext r
+      by_cases h : r = .r11 <;> simp [h]
+    have hsp₀ : (clearedG [.r11] u).gpr .rsp = u.gpr .rsp := by simp [clearedG]
+    have run : ∀ s, ∃ m', Exec isa (.seq (.block [zeroR .r11]) (wipeF true ks cs.sum s cs)) u'
+        (wipeFTr true ks cs.sum s cs (u.gpr .rsp)) { clearedG [.r11] u with mem := m' } ∧
+        (∀ x, WCov ks cs (u.gpr .rsp) x → m' x = 0) ∧ (∀ x, ¬ WCov ks cs (u.gpr .rsp) x → m' x = u.mem x) := by
+      intro s
+      obtain ⟨m', e, hz, hu⟩ := wipeF_run true ks cs.sum s cs (clearedG [.r11] u) hv (by rw [hsp₀]; exact hs)
+        (fun h => by simpa [clearedG] using hx h) (fun _ h => by simpa [clearedG] using hy rfl h)
+        (fun _ => by simp [clearedG])
+      rw [hsp₀] at e hz hu
+      have e₁ := execBlock_gprs [.r11] (by simp) u'
+      rw [hc₀] at e₁
+      exact ⟨m', by simpa using Exec.seq (M := isa) (.block e₁) e, hz, hu⟩
+    have hw : wipeEnd true ks u = clearedG [.r11] u := by simp only [wipeEnd, hb, ↓reduceIte]
+    rw [hw]
+    cases hbit : bit4z (u.gpr .rsp)
+    · obtain ⟨m', e, hz, hu⟩ := run 24
+      refine ⟨m', ?_, hz, hu⟩
+      have := Exec.seq (M := isa) (.block e₀) (Exec.iteF (th := .seq (.block [zeroR .r11]) (wipeF true ks cs.sum 8 cs)) (by rw [hz₀, hbit]) e)
+      simpa [wipe, wipeTr, hb, hbit] using this
+    · obtain ⟨m', e, hz, hu⟩ := run 8
+      refine ⟨m', ?_, hz, hu⟩
+      have := Exec.seq (M := isa) (.block e₀) (Exec.iteT (el := .seq (.block [zeroR .r11]) (wipeF true ks cs.sum 24 cs)) (by rw [hz₀, hbit]) e)
+      simpa [wipe, wipeTr, hb, hbit] using this
+  · obtain ⟨m', e, hz, hu⟩ := wipeF_run false ks cs.sum 8 cs u hv hs hx (fun h => by cases h) hr
+    refine ⟨m', ?_, hz, hu⟩
+    simp only [wipe, wipeTr, wipeEnd, hb, Bool.false_eq_true, ↓reduceIte]
+    exact e
 
 /-- What `retFix retBits` leaves in `rax`. -/
 def retVal (retBits : Nat) (x : BitVec 64) : BitVec 64 :=
@@ -759,7 +899,7 @@ theorem tail_run (v : VecLevel) (rb : Nat) {xs : List XReg} {ps gs : List Reg} {
   rw [show u₂.gpr .rsp = u.gpr .rsp from hsp] at he ho hi
   refine ⟨m', ?_, ho, fun x hx => ?_⟩
   · have h₃ := execBlock_clearGpr rb gs ht.gne
-      (fun h => absurd (ht.gsOk _ h) (by decide : Reg.rax ∉ scratchRegs)) { u₂ with mem := m' }
+      (fun h => absurd (ht.gsOk _ h) (by decide : Reg.rax ∉ scratchRegs)) { wipeEnd v.wide ks u₂ with mem := m' }
     have e := Exec.seq (M := isa) (.block h₁) (.seq hem (.seq he (.block h₃)))
     simp only [List.nil_append, List.append_nil] at e
     have hax : u₁.gpr .rax = u.gpr .rax := by
@@ -769,8 +909,15 @@ theorem tail_run (v : VecLevel) (rb : Nat) {xs : List XReg} {ps gs : List Reg} {
           ↓reduceIte]
         rw [(hcH _).1]; rfl
     have hf : finState v rb xs ps gs m' u f =
-        clearedG gs (({ u₂ with mem := m' } : State).setReg .rax (retVal rb (u₂.gpr .rax))) := by
-      rw [show u₂.gpr .rax = u.gpr .rax from hax]; rfl
+        clearedG gs (({ wipeEnd v.wide ks u₂ with mem := m' } : State).setReg .rax
+          (retVal rb ((wipeEnd v.wide ks u₂).gpr .rax))) := by
+      unfold wipeEnd
+      split
+      · rename_i hb
+        rw [clearedG_r11 gs u₂ m' _ (show u₂.gpr .r11 = 0 from hr11 fun e => by simp [e] at hb)]
+        simp only [clearedG, List.mem_singleton, reduceCtorEq, ↓reduceIte]
+        rw [show u₂.gpr .rax = u.gpr .rax from hax]; rfl
+      · rw [show u₂.gpr .rax = u.gpr .rax from hax]; rfl
     rw [hf]
     exact e
   · rw [hi x hx]
@@ -1397,23 +1544,30 @@ theorem postOut_of_local_pre {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
           hw⟩, rfl⟩
     exact (hm a ⟨b.1, hin, ha⟩).symm
 
-theorem stores16_spSafe (w : Bool) (ks : List Nat) (off base : Nat) :
-    ∀ k, (stores16 w ks off base k).all (fun i => !isa.writesSp i) = true
+theorem stores16_spSafe (w : Bool) (ks : List Nat) (off base e : Nat) :
+    ∀ k, (stores16 w ks off base e k).all (fun i => !isa.writesSp i) = true
   | 0 => rfl
   | 1 => by simp only [stores16, store1]; split <;> rfl
   | k + 2 => by
     simp only [stores16, store1]
     split
-    · simp only [List.all_cons, stores16_spSafe w ks off base k, Bool.and_true]; rfl
-    · simp only [List.all_append, stores16_spSafe w ks off base (k + 1), Bool.and_true]; split <;> rfl
+    · simp only [List.all_cons, stores16_spSafe w ks off base e k, Bool.and_true]; rfl
+    · simp only [List.all_append, stores16_spSafe w ks off base e (k + 1), Bool.and_true]; split <;> rfl
 
-theorem wipe_spSafe (w : Bool) (ks : List Nat) :
-    ∀ cs : List Nat, (wipe w ks cs).all (fun i => !isa.writesSp i) = true
+theorem wipeF_spSafe (w : Bool) (ks : List Nat) (n s : Nat) :
+    ∀ cs : List Nat, (wipeF w ks n s cs).all (fun i => !isa.writesSp i) = true
   | [] => rfl
   | b :: bs => by
-    simp only [wipe, Code.all, chunkStores, List.all_append, stores16_spSafe, wipe_spSafe w ks bs,
-      Bool.true_and, Bool.and_true, store8s]
-    split <;> rfl
+    simp only [wipeF, Code.all, chunkStores, List.all_append, stores16_spSafe, wipeF_spSafe w ks n s bs,
+      Bool.and_true]
+    split <;> split <;> rfl
+
+theorem wipe_spSafe (w : Bool) (ks cs : List Nat) : (wipe w ks cs).all (fun i => !isa.writesSp i) = true := by
+  unfold wipe
+  split
+  · simp only [Code.all, wipeF_spSafe true ks cs.sum 8 cs, wipeF_spSafe true ks cs.sum 24 cs, Bool.and_true]
+    rfl
+  · exact wipeF_spSafe _ _ _ _ _
 
 theorem zeroR_spSafe : ∀ r ∈ scratchRegs, (!isa.writesSp (zeroR r)) = true := by decide
 
@@ -1506,57 +1660,43 @@ theorem chunks_valid {n : Nat} (h8 : n % 8 = 0) : ∀ b ∈ chunks n, 0 < b ∧ 
 With every granule of the stack in `ks`, `ResOk` asks nothing of the code:
 what code the residue analysis cannot follow is scrubbed so. -/
 
-/-- Every granule of `wipe _ cs`. -/
-def allKs : List Nat → List Nat
-  | [] => []
-  | b :: bs => bs.sum :: ((List.range (b / 16)).map fun t => bs.sum + b % 16 + 16 * t) ++ allKs bs
+/-- Every granule of `wipe _ cs`: each starts at a multiple of 8. -/
+def allKs (cs : List Nat) : List Nat := (List.range (cs.sum / 8)).map (8 * ·)
 
-theorem covC_mono {ks ks' : List Nat} (h : ∀ k ∈ ks, k ∈ ks') {off b d : Nat} (hc : covC ks off b d = true) :
-    covC ks' off b d = true := by
-  unfold covC at hc ⊢
-  split
-  · rename_i hd
-    simp only [hd, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at hc
-    simp only [Bool.and_eq_true, beq_iff_eq]
-    exact ⟨hc.1, List.contains_iff_mem.mpr (h _ (List.contains_iff_mem.mp hc.2))⟩
-  · rename_i hd
-    simp only [hd, ↓reduceIte] at hc
-    exact List.contains_iff_mem.mpr (h _ (List.contains_iff_mem.mp hc))
+theorem sum_mod8 : ∀ cs : List Nat, (∀ b ∈ cs, b % 8 = 0) → cs.sum % 8 = 0
+  | [], _ => rfl
+  | b :: bs, h => by
+    have := h b (List.mem_cons_self ..)
+    have := sum_mod8 bs fun b' hb' => h b' (List.mem_cons_of_mem _ hb')
+    simp only [List.sum_cons]; omega
 
-theorem cov_mono {ks ks' : List Nat} (h : ∀ k ∈ ks, k ∈ ks') : ∀ (cs : List Nat) (i : Nat),
-    cov ks cs i = true → cov ks' cs i = true
-  | [], _, hc => by simp [cov] at hc
-  | b :: bs, i, hc => by
-    simp only [cov] at hc ⊢
-    split
-    · rename_i hlt
-      simp only [hlt, ↓reduceIte] at hc
-      exact cov_mono h bs i hc
-    · rename_i hlt
-      simp only [hlt, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hc
-      simp only [Bool.and_eq_true, decide_eq_true_eq]
-      exact ⟨hc.1, covC_mono h hc.2⟩
-
-theorem cov_all : ∀ cs : List Nat, (∀ b ∈ cs, b % 8 = 0) → ∀ i < cs.sum, cov (allKs cs) cs i = true
-  | [], _, i, hi => by simp at hi
-  | b :: bs, h8, i, hi => by
+/-- With every multiple of 8 below `cs.sum` in `K`, every byte is zeroed. -/
+theorem covN_all (K : List Nat) (n : Nat) : ∀ cs : List Nat, (∀ b ∈ cs, b % 8 = 0) →
+    (∀ j, j % 8 = 0 → j < cs.sum → j ∈ K) → ∀ i < cs.sum, covN K n cs i = true
+  | [], _, _, i, hi => by simp at hi
+  | b :: bs, h8, hK, i, hi => by
     have hb8 := h8 b (List.mem_cons_self ..)
-    simp only [List.sum_cons] at hi
-    simp only [cov]
-    split
-    · rename_i hlt
-      exact cov_mono (fun k hk => by simp only [allKs, List.mem_cons, List.mem_append]; exact .inr hk) bs i
-        (cov_all bs (fun b' hb' => h8 b' (List.mem_cons_of_mem _ hb')) i hlt)
-    · rename_i hlt
+    have h8' : ∀ b ∈ bs, b % 8 = 0 := fun b' hb' => h8 b' (List.mem_cons_of_mem _ hb')
+    have hs8 := sum_mod8 bs h8'
+    simp only [List.sum_cons] at hi hK
+    simp only [covN]
+    by_cases hlt : i < bs.sum
+    · rw [ite_t hlt]; exact covN_all K n bs h8' (fun j hj hj' => hK j hj (by omega)) i hlt
+    · rw [ite_f hlt]
       simp only [Bool.and_eq_true, decide_eq_true_eq]
       refine ⟨by omega, ?_⟩
+      have ha : phase n bs.sum = 0 ∨ phase n bs.sum = 8 := by unfold phase; split <;> simp
       unfold covC
+      generalize phase n bs.sum = a at *
       split
-      · simp only [Bool.and_eq_true, beq_iff_eq]
-        exact ⟨by omega, List.contains_iff_mem.mpr (by simp [allKs])⟩
-      · refine List.contains_iff_mem.mpr ?_
-        simp only [allKs, List.mem_cons, List.mem_append, List.mem_map, List.mem_range]
-        exact .inl (.inr ⟨(i - bs.sum - b % 16) / 16, by omega, rfl⟩)
+      · exact List.contains_iff_mem.mpr (hK _ hs8 (by omega))
+      · split
+        · exact List.contains_iff_mem.mpr (hK _ (by omega) (by omega))
+        · exact List.contains_iff_mem.mpr (hK _ (by omega) (by omega))
+
+theorem cov_all (cs : List Nat) (h8 : ∀ b ∈ cs, b % 8 = 0) : ∀ i < cs.sum, cov (allKs cs) cs i = true :=
+  have := sum_mod8 cs h8
+  covN_all _ _ cs h8 fun j hj hj' => List.mem_map.mpr ⟨j / 8, List.mem_range.mpr (by omega), by omega⟩
 
 theorem wcov_all {cs : List Nat} (h8 : ∀ b ∈ cs, b % 8 = 0) {p x : Addr}
     (hx : (⟨p - BitVec.ofNat 64 cs.sum, cs.sum⟩ : Region).Contains x 1) : WCov (allKs cs) cs p x :=
@@ -1572,11 +1712,13 @@ theorem evexOk_all (v : VecLevel) {cs : List Nat} (h8 : ∀ b ∈ cs, b % 8 = 0)
     (hs : cs.sum < 2 ^ 64) {p : Addr} (hp : cs.sum ≤ p.toNat) : EvexOk v (allKs cs) cs p := by
   intro _
   refine ⟨?_, h16, fun x hx => wcov_all h8 ?_⟩
-  · cases cs with
-    | nil => simp at h16
-    | cons b bs => simp [allKs]
+  · intro h
+    have := congrArg List.length h
+    simp only [allKs, List.length_map, List.length_range, List.length_nil] at this
+    omega
   · have := p.isLt
     have := x.isLt
+    have := hp
     simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_ofNat] at hx ⊢
     generalize p.toNat = P at *
     generalize x.toNat = X at *

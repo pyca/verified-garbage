@@ -4490,7 +4490,7 @@ vg_sm4_expand_key:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-3144]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3144]
 	xor eax, eax
 	xor ecx, ecx
@@ -9044,7 +9044,7 @@ vg_sm4_ecb_encrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-3144]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3144]
 	xor eax, eax
 	xor ecx, ecx
@@ -13598,7 +13598,7 @@ vg_sm4_ecb_decrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-3144]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3144]
 	xor eax, eax
 	xor ecx, ecx

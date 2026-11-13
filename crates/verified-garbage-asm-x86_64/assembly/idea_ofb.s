@@ -972,7 +972,7 @@ vg_idea_ofb:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-184]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+184]
 	xor eax, eax
 	xor ecx, ecx
@@ -1970,7 +1970,7 @@ vg_idea_ofb_final:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-184]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+184]
 	xor eax, eax
 	xor ecx, ecx

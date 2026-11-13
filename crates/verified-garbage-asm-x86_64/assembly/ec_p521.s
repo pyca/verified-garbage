@@ -11424,9 +11424,20 @@ vg_ec_p521_public_key_adx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 24f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 25f
+24:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+25:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx

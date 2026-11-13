@@ -83,9 +83,20 @@ vg_aes_ctr_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 25f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 26f
+25:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+26:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -173,11 +184,28 @@ vg_aes_ctr_final_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 23f
+	xor r11d, r11d
 	lea rsp, [rsp-96]
-	vmovdqu YMMWORD PTR [rsp+64], ymm0
-	vmovdqu YMMWORD PTR [rsp+32], ymm0
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	mov QWORD PTR [rsp+88], r11
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+96]
+	jmp 24f
+23:
+	xor r11d, r11d
+	lea rsp, [rsp-96]
+	mov QWORD PTR [rsp+88], r11
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+96]
+24:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -359,12 +387,13 @@ vg_aes_ctr_final_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+88], r11
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+96]
 	xor eax, eax
 	xor ecx, ecx
@@ -548,12 +577,13 @@ vg_aes_ctr_final:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+88], r11
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+96]
 	xor eax, eax
 	xor ecx, ecx

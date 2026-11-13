@@ -18,9 +18,11 @@ where its Rust caller cannot clear it (`X86_64.NoResidue`):
 * the stack below the stack pointer, within its `cs.sum` bytes (the stack
   `c`'s frames and calls use), in nested frames of the sizes `cs` (each
   less than a page, as `alloc` requires): the granules (16 bytes of `xmm0`,
-  or the 8 bytes of `r11` at the bottom of a frame whose size is not a
-  multiple of 16) at the offsets `ks` from the bottom, each frame from its
-  top down. The granules are those an analysis of `c` finds may hold
+  16-byte aligned if the stack pointer is as the ABI leaves it on entry, or
+  8 bytes of `r11` at the bottom or top of a frame, around them) at the
+  offsets `ks` from the bottom, each frame from its top down; with `ymm0`,
+  two granules at a time where they are 32-byte aligned, after a branch on
+  bit 4 of the stack pointer. The granules are those an analysis of `c` finds may hold
   secrets (all of them, if `ks` lists them all): stack `c` itself wrote, so
   the stores touch no page `c` did not;
 * the caller-saved general-purpose registers, with `xor r32, r32`, but the
@@ -107,6 +109,9 @@ def zero16 (off : Nat) : Instr := .movdquStore { base := .rsp, disp := (off : In
 /-- `vmovdqu [rsp + off], ymm0`. -/
 def zero32 (off : Nat) : Instr := .vmovdquStore .l256 { base := .rsp, disp := (off : Int) } .xmm0
 
+/-- `mov [rsp + off], r11`. -/
+def zero8 (off : Nat) : Instr := .store { base := .rsp, disp := (off : Int) } .r11
+
 /-- Whether the wipe may store 32 bytes at a time, from `ymm0`: at every
 level but `sse`, whose zeroing of `xmm0` (`zeroX`) zeroes `ymm0`. -/
 def VecLevel.wide : VecLevel → Bool
@@ -120,32 +125,52 @@ def store1 (ks : List Nat) (off base k : Nat) : List Instr :=
 
 /-- The 16-byte granules at `base + 16 * (k - 1)`, …, `base + 16`, `base`
 zeroed, from the top down, but those whose offset from the bottom of the
-wiped stack is not in `ks`: each with `zero16`, or, if `w`, a granule and the
-one below it, both in `ks`, with one `zero32`. -/
-def stores16 (w : Bool) (ks : List Nat) (off base : Nat) : Nat → List Instr
+wiped stack is not in `ks`: each with `zero16`, or, if `w`, a granule `t`
+with `t + e` even and the one above it, both in `ks`, with one `zero32`
+(which `e` makes 32-byte aligned). -/
+def stores16 (w : Bool) (ks : List Nat) (off base e : Nat) : Nat → List Instr
   | 0 => []
   | 1 => store1 ks off base 0
   | k + 2 =>
-    if w && ks.contains (off + base + 16 * (k + 1)) && ks.contains (off + base + 16 * k) then
-      zero32 (base + 16 * k) :: stores16 w ks off base k
-    else store1 ks off base (k + 1) ++ stores16 w ks off base (k + 1)
+    if w && (k + e) % 2 == 0 && ks.contains (off + base + 16 * (k + 1)) && ks.contains (off + base + 16 * k) then
+      zero32 (base + 16 * k) :: stores16 w ks off base e k
+    else store1 ks off base (k + 1) ++ stores16 w ks off base e (k + 1)
 
-/-- The 8-byte store at `rsp` of a chunk whose size is not a multiple of 16,
-if its offset `off` from the bottom of the wiped stack is in `ks`. -/
-def store8s (ks : List Nat) (off b : Nat) : List Instr :=
-  if b % 16 = 8 && ks.contains off then [.store { base := .rsp } .r11] else []
+/-- The offset in its frame of the 16-byte granules of the chunk at offset
+`off` from the bottom of the `n` bytes wiped: 8 if `n - off` is a multiple
+of 16, else 0, which makes them 16-byte aligned when the stack pointer is 8
+more than a multiple of 16, as on entry (the ABI's). Only speed depends on
+it. -/
+def phase (n off : Nat) : Nat := if (n - off) % 16 = 0 then 8 else 0
 
-/-- Zero the `b` bytes at `rsp` (offset `off` from the bottom of the wiped
-stack) from the top down, in 16-byte granules (and one 8-byte one at the
-bottom, if `b` is not a multiple of 16), those whose offset is in `ks`. -/
-def chunkStores (w : Bool) (ks : List Nat) (off b : Nat) : List Instr :=
-  stores16 w ks off (b % 16) (b / 16) ++ store8s ks off b
+/-- Which of the 16-byte granules of the chunk at `off` start 32-byte
+aligned pairs (`stores16`'s `e`), if the stack pointer is `s` modulo 32. -/
+def pairPar (n s off : Nat) : Nat := (s + 31 * n + off + phase n off) % 32 / 16
+
+/-- Zero the `b` bytes at `rsp` (offset `off` from the bottom of the `n`
+wiped bytes) from the top down, those of the granules whose offset is in
+`ks`: 16-byte granules at `phase n off` (`stores16`), and an 8-byte one
+(`zero8`, of `r11`) below them if that is 8, and above them if they leave 8
+bytes. -/
+def chunkStores (w : Bool) (ks : List Nat) (n s off b : Nat) : List Instr :=
+  (if (b - phase n off) % 16 = 8 && ks.contains (off + b - 8) then [zero8 (b - 8)] else []) ++
+    stores16 w ks off (phase n off) (pairPar n s off) ((b - phase n off) / 16) ++
+    (if phase n off = 8 && ks.contains off then [zero8 0] else [])
+
+/-- `wipe`'s frames, for a stack pointer `s` modulo 32. -/
+def wipeF (w : Bool) (ks : List Nat) (n s : Nat) : List Nat → Prog isa
+  | [] => .block []
+  | b :: bs => .frame (.alloc b) (.seq (.block (chunkStores w ks n s bs.sum b)) (wipeF w ks n s bs)) (.free b)
 
 /-- Zero the granules `ks` of the stack below `rsp`, in nested frames of the
-sizes `cs`. -/
-def wipe (w : Bool) (ks : List Nat) : List Nat → Prog isa
-  | [] => .block []
-  | b :: bs => .frame (.alloc b) (.seq (.block (chunkStores w ks bs.sum b)) (wipe w ks bs)) (.free b)
+sizes `cs`. With 32-byte stores (`w`), which are faster aligned, first
+`test` bit 4 of `rsp` (public), with `r11`, which is zero again after. -/
+def wipe (w : Bool) (ks : List Nat) (cs : List Nat) : Prog isa :=
+  if w && !ks.isEmpty then
+    .seq (.block [.mov32 .r11 (.imm 16), .alu32 .test .r11 (.reg .rsp)])
+      (.ite .e (.seq (.block [zeroR .r11]) (wipeF true ks cs.sum 8 cs))
+        (.seq (.block [zeroR .r11]) (wipeF true ks cs.sum 24 cs)))
+  else wipeF false ks cs.sum 8 cs
 
 /-- Chunks of at most 4080 bytes (`fuel` of them at most) summing to `n`. -/
 def chunksAux : Nat → Nat → List Nat

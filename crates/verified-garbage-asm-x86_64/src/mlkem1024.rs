@@ -30,7 +30,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx512(seed: *const [u8
 call {vg_mlkem1024_keygen_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_keygen_body_avx512 = sym super::mlkem1024::vg_mlkem1024_keygen_body_avx512::vg_mlkem1024_keygen_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -68,7 +75,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx512(ek: *const [u8
 call {vg_mlkem1024_encaps_h_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body_avx512 = sym super::mlkem1024::vg_mlkem1024_encaps_h_body_avx512::vg_mlkem1024_encaps_h_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -104,7 +118,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx512(ek: *const [u8; 
 call {vg_mlkem1024_encaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_encaps_body_avx512 = sym super::mlkem1024::vg_mlkem1024_encaps_body_avx512::vg_mlkem1024_encaps_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -138,7 +159,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 
 call {vg_mlkem1024_decaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_decaps_body_avx512 = sym super::mlkem1024::vg_mlkem1024_decaps_body_avx512::vg_mlkem1024_decaps_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -172,7 +200,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx2(seed: *const [u8; 
 call {vg_mlkem1024_keygen_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_keygen_body_avx2 = sym super::mlkem1024::vg_mlkem1024_keygen_body_avx2::vg_mlkem1024_keygen_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -210,7 +245,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx2(ek: *const [u8; 
 call {vg_mlkem1024_encaps_h_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body_avx2 = sym super::mlkem1024::vg_mlkem1024_encaps_h_body_avx2::vg_mlkem1024_encaps_h_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -246,7 +288,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx2(ek: *const [u8; 15
 call {vg_mlkem1024_encaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_encaps_body_avx2 = sym super::mlkem1024::vg_mlkem1024_encaps_body_avx2::vg_mlkem1024_encaps_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -280,7 +329,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 31
 call {vg_mlkem1024_decaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_decaps_body_avx2 = sym super::mlkem1024::vg_mlkem1024_decaps_body_avx2::vg_mlkem1024_decaps_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -314,7 +370,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx(seed: *const [u8; 6
 call {vg_mlkem1024_keygen_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -352,7 +415,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx(ek: *const [u8; 1
 call {vg_mlkem1024_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -388,7 +458,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx(ek: *const [u8; 156
 call {vg_mlkem1024_encaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -422,7 +499,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx(dk: *const [u8; 316
 call {vg_mlkem1024_decaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJMhMiVwkMPMPf0QkIMX+fwQkSI1kJDg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJMhMiVwkMMX+f0QkEPMPfwQkSI1kJDg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -452,7 +536,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen(seed: *const [u8; 64], 
 call {vg_mlkem1024_keygen_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMhMiVwkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -486,7 +570,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568]
 call {vg_mlkem1024_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMhMiVwkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -518,7 +602,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], 
 call {vg_mlkem1024_encaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMhMiVwkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -548,7 +632,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], 
 call {vg_mlkem1024_decaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMhMiVwkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,

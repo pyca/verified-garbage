@@ -77,12 +77,12 @@ vg_scrypt_shani_sse2:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-88]
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+88]
 	xor eax, eax
 	xor ecx, ecx
@@ -167,12 +167,26 @@ vg_scrypt_avx2_sse2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 21f
+	xor r11d, r11d
 	lea rsp, [rsp-88]
-	vmovdqu YMMWORD PTR [rsp+56], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+88]
+	jmp 22f
+21:
+	xor r11d, r11d
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp+80], r11
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+88]
+22:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -258,12 +272,12 @@ vg_scrypt_sse2:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-88]
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+88]
 	xor eax, eax
 	xor ecx, ecx
@@ -350,12 +364,12 @@ vg_scrypt_shani:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-88]
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+88]
 	xor eax, eax
 	xor ecx, ecx
@@ -441,12 +455,26 @@ vg_scrypt_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 21f
+	xor r11d, r11d
 	lea rsp, [rsp-88]
-	vmovdqu YMMWORD PTR [rsp+56], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+88]
+	jmp 22f
+21:
+	xor r11d, r11d
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp+80], r11
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+88]
+22:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -532,12 +560,12 @@ vg_scrypt:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-88]
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+80], r11
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+88]
 	xor eax, eax
 	xor ecx, ecx

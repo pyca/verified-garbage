@@ -7248,9 +7248,22 @@ vg_ecdh_p256_ifma:
 	ldmxcsr DWORD PTR [rsp]
 	xor r11d, r11d
 	lea rsp, [rsp+16]
+	mov r11d, 16
+	test r11d, esp
+	je 27f
+	xor r11d, r11d
 	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+16]
+	jmp 28f
+27:
+	xor r11d, r11d
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+16]
+28:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx

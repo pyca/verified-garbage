@@ -634,16 +634,18 @@ end
 
 /-! ## The granules to wipe -/
 
-/-- The granules `wipe ks cs` may zero, as offsets from the bottom of the
-`cs.sum` bytes and widths. -/
-def granules : List Nat → List (Nat × Nat)
+/-- The granules `wipeF _ ks n _ cs` may zero, as offsets from the bottom of
+the `cs.sum` bytes and widths (as `covC`). -/
+def granulesN (n : Nat) : List Nat → List (Nat × Nat)
   | [] => []
-  | b :: bs => ((List.range (b / 16)).map fun t => (bs.sum + b % 16 + 16 * t, 16)) ++
-    (if b % 16 = 8 then [(bs.sum, 8)] else []) ++ granules bs
+  | b :: bs =>
+    (if (b - phase n bs.sum) % 16 = 8 then [(bs.sum + b - 8, 8)] else []) ++
+    ((List.range ((b - phase n bs.sum) / 16)).map fun t => (bs.sum + phase n bs.sum + 16 * t, 16)) ++
+    (if phase n bs.sum = 8 then [(bs.sum, 8)] else []) ++ granulesN n bs
 
 /-- The granules of `wipe _ cs` that hold a byte `sec` lists. -/
 def keepOf (sec : List (Nat × Nat)) (cs : List Nat) : List Nat :=
-  (granules cs).filterMap fun g =>
+  (granulesN cs.sum cs).filterMap fun g =>
     if (List.range g.2).any (fun k => sec.any fun p => decide (p.1 ≤ g.1 + k ∧ g.1 + k < p.1 + p.2)) then
       some g.1 else none
 

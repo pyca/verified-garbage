@@ -8027,9 +8027,20 @@ vg_ec_p256_public_key_adx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 22f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 23f
+22:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+23:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx

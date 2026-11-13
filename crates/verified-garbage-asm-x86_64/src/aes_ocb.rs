@@ -27,7 +27,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_vaes(key: *const u8, key_le
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SDHASImD8AAAAEiJg/gAAABIid9Iie5IidpIgcLwAAAASMfBAQAAAE2J4EmBwAACAAA="
 call {vg_aes_encrypt_blocks_vaes}
-.base64 "SYscJEmLbCQITYtkJBBIjWQkIMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTYxf5/RCQISI1kJCgxwDHJMdIx9jH/RTHARTHSww=="
+.base64 "SYscJEmLbCQITYtkJBBIjWQkIMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20G7EAAAAEGF4w=="
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "McAxyTHSMfYx/0UxwEUx0sM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
@@ -358,7 +365,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_l
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SDHASImD8AAAAEiJg/gAAABIid9Iie5IidpIgcLwAAAASMfBAQAAAE2J4EmBwAACAAA="
 call {vg_aes_encrypt_blocks_aesni}
-.base64 "SYscJEmLbCQITYtkJBBIjWQkIGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTY8w9/RCQY8w9/RCQISI1kJCgxwDHJMdIx9jH/RTHARTHSww=="
+.base64 "SYscJEmLbCQITYtkJBBIjWQkIGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTYTIlcJCDzD39EJBDzD38EJEiNZCQoMcAxyTHSMfYx/0UxwEUx0sM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,

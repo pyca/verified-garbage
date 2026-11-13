@@ -972,7 +972,7 @@ vg_camellia_cfb128_encrypt:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-3288]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3288]
 	xor eax, eax
 	xor ecx, ecx
@@ -1989,7 +1989,7 @@ vg_camellia_cfb128_decrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-3288]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3288]
 	xor eax, eax
 	xor ecx, ecx
@@ -2987,7 +2987,7 @@ vg_camellia_cfb128_encrypt_final:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-3288]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3288]
 	xor eax, eax
 	xor ecx, ecx
@@ -3987,7 +3987,7 @@ vg_camellia_cfb128_decrypt_final:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-3288]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3288]
 	xor eax, eax
 	xor ecx, ecx

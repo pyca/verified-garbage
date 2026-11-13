@@ -134,11 +134,24 @@ vg_mlkem768_keygen_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -194,11 +207,24 @@ vg_mlkem768_encaps_h_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -254,11 +280,24 @@ vg_mlkem768_encaps_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -314,11 +353,24 @@ vg_mlkem768_decaps_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -358,11 +410,24 @@ vg_mlkem768_keygen_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -402,11 +467,24 @@ vg_mlkem768_encaps_h_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -446,11 +524,24 @@ vg_mlkem768_encaps_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -490,11 +581,24 @@ vg_mlkem768_decaps_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -534,11 +638,24 @@ vg_mlkem768_keygen_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -578,11 +695,24 @@ vg_mlkem768_encaps_h_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -622,11 +752,24 @@ vg_mlkem768_encaps_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -666,11 +809,24 @@ vg_mlkem768_decaps_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+56]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-56]
+	mov QWORD PTR [rsp+48], r11
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+56]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -711,10 +867,10 @@ vg_mlkem768_keygen:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
@@ -756,10 +912,10 @@ vg_mlkem768_encaps_h:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
@@ -801,10 +957,10 @@ vg_mlkem768_encaps:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
@@ -846,10 +1002,10 @@ vg_mlkem768_decaps:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+48], r11
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx

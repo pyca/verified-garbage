@@ -1436,11 +1436,11 @@ vg_ffdh_generate_key_search_cached_adx:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-72]
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+64], r11
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+72]
 	mov eax, eax
 	xor ecx, ecx
@@ -4446,11 +4446,11 @@ vg_ffdh_generate_key_search_cached:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-72]
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+64], r11
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+72]
 	mov eax, eax
 	xor ecx, ecx
@@ -22177,9 +22177,20 @@ vg_ffdh_check_public_mr_adx_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2153f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2154f
+2153:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2154:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -39745,9 +39756,20 @@ vg_ffdh_exchange_mr_adx_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2146f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2147f
+2146:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2147:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -57488,9 +57510,20 @@ vg_ffdh_check_private_mr_adx_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2164f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2165f
+2164:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2165:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -75223,9 +75256,20 @@ vg_ffdh_derive_public_mr_adx_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2163f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2164f
+2163:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2164:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -93791,9 +93835,20 @@ vg_ffdh_check_domain_mr_adx_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2274f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2275f
+2274:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2275:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -114273,9 +114328,20 @@ vg_ffdh_check_public_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2329f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2330f
+2329:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2330:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -134701,9 +134767,20 @@ vg_ffdh_exchange_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2322f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2323f
+2322:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2323:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -155304,9 +155381,20 @@ vg_ffdh_check_private_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2340f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2341f
+2340:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2341:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -175899,9 +175987,20 @@ vg_ffdh_derive_public_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2339f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2340f
+2339:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2340:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -197847,9 +197946,20 @@ vg_ffdh_check_domain_exp_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2482f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 2483f
+2482:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+2483:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -261169,13 +261279,32 @@ vg_ffdh_generate_parameters_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 2721f
+	xor r11d, r11d
 	lea rsp, [rsp-160]
-	vmovdqu YMMWORD PTR [rsp+128], ymm0
-	vmovdqu YMMWORD PTR [rsp+96], ymm0
-	vmovdqu YMMWORD PTR [rsp+64], ymm0
-	vmovdqu YMMWORD PTR [rsp+32], ymm0
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	mov QWORD PTR [rsp+152], r11
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+160]
+	jmp 2722f
+2721:
+	xor r11d, r11d
+	lea rsp, [rsp-160]
+	mov QWORD PTR [rsp+152], r11
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
+	vmovdqu YMMWORD PTR [rsp+88], ymm0
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+160]
+2722:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -297298,16 +297427,17 @@ vg_ffdh_generate_parameters_adx:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-160]
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+152], r11
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+160]
 	mov eax, eax
 	xor ecx, ecx
@@ -307271,16 +307401,17 @@ vg_ffdh_generate_parameters:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-160]
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+152], r11
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+160]
 	mov eax, eax
 	xor ecx, ecx

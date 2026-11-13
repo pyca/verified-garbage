@@ -110,10 +110,22 @@ vg_x25519_exchange_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-24]
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+24]
+21:
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -217,8 +229,8 @@ vg_x25519_exchange_adx:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	mov eax, eax
 	xor ecx, ecx
@@ -323,8 +335,8 @@ vg_x25519_exchange:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	mov eax, eax
 	xor ecx, ecx
@@ -3553,9 +3565,20 @@ vg_x25519_base_ifma:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 211f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 212f
+211:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+212:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4381,9 +4404,20 @@ vg_x25519_base_adx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 28f
+	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
+	jmp 29f
+28:
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+29:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx

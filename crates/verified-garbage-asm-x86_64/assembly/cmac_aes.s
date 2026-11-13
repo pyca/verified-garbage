@@ -273,15 +273,32 @@ vg_cmac_aes_init_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-184]
-	vmovdqu YMMWORD PTR [rsp+152], ymm0
-	vmovdqu YMMWORD PTR [rsp+120], ymm0
-	vmovdqu YMMWORD PTR [rsp+88], ymm0
-	vmovdqu YMMWORD PTR [rsp+56], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+176], r11
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	vmovdqu YMMWORD PTR [rsp+128], ymm0
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+184]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-184]
+	mov QWORD PTR [rsp+176], r11
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+184]
+21:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -334,9 +351,22 @@ vg_cmac_aes_finish_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 22f
+	xor r11d, r11d
 	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp+32], r11
+	movdqu XMMWORD PTR [rsp+16], xmm0
 	lea rsp, [rsp+40]
+	jmp 23f
+22:
+	xor r11d, r11d
+	lea rsp, [rsp-40]
+	mov QWORD PTR [rsp+32], r11
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	lea rsp, [rsp+40]
+23:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -395,18 +425,18 @@ vg_cmac_aes_init_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-184]
-	movdqu XMMWORD PTR [rsp+168], xmm0
-	movdqu XMMWORD PTR [rsp+152], xmm0
-	movdqu XMMWORD PTR [rsp+136], xmm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
-	movdqu XMMWORD PTR [rsp+104], xmm0
-	movdqu XMMWORD PTR [rsp+88], xmm0
-	movdqu XMMWORD PTR [rsp+72], xmm0
-	movdqu XMMWORD PTR [rsp+56], xmm0
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+176], r11
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+184]
 	xor eax, eax
 	xor ecx, ecx
@@ -461,8 +491,8 @@ vg_cmac_aes_finish_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-40]
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp+32], r11
+	movdqu XMMWORD PTR [rsp+16], xmm0
 	lea rsp, [rsp+40]
 	xor eax, eax
 	xor ecx, ecx

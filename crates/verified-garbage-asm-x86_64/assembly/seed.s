@@ -1196,7 +1196,7 @@ vg_seed_expand_key:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-1064]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+1064]
 	xor eax, eax
 	xor ecx, ecx
@@ -1354,7 +1354,7 @@ vg_seed_ecb_encrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-1104]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1104]
 	xor eax, eax
 	xor ecx, ecx
@@ -1514,7 +1514,7 @@ vg_seed_ecb_decrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-1104]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1104]
 	xor eax, eax
 	xor ecx, ecx

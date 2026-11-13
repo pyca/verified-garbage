@@ -212,7 +212,14 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJODF/n8EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 221f
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+jmp 222f
+221:
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+222:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -437,7 +444,14 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 221f
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+jmp 222f
+221:
+.base64 "RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIA=="
+222:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -658,7 +672,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJODzD39EJBDzD38EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJOBMiVwkGPMPf0QkCEyJHCRIjWQkIInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -697,7 +711,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8EAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwEUx20iNZCTg8w9/RCQQ8w9/BCRIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwEUx20iNZCTgTIlcJBjzD39EJAhMiRwkSI1kJCAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -982,7 +996,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_avx512(sk: *const [u8; 2560
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa44_sign_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
     )
@@ -1016,7 +1037,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_prepared_avx512(sk: *const 
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa44_sign_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
     )
@@ -1049,7 +1077,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_avx2(sk: *const [u8; 2560],
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa44_sign_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
     )
@@ -1083,7 +1118,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_prepared_avx2(sk: *const [u
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa44_sign_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
     )
@@ -1112,7 +1154,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: 
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa44_sign_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache::vg_mldsa44_sign_with_cache,
     )
@@ -1142,7 +1184,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_prepared(sk: *const [u8; 14
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa44_sign_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache::vg_mldsa44_sign_with_cache,
     )
@@ -1195,7 +1237,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_sign_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1252,7 +1301,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_sign_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1308,7 +1364,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_sign_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1365,7 +1428,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_sign_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1417,7 +1487,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_sign_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJBMiVwkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1470,7 +1540,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_sign_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJBMiVwkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1503,7 +1573,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_avx512(pk: *const [u8; 13
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa44_verify_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
     )
@@ -1534,7 +1611,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_prepared_avx512(pk: *cons
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa44_verify_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
     )
@@ -1564,7 +1648,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_avx2(pk: *const [u8; 1312
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa44_verify_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
     )
@@ -1595,7 +1686,14 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_prepared_avx2(pk: *const 
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa44_verify_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 20f
+.base64 "RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCg="
+jmp 21f
+20:
+.base64 "RTHbSI1kJNhMiVwkIMX+fwQkSI1kJCg="
+21:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
     )
@@ -1621,7 +1719,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa44_verify_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache::vg_mldsa44_verify_with_cache,
     )
@@ -1648,7 +1746,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_prepared(pk: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa44_verify_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNhMiVwkIPMPf0QkEPMPfwQkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache::vg_mldsa44_verify_with_cache,
     )
@@ -1700,7 +1798,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_verify_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1756,7 +1861,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_verify_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1811,7 +1923,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_verify_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1867,7 +1986,14 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_verify_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbQbsQAAAAQYXj"
+je 22f
+.base64 "RTHbSI1kJJBMiVwkaPMPf0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjWQkcA=="
+jmp 23f
+22:
+.base64 "RTHbSI1kJJBMiVwkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjWQkcA=="
+23:
+.base64 "icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1918,7 +2044,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_verify_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJBMiVwkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1970,7 +2096,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa44_verify_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJBMiVwkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,

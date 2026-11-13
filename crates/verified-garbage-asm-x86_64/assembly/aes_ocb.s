@@ -50,9 +50,23 @@ vg_aes_ocb_init_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp+32], r11
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+40]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-40]
+	mov QWORD PTR [rsp+32], r11
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+40]
+21:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1728,8 +1742,9 @@ vg_aes_ocb_init_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-40]
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp+32], r11
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+40]
 	xor eax, eax
 	xor ecx, ecx

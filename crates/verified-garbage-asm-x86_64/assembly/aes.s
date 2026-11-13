@@ -1403,7 +1403,7 @@ vg_aes_expand_key:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-520]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+520]
 	xor eax, eax
 	xor ecx, ecx

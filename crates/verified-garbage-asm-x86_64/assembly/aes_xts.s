@@ -2062,9 +2062,22 @@ vg_aes_xts_encrypt_unit_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 23f
+	xor r11d, r11d
 	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+16]
+	jmp 24f
+23:
+	xor r11d, r11d
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+16]
+24:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2209,9 +2222,22 @@ vg_aes_xts_decrypt_unit_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 23f
+	xor r11d, r11d
 	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+16]
+	jmp 24f
+23:
+	xor r11d, r11d
+	lea rsp, [rsp-16]
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+16]
+24:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2393,10 +2419,22 @@ vg_aes_xts_encrypt_unit_to_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 217f
+	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
+	jmp 218f
+217:
+	xor r11d, r11d
+	lea rsp, [rsp-24]
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+24]
+218:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2622,10 +2660,22 @@ vg_aes_xts_decrypt_unit_to_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 217f
+	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
+	jmp 218f
+217:
+	xor r11d, r11d
+	lea rsp, [rsp-24]
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+24]
+218:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2729,7 +2779,8 @@ vg_aes_xts_encrypt_unit_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+16]
 	xor eax, eax
 	xor ecx, ecx
@@ -2876,7 +2927,8 @@ vg_aes_xts_decrypt_unit_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+16]
 	xor eax, eax
 	xor ecx, ecx
@@ -3060,8 +3112,8 @@ vg_aes_xts_encrypt_unit_to_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	xor eax, eax
 	xor ecx, ecx
@@ -3289,8 +3341,8 @@ vg_aes_xts_decrypt_unit_to_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	xor eax, eax
 	xor ecx, ecx
@@ -3380,7 +3432,8 @@ vg_aes_xts_encrypt_unit:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+16]
 	xor eax, eax
 	xor ecx, ecx
@@ -3512,7 +3565,8 @@ vg_aes_xts_decrypt_unit:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+8], r11
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+16]
 	xor eax, eax
 	xor ecx, ecx
@@ -3696,8 +3750,8 @@ vg_aes_xts_encrypt_unit_to:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	xor eax, eax
 	xor ecx, ecx
@@ -3925,8 +3979,8 @@ vg_aes_xts_decrypt_unit_to:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	xor eax, eax
 	xor ecx, ecx

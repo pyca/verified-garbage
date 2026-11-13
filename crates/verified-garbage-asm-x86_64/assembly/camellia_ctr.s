@@ -1038,7 +1038,7 @@ vg_camellia_ctr:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-3288]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+3288]
 	xor eax, eax
 	xor ecx, ecx

@@ -31,9 +31,24 @@ vg_aes_cbc_decrypt_vaes_avx512:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+32]
+21:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -72,9 +87,24 @@ vg_aes_cbc_decrypt_vaes:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+32]
+21:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -113,9 +143,24 @@ vg_aes_cbc_decrypt_aesni_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+32]
+21:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -262,8 +307,9 @@ vg_aes_cbc_decrypt_aesni:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-32]
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
 	xor eax, eax
 	xor ecx, ecx
@@ -303,9 +349,24 @@ vg_aes_cbc_encrypt_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+32]
+21:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -345,9 +406,24 @@ vg_aes_cbc_decrypt_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 20f
+	xor r11d, r11d
 	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
+	jmp 21f
+20:
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+32]
+21:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -373,8 +449,9 @@ vg_aes_cbc_encrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-32]
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
 	xor eax, eax
 	xor ecx, ecx
@@ -401,8 +478,9 @@ vg_aes_cbc_decrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-32]
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp+24], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+32]
 	xor eax, eax
 	xor ecx, ecx

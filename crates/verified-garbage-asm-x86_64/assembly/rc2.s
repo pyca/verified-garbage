@@ -135,7 +135,8 @@ vg_rc2_cbc_init:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-600]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+600]
 	mov eax, eax
 	xor ecx, ecx

@@ -115,7 +115,7 @@ vg_rc2_cbc_encrypt_chained:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-528]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+528]
 	xor eax, eax
 	xor ecx, ecx
@@ -241,7 +241,7 @@ vg_rc2_cbc_decrypt_chained:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-528]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+528]
 	xor eax, eax
 	xor ecx, ecx

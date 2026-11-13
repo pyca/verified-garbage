@@ -1371,7 +1371,7 @@ vg_triple_des_expand_key:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-520]
-	mov QWORD PTR [rsp], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+520]
 	xor eax, eax
 	xor ecx, ecx
@@ -4198,9 +4198,20 @@ vg_triple_des_ecb_encrypt_avx512:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 226f
+	xor r11d, r11d
 	lea rsp, [rsp-1040]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1040]
+	jmp 227f
+226:
+	xor r11d, r11d
+	lea rsp, [rsp-1040]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1040]
+227:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5748,9 +5759,20 @@ vg_triple_des_ecb_encrypt_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 213f
+	xor r11d, r11d
 	lea rsp, [rsp-1040]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1040]
+	jmp 214f
+213:
+	xor r11d, r11d
+	lea rsp, [rsp-1040]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1040]
+214:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5916,7 +5938,7 @@ vg_triple_des_ecb_encrypt:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1040]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1040]
 	xor eax, eax
 	xor ecx, ecx
@@ -8748,9 +8770,20 @@ vg_triple_des_ecb_decrypt_avx512:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 226f
+	xor r11d, r11d
 	lea rsp, [rsp-1040]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1040]
+	jmp 227f
+226:
+	xor r11d, r11d
+	lea rsp, [rsp-1040]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1040]
+227:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -10298,9 +10331,20 @@ vg_triple_des_ecb_decrypt_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
+	mov r11d, 16
+	test r11d, esp
+	je 213f
+	xor r11d, r11d
 	lea rsp, [rsp-1040]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1040]
+	jmp 214f
+213:
+	xor r11d, r11d
+	lea rsp, [rsp-1040]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1040]
+214:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -10466,7 +10510,7 @@ vg_triple_des_ecb_decrypt:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-1040]
-	movdqu XMMWORD PTR [rsp], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+1040]
 	xor eax, eax
 	xor ecx, ecx

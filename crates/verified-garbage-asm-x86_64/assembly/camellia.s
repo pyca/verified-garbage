@@ -6303,7 +6303,7 @@ vg_camellia_ecb_encrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-3216]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+3216]
 	xor eax, eax
 	xor ecx, ecx
@@ -11361,7 +11361,7 @@ vg_camellia_ecb_decrypt:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-3216]
-	movdqu XMMWORD PTR [rsp], xmm0
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+3216]
 	xor eax, eax
 	xor ecx, ecx

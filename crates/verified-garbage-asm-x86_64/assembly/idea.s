@@ -2263,8 +2263,8 @@ vg_idea_ecb:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+24]
 	xor eax, eax
 	xor ecx, ecx
