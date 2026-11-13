@@ -15,6 +15,9 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Scrub
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.Sha512Compress.X86_64
 
@@ -32,24 +35,26 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
     (fs : String)
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode fld win) :
     Artifact :=
-  Spec.Ed25519.verifyApi.artifact X86_64.target {
+  Spec.Ed25519.verifyApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
     stack := 184
     verified := Proof.Ed25519.X86_64.VerifyMessage.verified hq c
     spSafe := Proof.Ed25519.X86_64.VerifyMessage.spSafe hq c }
+    (Proof.Ed25519.X86_64.Scrub.verifyOut Impl.Ed25519.X86_64.baseOddConsts 184))
 
 /-- Signing with the seed's cached SHA-512 digest and public key, with the SHA-512
 implementation `c`, calling the base-point multiplication `bs` (`vg_ed25519_scalar_base` with
 the suffix `fs`). -/
 def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) : Artifact :=
-  Spec.Ed25519.signExpandedApi.artifact X86_64.target {
+  Spec.Ed25519.signExpandedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.SignCached.codeExpanded bs fs c.callee c.suffix
     stack := 264
     verified := Proof.Ed25519.X86_64.SignCached.verifiedE c
     spSafe := Proof.Ed25519.X86_64.SignCached.spSafeE c }
+    (Proof.Ed25519.X86_64.Scrub.signExpandedOut Impl.Ed25519.X86_64.combConsts 264))
 
 /-- Key-pair derivation with the SHA-512 implementation `c`'s one-shot digest, whose code
 it calls as the internal `vg_sha512_digest<suffix>_core` (the exported digest also clears
@@ -57,7 +62,7 @@ what it leaves), calling `vg_ed25519_public_key_expanded` with the suffix `fs`, 
 base-point multiplication is `bs`. -/
 def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) : Artifact :=
-  Spec.Ed25519.keyPairApi.artifact X86_64.target {
+  Spec.Ed25519.keyPairApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ c.suffix ++ "_core")
       (Proof.Ed25519.X86_64.KeyPair.dgCode c) ("vg_ed25519_public_key_expanded" ++ fs)
@@ -65,6 +70,7 @@ def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     stack := 1632
     verified := Proof.Ed25519.X86_64.KeyPair.verified c bs fs
     spSafe := Proof.Ed25519.X86_64.KeyPair.spSafe c bs fs }
+    (Proof.Ed25519.X86_64.Scrub.keyPairOut Impl.Ed25519.X86_64.combConsts 1632))
 
 /-- Verification and signing with the SHA-512 implementation `c` and the field
 multiplications `fld` (verification's doublings too), those of the Ed25519

@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_mldsa87_keygen_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -20,7 +22,7 @@ pub const VG_MLDSA87_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_keygen_avx512(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
@@ -372,7 +374,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTgxf5/BCRIjWQkIInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -394,6 +396,8 @@ pub const VG_MLDSA87_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// ML-DSA-87 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -757,7 +761,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -776,6 +780,8 @@ call {vg_keccak_squeeze_scratch}
 /// ML-DSA-87 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1138,7 +1144,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJODzD39EJBDzD38EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1158,6 +1164,8 @@ call {vg_keccak_squeeze_scratch}
 ///
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 2592 bytes.
@@ -1175,7 +1183,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8EAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwEUx20iNZCTg8w9/RCQQ8w9/BCRIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1554,11 +1562,13 @@ jne 20b
 }
 
 /// The CPU features `vg_mldsa87_sign_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1572,24 +1582,26 @@ pub const VG_MLDSA87_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = veri
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx512(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx512::vg_mldsa87_sign_with_cache_avx512,
     )
 }
 
 /// The CPU features `vg_mldsa87_sign_prepared_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa87_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1604,13 +1616,13 @@ pub const VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Featur
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
 /// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared_avx512(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx512::vg_mldsa87_sign_with_cache_avx512,
     )
@@ -1622,6 +1634,8 @@ pub const VG_MLDSA87_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verifi
 /// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1641,7 +1655,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx2(sk: *const [u8; 4896],
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx2::vg_mldsa87_sign_with_cache_avx2,
     )
@@ -1653,6 +1667,8 @@ pub const VG_MLDSA87_SIGN_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Features
 /// ML-DSA-87 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa87_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1673,7 +1689,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared_avx2(sk: *const [u
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx2::vg_mldsa87_sign_with_cache_avx2,
     )
@@ -1682,6 +1698,8 @@ call {vg_mldsa87_sign_with_cache_avx2}
 /// ML-DSA-87 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1700,7 +1718,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: 
     core::arch::naked_asm!(
         r#".base64 "QbkAAAAA"
 call {vg_mldsa87_sign_with_cache}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTY8w9/RCQY8w9/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
@@ -1709,6 +1727,8 @@ call {vg_mldsa87_sign_with_cache}
 /// ML-DSA-87 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa87_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1728,18 +1748,20 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared(sk: *const [u8; 28
     core::arch::naked_asm!(
         r#".base64 "QbkBAAAA"
 call {vg_mldsa87_sign_with_cache}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTY8w9/RCQY8w9/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
 }
 
 /// The CPU features `vg_mldsa87_sign_message_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1754,7 +1776,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Feature
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx512(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
@@ -1779,7 +1801,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1789,11 +1811,13 @@ call {vg_mldsa87_sign_with_cache_avx512}
 }
 
 /// The CPU features `vg_mldsa87_sign_message_prepared_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 signing with a prepared private key: `vg_mldsa87_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1809,7 +1833,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx512(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
@@ -1834,7 +1858,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1849,6 +1873,8 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features 
 /// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1888,7 +1914,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1903,6 +1929,8 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::
 /// ML-DSA-87 signing with a prepared private key: `vg_mldsa87_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1943,7 +1971,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1955,6 +1983,8 @@ call {vg_mldsa87_sign_with_cache_avx2}
 /// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1993,7 +2023,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSQ8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2005,6 +2035,8 @@ call {vg_mldsa87_sign_with_cache}
 /// ML-DSA-87 signing with a prepared private key: `vg_mldsa87_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2044,7 +2076,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_sign_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSQ8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2054,11 +2086,13 @@ call {vg_mldsa87_sign_with_cache}
 }
 
 /// The CPU features `vg_mldsa87_verify_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_VERIFY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_VERIFY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2069,24 +2103,26 @@ pub const VG_MLDSA87_VERIFY_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx512(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx512::vg_mldsa87_verify_with_cache_avx512,
     )
 }
 
 /// The CPU features `vg_mldsa87_verify_prepared_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_VERIFY_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_VERIFY_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa87_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2098,13 +2134,13 @@ pub const VG_MLDSA87_VERIFY_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Feat
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
 /// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared_avx512(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx512::vg_mldsa87_verify_with_cache_avx512,
     )
@@ -2116,6 +2152,8 @@ pub const VG_MLDSA87_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2132,7 +2170,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx2(pk: *const [u8; 2592
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx2::vg_mldsa87_verify_with_cache_avx2,
     )
@@ -2144,6 +2182,8 @@ pub const VG_MLDSA87_VERIFY_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Featur
 /// ML-DSA-87 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa87_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2161,7 +2201,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared_avx2(pk: *const 
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTYxf5/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx2::vg_mldsa87_verify_with_cache_avx2,
     )
@@ -2170,6 +2210,8 @@ call {vg_mldsa87_verify_with_cache_avx2}
 /// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2185,7 +2227,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu
     core::arch::naked_asm!(
         r#".base64 "QbgAAAAA"
 call {vg_mldsa87_verify_with_cache}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTY8w9/RCQY8w9/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
@@ -2194,6 +2236,8 @@ call {vg_mldsa87_verify_with_cache}
 /// ML-DSA-87 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa87_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2210,18 +2254,20 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared(pk: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "QbgBAAAA"
 call {vg_mldsa87_verify_with_cache}
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTY8w9/RCQY8w9/RCQITIkcJEiNZCQoicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
 }
 
 /// The CPU features `vg_mldsa87_verify_message_cached_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2235,7 +2281,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx512(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2260,7 +2306,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2270,11 +2316,13 @@ call {vg_mldsa87_verify_with_cache_avx512}
 }
 
 /// The CPU features `vg_mldsa87_verify_message_prepared_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-DSA-87 verification with a prepared public key: `vg_mldsa87_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2289,7 +2337,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_c
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx512(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2314,7 +2362,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx512}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2329,6 +2377,8 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: verified_garbage_cpu::
 /// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2367,7 +2417,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2382,6 +2432,8 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu
 /// ML-DSA-87 verification with a prepared public key: `vg_mldsa87_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2421,7 +2473,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache_avx2}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSQxf5/RCRQxf5/RCQwxf5/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2433,6 +2485,8 @@ call {vg_mldsa87_verify_with_cache_avx2}
 /// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2470,7 +2524,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSQ8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2482,6 +2536,8 @@ call {vg_mldsa87_verify_with_cache}
 /// ML-DSA-87 verification with a prepared public key: `vg_mldsa87_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2520,7 +2576,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_mldsa87_verify_with_cache}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "ww=="
+.base64 "RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSQ8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjWQkcInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,

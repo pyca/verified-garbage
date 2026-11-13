@@ -10,6 +10,8 @@ pub const VG_PBKDF2_HMAC_SHA512_256_SHANI_FEATURES: verified_garbage_cpu::Featur
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -75,7 +77,7 @@ jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYuf8AAAAEmLr/gAAABNi6cAAQAATYuvCAEAAE2LtxABAABNi78YAQAASI2kJAgHAADD"
+.base64 "SYuf8AAAAEmLr/gAAABNi6cAAQAATYuvCAEAAE2LtxABAABNi78YAQAASI2kJAgHAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk4Pj//8X+f4QkAAcAAMX+f4Qk4AYAAMX+f4QkwAYAAMX+f4QkoAYAAMX+f4QkgAYAAMX+f4QkYAYAAMX+f4QkQAYAAMX+f4QkIAYAAMX+f4QkAAYAAMX+f4Qk4AUAAMX+f4QkwAUAAMX+f4QkoAUAAMX+f4QkgAUAAMX+f4QkYAUAAMX+f4QkQAUAAMX+f4QkIAUAAMX+f4QkAAUAAMX+f4Qk4AQAAMX+f4QkwAQAAMX+f4QkoAQAAMX+f4QkgAQAAMX+f4QkYAQAAMX+f4QkQAQAAMX+f4QkIAQAAMX+f4QkAAQAAMX+f4Qk4AMAAMX+f4QkwAMAAMX+f4QkoAMAAMX+f4QkgAMAAMX+f4QkYAMAAMX+f4QkQAMAAMX+f4QkIAMAAMX+f4QkAAMAAMX+f4Qk4AIAAMX+f4QkwAIAAMX+f4QkoAIAAMX+f4QkgAIAAMX+f4QkYAIAAMX+f4QkQAIAAMX+f4QkIAIAAMX+f4QkAAIAAMX+f4Qk4AEAAMX+f4QkwAEAAMX+f4QkoAEAAMX+f4QkgAEAAMX+f4QkYAEAAMX+f4QkQAEAAMX+f4QkIAEAAMX+f4QkAAEAAMX+f4Qk4AAAAMX+f4QkwAAAAMX+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJCAHAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -92,6 +94,8 @@ pub const VG_PBKDF2_HMAC_SHA512_256_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -158,7 +162,7 @@ jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufIAYAAEmLrygGAABNi6cwBgAATYuvOAYAAE2Lt0AGAABNi79IBgAASI2kJDgMAADD"
+.base64 "SYufIAYAAEmLrygGAABNi6cwBgAATYuvOAYAAE2Lt0AGAABNi79IBgAASI2kJDgMAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQksPP//8X+f4QkMAwAAMX+f4QkEAwAAMX+f4Qk8AsAAMX+f4Qk0AsAAMX+f4QksAsAAMX+f4QkkAsAAMX+f4QkcAsAAMX+f4QkUAsAAMX+f4QkMAsAAMX+f4QkEAsAAMX+f4Qk8AoAAMX+f4Qk0AoAAMX+f4QksAoAAMX+f4QkkAoAAMX+f4QkcAoAAMX+f4QkUAoAAMX+f4QkMAoAAMX+f4QkEAoAAMX+f4Qk8AkAAMX+f4Qk0AkAAMX+f4QksAkAAMX+f4QkkAkAAMX+f4QkcAkAAMX+f4QkUAkAAMX+f4QkMAkAAMX+f4QkEAkAAMX+f4Qk8AgAAMX+f4Qk0AgAAMX+f4QksAgAAMX+f4QkkAgAAMX+f4QkcAgAAMX+f4QkUAgAAMX+f4QkMAgAAMX+f4QkEAgAAMX+f4Qk8AcAAMX+f4Qk0AcAAMX+f4QksAcAAMX+f4QkkAcAAMX+f4QkcAcAAMX+f4QkUAcAAMX+f4QkMAcAAMX+f4QkEAcAAMX+f4Qk8AYAAMX+f4Qk0AYAAMX+f4QksAYAAMX+f4QkkAYAAMX+f4QkcAYAAMX+f4QkUAYAAMX+f4QkMAYAAMX+f4QkEAYAAMX+f4Qk8AUAAMX+f4Qk0AUAAMX+f4QksAUAAMX+f4QkkAUAAMX+f4QkcAUAAMX+f4QkUAUAAMX+f4QkMAUAAMX+f4QkEAUAAMX+f4Qk8AQAAMX+f4Qk0AQAAMX+f4QksAQAAMX+f4QkkAQAAMX+f4QkcAQAAMX+f4QkUAQAAMX+f4QkMAQAAMX+f4QkEAQAAMX+f4Qk8AMAAMX+f4Qk0AMAAMX+f4QksAMAAMX+f4QkkAMAAMX+f4QkcAMAAMX+f4QkUAMAAMX+f4QkMAMAAMX+f4QkEAMAAMX+f4Qk8AIAAMX+f4Qk0AIAAMX+f4QksAIAAMX+f4QkkAIAAMX+f4QkcAIAAMX+f4QkUAIAAMX+f4QkMAIAAMX+f4QkEAIAAMX+f4Qk8AEAAMX+f4Qk0AEAAMX+f4QksAEAAMX+f4QkkAEAAMX+f4QkcAEAAMX+f4QkUAEAAMX+f4QkMAEAAMX+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJFAMAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -172,6 +176,8 @@ jmp 24f
 /// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -237,7 +243,7 @@ jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufsAEAAEmLr7gBAABNi6fAAQAATYuvyAEAAE2Lt9ABAABNi7/YAQAASI2kJMgHAADD"
+.base64 "SYufsAEAAEmLr7gBAABNi6fAAQAATYuvyAEAAE2Lt9ABAABNi7/YAQAASI2kJMgHAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkIPj///MPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJOAHAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,

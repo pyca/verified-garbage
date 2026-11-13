@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
@@ -105,11 +107,12 @@ namespace VG.Artifacts.EcdsaP224.X86_64
 open VG.Proof.P224.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P224.verifyHashApi.artifact X86_64.target {
+  Spec.Ecdsa.P224.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.jointVerifyP224
     stack := 96
-    verified := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_verified hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv }] ++
+    verified := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_verified hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P224.inst Impl.Ecdsa.X86_64.p224.combConsts))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP224.X86_64

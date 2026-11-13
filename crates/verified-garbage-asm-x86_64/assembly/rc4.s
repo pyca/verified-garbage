@@ -1447,5 +1447,13 @@ vg_rc4_apply:
 	jmp 21f
 20:
 21:
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

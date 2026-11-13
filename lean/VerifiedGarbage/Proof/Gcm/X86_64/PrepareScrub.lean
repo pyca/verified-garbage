@@ -28,9 +28,10 @@ Each implementation of `vg_aes_gcm_prepare`, followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
 registers that the residue analysis (`X86_64.RTaint`) finds may hold
 secrets. Its postcondition reads the memory on return only within the
-context (`prepareOut`). `vg_aes_gcm_wipe_prepared` is not here: it branches
-on the count of powers, which its contract leaks only as `flagLeak`, while
-the analysis needs the count's bytes public.
+context (`prepareOut`). `vg_aes_gcm_wipe_prepared` branches on the count of
+powers, which its contract leaks only as `flagLeak`, while the analysis needs
+the count's bytes public: it has no stack, and only its registers are
+cleared (`X86_64.Scrub.withScrubAll`, `wipeReg`).
 -/
 
 @[expose] public section
@@ -108,6 +109,23 @@ theorem prepareOut (stack : Nat) :
       rw [this]
       exact h1
 
+theorem wipePreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.wipePreparedContract X86_64.abi stack) (Spec.Gcm.wipePreparedSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx], _ =>
+      simp only [Spec.Gcm.wipePreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hb
+      change Spec.Aes.bytesAt m₁ ctx (Spec.Gcm.wipePreparedLen m ctx) = _ at h
+      change Spec.Aes.bytesAt m₂ ctx (Spec.Gcm.wipePreparedLen m ctx) = _
+      have hl : Spec.Gcm.wipePreparedLen m ctx ≤ 1032 := by
+        unfold Spec.Gcm.wipePreparedLen; split
+        · decide
+        · split <;> decide
+      have := bytesAt_of hb (d := 0) (n := Spec.Gcm.wipePreparedLen m ctx) (by simp only [Elem.size]; omega)
+      simp only [BitVec.add_zero] at this
+      rw [this]
+      exact h
+
 /-! ## The registrations -/
 
 def zKs : List Nat := keep_for% Spec.Gcm.prepareApi.sig 0 (Impl.Gcm.X86_64.Flag.prepareFlagged 48 Impl.Gcm.X86_64.PrepareZ.prepare) []
@@ -177,5 +195,16 @@ def absentReg : Registration Spec.Gcm.prepareApi X86_64.target :=
     code := Impl.Gcm.X86_64.Flag.prepareAbsent
     verified := Proof.Gcm.X86_64.Prepare.absent_verified }
     (prepareOut _) [] (pubOk_nil _) (some ⟨absentKs, absentOk⟩)
+
+/-- `vg_aes_gcm_wipe_prepared`, with AVX if `avx`, with its registers
+cleared (`withScrubAll`; it has no stack): it branches on the count of
+powers, which its contract leaks only as `flagLeak`, while the residue
+analysis needs the count's bytes public. -/
+def wipeReg (avx : Bool) : Registration Spec.Gcm.wipePreparedApi X86_64.target :=
+  withScrubAll {
+    suffix := if avx then "_avx" else ""
+    code := Impl.Gcm.X86_64.Flag.wipe avx
+    verified := Proof.Gcm.X86_64.Prepare.wipe_verified avx }
+    (wipePreparedOut _)
 
 end VG.Proof.Gcm.X86_64.PrepareScrub

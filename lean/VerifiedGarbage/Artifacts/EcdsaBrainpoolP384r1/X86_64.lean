@@ -3,6 +3,8 @@ module
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Verified
@@ -102,11 +104,12 @@ namespace VG.Artifacts.EcdsaBrainpoolP384r1.X86_64
 open VG.Proof.BrainpoolP384r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact X86_64.target {
+  Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP384r1
     stack := 96
-    verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+    verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.verifyHash_verified hasLaw.law hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.BrainpoolP384r1.inst Impl.Ecdsa.X86_64.brainpoolp384r1S.combConsts))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP384r1.X86_64

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 
 /-!
 # AES-CBC on x86-64, zeroing the scratch it writes
@@ -203,6 +204,48 @@ theorem decryptVaes512_verified :
 theorem decryptVaes512_spSafe : decryptVaes512.all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe Vaes512Decrypt.spSafe
 
+/-! ## Without secret residue -/
+
+/-- The postcondition of `vg_aes_cbc_encrypt` reads the memory on return only
+within the buffers. -/
+theorem encryptOut (stack : Nat) :
+    Scrub.PostOut (Spec.Cbc.aesEncryptContract abi stack) (Spec.Cbc.aesSig.retBits 64) := by
+  rw [encrypt_eq]
+  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+    rw [bufs_eq] at hb
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+    obtain ⟨h1, h2⟩ := h
+    have hd := AesEcb.agree_of hb.2.2.1
+    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
+      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega)
+    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
+    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
+    · obtain ⟨h1a, h1b⟩ := h1 key hk
+      exact ⟨hb'.trans h1a, hc.trans h1b⟩
+    · rw [← hb.2.2.2 z hz]
+      exact h2 z hz
+
+/-- The postcondition of `vg_aes_cbc_decrypt` reads the memory on return only
+within the buffers. -/
+theorem decryptOut (stack : Nat) :
+    Scrub.PostOut (Spec.Cbc.aesDecryptContract abi stack) (Spec.Cbc.aesSig.retBits 64) := by
+  rw [decrypt_eq]
+  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+    rw [bufs_eq] at hb
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+    obtain ⟨h1, h2⟩ := h
+    have hd := AesEcb.agree_of hb.2.2.1
+    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
+      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega)
+    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
+    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
+    · obtain ⟨h1a, h1b⟩ := h1 key hk
+      exact ⟨hb'.trans h1a, hc.trans h1b⟩
+    · rw [← hb.2.2.2 z hz]
+      exact h2 z hz
+
 /-- The implementations of `vg_aes_cbc_encrypt` over `v` that are emitted
 with `z` (see the module's documentation). -/
 def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
@@ -217,29 +260,29 @@ def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc
       written := Caller.written v
       writtenOk := Caller.written_ok v }]
     else []
-  else [{
+  else [Scrub.withScrubAll {
     suffix := v.suffix ++ z.suffix
     code := encrypt v z
     stack := 32
     verified := encrypt_verified v z
-    spSafe := encrypt_spSafe v z }]
+    spSafe := encrypt_spSafe v z } (encryptOut _)]
 
 /-- The implementations of `vg_aes_cbc_decrypt` over `v` that are emitted
 with `z` (see the module's documentation). -/
 def decryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
   if Caller.vaes v then
     if z.suffix = "" then []
-    else [{
+    else [Scrub.withScrubAll {
       suffix := v.suffix
       code := decrypt v z
       stack := 32
       verified := decrypt_verified v z
-      spSafe := decrypt_spSafe v z }]
-  else [{
+      spSafe := decrypt_spSafe v z } (decryptOut _)]
+  else [Scrub.withScrubAll {
     suffix := v.suffix ++ z.suffix
     code := decrypt v z
     stack := 32
     verified := decrypt_verified v z
-    spSafe := decrypt_spSafe v z }]
+    spSafe := decrypt_spSafe v z } (decryptOut _)]
 
 end VG.Proof.AesCbc.X86_64.Wiped

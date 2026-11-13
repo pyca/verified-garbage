@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_keygen_avx512` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX512_FEATURES`); `vg_mlkem1024_keygen_avx2` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX2_FEATURES`); `vg_mlkem1024_keygen_avx` if the CPU supports its features (`VG_MLKEM1024_KEYGEN_AVX_FEATURES`); or else `vg_mlkem1024_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -69,6 +71,8 @@ pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_encaps_h_avx512` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES`); `vg_mlkem1024_encaps_h_avx2` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES`); `vg_mlkem1024_encaps_h_avx` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_H_AVX_FEATURES`); or else `vg_mlkem1024_encaps_h`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -136,6 +140,8 @@ pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_encaps_avx512` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX512_FEATURES`); `vg_mlkem1024_encaps_avx2` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX2_FEATURES`); `vg_mlkem1024_encaps_avx` if the CPU supports its features (`VG_MLKEM1024_ENCAPS_AVX_FEATURES`); or else `vg_mlkem1024_encaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1568 bytes.
@@ -199,6 +205,8 @@ pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: 
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem1024_decaps_avx512` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX512_FEATURES`); `vg_mlkem1024_decaps_avx2` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX2_FEATURES`); `vg_mlkem1024_decaps_avx` if the CPU supports its features (`VG_MLKEM1024_DECAPS_AVX_FEATURES`); or else `vg_mlkem1024_decaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

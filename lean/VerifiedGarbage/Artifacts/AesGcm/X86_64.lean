@@ -274,12 +274,7 @@ def artifacts : List Artifact :=
     Spec.Gcm.prepareApi.artifact X86_64.target Proof.Gcm.X86_64.PrepareScrub.p16Reg,
     Spec.Gcm.prepareApi.artifact X86_64.target Proof.Gcm.X86_64.PrepareScrub.avxReg,
     Spec.Gcm.prepareApi.artifact X86_64.target Proof.Gcm.X86_64.PrepareScrub.absentReg,
-    Spec.Gcm.wipePreparedApi.artifact X86_64.target {
-      suffix := "_avx"
-      code := Impl.Gcm.X86_64.Flag.wipe true
-      verified := Proof.Gcm.X86_64.Prepare.wipe_verified true },
-    Spec.Gcm.wipePreparedApi.artifact X86_64.target {
-      code := Impl.Gcm.X86_64.Flag.wipe false
-      verified := Proof.Gcm.X86_64.Prepare.wipe_verified false }]
+    Spec.Gcm.wipePreparedApi.artifact X86_64.target (Proof.Gcm.X86_64.PrepareScrub.wipeReg true),
+    Spec.Gcm.wipePreparedApi.artifact X86_64.target (Proof.Gcm.X86_64.PrepareScrub.wipeReg false)]
 
 end VG.Artifacts.AesGcm.X86_64

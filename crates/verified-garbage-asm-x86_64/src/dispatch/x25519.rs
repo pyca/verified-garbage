@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_x25519_exchange_ifma` if the CPU supports its features (`VG_X25519_EXCHANGE_IFMA_FEATURES`); `vg_x25519_exchange_adx` if the CPU supports its features (`VG_X25519_EXCHANGE_ADX_FEATURES`); or else `vg_x25519_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.

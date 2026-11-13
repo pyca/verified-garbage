@@ -12,6 +12,8 @@ pub const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: verified_garbage_cpu::Feat
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -166,7 +168,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx512}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVtFMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKj+///F/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJFgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx512 = sym super::blake2b::vg_blake2b_update_scratch_avx512::vg_blake2b_update_scratch_avx512,
@@ -184,6 +186,8 @@ pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: verified_garbage_cpu::Featur
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -339,7 +343,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx2}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVtFMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKj+///F/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJFgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx2 = sym super::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
@@ -357,6 +361,8 @@ pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: verified_garbage_cpu::Features
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -512,7 +518,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx2}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVtFMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKj+///F/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJFgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx2 = sym super::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
@@ -527,6 +533,8 @@ call {vg_argon2_hprime_avx2}
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -681,7 +689,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVtmD+/ARTHbSI2kJKj+///zD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJFgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,

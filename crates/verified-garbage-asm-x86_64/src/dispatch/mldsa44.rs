@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_keygen_avx512` if the CPU supports its features (`VG_MLDSA44_KEYGEN_AVX512_FEATURES`); `vg_mldsa44_keygen_avx2` if the CPU supports its features (`VG_MLDSA44_KEYGEN_AVX2_FEATURES`); or else `vg_mldsa44_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 32 bytes.
@@ -64,6 +66,8 @@ pub unsafe fn vg_mldsa44_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: 
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
 ///
 /// It runs `vg_mldsa44_pk_tr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -191,6 +195,8 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(_dit: verified_garbage_cpu::Di
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_avx512` if the CPU supports its features (`VG_MLDSA44_SIGN_AVX512_FEATURES`); `vg_mldsa44_sign_avx2` if the CPU supports its features (`VG_MLDSA44_SIGN_AVX2_FEATURES`); or else `vg_mldsa44_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `sk` must be valid for reads of 2560 bytes.
@@ -249,6 +255,8 @@ pub unsafe fn vg_mldsa44_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *con
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_prepared_avx512` if the CPU supports its features (`VG_MLDSA44_SIGN_PREPARED_AVX512_FEATURES`); `vg_mldsa44_sign_prepared_avx2` if the CPU supports its features (`VG_MLDSA44_SIGN_PREPARED_AVX2_FEATURES`); or else `vg_mldsa44_sign_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -310,6 +318,8 @@ pub unsafe fn vg_mldsa44_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_message_avx512` if the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_AVX512_FEATURES`); `vg_mldsa44_sign_message_avx2` if the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_AVX2_FEATURES`); or else `vg_mldsa44_sign_message`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `sk` must be valid for reads of 2560 bytes.
@@ -369,6 +379,8 @@ pub unsafe fn vg_mldsa44_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_sign_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa44_sign_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa44_sign_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -431,6 +443,8 @@ pub unsafe fn vg_mldsa44_sign_message_prepared_auto(_dit: verified_garbage_cpu::
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_avx512` if the CPU supports its features (`VG_MLDSA44_VERIFY_AVX512_FEATURES`); `vg_mldsa44_verify_avx2` if the CPU supports its features (`VG_MLDSA44_VERIFY_AVX2_FEATURES`); or else `vg_mldsa44_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 1312 bytes.
@@ -486,6 +500,8 @@ pub unsafe fn vg_mldsa44_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *c
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_prepared_avx512` if the CPU supports its features (`VG_MLDSA44_VERIFY_PREPARED_AVX512_FEATURES`); `vg_mldsa44_verify_prepared_avx2` if the CPU supports its features (`VG_MLDSA44_VERIFY_PREPARED_AVX2_FEATURES`); or else `vg_mldsa44_verify_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -543,6 +559,8 @@ pub unsafe fn vg_mldsa44_verify_prepared_auto(_dit: verified_garbage_cpu::Dit<'_
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_message_cached_avx512` if the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX512_FEATURES`); `vg_mldsa44_verify_message_cached_avx2` if the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX2_FEATURES`); or else `vg_mldsa44_verify_message_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -602,6 +620,8 @@ pub unsafe fn vg_mldsa44_verify_message_cached_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa44_verify_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa44_verify_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa44_verify_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

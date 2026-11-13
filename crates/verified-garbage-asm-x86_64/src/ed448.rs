@@ -8,6 +8,8 @@ pub const VG_ED448_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = ver
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 57 bytes.
@@ -29,7 +31,7 @@ call {vg_keccak_pad_scratch}
 call {vg_keccak_squeeze_scratch}
 .base64 "SItUJEBMi4IABAAATIuKCAQAAEyLkhAEAABMi5oYBAAASIuCIAQAAEiLiigEAABIi7IwBAAASYPg/Ei/AAAAAAAAAIBICf6/AAAAAEyJBCRMiUwkCEyJVCQQTIlcJBhIiUQkIEiJTCQoSIl0JDBIiXwkOEiLfCRQSInmSItUJEA="
 call {vg_ed448_scalar_base_adx}
-.base64 "QbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAuAAAAAC5AAAAAL4AAAAAvwAAAABMiQQkTIlMJAhMiVQkEEyJXCQYSIlEJCBIiUwkKEiJdCQwSIl8JDhYWFhYWFhYWFhYWMM="
+.base64 "QbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAuAAAAAC5AAAAAL4AAAAAvwAAAABMiQQkTIlMJAhMiVQkEEyJXCQYSIlEJCBIiUwkKEiJdCQwSIl8JDhYWFhYWFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSY8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRoMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -39,6 +41,8 @@ call {vg_ed448_scalar_base_adx}
 }
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -60,7 +64,7 @@ call {vg_keccak_pad_scratch}
 call {vg_keccak_squeeze_scratch}
 .base64 "SItUJEBMi4IABAAATIuKCAQAAEyLkhAEAABMi5oYBAAASIuCIAQAAEiLiigEAABIi7IwBAAASYPg/Ei/AAAAAAAAAIBICf6/AAAAAEyJBCRMiUwkCEyJVCQQTIlcJBhIiUQkIEiJTCQoSIl0JDBIiXwkOEiLfCRQSInmSItUJEA="
 call {vg_ed448_scalar_base}
-.base64 "QbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAuAAAAAC5AAAAAL4AAAAAvwAAAABMiQQkTIlMJAhMiVQkEEyJXCQYSIlEJCBIiUwkKEiJdCQwSIl8JDhYWFhYWFhYWFhYWMM="
+.base64 "QbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAuAAAAAC5AAAAAL4AAAAAvwAAAABMiQQkTIlMJAhMiVQkEEyJXCQYSIlEJCBIiUwkKEiJdCQwSIl8JDhYWFhYWFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSY8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRoMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -73,6 +77,8 @@ call {vg_ed448_scalar_base}
 pub const VG_ED448_SIGN_CACHED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -132,7 +138,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_ed448_scalar_reduce}
 .base64 "SIu8JPAAAABIg8c5SInmSIHGgAEAAEiJ4kiBwgABAABIieFIgcFAAQAATIuEJPgAAAA="
 call {vg_ed448_scalar_mul_add}
-.base64 "uAAAAABIiYQkQAEAAEiJhCRIAQAASImEJFABAABIiYQkWAEAAEiJhCRgAQAASImEJGgBAABIiYQkcAEAAEiJhCR4AQAASImEJIABAABIiYQkiAEAAEiJhCSQAQAASImEJJgBAABIiYQkoAEAAEiJhCSoAQAASImEJLABAABIiYQkuAEAAEFbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVvD"
+.base64 "uAAAAABIiYQkQAEAAEiJhCRIAQAASImEJFABAABIiYQkWAEAAEiJhCRgAQAASImEJGgBAABIiYQkcAEAAEiJhCR4AQAASImEJIABAABIiYQkiAEAAEiJhCSQAQAASImEJJgBAABIiYQkoAEAAEiJhCSoAQAASImEJLABAABIiYQkuAEAAEFbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkMP7///MPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJNABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -144,6 +150,8 @@ call {vg_ed448_scalar_mul_add}
 }
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -202,7 +210,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_ed448_scalar_reduce}
 .base64 "SIu8JPAAAABIg8c5SInmSIHGgAEAAEiJ4kiBwgABAABIieFIgcFAAQAATIuEJPgAAAA="
 call {vg_ed448_scalar_mul_add}
-.base64 "uAAAAABIiYQkQAEAAEiJhCRIAQAASImEJFABAABIiYQkWAEAAEiJhCRgAQAASImEJGgBAABIiYQkcAEAAEiJhCR4AQAASImEJIABAABIiYQkiAEAAEiJhCSQAQAASImEJJgBAABIiYQkoAEAAEiJhCSoAQAASImEJLABAABIiYQkuAEAAEFbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVvD"
+.base64 "uAAAAABIiYQkQAEAAEiJhCRIAQAASImEJFABAABIiYQkWAEAAEiJhCRgAQAASImEJGgBAABIiYQkcAEAAEiJhCR4AQAASImEJIABAABIiYQkiAEAAEiJhCSQAQAASImEJJgBAABIiYQkoAEAAEiJhCSoAQAASImEJLABAABIiYQkuAEAAEFbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkMP7///MPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJNABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -217,6 +225,8 @@ call {vg_ed448_scalar_mul_add}
 pub const VG_ED448_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -257,7 +267,7 @@ call {vg_ed448_scalar_reduce}
 call {vg_ed448_verify_equation_adx}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJPD+///zD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQQAQAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -268,6 +278,8 @@ call {vg_ed448_verify_equation_adx}
 }
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -307,7 +319,7 @@ call {vg_ed448_scalar_reduce}
 call {vg_ed448_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJPD+///zD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQQAQAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,

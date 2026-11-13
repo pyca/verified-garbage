@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Wiped
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
@@ -13,12 +14,13 @@ public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
 namespace VG.Artifacts.AesCbc.X86_64
 
 def direct : List Artifact := [
-  Spec.Cbc.aesDecryptApi.artifact VG.X86_64.target {
+  Spec.Cbc.aesDecryptApi.artifact VG.X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := "_vaes_avx512"
     code := Proof.AesCbc.X86_64.Wiped.decryptVaes512
     stack := 32
     spSafe := Proof.AesCbc.X86_64.Wiped.decryptVaes512_spSafe
-    verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_verified }]
+    verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_verified }
+    (Proof.AesCbc.X86_64.Wiped.decryptOut _))]
 
 end VG.Artifacts.AesCbc.X86_64
 

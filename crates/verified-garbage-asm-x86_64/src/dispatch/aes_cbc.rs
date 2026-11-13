@@ -65,6 +65,8 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cbc_decrypt_vaes_avx512` if the CPU supports its features (`VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES`); `vg_aes_cbc_decrypt_vaes` if the CPU supports its features (`VG_AES_CBC_DECRYPT_VAES_FEATURES`); `vg_aes_cbc_decrypt_aesni_avx` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AESNI_AVX_FEATURES`); `vg_aes_cbc_decrypt_aesni` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AESNI_FEATURES`); `vg_aes_cbc_decrypt_avx` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AVX_FEATURES`); or else `vg_aes_cbc_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.

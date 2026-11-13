@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCfb8.X86_64.Verified
@@ -21,7 +22,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 block functions (`Aes.X86_64.BlocksImpl`), each followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where the
 implementation gives the residue analysis of the instance (`cfb8EncRes`,
-`cfb8DecRes`, `cfbEncRes`, `cfbDecRes`, `ofbRes`). Their postconditions read
+`cfb8DecRes`, `cfbEncRes`, `cfbDecRes`, `ofbRes`), and otherwise with its 8
+bytes of stack wiped (`X86_64.RScrub.withScrubOrAll`). Their postconditions read
 the memory on return only within the buffers (`X86_64.Scrub.PostOut`): the
 data and the input block. The `_final` functions call the code of the
 CFB128 and OFB ones as internal functions of their own,
@@ -145,7 +147,7 @@ open VG.X86_64.RScrub VG.Proof.Aes.X86_64
 
 /-- `vg_aes_cfb8_encrypt` over `v`. -/
 def cfb8EncryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesEncryptApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesCfb8.X86_64.encrypt v.enc
     stack := 8
@@ -154,7 +156,7 @@ def cfb8EncryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesEncryptApi X86_6
 
 /-- `vg_aes_cfb8_decrypt` over `v`. -/
 def cfb8DecryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesDecryptApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesCfb8.X86_64.decrypt v.enc
     stack := 8
@@ -163,7 +165,7 @@ def cfb8DecryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesDecryptApi X86_6
 
 /-- `vg_aes_cfb128_encrypt` over `v`. -/
 def cfbEncryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesEncryptApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesCfb.X86_64.encrypt v.enc
     stack := 8
@@ -172,7 +174,7 @@ def cfbEncryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesEncryptApi X86_64.
 
 /-- `vg_aes_cfb128_decrypt` over `v`. -/
 def cfbDecryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesDecryptApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesCfb.X86_64.decrypt v.enc
     stack := 8
@@ -181,7 +183,7 @@ def cfbDecryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesDecryptApi X86_64.
 
 /-- `vg_aes_ofb` over `v`. -/
 def ofbReg (v : BlocksImpl) : Registration Spec.Ofb.aesApi X86_64.target :=
-  withScrub {
+  withScrubOrAll {
     suffix := v.suffix
     code := Impl.AesOfb.X86_64.crypt v.enc
     stack := 8

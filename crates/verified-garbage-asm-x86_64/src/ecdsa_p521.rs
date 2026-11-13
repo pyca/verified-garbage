@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 133 bytes.
@@ -389,7 +391,7 @@ call {vg_p521_mul_mod_p}
 call {vg_p521_mul_mod_p}
 .base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx2gBAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHvgAsAAEiBx9AJAABIiy9Mi0cITItPEEyLVxhMi18gTItnKEyLbzBMi3c4TIt/QEiBx5j+//8xwEiD+P9IEy9ME0cITBNPEEwTVxhME18gTBNnKEwTbzBME3c4TBN/QEiBx2gBAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv0AkAAEmJ9L4YCgAAutAJAAC5wAQAAA=="
 call {vg_p521_mul_mod_p}
-.base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx9gAAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv8AoAAEiLl4ALAABIC5eICwAASAuXkAsAAEgLl5gLAABIC5egCwAASAuXqAsAAEgLl7ALAABIC5e4CwAASAuXwAsAAEiD+gFIGdJIidVIi5f4CAAASCuXiAAAAEiLlwAJAABIG5eQAAAASIuXCAkAAEgbl5gAAABIi5cQCQAASBuXoAAAAEiLlxgJAABIG5eoAAAASIuXIAkAAEgbl7AAAABIi5coCQAASBuXuAAAAEiLlzAJAABIG5fAAAAASIuXOAkAAEgbl8gAAABIGcBJicRIi5fwCgAASAuX+AoAAEgLlwALAABIC5cICwAASAuXEAsAAEgLlxgLAABIC5cgCwAASAuXKAsAAEgLlzALAABIg/oBSBnSTCHiSAnqSIuHoAwAAEgh0EiJh6AMAABIi5fABAAASAuXyAQAAEgLl9AEAABIC5fYBAAASAuX4AQAAEgLl+gEAABIC5fwBAAASAuX+AQAAEgLlwAFAAC5AAAAAEgp0UgZ0kiLh6AMAABIIdBIiYegDAAASIuHoAwAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYww=="
+.base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx9gAAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv8AoAAEiLl4ALAABIC5eICwAASAuXkAsAAEgLl5gLAABIC5egCwAASAuXqAsAAEgLl7ALAABIC5e4CwAASAuXwAsAAEiD+gFIGdJIidVIi5f4CAAASCuXiAAAAEiLlwAJAABIG5eQAAAASIuXCAkAAEgbl5gAAABIi5cQCQAASBuXoAAAAEiLlxgJAABIG5eoAAAASIuXIAkAAEgbl7AAAABIi5coCQAASBuXuAAAAEiLlzAJAABIG5fAAAAASIuXOAkAAEgbl8gAAABIGcBJicRIi5fwCgAASAuX+AoAAEgLlwALAABIC5cICwAASAuXEAsAAEgLlxgLAABIC5cgCwAASAuXKAsAAEgLlzALAABIg/oBSBnSTCHiSAnqSIuHoAwAAEgh0EiJh6AMAABIi5fABAAASAuXyAQAAEgLl9AEAABIC5fYBAAASAuX4AQAAEgLl+gEAABIC5fwBAAASAuX+AQAAEgLlwAFAAC5AAAAAEgp0UgZ0kiLh6AMAABIIdBIiYegDAAASIuHoAwAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJKDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
         vg_p521_mul_mod_n = sym super::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
@@ -405,6 +407,8 @@ pub const VG_ECDSA_P521_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = ve
 /// ECDSA signature verification over P-521 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 66 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 521 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 66 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -757,7 +761,7 @@ call {vg_p521_mul_mod_p_adx}
 call {vg_p521_mul_mod_p_adx}
 .base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx2gBAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHvgAsAAEiBx9AJAABIiy9Mi0cITItPEEyLVxhMi18gTItnKEyLbzBMi3c4TIt/QEiBx5j+//8xwEiD+P9IEy9ME0cITBNPEEwTVxhME18gTBNnKEwTbzBME3c4TBN/QEiBx2gBAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv0AkAAEmJ9L4YCgAAutAJAAC5wAQAAA=="
 call {vg_p521_mul_mod_p_adx}
-.base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx9gAAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv8AoAAEiLl4ALAABIC5eICwAASAuXkAsAAEgLl5gLAABIC5egCwAASAuXqAsAAEgLl7ALAABIC5e4CwAASAuXwAsAAEiD+gFIGdJIidVIi5f4CAAASCuXiAAAAEiLlwAJAABIG5eQAAAASIuXCAkAAEgbl5gAAABIi5cQCQAASBuXoAAAAEiLlxgJAABIG5eoAAAASIuXIAkAAEgbl7AAAABIi5coCQAASBuXuAAAAEiLlzAJAABIG5fAAAAASIuXOAkAAEgbl8gAAABIGcBJicRIi5fwCgAASAuX+AoAAEgLlwALAABIC5cICwAASAuXEAsAAEgLlxgLAABIC5cgCwAASAuXKAsAAEgLlzALAABIg/oBSBnSTCHiSAnqSIuHoAwAAEgh0EiJh6AMAABIi5fABAAASAuXyAQAAEgLl9AEAABIC5fYBAAASAuX4AQAAEgLl+gEAABIC5fwBAAASAuX+AQAAEgLlwAFAAC5AAAAAEgp0UgZ0kiLh6AMAABIIdBIiYegDAAASIuHoAwAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYww=="
+.base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx9gAAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv8AoAAEiLl4ALAABIC5eICwAASAuXkAsAAEgLl5gLAABIC5egCwAASAuXqAsAAEgLl7ALAABIC5e4CwAASAuXwAsAAEiD+gFIGdJIidVIi5f4CAAASCuXiAAAAEiLlwAJAABIG5eQAAAASIuXCAkAAEgbl5gAAABIi5cQCQAASBuXoAAAAEiLlxgJAABIG5eoAAAASIuXIAkAAEgbl7AAAABIi5coCQAASBuXuAAAAEiLlzAJAABIG5fAAAAASIuXOAkAAEgbl8gAAABIGcBJicRIi5fwCgAASAuX+AoAAEgLlwALAABIC5cICwAASAuXEAsAAEgLlxgLAABIC5cgCwAASAuXKAsAAEgLlzALAABIg/oBSBnSTCHiSAnqSIuHoAwAAEgh0EiJh6AMAABIi5fABAAASAuXyAQAAEgLl9AEAABIC5fYBAAASAuX4AQAAEgLl+gEAABIC5fwBAAASAuX+AQAAEgLlwAFAAC5AAAAAEgp0UgZ0kiLh6AMAABIIdBIiYegDAAASIuHoAwAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJKDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_p521_check_point_adx = sym super::ec_p521_compressed::vg_p521_check_point_adx::vg_p521_check_point_adx,
         vg_p521_mul_mod_n = sym super::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,

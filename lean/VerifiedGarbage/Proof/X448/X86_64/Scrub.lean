@@ -16,13 +16,15 @@ meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 
 /-!
-# X448's base-point multiplication on x86-64, without secret residue
+# X448 on x86-64, without secret residue
 
 `vg_x448_base`, with each backend of the field, followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
 registers and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Its postcondition reads the memory
-on return only within `out` (`X86_64.Scrub.PostOut`).
+on return only within `out` (`X86_64.Scrub.PostOut`), as does that of
+`vg_x448_exchange` (`exchangeOut`), which returns with its whole stack wiped
+(`X86_64.Scrub.withScrubAll`).
 -/
 
 @[expose] public section
@@ -42,6 +44,27 @@ theorem baseOut : PostOut (Spec.X448.x448BaseContract X86_64.abi 8) (Spec.X448.x
     simp only [Spec.X448.x448BaseSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
     show Spec.X448.bytesAt m₂ o 56 = _
+    have : Spec.X448.bytesAt m₂ o 56 = Spec.X448.bytesAt m₁ o 56 := by
+      simp only [Spec.X448.bytesAt]
+      refine List.map_congr_left fun i hi => ?_
+      have := List.mem_range.mp hi
+      exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    rw [this]; exact h
+
+theorem exchangeOut (stack : Nat) :
+    PostOut (Spec.X448.exchangeContract X86_64.abi stack) (Spec.X448.exchangeSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    obtain ⟨o, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨k, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨u, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    simp only [Spec.X448.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hb
+    show Spec.X448.bytesAt m₂ o 56 = _ ∧ _
     have : Spec.X448.bytesAt m₂ o 56 = Spec.X448.bytesAt m₁ o 56 := by
       simp only [Spec.X448.bytesAt]
       refine List.map_congr_left fun i hi => ?_

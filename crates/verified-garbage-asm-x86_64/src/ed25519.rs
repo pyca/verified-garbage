@@ -8,6 +8,8 @@ pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features 
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -35,7 +37,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCRI////xf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCS4AAAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -46,9 +48,11 @@ call {vg_ed25519_verify_equation_ifma}
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_shani_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -62,7 +66,7 @@ pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: verified_garbage_cpu::Fe
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `sha512`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `sha512`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
@@ -92,7 +96,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9iof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7/9FMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQSI2kJPj+///F/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -104,9 +108,11 @@ call {vg_ed25519_scalar_mul_add}
 }
 
 /// The CPU features `vg_ed25519_key_pair_shani_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -119,7 +125,7 @@ pub const VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `sha512`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `sha512`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
@@ -127,7 +133,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_ifma(out: *mut [u
 call {vg_sha512_digest_shani_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_ifma}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNpCSg+f//xf5/hCRABgAAxf5/hCQgBgAAxf5/hCQABgAAxf5/hCTgBQAAxf5/hCTABQAAxf5/hCSgBQAAxf5/hCSABQAAxf5/hCRgBQAAxf5/hCRABQAAxf5/hCQgBQAAxf5/hCQABQAAxf5/hCTgBAAAxf5/hCTABAAAxf5/hCSgBAAAxf5/hCSABAAAxf5/hCRgBAAAxf5/hCRABAAAxf5/hCQgBAAAxf5/hCQABAAAxf5/hCTgAwAAxf5/hCTAAwAAxf5/hCSgAwAAxf5/hCSAAwAAxf5/hCRgAwAAxf5/hCRAAwAAxf5/hCQgAwAAxf5/hCQAAwAAxf5/hCTgAgAAxf5/hCTAAgAAxf5/hCSgAgAAxf5/hCSAAgAAxf5/hCRgAgAAxf5/hCRAAgAAxf5/hCQgAgAAxf5/hCQAAgAAxf5/hCTgAQAAxf5/hCTAAQAAxf5/hCSgAQAAxf5/hCSAAQAAxf5/hCRgAQAAxf5/hCRAAQAAxf5/hCQgAQAAxf5/hCQAAQAAxf5/hCTgAAAAxf5/hCTAAAAAxf5/hCSgAAAAxf5/hCSAAAAAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkYAYAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
@@ -138,6 +144,8 @@ call {vg_ed25519_public_key_expanded_ifma}
 pub const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -166,7 +174,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_adx}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -180,6 +188,8 @@ call {vg_ed25519_verify_equation_adx}
 pub const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -223,7 +233,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -238,6 +248,8 @@ call {vg_ed25519_scalar_mul_add}
 pub const VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -258,7 +270,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani_adx(out: *mut [u8
 call {vg_sha512_digest_shani_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_adx}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
@@ -269,6 +281,8 @@ call {vg_ed25519_public_key_expanded_adx}
 pub const VG_ED25519_VERIFY_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -297,7 +311,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -311,6 +325,8 @@ call {vg_ed25519_verify_equation}
 pub const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -354,7 +370,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -369,6 +385,8 @@ call {vg_ed25519_scalar_mul_add}
 pub const VG_ED25519_KEY_PAIR_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -389,7 +407,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_shani(out: *mut [u8; 32
 call {vg_sha512_digest_shani_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
@@ -400,6 +418,8 @@ call {vg_ed25519_public_key_expanded}
 pub const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -428,7 +448,7 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCRI////xf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCS4AAAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -439,9 +459,11 @@ call {vg_ed25519_verify_equation_ifma}
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_avx2_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
+pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -455,7 +477,7 @@ pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: verified_garbage_cpu::Fea
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `bmi1`, `bmi2`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
@@ -485,7 +507,7 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9iof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7/9FMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQSI2kJPj+///F/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -497,9 +519,11 @@ call {vg_ed25519_scalar_mul_add}
 }
 
 /// The CPU features `vg_ed25519_key_pair_avx2_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
+pub const VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -512,7 +536,7 @@ pub const VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `bmi1`, `bmi2`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
@@ -520,7 +544,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_ifma(out: *mut [u8
 call {vg_sha512_digest_avx2_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_ifma}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNpCSg+f//xf5/hCRABgAAxf5/hCQgBgAAxf5/hCQABgAAxf5/hCTgBQAAxf5/hCTABQAAxf5/hCSgBQAAxf5/hCSABQAAxf5/hCRgBQAAxf5/hCRABQAAxf5/hCQgBQAAxf5/hCQABQAAxf5/hCTgBAAAxf5/hCTABAAAxf5/hCSgBAAAxf5/hCSABAAAxf5/hCRgBAAAxf5/hCRABAAAxf5/hCQgBAAAxf5/hCQABAAAxf5/hCTgAwAAxf5/hCTAAwAAxf5/hCSgAwAAxf5/hCSAAwAAxf5/hCRgAwAAxf5/hCRAAwAAxf5/hCQgAwAAxf5/hCQAAwAAxf5/hCTgAgAAxf5/hCTAAgAAxf5/hCSgAgAAxf5/hCSAAgAAxf5/hCRgAgAAxf5/hCRAAgAAxf5/hCQgAgAAxf5/hCQAAgAAxf5/hCTgAQAAxf5/hCTAAQAAxf5/hCSgAQAAxf5/hCSAAQAAxf5/hCRgAQAAxf5/hCRAAQAAxf5/hCQgAQAAxf5/hCQAAQAAxf5/hCTgAAAAxf5/hCTAAAAAxf5/hCSgAAAAxf5/hCSAAAAAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkYAYAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
@@ -531,6 +555,8 @@ call {vg_ed25519_public_key_expanded_ifma}
 pub const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -559,7 +585,7 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_adx}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -573,6 +599,8 @@ call {vg_ed25519_verify_equation_adx}
 pub const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -616,7 +644,7 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -631,6 +659,8 @@ call {vg_ed25519_scalar_mul_add}
 pub const VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -651,7 +681,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2_adx(out: *mut [u8;
 call {vg_sha512_digest_avx2_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_adx}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
@@ -662,6 +692,8 @@ call {vg_ed25519_public_key_expanded_adx}
 pub const VG_ED25519_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -690,7 +722,7 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -704,6 +736,8 @@ call {vg_ed25519_verify_equation}
 pub const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -747,7 +781,7 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -762,6 +796,8 @@ call {vg_ed25519_scalar_mul_add}
 pub const VG_ED25519_KEY_PAIR_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -782,7 +818,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_avx2(out: *mut [u8; 32]
 call {vg_sha512_digest_avx2_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
@@ -790,9 +826,11 @@ call {vg_ed25519_public_key_expanded}
 }
 
 /// The CPU features `vg_ed25519_verify_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -803,7 +841,7 @@ pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = veri
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx2`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `bmi2`, `adx`, `avx2`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
@@ -821,7 +859,7 @@ call {vg_sha512_finalize_scratch}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCRI////xf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCS4AAAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -832,9 +870,11 @@ call {vg_ed25519_verify_equation_ifma}
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -848,7 +888,7 @@ pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
@@ -878,7 +918,7 @@ call {vg_sha512_finalize_scratch}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9iof1A78BiofVA78lioe1A79JioeVA79tiod1A7+RiodVA7+1ioc1A7/ZiocVA7/9iAb1A78BiAbVA78liAa1A79JiAaVA79tiAZ1A7+RiAZVA7+1iAY1A7/ZiAYVA7/9FMdtIjWQk8A+uHCREixwkQYHjwP8AAESJHCRBu78fAABEiVwkBA+uVCQED67oD67oD64UJEUx20iNZCQQSI2kJPj+///F/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -890,9 +930,11 @@ call {vg_ed25519_scalar_mul_add}
 }
 
 /// The CPU features `vg_ed25519_key_pair_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_KEY_PAIR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_ED25519_KEY_PAIR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -905,7 +947,7 @@ pub const VG_ED25519_KEY_PAIR_IFMA_FEATURES: verified_garbage_cpu::Features = ve
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_ifma(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
@@ -913,7 +955,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_ifma(out: *mut [u8; 32]
 call {vg_sha512_digest_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_ifma}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNpCSg+f//xf5/hCRABgAAxf5/hCQgBgAAxf5/hCQABgAAxf5/hCTgBQAAxf5/hCTABQAAxf5/hCSgBQAAxf5/hCSABQAAxf5/hCRgBQAAxf5/hCRABQAAxf5/hCQgBQAAxf5/hCQABQAAxf5/hCTgBAAAxf5/hCTABAAAxf5/hCSgBAAAxf5/hCSABAAAxf5/hCRgBAAAxf5/hCRABAAAxf5/hCQgBAAAxf5/hCQABAAAxf5/hCTgAwAAxf5/hCTAAwAAxf5/hCSgAwAAxf5/hCSAAwAAxf5/hCRgAwAAxf5/hCRAAwAAxf5/hCQgAwAAxf5/hCQAAwAAxf5/hCTgAgAAxf5/hCTAAgAAxf5/hCSgAgAAxf5/hCSAAgAAxf5/hCRgAgAAxf5/hCRAAgAAxf5/hCQgAgAAxf5/hCQAAgAAxf5/hCTgAQAAxf5/hCTAAQAAxf5/hCSgAQAAxf5/hCSAAQAAxf5/hCRgAQAAxf5/hCRAAQAAxf5/hCQgAQAAxf5/hCQAAQAAxf5/hCTgAAAAxf5/hCTAAAAAxf5/hCSgAAAAxf5/hCSAAAAAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkYAYAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
@@ -924,6 +966,8 @@ call {vg_ed25519_public_key_expanded_ifma}
 pub const VG_ED25519_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -952,7 +996,7 @@ call {vg_sha512_finalize_scratch}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_adx}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJEj////zD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -966,6 +1010,8 @@ call {vg_ed25519_verify_equation_adx}
 pub const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1009,7 +1055,7 @@ call {vg_sha512_finalize_scratch}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -1024,6 +1070,8 @@ call {vg_ed25519_scalar_mul_add}
 pub const VG_ED25519_KEY_PAIR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1044,7 +1092,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair_adx(out: *mut [u8; 32],
 call {vg_sha512_digest_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded_adx}
-.base64 "WFhYww=="
+.base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
@@ -1052,6 +1100,8 @@ call {vg_ed25519_public_key_expanded_adx}
 }
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1079,7 +1129,7 @@ call {vg_sha512_finalize_scratch}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJEj////zD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -1090,6 +1140,8 @@ call {vg_ed25519_verify_equation}
 }
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1132,7 +1184,7 @@ call {vg_sha512_finalize_scratch}
 call {vg_ed25519_scalar_reduce}
 .base64 "SIu8JPAAAABIg8cgSInmSIPGQEiJ4kiDwmBIieFIg8EATIuEJMgAAAA="
 call {vg_ed25519_scalar_mul_add}
-.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjD"
+.base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk+P7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
@@ -1144,6 +1196,8 @@ call {vg_ed25519_scalar_mul_add}
 }
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1163,7 +1217,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ed25519_key_pair(out: *mut [u8; 32], exp
 call {vg_sha512_digest_core}
 .base64 "SIt8JBBIi3QkCEiLFCQ="
 call {vg_ed25519_public_key_expanded}
-.base64 "WFhYww=="
+.base64 "WFhYZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJKD5///zD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
