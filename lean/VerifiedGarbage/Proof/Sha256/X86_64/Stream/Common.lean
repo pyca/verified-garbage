@@ -71,6 +71,16 @@ theorem scalar_ok : Callee.scalar.Ok :=
     (by change (instrs Impl.Sha256.X86_64.compress).all _ = true; rw [← Code.allInstrs_eq]; lit_decide)
     (by change Impl.Sha256.X86_64.compress.depth = 0; lit_decide)
 
+/-- The scalar compression function, verified with the scratch space it uses. -/
+theorem scalar_verified112 :
+    Verified X86_64.target Callee.scalar.code (Proof.Sha256.compressX86_64S 112) :=
+  Proof.Sha256.X86_64.compress_verified112
+
+/-- The compression function with the SHA extensions, verified with no
+scratch space, which it does not use. -/
+theorem shani_verified0 : Verified X86_64.target Callee.shani.code (Proof.Sha256.compressX86_64S 0) :=
+  Proof.Sha256.X86_64.ShaNi.compress_verified0
+
 theorem shani_ok : Callee.shani.Ok :=
   .of_verified Proof.Sha256.X86_64.ShaNi.compress_verified.1
     Proof.Sha256.X86_64.ShaNi.compress_verified.2.1 (by rw [← Code.allInstrs_eq]; decide +kernel)

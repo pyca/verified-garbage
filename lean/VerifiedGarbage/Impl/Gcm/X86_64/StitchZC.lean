@@ -30,8 +30,13 @@ groups left, each with the powers of its blocks, `H'⁴⁸`–`H'`
 yet hashed, as `StitchZ.bigRest` does, and leaves one, with the registers
 as it found them (`leave`).
 
-`StitchZH.bigS` runs it for messages of 48 to 143 blocks, and
-`StitchZ.bigRest` for longer ones: see there.
+Both are for messages of 48 to 143 blocks; longer ones are faster with
+`StitchZ.bigRest` on some CPUs (see `StitchZH.bigS`). `StitchZH.midC`
+encrypts such a message with nothing loaded back at all: the first group by
+`grpC`, the groups after it by `loopsC`, and the last group hashed by
+`lastC` or between the rounds of the blocks after it. `StitchZH.bigS`, in
+`StitchZHTo.encN`'s pass over its source, runs `bigRestC` between a first
+group and an end that are not its own.
 -/
 
 @[expose] public section
@@ -136,14 +141,22 @@ def leave : List Instr := [.vmovdqu32Load .xmm1 (at_ .r11 832), .vmovdqu32Load .
 three at a time, with the powers of 48 blocks (`StitchZH.bigS`). -/
 def bigMinC : BitVec 32 := 48
 
-/-- At least 48 blocks, the first group encrypted and the powers of 48
-blocks stored: the groups after it, all but the last hashed. -/
-def bigRestC (ld : Bool := false) : Prog isa :=
-  .seq (.block (enter ++ ([.alu .cmp .r9 (.imm 64)] : List Instr)))
+/-- The groups after the one in the copies, all but the last hashed and
+the last left in the copies: three at a time while at least 48 blocks
+follow it, then two or one. -/
+def loopsC (ld : Bool := false) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 64)])
     (.seq (.ite .b (.block []) (.loop (body48C ld) .ae))
       (.seq (.block [.alu .cmp .r9 (.imm 48)])
         (.seq (.ite .b (.block []) (body32C ld))
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (body16C ld)) (.block leave))))))
+          (.seq (.block [.alu .cmp .r9 (.imm 32)]) (.ite .b (.block []) (body16C ld))))))
+
+/-- At least 48 blocks, the first group encrypted and the powers of 48
+blocks stored: the groups after it, all but the last hashed. -/
+def bigRestC (ld : Bool := false) : Prog isa := .seq (.block enter) (.seq (loopsC ld) (.block leave))
+
+/-- The group in the copies hashed, with the powers of the last sixteen of
+48 blocks: what `gqC` does between the rounds of a last group. -/
+def lastC : List Instr := (List.range 9).flatMap fun i => gqC true true 2 (i + 1)
 
 end VG.Impl.Gcm.X86_64.StitchZC

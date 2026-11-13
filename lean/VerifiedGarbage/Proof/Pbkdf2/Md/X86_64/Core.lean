@@ -354,6 +354,64 @@ theorem pbkdf2XD : H.pbkdf2.x86_64Depth ≤ 24 := core_pbkdf2_xdepth K.cXD K.iXD
 
 end Callees
 
+/-- What the proofs need of `H.withWs so W`, the hash function's code made
+with `so` bytes of working space for the compression function and `W` words
+for our functions: `H`'s, but for what depends on them, the taint checks of
+the streaming code (`Taints`) and of HMAC's and PBKDF2's (`CoreOK`), and the
+compression function verified with that much working space. -/
+def HashOK.withWs {H : Hash} (hH : HashOK H) (so W : Nat) (hso : so % 8 = 0 ∧ so + 48 ≤ 8 * 256)
+    (taints : MdStream.X86_64.Taints { H.P with so := so })
+    (comp : MdStream.X86_64.CalleeOk (P := { H.P with so := so }) hH.md H.compC)
+    (fits : so + 48 + H.P.N + H.P.B ≤ 8 * W) (hW : W ≤ 256)
+    (hb : H.compBoth = Impl.Pbkdf2.Md.X86_64.compTwice H.P.N H.compN H.compC) (K : Callees H)
+    (C : CoreOK (core (H.withWs so W))) :
+    HashOK (H.withWs so W) :=
+  have K' : Callees (H.withWs so W) :=
+    ⟨K.cMx, K.cSp, K.cNs, K.cD, K.iMx, K.iSp, K.iNs, K.iD, K.cXD, K.iXD,
+      ⟨K.b.bMx, K.b.bSp, K.b.bNs, K.b.bD, K.b.bXD⟩⟩
+  {
+  md := hH.md
+  dims := ⟨hH.dims.B, hH.dims.N, hH.dims.L, show so ≤ 2048 by omega⟩
+  shape := ⟨hH.shape.len, hH.shape.lenV, hH.shape.out⟩
+  taints := taints
+  comp := comp
+  both := .inl hb
+  reloc := hH.reloc
+  lenOk := hH.lenOk
+  SH := hH.SH
+  iv := hH.iv
+  repr := hH.repr
+  hash := hH.hash
+  hB := hH.hB
+  hS := hH.hS
+  hD := hH.hD
+  hD0 := hH.hD0
+  hDN := hH.hDN
+  hD4 := hH.hD4
+  hN4 := hH.hN4
+  hDL := hH.hDL
+  hL4 := hH.hL4
+  hNL := hH.hNL
+  hPad := hH.hPad
+  hso := hso
+  fits := fits
+  hW := hW
+  init := hH.init
+  initDepth := hH.initDepth
+  initSp := hH.initSp
+  updMx := Callees.updMx K' C
+  finMx := Callees.finMx K' C
+  updSp := Callees.updSp K' C
+  finSp := Callees.finSp K' C
+  updDepth := Callees.updD K' C
+  finDepth := Callees.finD K' C }
+
+/-- `Callees` of `H.withWs so W`: those of `H`, whose compression function and
+streaming `init` it calls. -/
+theorem Callees.withWs {H : Hash} (K : Callees H) (so W : Nat) : Callees (H.withWs so W) :=
+  ⟨K.cMx, K.cSp, K.cNs, K.cD, K.iMx, K.iSp, K.iNs, K.iD, K.cXD, K.iXD,
+    ⟨K.b.bMx, K.b.bSp, K.b.bNs, K.b.bD, K.b.bXD⟩⟩
+
 /-! ## The functions, verified -/
 
 /-- A state satisfying `pbkdf2`'s precondition, with `8 sc` bytes of scratch
@@ -404,6 +462,14 @@ theorem hmacInit_verified (hsat : ∃ s, (Proof.Hmac.initScratchContract hH.SH H
     Verified X86_64.target H.hmacInit (Proof.Hmac.initScratchContract hH.SH H.W X86_64.abi 16) :=
   (hmacInit_ok hH C K hsat).of_implies (initImp _ _ hsat)
 
+/-- HMAC's `init`, verified against the shared contract with `sc` words of
+working space: any that hold what it uses (`Stream.buf` bytes). -/
+theorem hmacInit_verifiedW {sc : Nat} (hfit : H.stream.buf ≤ 8 * sc)
+    (hsat : ∃ s, (Proof.Hmac.initScratchContract hH.SH sc X86_64.abi 16).pre s) :
+    Verified X86_64.target H.hmacInit (Proof.Hmac.initScratchContract hH.SH sc X86_64.abi 16) :=
+  (HmacInit.verified hH (HmacInit.bothOk hH (HmacInit.Checks.of_core C.hinit)) (HmacInit.Checks.of_core C.hinit)
+    hfit (core_hmacInit K.iMx K.b.bMx C.hinitMx) (initImp _ _ hsat).sat_left).of_implies (initImp _ _ hsat)
+
 /-- HMAC's `finalize`, verified against the shared contract. -/
 theorem hmacFin_verified (hsat : ∃ s, (Proof.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacFin (Proof.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16) :=
@@ -413,6 +479,20 @@ theorem hmacFin_verified (hsat : ∃ s, (Proof.Hmac.finalizeScratchContract hH.S
 theorem iterate_verified (hsat : ∃ s, (Proof.Pbkdf2.iterateContract hH.SH H.W X86_64.abi 8).pre s) :
     Verified X86_64.target H.iterate (Proof.Pbkdf2.iterateContract hH.SH H.W X86_64.abi 8) :=
   (iterate_ok hH C hsat K.cMx).of_implies (iterImp _ _ hsat)
+
+/-- `pbkdf2`, verified against the contract its proof is written with. -/
+theorem pbkdf2_ok
+    (hsI : ∃ s, (Proof.Hmac.initScratchContract hH.SH H.W X86_64.abi 16).pre s)
+    (hsF : ∃ s, (Proof.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s)
+    (hsT : ∃ s, (Proof.Pbkdf2.iterateContract hH.SH H.W X86_64.abi 8).pre s)
+    (hsat : ∃ s, (pbkG hH.SH (H.W + H.S)).pre s) :
+    Verified X86_64.target H.pbkdf2 (pbkG hH.SH (H.W + H.S)) :=
+  Pbk.verified hH hH.psizes (Pbk.Checks.of_core C.pbk)
+    (hmacInit_ok hH C K hsI) (nosp_of (core_hmacInit K.iNs K.b.bNs C.hinitNs))
+    (core_hmacInit_depth K.iD K.b.bD C.hinitD)
+    (hmacFin_ok hH C K hsF) (nosp_of (core_hmacFin K.cNs C.hfinNs)) (core_hmacFin_depth K.cD C.hfinD)
+    (iterate_ok hH C hsT K.cMx) (nosp_of (core_iterate K.cNs C.iterNs)) (core_iterate_depth K.cD C.iterD)
+    (core_pbkdf2 K.cMx K.iMx K.b.bMx C.pbkMx) hsat
 
 /-- `pbkdf2`, verified against the shared contract. -/
 theorem pbkdf2_verified

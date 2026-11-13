@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.Sha256.X86_64.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
 /-!
 # SHA-256 compression function on x86-64: the message schedule and the rounds
@@ -349,6 +351,8 @@ abbrev scr : Addr := s₀.gpr .rcx
 abbrev stR : Region := ⟨st s₀, 32⟩
 abbrev blR : Region := ⟨bp s₀, 64 * nb s₀⟩
 abbrev scrR : Region := ⟨scr s₀, 560⟩
+/-- The scratch space, of `n` bytes. -/
+abbrev scrRN (n : Nat) : Region := ⟨scr s₀, n⟩
 abbrev retR : Region := ⟨s₀.gpr .rsp, 8⟩
 abbrev H₀ : HashValue := stateAt s₀.mem (st s₀)
 
@@ -358,21 +362,25 @@ abbrev blk (i : Nat) : Block := blockAt s₀.mem (blkAddr s₀ i)
 
 end
 
-structure Pre (s₀ : State) : Prop where
+/-- The precondition, with `n` bytes of scratch space (`compressX86_64S n`):
+this code uses 112, AVX2's 560 and the SHA extensions' none. -/
+structure PreN (n : Nat) (s₀ : State) : Prop where
   rd : s₀.rd = [blR s₀]
-  wr : s₀.wr = [stR s₀, scrR s₀]
-  st_scr : (stR s₀).Disjoint (scrR s₀)
+  wr : s₀.wr = [stR s₀, scrRN s₀ n]
+  st_scr : (stR s₀).Disjoint (scrRN s₀ n)
   blk_st : (blR s₀).Disjoint (stR s₀)
-  blk_scr : (blR s₀).Disjoint (scrR s₀)
+  blk_scr : (blR s₀).Disjoint (scrRN s₀ n)
   ret_st : (retR s₀).Disjoint (stR s₀)
-  ret_scr : (retR s₀).Disjoint (scrR s₀)
+  ret_scr : (retR s₀).Disjoint (scrRN s₀ n)
 
-theorem pre_of (s₀ : State) (h : Proof.Sha256.compressX86_64.pre s₀) : Pre s₀ := by
+theorem preN_of (n : Nat) (s₀ : State) (h : (Proof.Sha256.compressX86_64S n).pre s₀) : PreN n s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-namespace Pre
-variable {s₀ : State} (h : Pre s₀)
+theorem pre_of (s₀ : State) (h : Proof.Sha256.compressX86_64.pre s₀) : PreN 560 s₀ := preN_of 560 s₀ h
+
+namespace PreN
+variable {n : Nat} {s₀ : State} (h : PreN n s₀)
 include h
 
 /-- The blocks fit in the address space (or they could not be disjoint from the state). -/
@@ -391,11 +399,6 @@ theorem out_state {k : Nat} (hk : k < 8) :
     InRegions s₀.wr (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
   ⟨stR s₀, by simp [h.wr], contains_offset' (by bdd_omega) (by bdd_omega)⟩
 
-theorem in_slot (j : Nat) : InRegions (s₀.rd ++ s₀.wr) (slotAddr (scr s₀) j) 4 :=
-  ⟨scrR s₀, by simp [h.wr], contains_offset' (by bdd_omega) (by bdd_omega)⟩
-
-theorem out_slot (j : Nat) : InRegions s₀.wr (slotAddr (scr s₀) j) 4 :=
-  ⟨scrR s₀, by simp [h.wr], contains_offset' (by bdd_omega) (by bdd_omega)⟩
 
 theorem blk_contains {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
     (blR s₀).Contains (blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 4 := by
@@ -408,7 +411,14 @@ theorem in_blk {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 4 :=
   ⟨blR s₀, by simp [h.rd], h.blk_contains hi ht⟩
 
-end Pre
+end PreN
+
+theorem PreN.in_slot {s₀ : State} (h : PreN 112 s₀) (j : Nat) :
+    InRegions (s₀.rd ++ s₀.wr) (slotAddr (scr s₀) j) 4 :=
+  ⟨scrRN s₀ 112, by simp [h.wr], contains_offset' (by bdd_omega) (by bdd_omega)⟩
+
+theorem PreN.out_slot {s₀ : State} (h : PreN 112 s₀) (j : Nat) : InRegions s₀.wr (slotAddr (scr s₀) j) 4 :=
+  ⟨scrRN s₀ 112, by simp [h.wr], contains_offset' (by bdd_omega) (by bdd_omega)⟩
 
 /-! ## The loop invariant -/
 
@@ -424,7 +434,7 @@ structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
   rsp : s.gpr .rsp = s₀.gpr .rsp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [stR s₀, scrR s₀] s₀.mem s.mem
+  frame : Frame [stR s₀, scrRN s₀ 112] s₀.mem s.mem
   state : stateAt s.mem (st s₀) = compressBlocks (H₀ s₀) s₀.mem (bp s₀) i
   saved : Saved s₀ s.mem
 
@@ -460,7 +470,7 @@ theorem vars0 (s : State) (v : HashValue) : Vars 0 s v ↔
     s.gpr .r9 = v[4].setWidth 64 ∧ s.gpr .r10 = v[5].setWidth 64 ∧
     s.gpr .r11 = v[6].setWidth 64 ∧ s.gpr .r12 = v[7].setWidth 64 := Iff.rfl
 
-theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi = st s₀)
+theorem load_ok {s₀ : State} (hp : PreN 112 s₀) {s : State} (hrdi : s.gpr .rdi = st s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
     WP isa (.block load) s fun s₁ =>
       Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
@@ -517,7 +527,7 @@ theorem frame_writeState {s₀ : State} {m m' : Mem} (h : Frame [stR s₀] m m')
     (c 3 ?_)).writeW ?_ _ (c 4 ?_)).writeW ?_ _ (c 5 ?_)).writeW ?_ _ (c 6 ?_)).writeW ?_ _ (c 7 ?_) <;>
   simp
 
-theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (hv : Vars 0 s V)
+theorem update_ok {s₀ : State} (hp : PreN 112 s₀) {s : State} (V H : HashValue) (hv : Vars 0 s V)
     (hrdi : s.gpr .rdi = st s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hH : ∀ k : Nat, (hk : k < 8) →
       s.mem.readW (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = H[k]) :
@@ -561,7 +571,7 @@ theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (
   refine ⟨?_, by rw [e64], by rw [e1], by rw [e1], trivial, trivial, trivial, trivial, trivial⟩
   simp only [writeState, Vector.getElem_zipWith]
 
-theorem saved_frame {s₀ : State} (hp : Pre s₀) {m m' : Mem} (h : Saved s₀ m)
+theorem saved_frame {s₀ : State} (hp : PreN 112 s₀) {m m' : Mem} (h : Saved s₀ m)
     (hf : Frame [winRegion (scr s₀)] m m' ∨ Frame [stR s₀] m m') : Saved s₀ m' := by
   rcases hf with hf | hf <;> refine Spill.Saved.frame h hf fun p hp' r hr => ?_ <;>
     rw [List.mem_singleton.mp hr] <;> have := saved_bound p hp'
@@ -585,9 +595,9 @@ theorem blk_word {s₀ : State} (i t : Nat) (ht : t < 16) :
     show blkAddr s₀ i + BitVec.ofNat 64 (4 * t + 2) + 1 = blkAddr s₀ i + BitVec.ofNat 64 (4 * t + 3) from
       Offset.add_add _ _ 1]
 
-theorem win_sub (p : Addr) : Region.Sub (winRegion p) ⟨p, 560⟩ := Region.sub_prefix (by bdd_omega)
+theorem win_sub (p : Addr) : Region.Sub (winRegion p) ⟨p, 112⟩ := Region.sub_prefix (by bdd_omega)
 
-theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
+theorem body_ok {s₀ : State} (hp : PreN 112 s₀) {i : Nat} (hi : i < nb s₀) {s : State}
     (hL : LInv s₀ i s) :
     WP isa body s fun s' =>
       (eval .ne s' = some false ∧ Common s₀ (nb s₀) s') ∨
@@ -622,10 +632,10 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hrdx : s₂.gpr .rdx - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
     rw [pub₂ .rdx (by decide), hL.rdx]
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by bdd_omega), Nat.sub_sub]
-  have hframe : Frame [stR s₀, scrR s₀] s₀.mem s₃.mem := by
+  have hframe : Frame [stR s₀, scrRN s₀ 112] s₀.mem s₃.mem := by
     refine hL.frame.trans ?_
     rw [← hm₁]
-    refine Frame.trans (hR.frame.sub fun r hr => ⟨scrR s₀, by simp, by simp at hr; subst hr; exact win_sub _⟩) ?_
+    refine Frame.trans (hR.frame.sub fun r hr => ⟨scrRN s₀ 112, by simp, by simp at hr; subst hr; exact win_sub _⟩) ?_
     rw [hm₃]
     exact (frame_writeState (Frame.refl _ _) _).sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
   have hcommon : ∀ j, j = i + 1 → Common s₀ j s₃ := by
@@ -666,14 +676,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
 /-- The memory after the prologue. -/
 abbrev saveMem (s₀ : State) : Mem := Spill.saveMem s₀.mem (scr s₀) s₀.gpr saved
 
-theorem save_ok {s₀ : State} (hp : Pre s₀) :
+theorem save_ok {s₀ : State} (hp : PreN 112 s₀) :
     WP isa (.block (save ++ ([.alu .test .rdx (.reg .rdx)] : List Instr))) s₀ fun s₁ =>
       s₁.gpr = s₀.gpr ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧ s₁.mem = saveMem s₀ ∧
       s₁.zf = some (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) := by
   rw [WP.block_append_iff]
   refine WP.mono (Spill.save_ok .rcx saved s₀ fun p hp' => ?_) fun s₁ ⟨hg, hrd, hwr, hm⟩ => ?_
   · have := saved_bound p hp'
-    exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
+    exact ⟨scrRN s₀ 112, by simp [hp.wr], Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
   · apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
       State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
@@ -682,10 +692,10 @@ theorem save_ok {s₀ : State} (hp : Pre s₀) :
 theorem saveMem_saved {s₀ : State} : Saved s₀ (saveMem s₀) :=
   Spill.saveMem_saved _ _ _ _ (by decide)
 
-theorem saveMem_frame {s₀ : State} : Frame [scrR s₀] s₀.mem (saveMem s₀) :=
+theorem saveMem_frame {s₀ : State} : Frame [scrRN s₀ 112] s₀.mem (saveMem s₀) :=
   Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega) (by decide)
 
-theorem common_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hg : s₁.gpr = s₀.gpr)
+theorem common_zero {s₀ : State} (hp : PreN 112 s₀) {s₁ : State} (hg : s₁.gpr = s₀.gpr)
     (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) (hm : s₁.mem = saveMem s₀) : Common s₀ 0 s₁ := by
   refine ⟨by rw [hg], by rw [hg], by rw [hg], hrd, hwr, ?_, ?_, by rw [hm]; exact saveMem_saved⟩
   · rw [hm]; exact saveMem_frame.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
@@ -697,7 +707,7 @@ theorem common_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hg : s₁.gpr
       (by decide), ← stateAt_get _ _ hk]
     rfl
 
-theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ (nb s₀) s) :
+theorem restore_ok {s₀ : State} (hp : PreN 112 s₀) {s : State} (hc : Common s₀ (nb s₀) s) :
     WP isa (.block restore) s fun s' =>
       gprPreserved s₀ s' ∧ Proof.Sha256.compressX86_64.post s₀ s' := by
   have hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 :=
@@ -706,13 +716,13 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ 
     (by rw [hc.rcx]; exact hc.saved)) fun s' ⟨h₁, h₂, hm, _⟩ => ?_
   · have := saved_bound p hp'
     rw [hc.rcx, hc.rd, hc.wr]
-    exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
+    exact ⟨scrRN s₀ 112, by simp [hp.wr], Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
   · exact ⟨⟨Spill.calleeSaved_ok h₁ h₂ (by decide) hc.rsp, by rw [hm]; exact hret⟩,
       by show stateAt _ _ = _; rw [hm]; exact hc.state⟩
 
 /-! ## The whole function -/
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
+theorem correct {s₀ : State} (hp : PreN 112 s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha256.compressX86_64.post s₀ s' := by
   refine WP.seq (WP.mono (save_ok hp) fun s₁ ⟨hg, hrd, hwr, hm, hzf⟩ => ?_)
   refine WP.seq (WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s₂ hc => restore_ok hp hc)
@@ -750,19 +760,54 @@ def satState : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 560⟩]
 
-theorem compress_verified :
-    Verified X86_64.target Impl.Sha256.X86_64.compress Proof.Sha256.compressX86_64 := by
+/-- The compression function, verified with the 112 bytes of scratch space it
+uses. -/
+theorem compress_verified112 :
+    Verified X86_64.target Impl.Sha256.X86_64.compress (Proof.Sha256.compressX86_64S 112) := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
-  · obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
+  · obtain ⟨t, s', he, h⟩ := correct (preN_of 112 s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4⟩
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
-  · refine ⟨satState, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  · refine ⟨{ satState with wr := [⟨0x1000, 32⟩, ⟨0x3000, 112⟩] }, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
     first
     | exact Offset.disjoint_of_le (by decide) (by decide)
     | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide))
+
+/-- A compression function verified with `a` bytes of scratch space is with
+any `b ≥ a` (`Verified.widen`: it runs as it does with `a`). -/
+theorem compressS_widen {c : Prog isa} {a b : Nat}
+    (h : Verified X86_64.target c (Proof.Sha256.compressX86_64S a)) (hab : a ≤ b)
+    (hsat : ∃ s, (Proof.Sha256.compressX86_64S b).pre s) :
+    Verified X86_64.target c (Proof.Sha256.compressX86_64S b) :=
+  Verified.widen h (fun s => [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rcx, a⟩])
+    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇⟩ => ⟨h₁, rfl, h₃.sub_right (Region.sub_prefix hab), h₄,
+      h₅.sub_right (Region.sub_prefix hab), h₆, h₇.sub_right (Region.sub_prefix hab)⟩)
+    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, hab⟩ .nil))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
+
+/-- A state satisfying the precondition with `vg_sha256_compress`'s 560 bytes
+of scratch space. -/
+theorem compressS_sat560 : ∃ s, (Proof.Sha256.compressX86_64S 560).pre s := by
+  refine ⟨satState, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    first
+    | exact Offset.disjoint_of_le (by decide) (by decide)
+    | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide))
+
+/-- A state satisfying the precondition with no scratch space. -/
+theorem compressS_sat0 : ∃ s, (Proof.Sha256.compressX86_64S 0).pre s := by
+  refine ⟨{ satState with wr := [⟨0x1000, 32⟩, ⟨0x3000, 0⟩] }, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    first
+    | exact Offset.disjoint_of_le (by decide) (by decide)
+    | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide))
+
+/-- `compress_verified112` with the scratch space of `vg_sha256_compress`'s
+contract, which every implementation is verified with. -/
+theorem compress_verified :
+    Verified X86_64.target Impl.Sha256.X86_64.compress Proof.Sha256.compressX86_64 :=
+  compressS_widen compress_verified112 (by decide) compressS_sat560
 
 end VG.Proof.Sha256.X86_64

@@ -54,6 +54,10 @@ structure Compress where
   callee : Impl.Sha512.X86_64.Stream.Callee
   /-- It is correct and constant time, and keeps what callers need. -/
   ok : MdStream.X86_64.CalleeOk (P := Stream.params) md callee.code
+  /-- The same with the scratch space it uses (`Callee.so`), which the
+  functions that call it by name give it. -/
+  okS : MdStream.X86_64.CalleeOk (P := { Stream.params with so := callee.so }) md callee.code
+  hso : callee.so = 0 ∨ callee.so = 192 ∨ callee.so = 1328 := by decide
   /-- It never loads MXCSR. -/
   mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
   /-- It never writes the stack pointer. -/
@@ -73,6 +77,10 @@ structure Compress where
   /-- A function that compresses two blocks at once, if the implementation
   has one: HMAC's `init` then calls it once for its two padded keys. -/
   pair : Option Pair := none
+  /-- That function, with the scratch space the implementation uses. -/
+  pairOk : ∀ p, pair = some p →
+      MdStream.X86_64.PairOk (P := { Stream.params with so := callee.so }) md p.code := by
+    intro p h; cases h
 
 namespace Compress
 
@@ -80,6 +88,7 @@ namespace Compress
 def scalar : Compress where
   callee := .scalar
   ok := Stream.scalar_ok
+  okS := Stream.calleeS Stream.scalar_ok Stream.scalar_verified192
   mxcsr := by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide
   spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := ""
@@ -89,6 +98,7 @@ def scalar : Compress where
 def avx2 : Compress where
   callee := .avx2
   ok := Stream.avx2_ok
+  okS := Stream.avx2_ok
   mxcsr := by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide
   spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := "_avx2"
@@ -98,6 +108,7 @@ def avx2 : Compress where
 def shani : Compress where
   callee := .shani
   ok := Stream.shani_ok
+  okS := Stream.calleeS Stream.shani_ok Stream.shani_verified0
   mxcsr := by change Impl.Sha512.X86_64.ShaNi.compress.allInstrs _ = true; lit_decide
   spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.ShaNi.compress.allInstrs _ = true; lit_decide)
   suffix := "_shani"
@@ -126,7 +137,18 @@ def avx512 : Compress :=
         mxcsr := by lit_decide
         spSafe := by lit_decide
         noSp := by lit_decide
-        noStack := by lit_decide } }
+        noStack := by lit_decide }
+    pairOk := fun _ h => by cases h; exact compress2_ok }
+
+/-- `v` giving its compression function the scratch space of the slowest
+implementation, AVX2's (1328 bytes), as RSASSA-PSS's code does
+(`Proof.Pbkdf2.Md.X86_64.MdHash.okU`). -/
+def uniform (v : Compress) : Compress :=
+  { v with
+    callee := { v.callee with so := 1328 }
+    okS := v.ok
+    hso := .inr (.inr rfl)
+    pairOk := fun p _ => p.ok }
 
 end Compress
 

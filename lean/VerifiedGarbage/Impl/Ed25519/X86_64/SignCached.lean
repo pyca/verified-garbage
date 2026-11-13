@@ -68,11 +68,11 @@ def init : Prog isa := callWith initArgs "vg_sha512_init_core"
   (Sha512.X86_64.Stream.init Spec.Sha512.H0_512)
 
 def update (f : Callee) (suffix : String) (args : List Instr) : Prog isa :=
-  callWith args ("vg_sha512_update_scratch" ++ suffix) (Sha512.X86_64.Stream.update f)
+  callWith args ("vg_sha512_update_scratch" ++ suffix) (Sha512.X86_64.Stream.updateOwn f)
 
 def finalize (f : Callee) (suffix : String) (prefixLen : Nat) (withMessage : Bool) : Prog isa :=
   callWith (finalizeArgs prefixLen withMessage) ("vg_sha512_finalize_scratch" ++ suffix)
-    (Sha512.X86_64.Stream.finalize f)
+    (Sha512.X86_64.Stream.finalizeOwn f)
 
 def pruneRegs : List Instr :=
   [.mov .r8 (.mem (stk 128)), .mov .r9 (.mem (stk 136)),

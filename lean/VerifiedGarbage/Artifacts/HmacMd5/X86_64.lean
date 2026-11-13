@@ -37,13 +37,16 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.HmacMd5.X86_64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.X86_64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
-    v.I.initAnyKeyApi.artifact X86_64.target {
+  (VG.Proof.Variants.MdHash.X86_64.md5Inits.map fun v =>
+    Spec.Hmac.md5I.initAnyKeyApi.artifact X86_64.target {
       suffix := v.suffix
-      code := Proof.Pbkdf2.Md.X86_64.initCode v.H v.I
-      stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame v.I
-      verified := v.hmacInitF
-      spSafe := v.hmacInitFSp },
-    v.I.finalizeApi.artifact X86_64.target v.hmacFinReg]
+      extra := v.extra
+      code := v.code
+      stack := v.stack
+      verified := v.verified
+      spSafe := v.spSafe
+      residue := v.residue }) ++
+  (VG.Proof.Variants.MdHash.X86_64.md5Variants.map fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
+    v.I.finalizeApi.artifact X86_64.target v.hmacFinReg)
 
 end VG.Artifacts.HmacMd5.X86_64

@@ -118,7 +118,7 @@ open VG.Proof.Pbkdf2.Md.X86_64 (core_hmacInit core_hmacFin core_updC core_finC)
 SHA-256's and HMAC's functions, by what is proven of them, nor its own. -/
 theorem rest_mx (v : Compress) : (rest (HH v)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have K := Proof.Pbkdf2.Md.X86_64.Sha256.callees v
-  have C := Proof.Pbkdf2.Md.X86_64.Sha256.coreOK
+  have C := Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v
   have hI : (HH v).hmacInit.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacInit K.iMx K.b.bMx C.hinitMx
   have hU : (HH v).updC.allInstrs (fun i => !loadsMxcsr i) = true := core_updC K.cMx C.updMx
   have hFi : (HH v).finC.allInstrs (fun i => !loadsMxcsr i) = true := core_finC K.cMx C.finMx

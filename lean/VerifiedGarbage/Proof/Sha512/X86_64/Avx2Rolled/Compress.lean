@@ -51,11 +51,11 @@ variable {s₀ : State} (h : Pre s₀)
 include h
 
 /-- The precondition of the unrolled code, of `s₀` without the table. -/
-theorem base : Avx2.Pre (s₀.withRegions [blR s₀] s₀.wr) :=
+theorem base : Avx2.PreN 1328 (s₀.withRegions [blR s₀] s₀.wr) :=
   ⟨rfl, h.wr, h.st_scr, h.blk_st, h.blk_scr, h.ret_st, h.ret_scr⟩
 
 /-- The precondition of the unrolled code, which is the same. -/
-theorem avx2 : Avx2.Pre s₀ := ⟨h.rd, h.wr, h.st_scr, h.blk_st, h.blk_scr, h.ret_st, h.ret_scr⟩
+theorem avx2 : Avx2.PreN 1328 s₀ := ⟨h.rd, h.wr, h.st_scr, h.blk_st, h.blk_scr, h.ret_st, h.ret_scr⟩
 
 theorem nb_lt : 128 * nb s₀ < 2 ^ 64 := h.base.nb_lt
 

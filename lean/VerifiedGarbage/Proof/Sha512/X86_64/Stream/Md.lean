@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
+public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
@@ -136,6 +137,64 @@ theorem shani_ok : CalleeOk (P := params) md Callee.shani.code :=
     (by change (instrs Impl.Sha512.X86_64.ShaNi.compress).all _ = true; rw [← Code.allInstrs_eq]; lit_decide)
     (by change Impl.Sha512.X86_64.ShaNi.compress.depth = 0; lit_decide)
 
+/-- `params` with `so` bytes of working space for the compression function
+(`Impl.Pbkdf2.Md.X86_64.Hash.withWs`), for the implementations that use
+less than AVX2's: the functions made with it give the compression function
+only that much. -/
+abbrev paramsS (so : Nat) : Impl.MdStream.X86_64.Params := { params with so := so }
+
+theorem taintsS (so : Nat) (h : so = 0 ∨ so = 192) : Taints (paramsS so) := by
+  rcases h with rfl | rfl <;>
+  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, by decide, by decide⟩
+
+/-- `taintsS`, for each implementation's scratch space, AVX2's too. -/
+theorem taintsS3 (so : Nat) (h : so = 0 ∨ so = 192 ∨ so = 1328) : Taints (paramsS so) := by
+  rcases h with h | h | rfl
+  · exact taintsS so (.inl h)
+  · exact taintsS so (.inr h)
+  · exact taints
+
+/-- An implementation verified with `so` bytes of scratch space, as the code
+made with `paramsS so` calls it. -/
+theorem calleeS {code : Prog isa} (hf : CalleeOk (P := params) md code) {so : Nat}
+    (hv : Verified X86_64.target code (Proof.Sha512.compressWideX86_64S so)) :
+    CalleeOk (P := paramsS so) md code :=
+  ⟨hv.1, hv.2.1, hf.nosp, hf.depth, hf.keeps_rdi, hf.keeps_rcx⟩
+
+/-- The scalar compression function, verified with the scratch space it uses. -/
+theorem scalar_verified192 :
+    Verified X86_64.target Callee.scalar.code (Proof.Sha512.compressWideX86_64S 192) :=
+  Rolled.compress_verified192
+
+/-- The compression function with the SHA512 extension, verified with no
+scratch space, which it does not use. -/
+theorem shani_verified0 : Verified X86_64.target Callee.shani.code (Proof.Sha512.compressWideX86_64S 0) :=
+  ShaNi.compress_verified0
+
+theorem dimsS (so : Nat) (h : so ≤ 2048) : Dims (paramsS so) := ⟨dims.B, dims.N, dims.L, h⟩
+
+theorem shapeS (so : Nat) : Shape (P := paramsS so) md := ⟨shape.len, shape.lenV, shape.out⟩
+
+/-- `update` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem Update.verifiedS {so : Nat} (h : so = 0 ∨ so = 192) {f : Callee} (hf : CalleeOk (P := params) md f.code)
+    (hv : Verified X86_64.target f.code (Proof.Sha512.compressWideX86_64S so))
+    (hm : (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.update (paramsS so) f.name f.code)
+      (Proof.Sha512.updateX86_64S (so + 48)) :=
+  MdStream.X86_64.Update.verified (dimsS so (by omega)) (taintsS so h) (calleeS hf hv) hm
+
+/-- `finalize` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem Finalize.verifiedS {so : Nat} (h : so = 0 ∨ so = 192) {f : Callee} (hf : CalleeOk (P := params) md f.code)
+    (hv : Verified X86_64.target f.code (Proof.Sha512.compressWideX86_64S so))
+    (hm : (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code)
+      (Proof.Sha512.finalizeX86_64S (so + 48)) :=
+  MdStream.X86_64.Finalize.verified (dimsS so (by omega)) (shapeS so) (taintsS so h) (calleeS hf hv) hm
+
 namespace Update
 
 /-- `update` is verified if it never loads MXCSR. -/
@@ -161,5 +220,54 @@ theorem verified_of {f : Callee} (hf : CalleeOk (P := params) md f.code)
 abbrev sat : State := MdStream.X86_64.Finalize.sat params
 
 end Finalize
+
+/-! ### With the scratch space the compression function uses
+
+`updateOwn` and `finalizeOwn` give the compression function only the
+scratch space it uses (`Callee.so`), and are verified against the contracts
+with the scratch space of the slowest implementation, which their callers
+by name give them (`updateS_widen`: they run as they do with less). -/
+
+/-- `update` verified with `a` bytes of scratch space is with any `b ≥ a`. -/
+theorem updateS_widen {c : Prog isa} {a b : Nat} (h : Verified X86_64.target c (Proof.Sha512.updateX86_64S a))
+    (hab : a ≤ b) (hsat : ∃ s, (Proof.Sha512.updateX86_64S b).pre s) :
+    Verified X86_64.target c (Proof.Sha512.updateX86_64S b) :=
+  Verified.widen h (fun s => [⟨s.gpr .rdi, 192⟩, ⟨s.gpr .r8, a⟩])
+    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀⟩ => ⟨h₁, rfl, h₃.sub_right (Region.sub_prefix hab), h₄, h₅.sub_right (Region.sub_prefix hab), h₆,
+      h₇.sub_right (Region.sub_prefix hab), h₈, h₉, h₁₀.sub_right (Region.sub_prefix hab)⟩)
+    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, hab⟩ .nil))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
+
+/-- `finalize` verified with `a` bytes of scratch space is with any `b ≥ a`. -/
+theorem finalizeS_widen {c : Prog isa} {a b : Nat} (h : Verified X86_64.target c (Proof.Sha512.finalizeX86_64S a))
+    (hab : a ≤ b) (hsat : ∃ s, (Proof.Sha512.finalizeX86_64S b).pre s) :
+    Verified X86_64.target c (Proof.Sha512.finalizeX86_64S b) :=
+  Verified.widen h (fun s => [⟨s.gpr .rdi, 192⟩, ⟨s.gpr .rdx, 64⟩, ⟨s.gpr .rcx, a⟩])
+    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁⟩ => ⟨h₁, rfl, h₃, h₄.sub_right (Region.sub_prefix hab), h₅.sub_right (Region.sub_prefix hab),
+      h₆, h₇, h₈.sub_right (Region.sub_prefix hab), h₉, h₁₀, h₁₁.sub_right (Region.sub_prefix hab)⟩)
+    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, hab⟩ .nil)))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
+
+/-- `Impl.Sha512.X86_64.Stream.updateOwn`, for an implementation of the
+compression function correct with the scratch space it uses (`hf`), if it
+never loads MXCSR. -/
+theorem updateOwn_verified {f : Callee} (h : f.so = 0 ∨ f.so = 192 ∨ f.so = 1328)
+    (hf : CalleeOk (P := paramsS f.so) md f.code)
+    (hm : (Impl.Sha512.X86_64.Stream.updateOwn f).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hsat : ∃ s, Proof.Sha512.updateX86_64.pre s) :
+    Verified X86_64.target (Impl.Sha512.X86_64.Stream.updateOwn f) Proof.Sha512.updateX86_64 :=
+  updateS_widen (a := f.so + 48)
+    (MdStream.X86_64.Update.verified (dimsS f.so (by omega)) (taintsS3 f.so h) hf hm)
+    (by omega) hsat
+
+/-- `Impl.Sha512.X86_64.Stream.finalizeOwn`, likewise. -/
+theorem finalizeOwn_verified {f : Callee} (h : f.so = 0 ∨ f.so = 192 ∨ f.so = 1328)
+    (hf : CalleeOk (P := paramsS f.so) md f.code)
+    (hm : (Impl.Sha512.X86_64.Stream.finalizeOwn f).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hsat : ∃ s, Proof.Sha512.finalizeX86_64.pre s) :
+    Verified X86_64.target (Impl.Sha512.X86_64.Stream.finalizeOwn f) Proof.Sha512.finalizeX86_64 :=
+  finalizeS_widen (a := f.so + 48)
+    (MdStream.X86_64.Finalize.verified (dimsS f.so (by omega)) (shapeS f.so) (taintsS3 f.so h) hf hm)
+    (by omega) hsat
 
 end VG.Proof.Sha512.X86_64.Stream

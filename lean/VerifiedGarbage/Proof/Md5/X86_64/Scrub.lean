@@ -86,11 +86,11 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract X86_64.abi stack) 
 
 /-- `vg_md5_update`'s code. -/
 abbrev updateCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratch 120 .r8 Impl.Md5.X86_64.Stream.update
+  Impl.StackScratch.X86_64.withStackScratch 56 .r8 Impl.Md5.X86_64.Stream.update
 
 /-- `vg_md5_finalize`'s code. -/
 abbrev finalizeCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratch 120 .rcx Impl.Md5.X86_64.Stream.finalize
+  Impl.StackScratch.X86_64.withStackScratch 56 .rcx Impl.Md5.X86_64.Stream.finalize
 
 def initKs : List Nat := keep_for% Spec.Md5.initApi.sig 0 Impl.Md5.X86_64.Stream.init []
 
@@ -99,18 +99,18 @@ theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
       h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
   RScrub.Analysed.ok_of initKs (by taint_decide)
 
-def updateKs : List Nat := keep_for% Spec.Md5.updateApi.sig (8 + 120) updateCode []
+def updateKs : List Nat := keep_for% Spec.Md5.updateApi.sig (8 + 56) updateCode []
 
 theorem updateOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.updateApi.sig (8 + 120) []) updateCode
-      h).any (RScrub.resOkB · (8 + 120) updateKs (Impl.Scrub.X86_64.chunks (8 + 120))) = true :=
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.updateApi.sig (8 + 56) []) updateCode
+      h).any (RScrub.resOkB · (8 + 56) updateKs (Impl.Scrub.X86_64.chunks (8 + 56))) = true :=
   RScrub.Analysed.ok_of updateKs (by taint_decide)
 
-def finalizeKs : List Nat := keep_for% Spec.Md5.finalizeApi.sig (8 + 120) finalizeCode []
+def finalizeKs : List Nat := keep_for% Spec.Md5.finalizeApi.sig (8 + 56) finalizeCode []
 
 theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.finalizeApi.sig (8 + 120) []) finalizeCode
-      h).any (RScrub.resOkB · (8 + 120) finalizeKs (Impl.Scrub.X86_64.chunks (8 + 120))) = true :=
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.finalizeApi.sig (8 + 56) []) finalizeCode
+      h).any (RScrub.resOkB · (8 + 56) finalizeKs (Impl.Scrub.X86_64.chunks (8 + 56))) = true :=
   RScrub.Analysed.ok_of finalizeKs (by taint_decide)
 
 open VG.X86_64.RScrub in
@@ -124,7 +124,7 @@ open VG.X86_64.RScrub in
 def updateReg : Registration Spec.Md5.updateApi X86_64.target :=
   withScrub {
     code := updateCode
-    stack := 8 + 120
+    stack := 8 + 56
     verified := Shared.update } (updateOut _) [] (pubOk_nil _) (some ⟨updateKs, updateOk⟩)
 
 open VG.X86_64.RScrub in
@@ -132,7 +132,7 @@ open VG.X86_64.RScrub in
 def finalizeReg : Registration Spec.Md5.finalizeApi X86_64.target :=
   withScrub {
     code := finalizeCode
-    stack := 8 + 120
+    stack := 8 + 56
     verified := Shared.finalize } (finalizeOut _) [] (pubOk_nil _) (some ⟨finalizeKs, finalizeOk⟩)
 
 end VG.Proof.Md5.X86_64

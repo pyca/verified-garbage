@@ -38,7 +38,7 @@ open VG.Proof.Bignum (off)
 /-- The tables' functions for the variants `w` (of the table `hash`) and `w'`
 (of the table `mgf1`). -/
 def tabsOf (vs : List MdHash) (w w' : MdHash) : Tabs :=
-  ⟨w.H, digName w, MdHashTable.X86_64.fnsOf vs, w'.H.stream, HashTable.X86_64.fnsOf vs⟩
+  ⟨w.U, digName w, MdHashTable.X86_64.fnsOf vs, w'.H.stream, HashTable.X86_64.fnsOf vs⟩
 
 /-- What the registrations check of the variants whose tables the functions
 take: their functions of the same name have the same code, each has the
@@ -80,7 +80,8 @@ theorem mdFns_safe {vs : List MdHash} (hs : ∀ w ∈ vs, Shape w) : MdFnsSafe (
   dig q hq := by
     obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hq
     obtain ⟨hi, hP, -⟩ := hs w hw
-    dsimp only
+    show (Impl.MdHashTable.X86_64.digest w.U.P).allInstrs safeI = true ∧
+      (Impl.MdHashTable.X86_64.digest w.U.P).x86_64Depth ≤ 0
     rw [hP]
     exact dig_safe _ hi
 
@@ -108,9 +109,9 @@ theorem link_valid {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : HashOK H) (l : MgfLink
     rw [l.hash, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length, l.len]
     exact Nat.min_eq_left hH.hDN⟩
 
-theorem dig_of_shape {w : MdHash} (h : Shape w) : DigOK w.H := DigOK.of_P h.2.1 (dig_shape _ h.1)
+theorem dig_of_shape {w : MdHash} (h : Shape w) : DigOK w.U := DigOK.of_P h.2.1 (dig_shape _ h.1)
 
-theorem pss_of_shape {w : MdHash} (h : Shape w) : PssChecks w.H.P w.H.D := by
+theorem pss_of_shape {w : MdHash} (h : Shape w) : PssChecks w.U.P w.U.D := by
   rw [h.2.1, h.2.2]; exact pss_shape _ h.1
 
 variable {vs : List MdHash} (hok : OK vs)
@@ -136,7 +137,7 @@ theorem enc_safe : ∀ i ∈ idxs, SpSafe (encode (MdHashTable.X86_64.fnsOf vs) 
   have hs := hok.2.2.1 w hw
   rw [encode_shape _ _ hs.2.1 hs.2.2]
   refine ⟨sp_of_all ?_, Enc.enc_xd (T := tabsOf vs w w) (mdFns_safe hok.2.2.1) (hFns_safe vs)⟩
-  exact Enc.enc_spAll (T := tabsOf vs w w) w.ok (mdFns_safe hok.2.2.1) (hFns_safe vs)
+  exact Enc.enc_spAll (T := tabsOf vs w w) w.okU (mdFns_safe hok.2.2.1) (hFns_safe vs)
 
 include hok in
 theorem chk_safe : ∀ i ∈ idxs, SpSafe (checkEncoding (MdHashTable.X86_64.fnsOf vs) (ofIdx i) (HashTable.X86_64.fnsOf vs)) ∧
@@ -146,7 +147,7 @@ theorem chk_safe : ∀ i ∈ idxs, SpSafe (checkEncoding (MdHashTable.X86_64.fns
   have hs := hok.2.2.1 w hw
   rw [check_shape _ _ hs.2.1 hs.2.2]
   refine ⟨sp_of_all ?_, Chk.chk_xd (T := tabsOf vs w w) (mdFns_safe hok.2.2.1) (hFns_safe vs)⟩
-  exact Chk.chk_spAll (T := tabsOf vs w w) w.ok (mdFns_safe hok.2.2.1) (hFns_safe vs)
+  exact Chk.chk_spAll (T := tabsOf vs w w) w.okU (mdFns_safe hok.2.2.1) (hFns_safe vs)
 
 /-! ## The tables a state holds -/
 
@@ -206,8 +207,8 @@ theorem esel_of {s : State} {w w' : MdHash} (hw : w ∈ vs) (hw' : w' ∈ vs)
   refine ⟨hs.1, h5, ⟨h0, h3, h4, g0, g1, g2, g4, htf_of hok.1 d hw, ⟨t.i, t.u, t.f⟩⟩, hA,
     HashTable.X86_64.hashAt_tableOf g3, ((hdl _ hA).trans w.mgf.len).symm, fun s' h => ?_⟩
   rw [encode_shape _ _ hs.2.1 hs.2.2]
-  exact Enc.enc_correct (T := tabsOf vs w w') w.ok w.K w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
-    (mdFns_safe hok.2.2.1) (hFns_safe vs) (dig_of_shape hs) w.mgf s' h
+  exact Enc.enc_correct (T := tabsOf vs w w') w.okU w.KU w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
+    (mdFns_safe hok.2.2.1) (hFns_safe vs) (dig_of_shape hs) w.mgfU s' h
 
 include hok in
 /-- What verification needs of the tables of `w` and `w'`, in a state that
@@ -229,8 +230,8 @@ theorem ksel_of {s : State} {w w' : MdHash} (hw : w ∈ vs) (hw' : w' ∈ vs)
   refine ⟨hs.1, h5, ⟨h0, h3, h4, g0, g1, g2, g4, htf_of hok.1 d hw, ⟨t.i, t.u, t.f⟩⟩, hA,
     HashTable.X86_64.hashAt_tableOf g3, ((hdl _ hA).trans w.mgf.len).symm, fun s' h => ?_⟩
   rw [check_shape _ _ hs.2.1 hs.2.2]
-  exact Chk.chk_correct (T := tabsOf vs w w') w.ok w.K w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
-    (mdFns_safe hok.2.2.1) (hFns_safe vs) (dig_of_shape hs) w.mgf s' h
+  exact Chk.chk_correct (T := tabsOf vs w w') w.okU w.KU w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
+    (mdFns_safe hok.2.2.1) (hFns_safe vs) (dig_of_shape hs) w.mgfU s' h
 
 theorem tidx_read {m : Mem} {p : Addr} {s : State} {w : MdHash}
     (h : Abi.tableHeld 64 m p (FnTable.words isa s (MdHashTable.X86_64.tableOf w))) :
@@ -256,7 +257,7 @@ theorem sgood_of {a : State}
   · exact tabWords_eq wm wm' hpub.2.2.2.2.1 ((hpub.2.2.2.2.2.1 _ hT).mp hwa) ((hpub.2.2.2.2.2.2 _ hT').mp hwa')
       hwa hwa'
   · rw [hidx, encode_shape _ _ hs.2.1 hs.2.2]
-    exact Enc.enc_ct (T := tabsOf vs w w') w.ok w.K w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
+    exact Enc.enc_ct (T := tabsOf vs w w') w.okU w.KU w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
       (mdFns_safe hok.2.2.1) (hFns_safe vs) (dig_of_shape hs) (pss_of_shape hs) w.mgf.G
 
 include hok in
@@ -281,7 +282,7 @@ theorem kgood_of {a : State} (ha : Pc.Pre (MdHashTable.X86_64.tables vs) (HashTa
     exact ksel_of hok wm wm' hps.hsy hps.hdl (hH s hpub) (hG s hpub)
   · exact tabWords_eq wm wm' hpub.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 (hH s hpub) (hG s hpub) hwa hwa'
   · rw [hidx, check_shape _ _ hs.2.1 hs.2.2]
-    exact Chk.chk_ct (T := tabsOf vs w w') w.ok w.K w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
+    exact Chk.chk_ct (T := tabsOf vs w w') w.okU w.KU w'.ok.stream w'.mgf.hash w'.mgf.len (link_valid w'.ok w'.mgf)
       (dig_of_shape hs) (pss_of_shape hs) w.mgf.G
 
 end VG.Proof.RsaPss.X86_64

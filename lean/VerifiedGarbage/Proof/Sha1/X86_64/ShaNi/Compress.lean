@@ -548,13 +548,36 @@ theorem store_ok (s : State) (v : HashValue) (h0 : s.xmm .xmm0 = abcd v) (h1 : s
 
 /-! ## The loop over the blocks -/
 
-open VG.Proof.Sha1.X86_64 (Pre pre_of st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
+open VG.Proof.Sha1.X86_64 (st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
   compressBlocks_succ contains_offset contains_offset' toNat_ofNat_lt satState)
 
-theorem Pre.in_blk16 {s₀ : State} (hp : Pre s₀) {i n : Nat} (hi : i < nb s₀) (hn : n < 4) :
+/-- What the proofs need of the precondition with no scratch space
+(`compressX86_64S 0`): this code uses none. -/
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = [blR s₀]
+  wr : s₀.wr = [stR s₀, ⟨scr s₀, 0⟩]
+  blk_st : (blR s₀).Disjoint (stR s₀)
+  ret_st : (retR s₀).Disjoint (stR s₀)
+
+theorem pre_of (s₀ : State) (h : (Proof.Sha1.compressX86_64S 0).pre s₀) : Pre s₀ := by
+  obtain ⟨h1, h2, -, h4, -, h6, -⟩ := h
+  exact ⟨h1, h2, h4, h6⟩
+
+/-- The blocks fit in the address space (or they could not be disjoint from the state). -/
+theorem Pre.nb_lt {s₀ : State} (h : Pre s₀) : 64 * nb s₀ < 2 ^ 64 := by
+  by_contra hn
+  refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
+  simp only [Region.Contains]
+  have := (st s₀ - bp s₀).isLt
+  omega
+
+/-- The 16-byte words of the blocks are readable, for a state whose readable
+regions are the blocks, which fit in the address space. -/
+theorem in_blk16_of {s₀ : State} (hrd : s₀.rd = [blR s₀]) (hnb : 64 * nb s₀ < 2 ^ 64) {i n : Nat}
+    (hi : i < nb s₀) (hn : n < 4) :
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 := by
-  have := hp.nb_lt
-  refine ⟨blR s₀, by simp [hp.rd], ?_⟩
+  have := hnb
+  refine ⟨blR s₀, by simp [hrd], ?_⟩
   rw [ofInt_natCast', show blkAddr s₀ i + BitVec.ofNat 64 (16 * n) =
     bp s₀ + BitVec.ofNat 64 (64 * i + 16 * n) from Offset.add_ofNat_add_ofNat _ _ _]
   exact contains_offset (by omega_arith) (by omega_arith)
@@ -591,7 +614,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hmem₁ : s₁.mem = s₀.mem := hm₁.trans hL.mem
   refine WP.seq (WP.mono (rounds_ok _ (blk s₀ i) (blkAddr s₀ i) s₁ (by rw [hg₁, hL.rsi])
     (by rw [hx₁ _ (by decide) (by decide), hL.x7])
-    (fun n hn => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact Pre.in_blk16 hp hi hn)
+    (fun n hn => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact in_blk16_of hp.rd hp.nb_lt hi hn)
     (fun t ht => by rw [hmem₁]; exact blk_word i t ht)
     (by rw [hx₁ _ (by decide) (by decide), hL.x0]) (by rw [hx₁ _ (by decide) (by decide), hL.x1])
     20 (Nat.le_refl _)) fun s₂ hR => ?_)
@@ -704,8 +727,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     · show stateAt s'.mem (st s₀) = _
       rw [← hrdi]; exact hst
 
-theorem compress_verified :
-    Verified X86_64.target Impl.Sha1.X86_64.ShaNi.compress Proof.Sha1.compressX86_64 := by
+/-- The compression function, verified with no scratch space, which it does not use. -/
+theorem compress_verified0 :
+    Verified X86_64.target Impl.Sha1.X86_64.ShaNi.compress (Proof.Sha1.compressX86_64S 0) := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
@@ -714,6 +738,11 @@ theorem compress_verified :
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
-  · exact (Proof.Sha1.X86_64.compress_verified).2.2
+  · exact Proof.Sha1.X86_64.compressS_sat0
+
+/-- `compress_verified0` with the scratch space of `vg_sha1_compress`'s contract. -/
+theorem compress_verified :
+    Verified X86_64.target Impl.Sha1.X86_64.ShaNi.compress Proof.Sha1.compressX86_64 :=
+  Proof.Sha1.X86_64.compressS_widen compress_verified0 (by decide) Proof.Sha1.X86_64.compress_verified.2.2
 
 end VG.Proof.Sha1.X86_64.ShaNi

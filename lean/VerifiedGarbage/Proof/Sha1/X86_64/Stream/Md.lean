@@ -65,6 +65,39 @@ theorem shani_ok : CalleeOk (P := params) md Callee.shani.code :=
   .of_verified ShaNi.compress_verified.1 ShaNi.compress_verified.2.1
     (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
 
+/-- `params` with no working space for the compression function, for
+`vg_sha1_compress_shani`, which uses none: the code made with it is part of
+the functions that call no function made with `params` by name (HMAC's
+`init` for a key of at most a block). -/
+abbrev params0 : Impl.MdStream.X86_64.Params := { params with so := 0 }
+
+theorem taints0 : Taints params0 :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, by decide, by decide⟩
+
+theorem shani_ok0 : CalleeOk (P := params0) md Callee.shani.code :=
+  .of_verified ShaNi.compress_verified0.1 ShaNi.compress_verified0.2.1
+    (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
+
+theorem dims0 : Dims params0 := ⟨dims.B, dims.N, dims.L, by decide⟩
+
+theorem shape0 : Shape (P := params0) md := ⟨shape.len, shape.lenV, shape.out⟩
+
+/-- `update` made with no working space for the compression function. -/
+theorem Update.verified0 {f : Callee} (hf : CalleeOk (P := params0) md f.code)
+    (hm : (Impl.MdStream.X86_64.update params0 f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.update params0 f.name f.code) (Proof.Sha1.updateX86_64S 48) :=
+  have h := MdStream.X86_64.Update.verified dims0 taints0 hf hm
+  Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr hc, fun _ _ _ _ h => h, h.2.2⟩
+
+/-- `finalize` made with no working space for the compression function. -/
+theorem Finalize.verified0 {f : Callee} (hf : CalleeOk (P := params0) md f.code)
+    (hm : (Impl.MdStream.X86_64.finalize params0 f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.finalize params0 f.name f.code) (Proof.Sha1.finalizeX86_64S 48) :=
+  have h := MdStream.X86_64.Finalize.verified dims0 shape0 taints0 hf hm
+  Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
+
 namespace Update
 
 /-- `update` is verified if it never loads MXCSR. -/

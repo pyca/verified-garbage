@@ -5,12 +5,12 @@
 // gives.
 
 vg_hmac_sha384_init_scratch:
-	mov QWORD PTR [r8+1376], rbx
-	mov QWORD PTR [r8+1384], rbp
-	mov QWORD PTR [r8+1392], r12
-	mov QWORD PTR [r8+1400], r13
-	mov QWORD PTR [r8+1408], r14
-	mov QWORD PTR [r8+1416], r15
+	mov QWORD PTR [r8+240], rbx
+	mov QWORD PTR [r8+248], rbp
+	mov QWORD PTR [r8+256], r12
+	mov QWORD PTR [r8+264], r13
+	mov QWORD PTR [r8+272], r14
+	mov QWORD PTR [r8+280], r15
 	mov rbx, rdi
 	mov r12, rsi
 	mov r15, r8
@@ -106,11 +106,11 @@ vg_hmac_sha384_init_scratch:
 	call {vg_sha512_compress}
 	mov rbx, rdi
 	mov r15, rcx
-	mov rbx, QWORD PTR [r15+1376]
-	mov rbp, QWORD PTR [r15+1384]
-	mov r12, QWORD PTR [r15+1392]
-	mov r13, QWORD PTR [r15+1400]
-	mov r14, QWORD PTR [r15+1408]
-	mov r15, QWORD PTR [r15+1416]
+	mov rbx, QWORD PTR [r15+240]
+	mov rbp, QWORD PTR [r15+248]
+	mov r12, QWORD PTR [r15+256]
+	mov r13, QWORD PTR [r15+264]
+	mov r14, QWORD PTR [r15+272]
+	mov r15, QWORD PTR [r15+280]
 	ret
 	.p2align 6

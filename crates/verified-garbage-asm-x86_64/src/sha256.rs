@@ -54,12 +54,12 @@ pub const VG_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 64 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SI1kJMhIieFIg8EISIkZSIlpCEyJYRBMiWkYTIlxIEyJeShIiftJic9IidVJifRJifVJg+U/QbmAAAAAQb4AAAAASYP9OA=="
 jae 20f
 jmp 21f
 20:
@@ -118,7 +118,7 @@ jmp 219f
 call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCRoAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI2kJJD9//9IjaQkcAIAADHAMckx0jH2Mf9FMclFMdLD"
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI1kJDhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9IjWQkwEiNZCRAMcAxyTHSMfYx/0UxyUUx0sM="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -138,12 +138,12 @@ pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
+        r#".base64 "SI2kJFj///9IieFIg8EISIPBYEiJGUiJaQhMiWEQTIlpGEyJcSBMiXkoSYnPSInLSIPrYEmJ/UmJ9EiJ1UiJ30i42J4FwQfVfDZmSA9uwEi4F91wMDlZDvdmSA9uyGYPbMHzD38HSLgxC8D/ERVYaGZID27ASLinj/lkpE/6vmZID27IZg9swfMPf0cQTYnmScHuBk2F9g=="
 je 20f
 .base64 "TInuSInfTInyTIn5"
 call {vg_sha256_compress_shani}
@@ -196,7 +196,7 @@ call {vg_sha256_compress_shani}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCTYAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJCD9///zD39EJHDzD38EJEiNpCTgAgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUEmLH0mLbwhNi2cQTYtvGE2LdyBNi38oSI2kJKgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkUP////MPfwQkSI2kJLAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -377,11 +377,11 @@ call {vg_sha256_compress_avx2}
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SI2kJFj///9IieFIg8EISIlZcEiJaXhMiaGAAAAATImpiAAAAEyJsZAAAABMibmYAAAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
 jmp 21f
 20:
@@ -440,7 +440,7 @@ jmp 219f
 call {vg_sha256_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCRoAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJJD9///zD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRwAgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCSoAAAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJFD////zD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSwAAAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -457,11 +457,11 @@ je 22b
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
+        r#".base64 "SI2kJOj+//9IieFIg8EISIPBYEiJWXBIiWl4TImhgAAAAEyJqYgAAABMibGQAAAATIm5mAAAAEmJz0iJy0iD62BJif1JifRIidVIid9IuNieBcEH1Xw2ZkgPbsBIuBfdcDA5WQ73ZkgPbshmD2zB8w9/B0i4MQvA/xEVWGhmSA9uwEi4p4/5ZKRP+r5mSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
 .base64 "TInuSInfTInyTIn5"
 call {vg_sha256_compress}
@@ -514,7 +514,7 @@ call {vg_sha256_compress}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUEmLnzACAABJi684AgAATYunQAIAAE2Lr0gCAABNi7dQAgAATYu/WAIAAEiNpCTYAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJCD9///zD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD38EJEiNpCTgAgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGGYP78DzD38D8w9/QxDzD39DIPMPf0Mw8w9/Q0DzD39DUEmLX3BJi294TYungAAAAE2Lr4gAAABNi7eQAAAATYu/mAAAAEiNpCQYAQAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJOD+///zD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD38EJEiNpCQgAQAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -534,12 +534,12 @@ pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 64 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_update_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJJj9//9JieBJg8AISYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAASIn7TYnHSInVSYnMSYn1SYPlPw=="
+        r#".base64 "SI1kJMhJieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChIiftNicdIidVJicxJifVJg+U/"
 20:
 .base64 "TYXt"
 je 21f
@@ -618,7 +618,7 @@ call {vg_sha256_compress_shani}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9IjaQkkP3//0iNpCRwAgAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCTASI1kJEAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -639,12 +639,12 @@ pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 64 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SI1kJMhIieFIg8EISIkZSIlpCEyJYRBMiWkYTIlxIEyJeShIiftJic9IidVJifRJifVJg+U/QbmAAAAAQb4AAAAASYP9OA=="
 jae 20f
 jmp 21f
 20:
@@ -703,7 +703,7 @@ jmp 219f
 call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9IjaQkkP3//0iNpCRwAgAAMcAxyTHSMfYx/0UxyUUx0sM="
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCTASI1kJEAxwDHJMdIx9jH/RTHJRTHSww=="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -723,12 +723,12 @@ pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
+        r#".base64 "SI2kJFj///9IieFIg8EISIPBYEiJGUiJaQhMiWEQTIlpGEyJcSBMiXkoSYnPSInLSIPrYEmJ/UmJ9EiJ1UiJ30i4Z+YJaoWuZ7tmSA9uwEi4cvNuPDr1T6VmSA9uyGYPbMHzD38HSLh/Ug5RjGgFm2ZID27ASLir2YMfGc3gW2ZID27IZg9swfMPf0cQTYnmScHuBk2F9g=="
 je 20f
 .base64 "TInuSInfTInyTIn5"
 call {vg_sha256_compress_shani}
@@ -781,7 +781,7 @@ call {vg_sha256_compress_shani}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkIP3///MPf0QkcPMPfwQkSI2kJOACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkqAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRQ////8w9/BCRIjaQksAAAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -1065,11 +1065,11 @@ call {vg_sha256_compress_avx2}
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJJj9//9JieBJg8AISYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAASIn7TYnHSInVSYnMSYn1SYPlPw=="
+        r#".base64 "SI2kJFj///9JieBJg8AISYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7TYnHSInVSYnMSYn1SYPlPw=="
 20:
 .base64 "TYXt"
 je 21f
@@ -1148,7 +1148,7 @@ call {vg_sha256_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/ARTHbSI2kJJD9///zD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRwAgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/ARTHbSI2kJFD////zD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSwAAAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -1166,11 +1166,11 @@ jne 20b
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJJj9//9IieFIg8EISImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SI2kJFj///9IieFIg8EISIlZcEiJaXhMiaGAAAAATImpiAAAAEyJsZAAAABMibmYAAAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
 jmp 21f
 20:
@@ -1229,7 +1229,7 @@ jmp 219f
 call {vg_sha256_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkkP3///MPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJHACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkUP////MPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJLAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -1246,11 +1246,11 @@ je 22b
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 736 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJCj9//9IieFIg8EISIPBYEiJmTACAABIiak4AgAATImhQAIAAEyJqUgCAABMibFQAgAATIm5WAIAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
+        r#".base64 "SI2kJOj+//9IieFIg8EISIPBYEiJWXBIiWl4TImhgAAAAEyJqYgAAABMibGQAAAATIm5mAAAAEmJz0iJy0iD62BJif1JifRIidVIid9IuGfmCWqFrme7ZkgPbsBIuHLzbjw69U+lZkgPbshmD2zB8w9/B0i4f1IOUYxoBZtmSA9uwEi4q9mDHxnN4FtmSA9uyGYPbMHzD39HEE2J5knB7gZNhfY="
 je 20f
 .base64 "TInuSInfTInyTIn5"
 call {vg_sha256_compress}
@@ -1303,7 +1303,7 @@ call {vg_sha256_compress}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkIP3///MPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPfwQkSI2kJOACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJBgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk4P7///MPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPfwQkSI2kJCABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )

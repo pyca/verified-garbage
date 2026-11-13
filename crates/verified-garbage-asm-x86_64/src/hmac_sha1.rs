@@ -10,20 +10,22 @@ pub const VG_HMAC_SHA1_INIT_SHANI_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
 /// * `outer` must be valid for reads and writes of 84 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 840 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIP5QQ=="
 jae 20f
-.base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
+.base64 "SI1kJJhJieBJg8AISYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0TYnHSInVSYnNSInf"
 call {vg_sha1_init_core}
 .base64 "TInn"
 call {vg_sha1_init_core}
@@ -47,26 +49,26 @@ jmp 26f
 call {vg_sha1_compress_shani}
 .base64 "SIn7SYnPTInjTInmSIPGFEiJ37oBAAAATIn5"
 call {vg_sha1_compress_shani}
-.base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAAA="
+.base64 "SIn7SYnPSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39YSI1kJGhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkiPMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkeDHAMckx0jH2Mf9FMcBFMdI="
 21:
 .base64 "ww=="
 20:
-.base64 "SI2kJJj7//9JieBJg8AISYmYwAEAAEmJqMgBAABNiaDQAQAATYmo2AEAAE2JsOABAABNibjoAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
+.base64 "SI2kJND8//9JieBJg8AISYmYiAAAAEmJqJAAAABNiaCYAAAATYmooAAAAE2JsKgAAABNibiwAAAATYnHSInTSInNSYn8SYn1SIP9QQ=="
 jae 28f
 .base64 "SInaSInp"
 jmp 29f
 28:
-.base64 "TIn/SIHH/AIAAA=="
+.base64 "TIn/SIHHxAEAAA=="
 call {vg_sha1_init_core}
-.base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHxAEAAL4AAAAASInaSInpTYn4"
 call {vg_sha1_update_scratch_shani}
-.base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
+.base64 "TIn/SIHHxAEAAEiJ7kyJ+kiBwkACAABMifk="
 call {vg_sha1_finalize_scratch_shani}
-.base64 "TIn6SIHCeAMAALkUAAAA"
+.base64 "TIn6SIHCQAIAALkUAAAA"
 29:
 .base64 "TInnTInuTYn4"
 call {vg_hmac_sha1_init_scratch_shani}
-.base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEiNpCRoBAAA"
+.base64 "SYufiAAAAEmLr5AAAABNi6eYAAAATYuvoAAAAE2Lt6gAAABNi7+wAAAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEiNpCQwAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJLj8///zD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJEgDAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHb"
 jmp 21b
 .p2align 6"#,
         vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
@@ -74,6 +76,154 @@ jmp 21b
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani::vg_hmac_sha1_init_scratch_shani,
+    )
+}
+
+/// The CPU features `vg_hmac_sha1_init_avx_bmi` requires (`Artifact.features`).
+pub const VG_HMAC_SHA1_INIT_AVX_BMI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
+
+/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 84 bytes.
+/// * `outer` must be valid for reads and writes of 84 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 952 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `bmi1` and `bmi2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_avx_bmi(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SIP5QQ=="
+jae 20f
+.base64 "SI2kJCj///9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
+call {vg_sha1_init_core}
+.base64 "TInn"
+call {vg_sha1_init_core}
+.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0MU8w9/QyTzD39DNPMPf0NEQb4AAAAATInpSMHpBEiFyQ=="
+je 22f
+24:
+.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTFEmDxhBIg+kB"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "TTnu"
+je 25f
+27:
+.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMUSYPGAU057g=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "SLhqampqampqamZID27IZg9syfMPb1MUZg/v0fNBD39UJBTzD29TJGYP79HzQQ9/VCQk8w9vUzRmD+/R80EPf1QkNPMPb1NEZg/v0fNBD39UJERIid5Ig8YUSInfugEAAABMifk="
+call {vg_sha1_compress_avx_bmi}
+.base64 "SIn7SYnPTInjTInmSIPGFEiJ37oBAAAATIn5"
+call {vg_sha1_compress_avx_bmi}
+.base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJNgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkGP///8X+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMclFMdI="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJGD8//9JieBJg8AISYmY+AAAAEmJqAABAABNiaAIAQAATYmoEAEAAE2JsBgBAABNibggAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
+jae 28f
+.base64 "SInaSInp"
+jmp 29f
+28:
+.base64 "TIn/SIHHNAIAAA=="
+call {vg_sha1_init_core}
+.base64 "TIn/SIHHNAIAAL4AAAAASInaSInpTYn4"
+call {vg_sha1_update_scratch_avx_bmi}
+.base64 "TIn/SIHHNAIAAEiJ7kyJ+kiBwrACAABMifk="
+call {vg_sha1_finalize_scratch_avx_bmi}
+.base64 "TIn6SIHCsAIAALkUAAAA"
+29:
+.base64 "TInnTInuTYn4"
+call {vg_hmac_sha1_init_scratch_avx_bmi}
+.base64 "SYuf+AAAAEmLrwABAABNi6cIAQAATYuvEAEAAE2LtxgBAABNi78gAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABIjaQkoAMAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCRI/P//xf5/hCSYAwAAxf5/hCR4AwAAxf5/hCRYAwAAxf5/hCQ4AwAAxf5/hCQYAwAAxf5/hCT4AgAAxf5/hCTYAgAAxf5/hCS4AgAAxf5/hCSYAgAAxf5/hCR4AgAAxf5/hCRYAgAAxf5/hCQ4AgAAxf5/hCQYAgAAxf5/hCT4AQAAxf5/hCTYAQAAxf5/hCS4AQAAxf5/hCSYAQAAxf5/hCR4AQAAxf5/hCRYAQAAxf5/hCQ4AQAAxf5/hCQYAQAAxf5/hCT4AAAAxf5/hCTYAAAAxf5/hCS4AAAAxf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCS4AwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx2w=="
+jmp 21b
+.p2align 6"#,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
+        vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
+        vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
+        vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
+        vg_hmac_sha1_init_scratch_avx_bmi = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_avx_bmi::vg_hmac_sha1_init_scratch_avx_bmi,
+    )
+}
+
+/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 84 bytes.
+/// * `outer` must be valid for reads and writes of 84 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 952 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SIP5QQ=="
+jae 20f
+.base64 "SI2kJCj///9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
+call {vg_sha1_init_core}
+.base64 "TInn"
+call {vg_sha1_init_core}
+.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0MU8w9/QyTzD39DNPMPf0NEQb4AAAAATInpSMHpBEiFyQ=="
+je 22f
+24:
+.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTFEmDxhBIg+kB"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "TTnu"
+je 25f
+27:
+.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMUSYPGAU057g=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "SLhqampqampqamZID27IZg9syfMPb1MUZg/v0fNBD39UJBTzD29TJGYP79HzQQ9/VCQk8w9vUzRmD+/R80EPf1QkNPMPb1NEZg/v0fNBD39UJERIid5Ig8YUSInfugEAAABMifk="
+call {vg_sha1_compress}
+.base64 "SIn7SYnPTInjTInmSIPGFEiJ37oBAAAATIn5"
+call {vg_sha1_compress}
+.base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJNgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkGP////MPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMclFMdI="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJGD8//9JieBJg8AISYmY+AAAAEmJqAABAABNiaAIAQAATYmoEAEAAE2JsBgBAABNibggAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
+jae 28f
+.base64 "SInaSInp"
+jmp 29f
+28:
+.base64 "TIn/SIHHNAIAAA=="
+call {vg_sha1_init_core}
+.base64 "TIn/SIHHNAIAAL4AAAAASInaSInpTYn4"
+call {vg_sha1_update_scratch}
+.base64 "TIn/SIHHNAIAAEiJ7kyJ+kiBwrACAABMifk="
+call {vg_sha1_finalize_scratch}
+.base64 "TIn6SIHCsAIAALkUAAAA"
+29:
+.base64 "TInnTInuTYn4"
+call {vg_hmac_sha1_init_scratch}
+.base64 "SYuf+AAAAEmLrwABAABNi6cIAQAATYuvEAEAAE2LtxgBAABNi78gAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABIjaQkoAMAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRI/P//8w9/hCSoAwAA8w9/hCSYAwAA8w9/hCSIAwAA8w9/hCR4AwAA8w9/hCRoAwAA8w9/hCRYAwAA8w9/hCRIAwAA8w9/hCQ4AwAA8w9/hCQoAwAA8w9/hCQYAwAA8w9/hCQIAwAA8w9/hCT4AgAA8w9/hCToAgAA8w9/hCTYAgAA8w9/hCTIAgAA8w9/hCS4AgAA8w9/hCSoAgAA8w9/hCSYAgAA8w9/hCSIAgAA8w9/hCR4AgAA8w9/hCRoAgAA8w9/hCRYAgAA8w9/hCRIAgAA8w9/hCQ4AgAA8w9/hCQoAgAA8w9/hCQYAgAA8w9/hCQIAgAA8w9/hCT4AQAA8w9/hCToAQAA8w9/hCTYAQAA8w9/hCTIAQAA8w9/hCS4AQAA8w9/hCSoAQAA8w9/hCSYAQAA8w9/hCSIAQAA8w9/hCR4AQAA8w9/hCRoAQAA8w9/hCRYAQAA8w9/hCRIAQAA8w9/hCQ4AQAA8w9/hCQoAQAA8w9/hCQYAQAA8w9/hCQIAQAA8w9/hCT4AAAA8w9/hCToAAAA8w9/hCTYAAAA8w9/hCTIAAAA8w9/hCS4AAAA8w9/hCSoAAAA8w9/hCSYAAAA8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCS4AwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx2w=="
+jmp 21b
+.p2align 6"#,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
     )
 }
 
@@ -93,93 +243,19 @@ pub const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features =
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 472 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
+        r#".base64 "SI2kJHD///9JieBJg8AISYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0SYnNTYnHSInWTIn6SIPCYEyJ+Q=="
 call {vg_sha1_finalize_scratch_shani}
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi4fQAAAAiUMUQYuH1AAAAIlDGEGLh9gAAACJQxxBi4fcAAAAiUMgQYuH4AAAAIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
+.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0dgiUMUQYtHZIlDGEGLR2iJQxxBi0dsiUMgQYtHcIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
 call {vg_sha1_compress_shani}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkKP7///MPf4Qk+AAAAPMPf4Qk6AAAAEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39YSI2kJJAAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkYP////MPf4QkgAAAAPMPf0QkcEiNpCSgAAAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
-    )
-}
-
-/// The CPU features `vg_hmac_sha1_init_avx_bmi` requires (`Artifact.features`).
-pub const VG_HMAC_SHA1_INIT_AVX_BMI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
-/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads and writes of 84 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `bmi1` and `bmi2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_avx_bmi(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SIP5QQ=="
-jae 20f
-.base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha1_init_core}
-.base64 "TInn"
-call {vg_sha1_init_core}
-.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0MU8w9/QyTzD39DNPMPf0NEQb4AAAAATInpSMHpBEiFyQ=="
-je 22f
-24:
-.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTFEmDxhBIg+kB"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "TTnu"
-je 25f
-27:
-.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMUSYPGAU057g=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "SLhqampqampqamZID27IZg9syfMPb1MUZg/v0fNBD39UJBTzD29TJGYP79HzQQ9/VCQk8w9vUzRmD+/R80EPf1QkNPMPb1NEZg/v0fNBD39UJERIid5Ig8YUSInfugEAAABMifk="
-call {vg_sha1_compress_avx_bmi}
-.base64 "SIn7SYnPTInjTInmSIPGFEiJ37oBAAAATIn5"
-call {vg_sha1_compress_avx_bmi}
-.base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAAA="
-21:
-.base64 "ww=="
-20:
-.base64 "SI2kJJj7//9JieBJg8AISYmYwAEAAEmJqMgBAABNiaDQAQAATYmo2AEAAE2JsOABAABNibjoAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
-jae 28f
-.base64 "SInaSInp"
-jmp 29f
-28:
-.base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init_core}
-.base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
-call {vg_sha1_update_scratch_avx_bmi}
-.base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
-call {vg_sha1_finalize_scratch_avx_bmi}
-.base64 "TIn6SIHCeAMAALkUAAAA"
-29:
-.base64 "TInnTInuTYn4"
-call {vg_hmac_sha1_init_scratch_avx_bmi}
-.base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEiNpCRoBAAA"
-jmp 21b
-.p2align 6"#,
-        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
-        vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
-        vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
-        vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
-        vg_hmac_sha1_init_scratch_avx_bmi = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_avx_bmi::vg_hmac_sha1_init_scratch_avx_bmi,
     )
 }
 
@@ -199,89 +275,19 @@ pub const VG_HMAC_SHA1_FINALIZE_AVX_BMI_FEATURES: verified_garbage_cpu::Features
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 472 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_avx_bmi(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
+        r#".base64 "SI2kJAD///9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
 call {vg_sha1_finalize_scratch_avx_bmi}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi4fQAAAAiUMUQYuH1AAAAIlDGEGLh9gAAACJQxxBi4fcAAAAiUMgQYuH4AAAAIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
 call {vg_sha1_compress_avx_bmi}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkKP7//8X+f4Qk6AAAAMX+f0QkOMX+f0QkGPMPf0QkCEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJAABAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk8P7//8X+f4Qk4AAAAMX+f0QkQMX+f0QkIPMPf0QkEEiNpCQQAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
         vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
-    )
-}
-
-/// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads and writes of 84 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SIP5QQ=="
-jae 20f
-.base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha1_init_core}
-.base64 "TInn"
-call {vg_sha1_init_core}
-.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0MU8w9/QyTzD39DNPMPf0NEQb4AAAAATInpSMHpBEiFyQ=="
-je 22f
-24:
-.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTFEmDxhBIg+kB"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "TTnu"
-je 25f
-27:
-.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMUSYPGAU057g=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "SLhqampqampqamZID27IZg9syfMPb1MUZg/v0fNBD39UJBTzD29TJGYP79HzQQ9/VCQk8w9vUzRmD+/R80EPf1QkNPMPb1NEZg/v0fNBD39UJERIid5Ig8YUSInfugEAAABMifk="
-call {vg_sha1_compress}
-.base64 "SIn7SYnPTInjTInmSIPGFEiJ37oBAAAATIn5"
-call {vg_sha1_compress}
-.base64 "SIn7SYnPSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAAA="
-21:
-.base64 "ww=="
-20:
-.base64 "SI2kJJj7//9JieBJg8AISYmYwAEAAEmJqMgBAABNiaDQAQAATYmo2AEAAE2JsOABAABNibjoAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
-jae 28f
-.base64 "SInaSInp"
-jmp 29f
-28:
-.base64 "TIn/SIHH/AIAAA=="
-call {vg_sha1_init_core}
-.base64 "TIn/SIHH/AIAAL4AAAAASInaSInpTYn4"
-call {vg_sha1_update_scratch}
-.base64 "TIn/SIHH/AIAAEiJ7kyJ+kiBwngDAABMifk="
-call {vg_sha1_finalize_scratch}
-.base64 "TIn6SIHCeAMAALkUAAAA"
-29:
-.base64 "TInnTInuTYn4"
-call {vg_hmac_sha1_init_scratch}
-.base64 "SYufwAEAAEmLr8gBAABNi6fQAQAATYuv2AEAAE2Lt+ABAABNi7/oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEiNpCRoBAAA"
-jmp 21b
-.p2align 6"#,
-        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
     )
 }
 
@@ -298,15 +304,15 @@ jmp 21b
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 472 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJDj+//9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
+        r#".base64 "SI2kJAD///9JieBJg8AISYmYoAAAAEmJqKgAAABNiaCwAAAATYmouAAAAE2JsMAAAABNibjIAAAASIn7SYn0SYnNTYnHSInWTIn6SIHC0AAAAEyJ+Q=="
 call {vg_sha1_finalize_scratch}
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi4fQAAAAiUMUQYuH1AAAAIlDGEGLh9gAAACJQxxBi4fcAAAAiUMgQYuH4AAAAIlDJEiJ3UiDxRS4gAAAAIlFFLgAAAAAiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxUAAAATIngSAHASAHASAHASA/ISIlDTEiJ7kiJ37oBAAAATIn5"
 call {vg_sha1_compress}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJMgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkKP7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEiNpCTYAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJAABAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk8P7///MPf4Qk8AAAAPMPf4Qk4AAAAPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEEiNpCQQAQAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,

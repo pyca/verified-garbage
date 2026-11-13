@@ -87,6 +87,7 @@ namespace VG.Proof.Variants.MdHash.X86_64.Sha1ShaNi
 def compress : Proof.Sha1.X86_64.Compress where
   callee := .shani
   ok := Proof.Sha1.X86_64.Stream.shani_ok
+  okS := Proof.Sha1.X86_64.Stream.shani_ok0
   mxcsr := by decide +kernel
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_shani"
@@ -96,63 +97,72 @@ section Scrub
 
 open Proof.Pbkdf2.Md.X86_64 Proof.Pbkdf2.Md.X86_64.Sha1 VG.X86_64 VG.X86_64.Scrub VG.Impl.Scrub.X86_64
 
+/-! ## The functions with the working space this compression function uses
+
+It uses none: `update`, `finalize` and `digest` give it none
+(`Sha1.updFn0`). -/
+
+abbrev updF : StreamFn := updFn0 compress Proof.Sha1.X86_64.Stream.shani_ok0
+abbrev finF : StreamFn := finFn0 compress Proof.Sha1.X86_64.Stream.shani_ok0
+abbrev digF : StreamFn := digFn0 compress Proof.Sha1.X86_64.Stream.shani_ok0
+
 /-! ## Without secret residue
 
 Each function, followed by `Impl.Scrub.X86_64.scrubTail`, which wipes the
 registers and the granules of its stack that the residue analysis of its
 code (`X86_64.RTaint`) finds may hold secrets. -/
 
-def updateKs : List Nat := keep_for% Spec.Sha1.updateApi.sig (updFn compress).stack (updFn compress).code
+def updateKs : List Nat := keep_for% Spec.Sha1.updateApi.sig updF.stack updF.code
 
-theorem updateRes : ResOk (updFn compress).code (updFn compress).contract (updFn compress).stack updateKs (chunks (updFn compress).stack) :=
-  RScrub.resOk_reg0 (updFn compress).reg updateKs (by taint_decide)
+theorem updateRes : ResOk updF.code updF.contract updF.stack updateKs (chunks updF.stack) :=
+  RScrub.resOk_reg0 updF.reg updateKs (by taint_decide)
 
-def update : StreamFn := (updFn compress).scrub .sse updateKs (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (updOut compress) updateRes
+def update : StreamFn := updF.scrub .sse updateKs (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (updOut0 compress Proof.Sha1.X86_64.Stream.shani_ok0) updateRes
 
-theorem update_noResidue : NoResidue update.code (updFn compress).contract (updFn compress).retBits :=
+theorem update_noResidue : NoResidue update.code updF.contract updF.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 
-def finalizeKs : List Nat := keep_for% Spec.Sha1.finalizeApi.sig (finFn compress).stack (finFn compress).code
+def finalizeKs : List Nat := keep_for% Spec.Sha1.finalizeApi.sig finF.stack finF.code
 
-theorem finalizeRes : ResOk (finFn compress).code (finFn compress).contract (finFn compress).stack finalizeKs (chunks (finFn compress).stack) :=
-  RScrub.resOk_reg0 (finFn compress).reg finalizeKs (by taint_decide)
+theorem finalizeRes : ResOk finF.code finF.contract finF.stack finalizeKs (chunks finF.stack) :=
+  RScrub.resOk_reg0 finF.reg finalizeKs (by taint_decide)
 
-def finalize : StreamFn := (finFn compress).scrub .sse finalizeKs (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (finOut compress) finalizeRes
+def finalize : StreamFn := finF.scrub .sse finalizeKs (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (finOut0 compress Proof.Sha1.X86_64.Stream.shani_ok0) finalizeRes
 
-theorem finalize_noResidue : NoResidue finalize.code (finFn compress).contract (finFn compress).retBits :=
+theorem finalize_noResidue : NoResidue finalize.code finF.contract finF.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 
-def digestKs : List Nat := keep_for% Spec.Sha1.digestApi.sig (digFn compress).stack (digFn compress).code
+def digestKs : List Nat := keep_for% Spec.Sha1.digestApi.sig digF.stack digF.code
 
-theorem digestRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digestKs (chunks (digFn compress).stack) :=
-  RScrub.resOk_reg0 (digFn compress).reg digestKs (by taint_decide)
+theorem digestRes : ResOk digF.code digF.contract digF.stack digestKs (chunks digF.stack) :=
+  RScrub.resOk_reg0 digF.reg digestKs (by taint_decide)
 
-def digest : StreamFn := (digFn compress).scrub .sse digestKs (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (digOut compress) digestRes
+def digest : StreamFn := digF.scrub .sse digestKs (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (digOut0 compress Proof.Sha1.X86_64.Stream.shani_ok0) digestRes
 
-theorem digest_noResidue : NoResidue digest.code (digFn compress).contract (digFn compress).retBits :=
+theorem digest_noResidue : NoResidue digest.code digF.contract digF.retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 
 end Scrub
 
 /-- `variant` before the residue analysis of HMAC's `finalize`. -/
 def unscrubbed : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha1.variant compress with stream := [update, finalize, digest] }
+  Proof.Pbkdf2.Md.X86_64.Sha1.variant compress [update, finalize, digest]
 
 /-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
 analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H)
+  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) []
 
 theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I))) = true :=
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H))) = true :=
   VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=

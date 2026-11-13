@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Scrypt.BlockMix
 import VerifiedGarbage.Proof.Scrypt.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Calls
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
@@ -23,6 +24,7 @@ meta import VerifiedGarbage.Proof.Scrypt.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 
 @[expose] public section
 
@@ -736,6 +738,37 @@ theorem core_pbkdf2_depth {H : Hash} (hc : H.compC.depth = 0) (hi : H.initC.dept
     core, Proof.Pbkdf2.Md.X86_64.coreBoth, Code.depth, hc, hi, hb] at h ⊢
   exact h
 
+/-- `pbkG` verified with `8 a` bytes of scratch space is with `8 b ≥ 8 a`
+(`Verified.widen`: it runs as it does with `8 a`). -/
+theorem pbkG_widen {c : Prog isa} {S : Spec.Hmac.StreamingHash} {a b : Nat}
+    (h : Verified X86_64.target c (Proof.Pbkdf2.Md.X86_64.pbkG S a)) (hab : a ≤ b)
+    (hsat : ∃ s, (Proof.Pbkdf2.Md.X86_64.pbkG S b).pre s) :
+    Verified X86_64.target c (Proof.Pbkdf2.Md.X86_64.pbkG S b) :=
+  have h8 : a * 8 ≤ b * 8 := Nat.mul_le_mul_right 8 hab
+  Verified.widen h (fun s => [⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, a * 8⟩])
+    (fun _ ⟨h1, h2, h3, _, h5, h6, h7, h8', h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+        h23, h24, h25, h26, h27⟩ =>
+      ⟨h1, h2, h3, rfl, h5, h6.sub_right (Region.sub_prefix h8), h7, h8'.sub_right (Region.sub_prefix h8), h9.sub_right (Region.sub_prefix h8), h10,
+        h11.sub_left (Region.sub_prefix h8), h12, h13, h14, h15.sub_right (Region.sub_prefix h8), h16, h17, h18, h19, h20.sub_right (Region.sub_prefix h8), h21, h22,
+        h23, h24, Nat.le_trans (Nat.add_le_add_left h8 _) h25, h26, h27⟩)
+    (fun _ ⟨_, _, _, h4, _⟩ => h4 ▸ .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, h8⟩ .nil))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
+
+/-- A state satisfying the precondition of PBKDF2-HMAC-SHA256 with the
+working space scrypt gives it. -/
+theorem pbk_sat200 : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha256I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi, X86_64.argRegs] using Proof.Pbkdf2.Md.X86_64.pbkSat 200
+
+/-- The code PBKDF2 adds never writes `rsp` but in its frames, and nests
+calls at most three deep, for each implementation's working space. -/
+theorem core_pbkdf2_facts : ∀ so, Proof.Pbkdf2.Md.X86_64.Sha256.SoOk so →
+    (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).pbkdf2.allInstrs (fun i => !Taint.clobbers i .rsp) = true ∧
+      (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).pbkdf2.depth ≤ 3 := by
+  intro so h
+  rcases h with rfl | rfl | rfl <;> exact ⟨by decide +kernel, by decide +kernel⟩
+
 variable (c : Proof.Sha256.X86_64.Compress)
 
 /-- PBKDF2-HMAC-SHA256 made with `c`. -/
@@ -744,24 +777,33 @@ abbrev pbkOf : Prog isa := (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).pbkdf2
 /-- Its name. -/
 abbrev pbkName : String := "vg_pbkdf2_hmac_sha256_scratch" ++ c.suffix
 
+/-- PBKDF2-HMAC-SHA256 made with `c` uses the working space it needs (of
+the 200 words scrypt gives it). -/
 theorem pbk_verified :
     Verified X86_64.target (pbkOf c) (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24) :=
-  (Proof.Pbkdf2.Md.X86_64.Sha256.variant c).pbkdf2
+  have hw := Proof.Pbkdf2.Md.X86_64.Sha256.hashW c
+  (pbkG_widen (b := 200)
+    (Proof.Pbkdf2.Md.X86_64.pbkdf2_ok (Proof.Pbkdf2.Md.X86_64.Sha256.ok c) (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK c)
+      (Proof.Pbkdf2.Md.X86_64.Sha256.callees c) (Proof.Pbkdf2.Md.X86_64.Sha256.satI hw)
+      (Proof.Pbkdf2.Md.X86_64.Sha256.satF hw) (Proof.Pbkdf2.Md.X86_64.Sha256.satT hw)
+      (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ (Proof.Pbkdf2.Md.X86_64.Sha256.satP hw)).sat_left)
+    (by show (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).W + 96 ≤ 200; rcases hw with h | h | h <;> omega)
+    (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ pbk_sat200).sat_left).of_implies
+    (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ pbk_sat200)
 
 theorem pbk_nosp : NoSp (pbkOf c) :=
   nosp_of (core_pbkdf2 (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cNs
     (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iNs (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bNs
-    (by decide +kernel : Proof.Pbkdf2.Md.X86_64.Sha256.coreH.pbkdf2.allInstrs
-      (fun i => !Taint.clobbers i .rsp) = true))
+    (core_pbkdf2_facts _ c.hso).1)
 
 theorem pbk_depth : (pbkOf c).depth ≤ 3 :=
   core_pbkdf2_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cD
     (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iD (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bD
-    (by decide +kernel : Proof.Pbkdf2.Md.X86_64.Sha256.coreH.pbkdf2.depth ≤ 3)
+    (core_pbkdf2_facts _ c.hso).2
 
 theorem pbk_mx : (pbkOf c).allInstrs (fun i => !loadsMxcsr i) = true :=
   core_pbkdf2 (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cMx (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iMx
-    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bMx Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.pbkMx
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bMx (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK c).pbkMx
 
 theorem scrypt_mx : (scrypt (pbkName c) (pbkOf c)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have hr : Impl.Scrypt.X86_64.roMixDirect.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
@@ -777,7 +819,7 @@ theorem scrypt_verified :
 /-- No instruction writes `rsp` but the frame's push and pop. -/
 theorem scrypt_spSafe : (scrypt (pbkName c) (pbkOf c)).all (fun i => !isa.writesSp i) = true := by
   have hp : (pbkOf c).all (fun i => !isa.writesSp i) = true :=
-    (Proof.Pbkdf2.Md.X86_64.Sha256.variant c).pbkdf2Sp
+    Proof.Pbkdf2.Md.X86_64.pbkdf2_sp (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK c) (Proof.Pbkdf2.Md.X86_64.Sha256.callees c)
   have hr : Impl.Scrypt.X86_64.roMixDirect.all (fun i => !isa.writesSp i) = true :=
     Code.all_of_allInstrs (by lit_decide)
   simp only [scrypt, scryptBody, pbkCall, romixLoop, Code.all, hp, hr, Bool.and_true, Bool.true_and]

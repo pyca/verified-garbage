@@ -14,47 +14,47 @@
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 16`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1072 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 816 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJOj7//9Ii4QkIAQAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZiAAQAASYmoiAEAAE2JoJABAABNiaiYAQAATYmwoAEAAE2JuKgBAABNicdNiY+wAQAARInQSIPoAUmJh7gBAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "SI2kJOj8//9Ii4QkIAMAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZiAAAAASYmoiAAAAE2JoJAAAABNiaiYAAAATYmwoAAAAE2JuKgAAABNicdNiY+wAAAARInQSIPoAUmJh7gAAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHHsAIAAA=="
+.base64 "TIn/SIHHsAEAAA=="
 call {vg_md5_init_core}
-.base64 "TIn/SIHHsAIAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHsAEAAL4AAAAASInaSInpTYn4"
 call {vg_md5_update_scratch}
-.base64 "TIn/SIHHsAIAAEiJ7kyJ+kiBwiADAABMifk="
+.base64 "TIn/SIHHsAEAAEiJ7kyJ+kiBwiACAABMifk="
 call {vg_md5_finalize_scratch}
-.base64 "TIn6SIHCIAMAALkQAAAA"
+.base64 "TIn6SIHCIAIAALkQAAAA"
 21:
-.base64 "TIn/SIHHwAEAAEyJ/kiBxhACAABNifg="
+.base64 "TIn/SIHHwAAAAEyJ/kiBxhABAABNifg="
 call {vg_hmac_md5_init_scratch}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDfAAQAAQ4iEN2ACAABJg8YBSYP+UA=="
+.base64 "Qw+2hDfAAAAAQ4iEN2ABAABJg8YBSYP+UA=="
 jne 22b
-.base64 "TIn/SIHHYAIAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHHYAEAAL5AAAAATIniTInpTYn4"
 call {vg_md5_update_scratch}
-.base64 "TIntTYuvsAEAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuvsAAAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDdgAgAAQ4iEN7ACAABJg8YBSYP+UA=="
+.base64 "Qw+2hDdgAQAAQ4iEN7ABAABJg8YBSYP+UA=="
 jne 26b
-.base64 "idgPyEGJhzADAABMif9IgcewAgAASInuSIPGQEyJ+kiBwjADAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJhzACAABMif9IgcewAQAASInuSIPGQEyJ+kiBwjACAAC5BAAAAE2J+A=="
 call {vg_md5_update_scratch}
-.base64 "TIn/SIHHsAIAAEyJ/kiBxhACAABIiepIg8JETIn5SIHBAAMAAE2J+A=="
+.base64 "TIn/SIHHsAEAAEyJ/kiBxhABAABIiepIg8JETIn5SIHBAAIAAE2J+A=="
 call {vg_hmac_md5_finalize_scratch}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDcAAwAAQ4iENxADAABJg8YBSYP+EA=="
+.base64 "Qw+2hDcAAgAAQ4iENxACAABJg8YBSYP+EA=="
 jne 27b
-.base64 "TIn/SIHHwAEAAEyJ/kiBxgADAABJi5e4AQAATIn5SIHBEAMAAE2J+A=="
+.base64 "TIn/SIHHwAAAAEyJ/kiBxgACAABJi5e4AAAATIn5SIHBEAIAAE2J+A=="
 call {vg_pbkdf2_hmac_md5_iterate}
 .base64 "uRAAAABJOcw="
 jb 28f
@@ -64,14 +64,14 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDcQAwAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDcQAgAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufgAEAAEmLr4gBAABNi6eQAQAATYuvmAEAAE2Lt6ABAABNi7+oAQAASI2kJBgEAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgDAADD"
 .p2align 6"#,
         vg_md5_init_core = sym super::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,

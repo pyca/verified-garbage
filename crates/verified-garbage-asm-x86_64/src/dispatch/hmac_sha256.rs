@@ -8,13 +8,15 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha256_init_shani` if the CPU supports its features (`VG_HMAC_SHA256_INIT_SHANI_FEATURES`); `vg_hmac_sha256_init_avx2` if the CPU supports its features (`VG_HMAC_SHA256_INIT_AVX2_FEATURES`); or else `vg_hmac_sha256_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
 /// * `outer` must be valid for reads and writes of 96 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1504 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
@@ -71,7 +73,7 @@ pub unsafe fn vg_hmac_sha256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inne
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {

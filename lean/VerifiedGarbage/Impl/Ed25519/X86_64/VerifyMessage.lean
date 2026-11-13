@@ -64,13 +64,13 @@ def hash (f : Callee) (suffix : String) : Prog isa :=
   .seq (callWith initArgs "vg_sha512_init_core"
       (Sha512.X86_64.Stream.init Spec.Sha512.H0_512))
     (.seq (callWith (prefixArgs fSignature 0) ("vg_sha512_update_scratch" ++ suffix)
-      (Sha512.X86_64.Stream.update f))
+      (Sha512.X86_64.Stream.updateOwn f))
     (.seq (callWith (prefixArgs fPublicKey 32) ("vg_sha512_update_scratch" ++ suffix)
-      (Sha512.X86_64.Stream.update f))
+      (Sha512.X86_64.Stream.updateOwn f))
     (.seq (callWith messageArgs ("vg_sha512_update_scratch" ++ suffix)
-      (Sha512.X86_64.Stream.update f))
+      (Sha512.X86_64.Stream.updateOwn f))
       (callWith finalizeArgs ("vg_sha512_finalize_scratch" ++ suffix)
-        (Sha512.X86_64.Stream.finalize f)))))
+        (Sha512.X86_64.Stream.finalizeOwn f)))))
 
 def reduceArgs : List Instr :=
   [.mov .rdi (.reg .rsp), .mov .rsi (.reg .rsp), .alu .add .rsi (.imm 64),

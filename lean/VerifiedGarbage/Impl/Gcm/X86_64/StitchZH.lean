@@ -64,6 +64,8 @@ def bigRest (ld : Bool := false) : Prog isa :=
   .seq (batch 4 (fun _ => []) false ld) (.seq (batch 8 (fun _ => []) false ld)
     (.seq (.loop (body48 ld) .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
 
+def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (bigRest ld)
+
 /-- At least 48 blocks, the first group encrypted: the powers of 48 blocks,
 then the groups after the first, all but the last hashed. Below
 `StitchZ.bigMinPE` blocks, where `bigRest` is not worth its start and its
@@ -72,7 +74,9 @@ next (`StitchZC.bigRestC`), which measured faster there than `body`'s loop
 on Emerald Rapids, Zen 4 and Zen 5. From `bigMinPE` blocks on they are
 hashed from the output, three groups behind (`bigRest`): on Zen 4 and
 Zen 5 that is the faster for long messages (by 3 to 10% at 16 KiB), its
-multiplications never waiting for a group still being encrypted. -/
+multiplications never waiting for a group still being encrypted.
+`StitchZHTo.phase1` runs it; `encR` takes the messages below `bigMinPE`
+blocks with `midC`. -/
 def bigS (ld : Bool := false) : Prog isa :=
   .seq (.block powP48)
     (.seq (.block [.alu .cmp .r9 (.imm StitchZ.bigMinPE)]) (.ite .b (StitchZC.bigRestC ld) (bigRest ld)))
@@ -192,16 +196,78 @@ def rem : Prog isa := remG [] .rdx
 def tailR (r : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .e (.block (storeCtr ++ lastG ++ storeY)) r)
 
-/-- Encryption, for any number of blocks from 16 on: from 48 on, the
-groups after the first three at a time (`bigS`); the blocks after the last
-group, if any, by `rem`. -/
+/-! ## Messages of 48 to 143 blocks: nothing loaded back
+
+`midC` encrypts a message of 48 to 143 blocks with every group hashed from
+registers (`StitchZC`), the first and the last too: the first group is
+encrypted by `StitchZC.grpC`, which leaves it in the copies, after the
+powers of 48 blocks and the increment are stored; `StitchZC.loopsC` takes
+the groups after it; and the group then in the copies is hashed by
+`StitchZC.lastC` if it is the last (`tailC`), or between the rounds of the
+blocks after it (`remC`, `remG` with `StitchZC.gqC` for `gq` and the
+increment loaded as `grpC` loads it). -/
+
+/-- `ksBatchG` for a last group in the copies: the increment loaded into
+`zmm11`, and the copies hashed and reduced between the rounds. -/
+def ksBatchC (k : Nat) (pre : List Instr) (src : Reg) : Prog isa :=
+  .seq (.block (.vmovdqu32Load .xmm11 StitchZC.incAt :: ctrsZ .xmm14 .xmm0 .xmm11 (aregs.take k)))
+    (.seq (Aes.X86_64.VaesZH.aes (aregs.take k) (StitchZC.gqC true true 2))
+      (.seq (.block (.alu .add .rdx (.imm 256) :: pre))
+        (.seq remMaskG (.block (xorG src (aregs.take k) 0 ++ hashG (aregs.take k) 0 ++ fin)))))
+
+/-- `ksBatchC` of `⌈r / 4⌉` registers, from `r10 = 16 r`. -/
+def ksSelC (pre : List Instr) (src : Reg) : Prog isa :=
+  .seq (.block [.alu .cmp .r10 (.imm 65)])
+    (.ite .b (ksBatchC 1 pre src)
+      (.seq (.block [.alu .cmp .r10 (.imm 129)])
+        (.ite .b (ksBatchC 2 pre src)
+          (.seq (.block [.alu .cmp .r10 (.imm 193)])
+            (.ite .b (ksBatchC 3 pre src) (ksBatchC 4 pre src))))))
+
+/-- The `r9 - 16` blocks after the last group, the last group, in the
+copies, hashed, and `Y` stored: in place, or read at `rdx + r8` (`ld`). -/
+def remC (ld : Bool := false) : Prog isa :=
+  .seq (.block remSetup)
+    (.seq (ksSelC (if ld then [.alu .add .r8 (.reg .rdx)] else []) (if ld then .r8 else .rdx)) (.block storeY))
+
+/-- The end of `midC`: the last group, in the copies, and the blocks after
+it if any. -/
+def tailC (ld : Bool := false) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 16)])
+    (.ite .e (.block (StitchZC.lastC ++ storeCtr ++ storeY)) (remC ld))
+
+/-- A message of 48 to 143 blocks, after the setup and the powers of 48
+blocks: the increment kept, the first group, the groups after it, and the
+end. -/
+def midRest (ld : Bool := false) : Prog isa :=
+  .seq (.block [.vmovdqu32Store StitchZC.incAt .xmm15])
+    (.seq (StitchZC.grpC 0 (fun _ => []) ld) (.seq (StitchZC.loopsC ld) (tailC ld)))
+
+/-- A message of 48 to 143 blocks, after the setup. -/
+def midC (ld : Bool := false) : Prog isa := .seq (.block powP48) (midRest ld)
+
+/-- The first group, the groups after it and the end of the message, for
+fewer than 48 blocks or at least `StitchZ.bigMinPE`: from there on three
+groups at a time (`bigP`). -/
+def rest : Prog isa :=
+  .seq first
+    (.seq (.block [.alu .cmp .r9 (.imm StitchZ.bigMinPE)])
+      (.seq (.ite .b (.block []) bigP)
+        (.seq (.block [.alu .cmp .r9 (.imm 32)])
+          (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem)))))
+
+/-- Whether there are 48 to 143 blocks (`CF`), with `r9` less 48. -/
+def midTest : List Instr :=
+  [.alu .sub .r9 (.imm StitchZC.bigMinC), .alu .cmp .r9 (.imm (StitchZ.bigMinPE - StitchZC.bigMinC))]
+
+/-- `r9` again. -/
+def midUndo : List Instr := [.alu .add .r9 (.imm StitchZC.bigMinC)]
+
+/-- Encryption, for any number of blocks from 16 on: 48 to 143 by `midC`,
+the others by `rest`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
-        (.seq (.ite .b (.block []) bigS)
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem))))))
+    (.seq (.block midTest) (.ite .b (.seq (.block midUndo) midC) (.seq (.block midUndo) rest)))
 
 /-! ## Decryption: the blocks after the last group, as a masked group
 

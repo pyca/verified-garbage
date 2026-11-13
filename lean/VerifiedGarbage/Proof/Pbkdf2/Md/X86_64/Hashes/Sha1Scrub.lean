@@ -101,4 +101,19 @@ theorem finOut (v : Proof.Sha1.X86_64.Compress) : PostOut (finFn v).contract (fi
 theorem digOut (v : Proof.Sha1.X86_64.Compress) : PostOut (digFn v).contract (digFn v).retBits :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.digestPost_out 64)
 
+section Zero
+variable (v : Proof.Sha1.X86_64.Compress)
+  (hc : MdStream.X86_64.CalleeOk (P := Proof.Sha1.X86_64.Stream.params0) Proof.Sha1.md v.callee.code)
+
+theorem updOut0 : PostOut (updFn0 v hc).contract (updFn0 v hc).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.updatePost_out 64)
+
+theorem finOut0 : PostOut (finFn0 v hc).contract (finFn0 v hc).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.finalizePost_out 64)
+
+theorem digOut0 : PostOut (digFn0 v hc).contract (digFn0 v hc).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.digestPost_out 64)
+
+end Zero
+
 end VG.Proof.Pbkdf2.Md.X86_64.Sha1

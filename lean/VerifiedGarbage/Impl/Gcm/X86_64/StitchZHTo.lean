@@ -11,7 +11,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
-open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv)
+open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv bigMinPE)
 open VG.Impl.Gcm.X86_64.StitchZR (powP48)
 open VG.Impl.Gcm.X86_64.StitchZRTo (setupP)
 
@@ -26,18 +26,25 @@ abbrev body48To : Prog isa := StitchZH.body48 true
 
 abbrev bigRestTo : Prog isa := StitchZH.bigRest true
 
+abbrev bigPTo : Prog isa := StitchZH.bigP true
+
 /-- The blocks after the last group, as `StitchZH.rem`'s, read at
 `rdx + r8` (`r8` is `src - dst`). -/
 def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
 
+/-- `StitchZH.rest`, the data read at `rdx + r8`. -/
+def restTo : Prog isa :=
+  .seq firstTo
+    (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
+      (.seq (.ite .b (.block []) bigPTo)
+        (.seq (.block [.alu .cmp .r9 (.imm 32)])
+          (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo)))))
+
 /-- `StitchZH.encR`, the data read at `rdx + r8`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
-        (.seq (.ite .b (.block []) (StitchZH.bigS true))
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo))))))
+    (.seq (.block StitchZH.midTest)
+      (.ite .b (.seq (.block StitchZH.midUndo) (StitchZH.midC true)) (.seq (.block StitchZH.midUndo) restTo)))
 
 /-! ## In one pass over a source and then in place
 
