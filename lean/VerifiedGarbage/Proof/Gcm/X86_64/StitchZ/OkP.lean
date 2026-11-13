@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGTo
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZC.Tail
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
@@ -302,9 +303,13 @@ theorem remZG {H : Block} {P : Nat → Nat → Block}
 /-- `encR`, for any number of blocks from 16 on. -/
 theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZH.encR s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw))
-      48 (by decide) (by decide) (fun _ _ hI hC => bigS_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) hI hC) hR hK)
+  WP.seq (WP.mono (setup_ok hp) fun s ⟨_, hR, hpw, hK⟩ =>
+    StitchZC.midSel_ok s
+      (fun _ _ _ f hh => midC_ok hp (remZG (finP hpw)) hpw (fin48P (hk s₀)) (ready_frame hR f)
+        (hK.keep hh ((ready_frame hR f).a.keys hp.base)))
+      (fun _ _ f hh => encTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw)) 144 (by decide) (by decide)
+        (fun _ h hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC)
+        (ready_frame hR f) (hK.keep hh ((ready_frame hR f).a.keys hp.base))))
 
 /-- `decR`, for any number of blocks from 16 on. -/
 theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
@@ -329,9 +334,13 @@ open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 /-- `encR`, for any number of blocks from 16 on. -/
 theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZHTo.encR s₀ (Proof.Gcm.X86_64.Stitch.EPostTo s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw))
-      48 (by decide) (by decide) (fun _ _ hI hC => bigSTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) hI hC) hR hK)
+  WP.seq (WP.mono (setup_ok hp) fun s ⟨_, hR, hpw, hK⟩ =>
+    StitchZC.midSel_ok s
+      (fun _ _ _ f hh => midCTo_ok hp (StitchZH.remZG (finP hpw)) hpw (fin48P (hk s₀)) (ready_frame hR f)
+        (hK.keep hh ((ready_frame hR f).a.keys hp)))
+      (fun _ _ f hh => encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw)) 144 (by decide) (by decide)
+        (fun _ h hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC)
+        (ready_frame hR f) (hK.keep hh ((ready_frame hR f).a.keys hp))))
 
 /-- Prepared powers and cached AES keys, out of place, for any number of
 blocks from 16 on. -/
