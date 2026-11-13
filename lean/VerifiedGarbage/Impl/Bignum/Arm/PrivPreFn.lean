@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MaskOutput
 public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
 public import VerifiedGarbage.Impl.Bignum.Arm.PrimeR2From
 public import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
+public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 
 /-! # ARMv7 RSA private-key precomputation entry point
 
@@ -106,5 +107,8 @@ def code : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (.seq (.block zeroArgs) (.seq zero (.seq (.block loadArgs) (.seq argsFrame (.block PcFn.restore)))))
     (.pop .r12 56)
+
+/-- `vg_rsa_private_precompute_umaal`: `code` with its rows by `umaal`. -/
+def codeU : Prog isa := umaalArithmetic code
 
 end VG.Impl.Bignum.Arm.PrivPreFn
