@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Bignum.Arm.PrivPreFrameCT
+import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
@@ -177,5 +178,9 @@ theorem pp_contract_sat : ∃ s, (Spec.Rsa.privatePrecomputeContract abi 168).pr
 
 theorem privPre_verified : Verified target code (Spec.Rsa.privatePrecomputeContract abi 168) :=
   ⟨pp_contract_correct, pp_contract_ct, pp_contract_sat⟩
+
+/-- `vg_rsa_private_precompute_umaal`. -/
+theorem privPre_umaal_verified : Verified target codeU (Spec.Rsa.privatePrecomputeContract abi 168) :=
+  umaalArithmetic_verified privPre_verified
 
 end VG.Proof.Bignum.Arm
