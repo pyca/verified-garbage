@@ -194,7 +194,7 @@ inductive F where
   deriving DecidableEq
 
 /-- An operand without an index, with a displacement of 32 bits. -/
-def plain (m : MemOp) : Bool := m.index.isNone && decide (-2 ^ 31 ≤ m.disp ∧ m.disp < 2 ^ 31)
+def plain (m : MemOp) : Bool := m.index.isNone && decide (-2 ^ (31 : Nat) ≤ m.disp ∧ m.disp < 2 ^ (31 : Nat))
 
 def slotOf (m : MemOp) : F := .slot m.base m.disp
 
@@ -203,7 +203,7 @@ base register) the bytes. -/
 def keep (i : Instr) : F → Bool
   | .reg r => !Taint.clobbers i r
   | .slot b d => !Taint.clobbers i b && match storeW i with
-    | some (m, w) => plain m && m.base == b && decide (w ≤ 64) && decide (-2 ^ 31 ≤ d ∧ d < 2 ^ 31) &&
+    | some (m, w) => plain m && m.base == b && decide (w ≤ 64) && decide (-2 ^ (31 : Nat) ≤ d ∧ d < 2 ^ (31 : Nat)) &&
         decide (m.disp + w ≤ d ∨ d + 4 ≤ m.disp)
     | none => !writesMem i
 
