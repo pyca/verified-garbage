@@ -43,18 +43,28 @@ theorem restore_check : ∃ hc, (taint.check (Taint.ofRegs [.r13, .r14, .r15, .r
   ⟨_, by taint_decide⟩
 
 /-- A function `entry; body; restore`, in two runs from `s₀` and `s₀'`. -/
-theorem fn_rel {E : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr}
+theorem fn_relN {E : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr} {N : Nat}
     (rs : List Reg) (hag : ∀ r ∈ rs, s₀.gpr r = s₀'.gpr r)
     (hc : ∃ hc, (taint.check (Taint.ofRegs rs) (.block E) hc).isSome = true)
     (hE₁ : WP isa (.block E) s₀ I₁) (hE₂ : WP isa (.block E) s₀' I₂)
     (hB : RelCT isa (fun s₁ s₂ => True ∧ I₁ s₁ ∧ I₂ s₂) B
-      fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) :
+      fun s₁ s₂ => Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.seq (.block E) (.seq B (.block restore))) fun _ _ => True := by
   have e := rel_wp (rel_taint (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') rs (fun _ _ h => by
       obtain ⟨rfl, rfl⟩ := h; exact hag) hc) (fun _ _ h => h) (G₁ := I₁) (G₂ := I₂)
     (fun s h => h ▸ hE₁) (fun s h => h ▸ hE₂)
   exact RelCT.seq e (RelCT.seq hB (rel_taint [.r13, .r14, .r15, .rsp]
     (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.1, h.2, fun _ h => by cases h⟩) restore_check))
+
+/-- `fn_relN`, with the 2560 bytes of working space of the others. -/
+theorem fn_rel {E : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr}
+    (rs : List Reg) (hag : ∀ r ∈ rs, s₀.gpr r = s₀'.gpr r)
+    (hc : ∃ hc, (taint.check (Taint.ofRegs rs) (.block E) hc).isSome = true)
+    (hE₁ : WP isa (.block E) s₀ I₁) (hE₂ : WP isa (.block E) s₀' I₂)
+    (hB : RelCT isa (fun s₁ s₂ => True ∧ I₁ s₁ ∧ I₂ s₂) B
+      fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.seq (.block E) (.seq B (.block restore))) fun _ _ => True :=
+  fn_relN rs hag hc hE₁ hE₂ hB
 
 /-- A stack argument loaded into `rax`. -/
 theorem loadArg_ok {s : State} {k : Nat}

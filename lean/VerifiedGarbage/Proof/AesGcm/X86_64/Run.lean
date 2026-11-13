@@ -50,24 +50,24 @@ tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(t
 
 /-- A buffer of `n` bytes at `D` that the code may read, apart from the
 context, the state, `W` and the stack below `SP`. -/
-structure DataOk (St W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
+structure DataOk (St W SP : Addr) (s : State) (D : Addr) (n : Nat) (N : Nat := 2560) : Prop where
   rd : Covers [⟨D, n⟩] (s.rd ++ s.wr)
   lt : n < 2 ^ 64
   wrap : D.toNat + n ≤ 2 ^ 64
   st : (⟨D, n⟩ : Region).Disjoint ⟨St, 80⟩
-  w : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
+  w : (⟨D, n⟩ : Region).Disjoint ⟨W, N⟩
   stk : (below SP 8).Disjoint ⟨D, n⟩
 
 namespace DataOk
 
-variable {St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataOk St W SP s D n)
+variable {St W SP : Addr} {s : State} {D : Addr} {n N : Nat} (h : DataOk St W SP s D n N)
 include h
 
-theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataOk St W SP s' D n :=
+theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataOk St W SP s' D n N :=
   { h with rd := by rw [hrd, hwr]; exact h.rd }
 
 /-- The bytes from `k` on. -/
-theorem drop {k : Nat} (hk : k ≤ n) : DataOk St W SP s (D + BitVec.ofNat 64 k) (n - k) where
+theorem drop {k : Nat} (hk : k ≤ n) : DataOk St W SP s (D + BitVec.ofNat 64 k) (n - k) N where
   rd := covers_off h.rd (by omega) h.lt
   lt := by have := h.lt; omega
   wrap := by
@@ -80,7 +80,7 @@ theorem drop {k : Nat} (hk : k ≤ n) : DataOk St W SP s (D + BitVec.ofNat 64 k)
   stk := h.stk.sub_right (Offset.sub_base D (by omega))
 
 /-- The first `k` bytes. -/
-theorem take {k : Nat} (hk : k ≤ n) : DataOk St W SP s D k where
+theorem take {k : Nat} (hk : k ≤ n) : DataOk St W SP s D k N where
   rd := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
     exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩

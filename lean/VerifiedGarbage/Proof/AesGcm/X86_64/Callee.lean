@@ -52,6 +52,14 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom ctr32 aesWith)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
+/-- What an implementation of `vg_ghash` that never touches its scratch
+buffer gives: its contract without one (`Proof.Gcm.ghashX86_64F`), so that
+its callers need not set aside one. -/
+structure GhashFree (code : Prog isa) : Type where
+  ok : ∀ s, Proof.Gcm.ghashX86_64F.pre s →
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashX86_64F.post s s'
+  ct : ConstantTime isa Proof.Gcm.ghashX86_64F.pre Proof.Gcm.ghashX86_64F.pub code
+
 /-- An implementation of `vg_ghash` on x86-64. -/
 structure GhashImpl where
   fn : Fn
@@ -66,6 +74,8 @@ structure GhashImpl where
   spSafe : fn.code.all (fun i => !isa.writesSp i) = true
   suffix : String
   features : List String
+  /-- Its contract without a scratch buffer, if it never touches one. -/
+  free : Option (GhashFree fn.code) := none
 
 /-- What an implementation of `vg_aes_expand_key_scratch` that never touches
 its scratch buffer gives: the contract of `vg_aes_expand_key`, which has none
@@ -227,6 +237,70 @@ theorem gh_rel (g : GhashImpl) {P : State → State → Prop}
   obtain ⟨H, Y, D, S, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
   simp only [Proof.Gcm.ghashX86_64, State.withRegions_gpr,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp),
+    h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+/-- What a call of `vg_ghash` without a scratch buffer needs: `GhCall`
+without the buffer, `r8` any public value. -/
+structure GhCallF (s : State) (H Y D S : Addr) (n : Nat) : Prop where
+  rdi : s.gpr .rdi = H
+  rsi : s.gpr .rsi = Y
+  rdx : s.gpr .rdx = D
+  rcx : s.gpr .rcx = BitVec.ofNat 64 n
+  r8 : s.gpr .r8 = S
+  n_lt : 16 * n < 2 ^ 64
+  hy : (⟨H, 16⟩ : Region).Disjoint ⟨Y, 16⟩
+  yd : (⟨Y, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  stkH : (below (s.gpr .rsp) 8).Disjoint ⟨H, 16⟩
+  stkY : (below (s.gpr .rsp) 8).Disjoint ⟨Y, 16⟩
+  stkD : (below (s.gpr .rsp) 8).Disjoint ⟨D, 16 * n⟩
+  reads : Covers ([⟨H, 16⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨Y, 16⟩] s.wr
+
+/-- What a call of `vg_ghash` without a scratch buffer leaves. -/
+structure GhPostF (s : State) (H Y D : Addr) (n : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨Y, 16⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  out : blockAt s'.mem Y = ghashFrom (blockAt s.mem H) (blockAt s.mem Y) (blocksAt s.mem D n)
+
+theorem GhCallF.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCallF s H Y D S n) :
+    Proof.Gcm.ghashX86_64F.pre (s.callEntry.withRegions [⟨H, 16⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩]) := by
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  simp only [Proof.Gcm.ghashX86_64F, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+    State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, hn]
+  exact ⟨trivial, trivial, h.hy, h.yd, h.stkY⟩
+
+theorem gh_callF (g : GhashImpl) (f : GhashFree g.fn.code) {s : State} {H Y D S : Addr} {n : Nat}
+    (h : GhCallF s H Y D S n) : WP isa (.call g.fn.name g.fn.code) s (GhPostF s H Y D n) := by
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
+  refine WP.call (k := Proof.Gcm.ghashX86_64F) f.ok g.nosp (by rw [g.depth]; decide)
+    (rd := [⟨H, 16⟩, ⟨D, 16 * n⟩]) (wr := [⟨Y, 16⟩]) h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [g.depth] at hf
+  refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
+  simp only [Proof.Gcm.ghashX86_64F, Proof.Gcm.ghashX86_64, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, h.rcx, hn, hm₂] at hpost
+  have fE := callEntry_frame s
+  rw [hpost, blockAt_frame fE (disj_below h.stkH), blockAt_frame fE (disj_below h.stkY),
+    blocksAt_frame fE (disj_below h.stkD) (by have := h.n_lt; omega)]
+
+theorem gh_relF (g : GhashImpl) (f : GhashFree g.fn.code) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S : Addr, ∃ n : Nat,
+      GhCallF s₁ H Y D S n ∧ GhCallF s₂ H Y D S n ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call g.fn.name g.fn.code) fun _ _ => True := by
+  refine RelCT.callEx f.ok f.ct fun s₁ s₂ hp => ?_
+  obtain ⟨H, Y, D, S, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [Proof.Gcm.ghashX86_64F, Proof.Gcm.ghashX86_64, State.withRegions_gpr,
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp),

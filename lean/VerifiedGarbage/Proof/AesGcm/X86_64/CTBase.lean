@@ -73,10 +73,10 @@ theorem rel_wp {P Q : State → State → Prop} {c : Prog isa} {F₁ F₂ G₁ G
   h.wp fun _ _ hp => ⟨hw₁ _ (hP _ _ hp).1, hw₂ _ (hP _ _ hp).2⟩
 
 /-- The environment, after code that writes none of its registers. -/
-theorem rel_env {Ctx St W SP : Addr} {P Q : State → State → Prop} {c : Prog isa}
+theorem rel_env {Ctx St W SP : Addr} {N : Nat} {P Q : State → State → Prop} {c : Prog isa}
     (hc : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], ∀ i ∈ instrs c, Taint.clobbers i r = false)
-    (hP : ∀ s₁ s₂, P s₁ s₂ → Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) (h : RelCT isa P c Q) :
-    RelCT isa P c fun s₁ s₂ => Q s₁ s₂ ∧ Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ := by
+    (hP : ∀ s₁ s₂, P s₁ s₂ → Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N) (h : RelCT isa P c Q) :
+    RelCT isa P c fun s₁ s₂ => Q s₁ s₂ ∧ Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp e₁ e₂
   obtain ⟨r₁, w₁⟩ := Exec.rdwr e₁
@@ -85,10 +85,11 @@ theorem rel_env {Ctx St W SP : Addr} {P Q : State → State → Prop} {c : Prog 
     (hP _ _ hp).2.keep (fun r hr => Exec.gpr (hc r hr) e₂) r₂ w₂⟩
 
 /-- Two runs with the same environment, agreeing on the registers `rs`. -/
-def EnvAgree (Ctx St W SP : Addr) (rs : List Reg) (s₁ s₂ : State) : Prop :=
-  Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ ∧ ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
+def EnvAgree (Ctx St W SP : Addr) (rs : List Reg) (s₁ s₂ : State) (N : Nat := 2560) : Prop :=
+  Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N ∧ ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
 
-theorem EnvAgree.regs {Ctx St W SP : Addr} {rs : List Reg} {s₁ s₂ : State} (h : EnvAgree Ctx St W SP rs s₁ s₂) :
+theorem EnvAgree.regs {Ctx St W SP : Addr} {N : Nat} {rs : List Reg} {s₁ s₂ : State}
+    (h : EnvAgree Ctx St W SP rs s₁ s₂ N) :
     ∀ r ∈ rs ++ ([.r13, .r14, .r15, .rsp] : List Reg), s₁.gpr r = s₂.gpr r := by
   intro r hr
   rcases List.mem_append.mp hr with hr | hr

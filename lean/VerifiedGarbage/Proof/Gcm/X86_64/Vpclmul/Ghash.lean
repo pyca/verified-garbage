@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
@@ -16,6 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Gcm.Contract
 
 /-!
@@ -936,12 +938,22 @@ theorem ghash_correct (s : State) (hs : ghashX86_64.pre s) :
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
-theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub ghash := by
+/-- Constant time under any precondition. -/
+theorem ghash_ctP (P : State → Prop) : ConstantTime isa P ghashX86_64.pub ghash := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) ?_
     (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+
+theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub ghash := ghash_ctP _
+
+theorem ghash_correctF (s : State) (hs : Proof.Gcm.ghashX86_64F.pre s) :
+    ∃ t s', Exec isa ghash s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashX86_64F.post s s' := by
+  obtain ⟨t, s', he, h⟩ := correct (Pclmul.pre_ofF s hs)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+
+theorem ghash_ctF : ConstantTime isa Proof.Gcm.ghashX86_64F.pre Proof.Gcm.ghashX86_64F.pub ghash := ghash_ctP _
 
 end VG.Proof.Gcm.X86_64.Vpclmul

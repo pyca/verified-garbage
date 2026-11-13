@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
@@ -74,9 +75,10 @@ theorem streamInit_spSafe : (streamInit v.callees).all (fun i => !X86_64.isa.wri
     Bool.and_true]
   decide +kernel
 
-theorem streamInit_correct (s : State) (hs : Proof.AesGcm.streamInitX86_64.pre s) :
-    ∃ t s', Exec isa (streamInit v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamInitX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := streamInit_wp v hs
+theorem streamInit_correct {N gs : Nat} [G : GhFits v N gs] (s : State) (hs : (Proof.AesGcm.streamInitX86_64 N).pre s)
+    (hN : 224 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    ∃ t s', Exec isa (streamInit v.callees) s t s' ∧ abiPreserved s s' ∧ (Proof.AesGcm.streamInitX86_64 N).post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := streamInit_wp v hs hN hN'
   exact ⟨t, s', he, abiPreserved_of_exec (streamInit_mx v) he hg, hp⟩
 
 theorem streamAad_mx : (streamAad v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -89,9 +91,10 @@ theorem streamAad_spSafe : (streamAad v.callees).all (fun i => !X86_64.isa.write
     Bool.and_true]
   decide +kernel
 
-theorem streamAad_correct (s : State) (hs : Proof.AesGcm.streamAadX86_64.pre s) :
-    ∃ t s', Exec isa (streamAad v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamAadX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := streamAad_wp v hs
+theorem streamAad_correct {N gs : Nat} [G : GhFits v N gs] (s : State) (hs : (Proof.AesGcm.streamAadX86_64 N).pre s)
+    (hN : 176 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    ∃ t s', Exec isa (streamAad v.callees) s t s' ∧ abiPreserved s s' ∧ (Proof.AesGcm.streamAadX86_64 N).post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := streamAad_wp v hs hN hN'
   exact ⟨t, s', he, abiPreserved_of_exec (streamAad_mx v) he hg, hp⟩
 
 theorem streamEncrypt_mx : (streamEncrypt v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -265,7 +268,7 @@ def siSat : State where
 
 theorem streamInit_verified (v : GcmImpl) :
     Verified X86_64.target (streamInit v.callees) (Proof.AesGcm.streamInitScratchContract X86_64.abi 8) :=
-  Verified.of_correct (streamInit_correct v) (streamInit_ct v) (by
+  Verified.of_correct (fun s hs => streamInit_correct v (N := 2560) s hs) (streamInit_ct v (N := 2560)) (by
     sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig, Spec.Gcm.streamInitPost, Proof.AesGcm.streamInitX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -285,11 +288,88 @@ def saSat : State where
 
 theorem streamAad_verified (v : GcmImpl) :
     Verified X86_64.target (streamAad v.callees) (Proof.AesGcm.streamAadScratchContract X86_64.abi 8) :=
-  Verified.of_correct (streamAad_correct v) (streamAad_ct v) (by
+  Verified.of_correct (fun s hs => streamAad_correct v (N := 2560) s hs) (streamAad_ct v (N := 2560)) (by
     sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig, Spec.Gcm.streamAadPost, Proof.AesGcm.streamAadX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [saSat] using saSat)
+
+/-- `siSat`, with `k` words of working space. -/
+def siSatK (k : Nat) : State := { siSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, 8 * k⟩] }
+
+/-- `saSat`, with `k` words of working space. -/
+def saSatK (k : Nat) : State := { saSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, 8 * k⟩] }
+
+/-! ### `stream_init` and `stream_aad` with only the working space they use
+
+The bytes they use themselves (`stream_init` `[0, 224)`, `stream_aad`
+`[0, 176)`) and, if their `vg_ghash` touches its working space, its 256
+bytes at 512 (`GhFits`): 768 bytes over `vg_ghash` (`_verified96`), and
+over `vg_ghash_pclmul` and `vg_ghash_vpclmul` 224 (`streamInit_verified28`)
+and 176 (`streamAad_verified22`), for the instances that
+`vg_aes_gcm_seal_gather_prepared` does not call. -/
+
+/-- `streamInitScratchSig`, with `scratch: *mut [u64; k]`. -/
+def streamInitScratchSigK (k : Nat) : Sig where
+  params := [("ctx", .array false .u64 32), ("nonce", .slice false .u8 "nonce_len"),
+    ("state", .array true .u64 10), ("scratch", .array true .u64 k)]
+
+/-- `Spec.Gcm.streamInitContract`, whatever `scratch` is (of `k` words). -/
+def streamInitScratchContractK (k : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (streamInitScratchSigK k).contract A
+    (post := fun ctx nonce nonceLen state _scratch => Spec.Gcm.streamInitPost A.ptrBits ctx nonce nonceLen state)
+    (writeArgs := true) (stack := stack)
+
+/-- `streamAadScratchSig`, with `scratch: *mut [u64; k]`. -/
+def streamAadScratchSigK (k : Nat) : Sig where
+  params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("data", .slice false .u8 "len"), ("scratch", .array true .u64 k)]
+
+/-- `Spec.Gcm.streamAadContract`, whatever `scratch` is (of `k` words). -/
+def streamAadScratchContractK (k : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (streamAadScratchSigK k).contract A
+    (post := fun ctx state aadLen data len _scratch => Spec.Gcm.streamAadPost A.ptrBits ctx state aadLen data len)
+    (writeArgs := true) (stack := stack)
+
+theorem streamInit_verified96 (v : GcmImpl) :
+    Verified X86_64.target (streamInit v.callees) (streamInitScratchContractK 96 X86_64.abi 8) :=
+  Verified.of_correct (fun s hs => streamInit_correct v (N := 768) (G := GhFits.base v (by decide)) s hs)
+    (streamInit_ct v (N := 768) (G := GhFits.base v (by decide))) (by
+    sig_implies [streamInitScratchContractK, streamInitScratchSigK, Spec.Gcm.streamInitPost,
+      Proof.AesGcm.streamInitX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [siSatK] using siSatK 96)
+
+theorem streamAad_verified96 (v : GcmImpl) :
+    Verified X86_64.target (streamAad v.callees) (streamAadScratchContractK 96 X86_64.abi 8) :=
+  Verified.of_correct (fun s hs => streamAad_correct v (N := 768) (G := GhFits.base v (by decide)) s hs)
+    (streamAad_ct v (N := 768) (G := GhFits.base v (by decide))) (by
+    sig_implies [streamAadScratchContractK, streamAadScratchSigK, Spec.Gcm.streamAadPost,
+      Proof.AesGcm.streamAadX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [saSatK] using saSatK 96)
+
+theorem streamInit_verified28 (v : GcmImpl) (f : GhashFree v.gh.fn.code) :
+    Verified X86_64.target (streamInit v.callees) (streamInitScratchContractK 28 X86_64.abi 8) :=
+  Verified.of_correct (fun s hs => streamInit_correct v (N := 224) (G := GhFits.free v f 224) s hs)
+    (streamInit_ct v (N := 224) (G := GhFits.free v f 224)) (by
+    sig_implies [streamInitScratchContractK, streamInitScratchSigK, Spec.Gcm.streamInitPost,
+      Proof.AesGcm.streamInitX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [siSatK] using siSatK 28)
+
+theorem streamAad_verified22 (v : GcmImpl) (f : GhashFree v.gh.fn.code) :
+    Verified X86_64.target (streamAad v.callees) (streamAadScratchContractK 22 X86_64.abi 8) :=
+  Verified.of_correct (fun s hs => streamAad_correct v (N := 176) (G := GhFits.free v f 176) s hs)
+    (streamAad_ct v (N := 176) (G := GhFits.free v f 176)) (by
+    sig_implies [streamAadScratchContractK, streamAadScratchSigK, Spec.Gcm.streamAadPost,
+      Proof.AesGcm.streamAadX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [saSatK] using saSatK 22)
 
 /-- A state satisfying the precondition of `vg_aes_gcm_stream_encrypt` and `_decrypt` (with no data, and `scratch` at 0). -/
 def crSat : State where

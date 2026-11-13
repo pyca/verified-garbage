@@ -117,6 +117,65 @@ theorem streamAad_framed :
     (bytes := 2568) (streamAad_verified v) (by decide) (by decide) (by decide)
     (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat_pre
 
+/-- `vg_aes_gcm_stream_init` in a frame of only the 768 bytes of working
+space it uses over `vg_ghash` (`streamInit_verified96`). -/
+theorem streamInitFrameSat96_pre : ∃ s, (Spec.Gcm.streamInitContract X86_64.abi 784).pre s := by
+  implies_sat [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost,
+    X86_64.abi, X86_64.argRegs] [streamInitFrameSat, siSat] using streamInitFrameSat
+
+theorem streamInit_framed96 :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 776 .r8 (streamInit v.callees))
+      (Spec.Gcm.streamInitContract X86_64.abi 784) :=
+  X86_64.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+    (n := 96) (post := Spec.Gcm.streamInitPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 776) (streamInit_verified96 v) (by decide) (by decide) (by decide)
+    (streamInit_spSafe v) (streamInit_xdepth v) streamInitFrameSat96_pre
+
+/-- `vg_aes_gcm_stream_aad` in a frame of the 768 bytes it uses over `vg_ghash`. -/
+theorem streamAadFrameSat96_pre : ∃ s, (Spec.Gcm.streamAadContract X86_64.abi 784).pre s := by
+  implies_sat [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost,
+    X86_64.abi, X86_64.argRegs] [streamAadFrameSat, saSat] using streamAadFrameSat
+
+theorem streamAad_framed96 :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamAad v.callees))
+      (Spec.Gcm.streamAadContract X86_64.abi 784) :=
+  X86_64.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+    (n := 96) (post := Spec.Gcm.streamAadPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 776) (streamAad_verified96 v) (by decide) (by decide) (by decide)
+    (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat96_pre
+
+/-- `vg_aes_gcm_stream_init` in a frame of only the 224 bytes it uses over a
+`vg_ghash` that needs no working space (`streamInit_verified28`). -/
+theorem streamInitFrameSat28_pre : ∃ s, (Spec.Gcm.streamInitContract X86_64.abi 240).pre s := by
+  implies_sat [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost,
+    X86_64.abi, X86_64.argRegs] [streamInitFrameSat, siSat] using streamInitFrameSat
+
+theorem streamInit_framed28 (f : GhashFree v.gh.fn.code) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 232 .r8 (streamInit v.callees))
+      (Spec.Gcm.streamInitContract X86_64.abi 240) :=
+  X86_64.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+    (n := 28) (post := Spec.Gcm.streamInitPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 232) (streamInit_verified28 v f) (by decide) (by decide) (by decide)
+    (streamInit_spSafe v) (streamInit_xdepth v) streamInitFrameSat28_pre
+
+/-- `vg_aes_gcm_stream_aad` in a frame of the 176 bytes it uses over a
+`vg_ghash` that needs no working space. -/
+theorem streamAadFrameSat22_pre : ∃ s, (Spec.Gcm.streamAadContract X86_64.abi 192).pre s := by
+  implies_sat [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost,
+    X86_64.abi, X86_64.argRegs] [streamAadFrameSat, saSat] using streamAadFrameSat
+
+theorem streamAad_framed22 (f : GhashFree v.gh.fn.code) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 184 .r9 (streamAad v.callees))
+      (Spec.Gcm.streamAadContract X86_64.abi 192) :=
+  X86_64.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+    (n := 22) (post := Spec.Gcm.streamAadPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 184) (streamAad_verified22 v f) (by decide) (by decide) (by decide)
+    (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat22_pre
+
 theorem streamEncrypt_xdepth : (streamEncrypt v.callees).x86_64Depth ≤ 24 := by
   have e := encryptBlocks_xdepthB v v.stitch
   have d := decryptBlocks_xdepthB v v.stitch

@@ -81,37 +81,39 @@ def initX86_64F : Contract isa where
   post := initX86_64.post
   pub := initX86_64.pub
 
-/-- `vg_aes_gcm_stream_init(ctx = rdi, nonce = rsi, nonce_len = rdx, state = rcx, scratch = r8)`. -/
-def streamInitX86_64 : Contract isa where
+/-- `vg_aes_gcm_stream_init(ctx = rdi, nonce = rsi, nonce_len = rdx, state = rcx, scratch = r8)`,
+with `N` bytes at `scratch`. -/
+def streamInitX86_64 (N : Nat := 2560) : Contract isa where
   pre s :=
     let ctx : Region := ⟨s.gpr .rdi, 256⟩
     let nonce : Region := ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
     let st : Region := ⟨s.gpr .rcx, 80⟩
-    let scr : Region := ⟨s.gpr .r8, 2560⟩
+    let scr : Region := ⟨s.gpr .r8, N⟩
     s.rd = [ctx, nonce] ∧ s.wr = [st, scr] ∧
       ctx.Disjoint st ∧ ctx.Disjoint scr ∧ nonce.Disjoint st ∧ nonce.Disjoint scr ∧ st.Disjoint scr ∧
       (ret s).Disjoint st ∧ (ret s).Disjoint scr ∧
       (stk s).Disjoint ctx ∧ (stk s).Disjoint nonce ∧ (stk s).Disjoint st ∧ (stk s).Disjoint scr ∧
       (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .rcx).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 2560 ≤ 2 ^ 64
+      (s.gpr .rcx).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + N ≤ 2 ^ 64
   post s s' := ∀ ciph, StreamRepr s'.mem (s.gpr .rcx) ciph (ctxH s.mem (s.gpr .rdi))
     (bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat) [] []
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
-/-- `vg_aes_gcm_stream_aad(ctx = rdi, state = rsi, aad_len = rdx, data = rcx, len = r8, scratch = r9)`. -/
-def streamAadX86_64 : Contract isa where
+/-- `vg_aes_gcm_stream_aad(ctx = rdi, state = rsi, aad_len = rdx, data = rcx, len = r8, scratch = r9)`,
+with `N` bytes at `scratch`. -/
+def streamAadX86_64 (N : Nat := 2560) : Contract isa where
   pre s :=
     let ctx : Region := ⟨s.gpr .rdi, 256⟩
     let st : Region := ⟨s.gpr .rsi, 80⟩
     let data : Region := ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
-    let scr : Region := ⟨s.gpr .r9, 2560⟩
+    let scr : Region := ⟨s.gpr .r9, N⟩
     s.rd = [ctx, data] ∧ s.wr = [st, scr] ∧
       ctx.Disjoint st ∧ ctx.Disjoint scr ∧ data.Disjoint st ∧ data.Disjoint scr ∧ st.Disjoint scr ∧
       (ret s).Disjoint st ∧ (ret s).Disjoint scr ∧
       (stk s).Disjoint ctx ∧ (stk s).Disjoint data ∧ (stk s).Disjoint st ∧ (stk s).Disjoint scr ∧
       (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .rsi).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 2560 ≤ 2 ^ 64
+      (s.gpr .rsi).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + N ≤ 2 ^ 64
   post s s' := ∀ ciph iv a, StreamRepr s.mem (s.gpr .rsi) ciph (ctxH s.mem (s.gpr .rdi)) iv a [] →
     s.gpr .rdx = BitVec.ofNat 64 a.length →
     StreamRepr s'.mem (s.gpr .rsi) ciph (ctxH s.mem (s.gpr .rdi)) iv

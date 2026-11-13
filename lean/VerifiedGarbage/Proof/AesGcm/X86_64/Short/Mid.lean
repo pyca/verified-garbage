@@ -139,7 +139,7 @@ theorem shortStart_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl
     ⟨E.env, hH₁, by rw [E.r12, hNp], by rw [E.rbp, ← hnl', BitVec.ofNat_toNat, BitVec.setWidth_eq],
       C.nonce.of_eq E.rd E.wr⟩
   rw [WP.block_append_iff]
-  refine WP.mono (WP.with_rdwr (j012_ok L j0in)) fun s₂ ⟨J, rd₂, wr₂⟩ => ?_
+  refine WP.mono (WP.with_rdwr (j012_ok L (gs := 256) j0in)) fun s₂ ⟨J, rd₂, wr₂⟩ => ?_
   rw [hiv] at J
   have kp : ∀ d, 112 ≤ d → (d + 8 ≤ 216 ∨ 224 ≤ d) → d + 8 ≤ 512 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ h₃ =>
@@ -183,7 +183,7 @@ theorem shortStart_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint W (.inl (by decide)) (by have := L.ww; omega) (by have := L.ww; omega)]
     exact J.j0
-  · exact (E.saved.frame J.frame (saved_j0Frame L)).frame f₃ fun r hr => by
+  · exact (E.saved.frame J.frame (saved_j0Frame L (by decide) (.inr (by decide)))).frame f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint W (.inl (by decide)) (by have := L.ww; omega) (by have := L.ww; omega)
 

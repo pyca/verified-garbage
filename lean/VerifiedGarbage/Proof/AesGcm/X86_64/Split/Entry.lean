@@ -93,7 +93,7 @@ theorem SplitCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.splitPre cl s) (hc
   have hSt : (⟨stackArg s 5 + BitVec.ofNat 64 16, 80⟩ : Region).Sub ⟨stackArg s 5, 2560⟩ := Lay.wSub (by decide)
   have L : Lay (s.gpr .rdi) (stackArg s 5 + BitVec.ofNat 64 16) (stackArg s 5) (s.gpr .rsp) := by
     refine ⟨wc, ?_, ww, d_cw.sub_right hSt, d_cw, ?_, ?_, t_c.sub_left b8, (t_w.sub_left b8).sub_right hSt,
-      t_w.sub_left b8⟩
+      t_w.sub_left b8, by decide, by decide⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le ((stackArg s 5).toNat + 16 % 2 ^ 64) (2 ^ 64)
       omega_arith
     · simpa using Offset.disjoint (stackArg s 5) (d := 16) (n := 80) (e := 0) (k := 16) (.inr (by decide))

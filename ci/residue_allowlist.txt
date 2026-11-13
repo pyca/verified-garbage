@@ -68,9 +68,6 @@ x86_64 vg_aes_gcm_siv_seal_avx2
 x86_64 vg_aes_gcm_siv_seal_pclmul
 x86_64 vg_aes_gcm_siv_seal_pclmul_avx2
 x86_64 vg_aes_gcm_siv_seal_vaes_vpclmul_avx512
-x86_64 vg_aes_gcm_stream_aad
-x86_64 vg_aes_gcm_stream_aad_pclmul
-x86_64 vg_aes_gcm_stream_aad_vpclmul
 x86_64 vg_aes_gcm_stream_decrypt_prepared
 x86_64 vg_aes_gcm_stream_decrypt_prepared_aesni
 x86_64 vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul
@@ -90,9 +87,6 @@ x86_64 vg_aes_gcm_stream_finish_aesni
 x86_64 vg_aes_gcm_stream_finish_aesni_pclmul
 x86_64 vg_aes_gcm_stream_finish_pclmul
 x86_64 vg_aes_gcm_stream_finish_vaes_vpclmul
-x86_64 vg_aes_gcm_stream_init
-x86_64 vg_aes_gcm_stream_init_pclmul
-x86_64 vg_aes_gcm_stream_init_vpclmul
 x86_64 vg_aes_gcm_stream_verify
 x86_64 vg_aes_gcm_stream_verify_aesni
 x86_64 vg_aes_gcm_stream_verify_aesni_pclmul
@@ -233,9 +227,6 @@ x86_64 vg_sm4_gcm_open_vpclmul
 x86_64 vg_sm4_gcm_seal
 x86_64 vg_sm4_gcm_seal_pclmul
 x86_64 vg_sm4_gcm_seal_vpclmul
-x86_64 vg_sm4_gcm_stream_aad
-x86_64 vg_sm4_gcm_stream_aad_pclmul
-x86_64 vg_sm4_gcm_stream_aad_vpclmul
 x86_64 vg_sm4_gcm_stream_decrypt
 x86_64 vg_sm4_gcm_stream_decrypt_pclmul
 x86_64 vg_sm4_gcm_stream_decrypt_vpclmul
@@ -245,9 +236,6 @@ x86_64 vg_sm4_gcm_stream_encrypt_vpclmul
 x86_64 vg_sm4_gcm_stream_finish
 x86_64 vg_sm4_gcm_stream_finish_pclmul
 x86_64 vg_sm4_gcm_stream_finish_vpclmul
-x86_64 vg_sm4_gcm_stream_init
-x86_64 vg_sm4_gcm_stream_init_pclmul
-x86_64 vg_sm4_gcm_stream_init_vpclmul
 x86_64 vg_sm4_gcm_stream_verify
 x86_64 vg_sm4_gcm_stream_verify_pclmul
 x86_64 vg_sm4_gcm_stream_verify_vpclmul
