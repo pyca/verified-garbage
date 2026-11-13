@@ -5,6 +5,10 @@ description: "Use when a change could make code slower or claims to make it fast
 
 # Measuring a change's speed
 
+When making code faster, consider instructions the target's ISA model
+lacks as well as those it has. Adding one is a TCB change (CLAUDE.md's
+rules apply), justified by a Benchmarks run of an implementation that uses it.
+
 Measure only what the change affects. `python3 ci/bench_arches.py --choices`
 lists the architectures, each one's `VG_CPU_FEATURES` configurations and the
 features `crates/verified-garbage-cpu/src/detect.rs` detects there, and the library modules with the
