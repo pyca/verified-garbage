@@ -119,6 +119,17 @@ def finalizeDigestScratchContract {M : ISA} (A : Abi M) (iv : Spec.Sha512.HashVa
   (finalizeDigestScratchSig D).contract A (post := fun state count out _scratch =>
     Spec.Sha512.finalizeDigestPost iv D digest A.ptrBits state count out) (stack := stack)
 
+/-- `finalizeDigestScratchSig` with `w` words of working space. -/
+def finalizeDigestScratchSigW (w D : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("out", .array true .u8 D), ("scratch", .array true .u64 w)]
+
+/-- `finalizeDigestScratchContract`, with `w` words of working space. -/
+def finalizeDigestScratchContractW (w : Nat) {M : ISA} (A : Abi M) (iv : Spec.Sha512.HashValue) (D : Nat)
+    (digest : List Byte → List Byte) (stack : Nat) : Contract M :=
+  (finalizeDigestScratchSigW w D).contract A (post := fun state count out _scratch =>
+    Spec.Sha512.finalizeDigestPost iv D digest A.ptrBits state count out) (stack := stack)
+
 /-- `finalizeDigestPost` reads the memory on entry only within the streaming
 state (see `finalizePost_local`). -/
 theorem finalizeDigestPost_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byte → List Byte)

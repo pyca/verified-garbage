@@ -123,6 +123,21 @@ theorem finOut (v : Proof.Sha256.X86_64.Compress) : PostOut (finFn v).contract (
 theorem digOut (v : Proof.Sha256.X86_64.Compress) : PostOut (digFn v).contract (digFn v).retBits :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 64 (by decide))
 
+section S
+variable (v : Proof.Sha256.X86_64.Compress) {so : Nat} (h : so = 0 ∨ so = 112)
+  (hv : Verified X86_64.target v.callee.code (Proof.Sha256.compressX86_64S so))
+
+theorem updOutS : PostOut (updFnS v h hv).contract (updFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.updatePost_out 64)
+
+theorem finOutS : PostOut (finFnS v h hv).contract (finFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalizePost_out 64)
+
+theorem digOutS : PostOut (digFnS v h hv).contract (digFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 64 (by decide))
+
+end S
+
 end VG.Proof.Pbkdf2.Md.X86_64.Sha256
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Sha224
@@ -134,5 +149,17 @@ theorem finOut (v : Proof.Sha256.X86_64.Compress) : PostOut (finFn v).contract (
 
 theorem digOut (v : Proof.Sha256.X86_64.Compress) : PostOut (digFn v).contract (digFn v).retBits :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 64 (by decide))
+
+section S
+variable (v : Proof.Sha256.X86_64.Compress) {so : Nat} (h : so = 0 ∨ so = 112)
+  (hv : Verified X86_64.target v.callee.code (Proof.Sha256.compressX86_64S so))
+
+theorem finOutS : PostOut (finFnS v h hv).contract (finFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalize224Post_out 64)
+
+theorem digOutS : PostOut (digFnS v h hv).contract (digFnS v h hv).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 64 (by decide))
+
+end S
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha224

@@ -359,6 +359,117 @@ def dig512_224Fn (v : Compress) : StreamFn :=
 /-- SHA-512/224's `finalize` and one-shot `digest` made with `v`. -/
 def stream512_224 (v : Compress) : List StreamFn := [fin512_224Fn v, dig512_224Fn v]
 
+/-! ### With the working space the compression function uses
+
+The same functions made for an implementation `v` of the compression
+function verified with `so` bytes of scratch space (`hv`), which give it
+only that much (`Stream.paramsS`): their frames shrink with it. -/
+
+section S
+
+variable (v : Compress) {so : Nat} (h : so = 0 ∨ so = 192)
+  (hv : Verified X86_64.target v.callee.code (Proof.Sha512.compressWideX86_64S so))
+
+/-- The streaming `update` made with `v`, in a frame of `so + 56` bytes. -/
+def updFnS : StreamFn :=
+  { api := Spec.Sha512.updateApi
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .r8
+      (Impl.MdStream.X86_64.update (Proof.Sha512.X86_64.Stream.paramsS so) v.callee.name v.callee.code)
+    contract := Spec.Sha512.updateContract X86_64.abi (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha512.X86_64.Shared.updateS h v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      (Proof.Sha512.X86_64.Shared.updateS_spSafe h v.spSafe) }
+
+/-- The streaming `finalize` made with `v`, likewise. -/
+def finFnS : StreamFn :=
+  { api := Spec.Sha512.finalizeApi
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx
+      (Impl.MdStream.X86_64.finalize (Proof.Sha512.X86_64.Stream.paramsS so) v.callee.name v.callee.code)
+    contract := Spec.Sha512.finalizeContract X86_64.abi (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha512.X86_64.Shared.finalizeS h v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      (Proof.Sha512.X86_64.Shared.finalizeS_spSafe h v.spSafe) }
+
+/-- `digFn`, in a frame holding a buffer of `Proof.Sha512.X86_64.OneShot.wordsS so` words. -/
+def digFnS : StreamFn :=
+  { api := Spec.Sha512.digest512Api
+    code := Proof.Sha512.X86_64.OneShot.digestS so (Impl.MdStream.X86_64.out64 8) H0_512 v.callee
+    contract := Spec.Sha512.digestContract X86_64.abi 64 Spec.Sha512.sha512 (8 + Proof.Sha512.X86_64.OneShot.frameS so)
+    stack := 8 + Proof.Sha512.X86_64.OneShot.frameS so
+    verified := Proof.Sha512.X86_64.OneShot.verifiedS (Proof.Sha512.X86_64.OneShot.code512S h)
+      (fun m => List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))) v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := Proof.Sha512.X86_64.OneShot.spSafeS (Proof.Sha512.X86_64.OneShot.code512S h) H0_512 v.spSafe }
+
+/-- `fin384Fn`, in a frame of `so + 56` bytes. -/
+def fin384FnS : StreamFn :=
+  { api := Spec.Sha512.finalize384Api
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx
+      (Impl.Sha512.X86_64.Stream.finalizeDigest { Proof.Sha512.X86_64.Stream.paramsS so with out := Impl.MdStream.X86_64.out64 6 } v.callee)
+    contract := Spec.Sha512.finalizeDigestContract X86_64.abi H0_384 48 Spec.Sha512.sha384 (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha512.X86_64.Shared.finalizeDigestStackS (Proof.Sha512.X86_64.Shared.digest384S h)
+      (fun _ => rfl) v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      ((Proof.Sha512.X86_64.Shared.digest384S h).spSafe v.callee v.spSafe) }
+
+/-- `dig384Fn`, in a frame holding a buffer of `Proof.Sha512.X86_64.OneShot.wordsS so` words. -/
+def dig384FnS : StreamFn :=
+  { api := Spec.Sha512.digest384Api
+    code := Proof.Sha512.X86_64.OneShot.digestS so (Impl.MdStream.X86_64.out64 6) H0_384 v.callee
+    contract := Spec.Sha512.digestContract X86_64.abi 48 Spec.Sha512.sha384 (8 + Proof.Sha512.X86_64.OneShot.frameS so)
+    stack := 8 + Proof.Sha512.X86_64.OneShot.frameS so
+    verified := Proof.Sha512.X86_64.OneShot.verifiedS (Proof.Sha512.X86_64.OneShot.code384S h)
+      (fun _ => rfl) v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := Proof.Sha512.X86_64.OneShot.spSafeS (Proof.Sha512.X86_64.OneShot.code384S h) H0_384 v.spSafe }
+
+/-- `fin512_256Fn`, in a frame of `so + 56` bytes. -/
+def fin512_256FnS : StreamFn :=
+  { api := Spec.Sha512.finalize512_256Api
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx
+      (Impl.Sha512.X86_64.Stream.finalizeDigest { Proof.Sha512.X86_64.Stream.paramsS so with out := Impl.MdStream.X86_64.out64 4 } v.callee)
+    contract := Spec.Sha512.finalizeDigestContract X86_64.abi H0_512_256 32 Spec.Sha512.sha512_256 (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha512.X86_64.Shared.finalizeDigestStackS (Proof.Sha512.X86_64.Shared.digest512_256S h)
+      (fun _ => rfl) v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      ((Proof.Sha512.X86_64.Shared.digest512_256S h).spSafe v.callee v.spSafe) }
+
+/-- `dig512_256Fn`, in a frame holding a buffer of `Proof.Sha512.X86_64.OneShot.wordsS so` words. -/
+def dig512_256FnS : StreamFn :=
+  { api := Spec.Sha512.digest512_256Api
+    code := Proof.Sha512.X86_64.OneShot.digestS so (Impl.MdStream.X86_64.out64 4) H0_512_256 v.callee
+    contract := Spec.Sha512.digestContract X86_64.abi 32 Spec.Sha512.sha512_256 (8 + Proof.Sha512.X86_64.OneShot.frameS so)
+    stack := 8 + Proof.Sha512.X86_64.OneShot.frameS so
+    verified := Proof.Sha512.X86_64.OneShot.verifiedS (Proof.Sha512.X86_64.OneShot.code512_256S h)
+      (fun _ => rfl) v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := Proof.Sha512.X86_64.OneShot.spSafeS (Proof.Sha512.X86_64.OneShot.code512_256S h) H0_512_256 v.spSafe }
+
+/-- `fin512_224Fn`, in a frame of `so + 56` bytes. -/
+def fin512_224FnS : StreamFn :=
+  { api := Spec.Sha512.finalize512_224Api
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx
+      (Impl.Sha512.X86_64.Stream.finalizeDigest { Proof.Sha512.X86_64.Stream.paramsS so with out := Impl.MdStream.X86_64.out64 3 ++ Impl.Sha512.X86_64.Stream.outHi 3 } v.callee)
+    contract := Spec.Sha512.finalizeDigestContract X86_64.abi H0_512_224 28 Spec.Sha512.sha512_224 (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha512.X86_64.Shared.finalizeDigestStackS (Proof.Sha512.X86_64.Shared.digest512_224S h)
+      (fun _ => rfl) v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      ((Proof.Sha512.X86_64.Shared.digest512_224S h).spSafe v.callee v.spSafe) }
+
+/-- `dig512_224Fn`, in a frame holding a buffer of `Proof.Sha512.X86_64.OneShot.wordsS so` words. -/
+def dig512_224FnS : StreamFn :=
+  { api := Spec.Sha512.digest512_224Api
+    code := Proof.Sha512.X86_64.OneShot.digestS so (Impl.MdStream.X86_64.out64 3 ++ Impl.Sha512.X86_64.Stream.outHi 3) H0_512_224 v.callee
+    contract := Spec.Sha512.digestContract X86_64.abi 28 Spec.Sha512.sha512_224 (8 + Proof.Sha512.X86_64.OneShot.frameS so)
+    stack := 8 + Proof.Sha512.X86_64.OneShot.frameS so
+    verified := Proof.Sha512.X86_64.OneShot.verifiedS (Proof.Sha512.X86_64.OneShot.code512_224S h)
+      (fun _ => rfl) v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := Proof.Sha512.X86_64.OneShot.spSafeS (Proof.Sha512.X86_64.OneShot.code512_224S h) H0_512_224 v.spSafe }
+
+end S
+
 /-! ## SHA-384 -/
 
 theorem sha384_satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha384I X86_64.abi 16).pre s := by

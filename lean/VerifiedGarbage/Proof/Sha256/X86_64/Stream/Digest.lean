@@ -83,4 +83,52 @@ abbrev sat224 : State := MdStream.X86_64.Finalize.satD params 28
 
 end Finalize
 
+/-- `params224` with `so` bytes of working space for the compression function
+(`paramsS`). -/
+abbrev params224S (so : Nat) : Impl.MdStream.X86_64.Params := { paramsS so with out := out32 7 true }
+
+theorem taints224S (so : Nat) (h : so = 0 ∨ so = 112) : Taints (params224S so) :=
+  have t := taintsS so h
+  ⟨t.updStart, t.updHead, t.updEnd, t.finStart, t.finPad,
+    by rcases h with rfl | rfl <;> exact ⟨_, by taint_decide⟩, t.lenSec, taints224.outPub, t.lenSafe,
+    taints224.outSafe⟩
+
+theorem shape224S (so : Nat) : ShapeD (P := params224S so) md 28 :=
+  ⟨shape224.le, shape224.len, shape224.lenV, shape224.out⟩
+
+/-- `finalize224X86_64` with `n` bytes of scratch space. -/
+def finalize224X86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 96⟩
+    let out : Region := ⟨s.gpr .rdx, 28⟩
+    let scratch : Region := ⟨s.gpr .rcx, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ m, Spec.Sha256.ReprFrom Spec.Sha256.H0_224 s.mem (s.gpr .rdi) m → s.gpr .rsi = BitVec.ofNat 64 m.length →
+    Spec.Sha256.bytesAt s'.mem (s.gpr .rdx) 28 = Spec.Sha256.sha224 m
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+namespace Finalize
+
+/-- `finalize224` made with `so` bytes of working space for the compression
+function, for an implementation verified with that much (`hv`). -/
+theorem verified224S {so : Nat} (h : so = 0 ∨ so = 112) {f : Callee} (hf : f.Ok)
+    (hv : Verified X86_64.target f.code (Proof.Sha256.compressX86_64S so))
+    (hm : (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code)
+      (finalize224X86_64S (so + 48)) :=
+  have h := MdStream.X86_64.Finalize.verifiedD (P := params224S so)
+    ⟨dims.B, dims.N, dims.L, show so ≤ 2048 by omega⟩
+    (shape224S so) (taints224S so h) ((calleeS hf hv).withOut _) hm
+  h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hc => (h _ m hr trivial hc).trans (sha224_eq m),
+    fun _ _ _ _ h => h, h.2.2⟩
+
+end Finalize
+
 end VG.Proof.Sha256.X86_64.Stream

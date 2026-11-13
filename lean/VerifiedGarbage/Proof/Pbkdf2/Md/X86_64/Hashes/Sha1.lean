@@ -287,6 +287,47 @@ def digFn : StreamFn :=
 `digest`. -/
 def stream : List StreamFn := [updFn v, finFn v, digFn v]
 
+/-! ### With no working space for the compression function
+
+The same functions made for an implementation `v` that uses none (`hc`, such
+as `vg_sha1_compress_shani`), which give it none (`Stream.params0`): their
+frames shrink with it. -/
+
+section Zero
+
+variable (hc : MdStream.X86_64.CalleeOk (P := Proof.Sha1.X86_64.Stream.params0) Proof.Sha1.md v.callee.code)
+
+/-- The streaming `update` made with `v`, in a frame of 56 bytes. -/
+def updFn0 : StreamFn :=
+  { api := Spec.Sha1.updateApi
+    code := Impl.StackScratch.X86_64.withStackScratch 56 .r8
+      (Impl.MdStream.X86_64.update Proof.Sha1.X86_64.Stream.params0 v.callee.name v.callee.code)
+    contract := Spec.Sha1.updateContract X86_64.abi (8 + 56)
+    stack := 8 + 56
+    verified := Proof.Sha1.X86_64.Shared.update0 hc v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.Sha1.X86_64.Shared.update0_spSafe v.spSafe) }
+
+/-- The streaming `finalize` made with `v`, likewise. -/
+def finFn0 : StreamFn :=
+  { api := Spec.Sha1.finalizeApi
+    code := Impl.StackScratch.X86_64.withStackScratch 56 .rcx
+      (Impl.MdStream.X86_64.finalize Proof.Sha1.X86_64.Stream.params0 v.callee.name v.callee.code)
+    contract := Spec.Sha1.finalizeContract X86_64.abi (8 + 56)
+    stack := 8 + 56
+    verified := Proof.Sha1.X86_64.Shared.finalize0 hc v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.Sha1.X86_64.Shared.finalize0_spSafe v.spSafe) }
+
+/-- The one-shot `digest` made with `v`, likewise. -/
+def digFn0 : StreamFn :=
+  { api := Spec.Sha1.digestApi
+    code := Proof.Sha1.X86_64.OneShot.digest0 v.callee
+    contract := Spec.Sha1.digestContract X86_64.abi (8 + Proof.Sha1.X86_64.OneShot.frame0)
+    stack := 8 + Proof.Sha1.X86_64.OneShot.frame0
+    verified := Proof.Sha1.X86_64.OneShot.verified0 hc v.mxcsr v.spSafe v.noStack
+    spSafe := Proof.Sha1.X86_64.OneShot.spSafe0 v.spSafe }
+
+end Zero
+
 /-- A state satisfying the precondition of `init_scratch` with the working
 space `init` uses with no working space for the compression function. -/
 theorem satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha1I.S 12 X86_64.abi 16).pre s := by

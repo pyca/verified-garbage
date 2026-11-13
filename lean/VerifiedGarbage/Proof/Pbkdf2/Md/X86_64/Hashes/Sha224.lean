@@ -275,6 +275,44 @@ def digFn : StreamFn :=
 /-- SHA-224's `finalize` and one-shot `digest` made with `v`. -/
 def stream : List StreamFn := [finFn v, digFn v]
 
+/-! ### With the working space the compression function uses
+
+As `Sha256.updFnS`: for an implementation `v` verified with `so` bytes of
+scratch space (`hv`). -/
+
+section S
+
+variable {so : Nat} (h : so = 0 ∨ so = 112)
+  (hv : Verified X86_64.target v.callee.code (Proof.Sha256.compressX86_64S so))
+
+/-- SHA-224's `finalize` made with `v`, in a frame of `so + 56` bytes. -/
+def finFnS : StreamFn :=
+  { api := Spec.Sha256.finalize224Api
+    code := Impl.StackScratch.X86_64.withStackScratch (so + 56) .rcx
+      (Impl.MdStream.X86_64.finalize (Proof.Sha256.X86_64.Stream.params224S so) v.callee.name v.callee.code)
+    contract := Spec.Sha256.finalize224Contract X86_64.abi (8 + (so + 56))
+    stack := 8 + (so + 56)
+    verified := Proof.Sha256.X86_64.Shared.finalize224S h v.ok hv v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by rcases h with rfl | rfl <;> decide)
+      (Proof.Sha256.X86_64.Shared.finalize224S_spSafe h v.spSafe) }
+
+/-- SHA-224's one-shot `digest` made with `v`, likewise. -/
+def digFnS : StreamFn :=
+  { api := Spec.Sha256.digest224Api
+    code := Proof.Sha256.X86_64.OneShot.digestS so (Impl.MdStream.X86_64.out32 7 true) Spec.Sha256.H0_224 v.callee
+    contract := Spec.Sha256.digestContract X86_64.abi 28 Spec.Sha256.sha224 (8 + Proof.Sha256.X86_64.OneShot.frameS so)
+    stack := 8 + Proof.Sha256.X86_64.OneShot.frameS so
+    verified := Proof.Sha256.X86_64.OneShot.verifiedS (Proof.Sha256.X86_64.OneShot.code224S h)
+      Proof.Sha256.X86_64.OneShot.init_check224 Proof.Sha256.X86_64.OneShot.sha224_take v.ok hv v.mxcsr v.spSafe
+      v.noStack
+    spSafe := Proof.Sha256.X86_64.OneShot.spSafeS (Proof.Sha256.X86_64.OneShot.code224S h) Spec.Sha256.H0_224
+      v.spSafe }
+
+/-- `stream`, made for `so` bytes of scratch space. -/
+def streamS : List StreamFn := [finFnS v h hv, digFnS v h hv]
+
+end S
+
 /-- A state satisfying the precondition of `init_scratch` with the working
 space `init` uses with 0 bytes of working space for the compression function. -/
 theorem satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha224I.S 12 X86_64.abi 16).pre s := by
