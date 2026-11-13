@@ -51,14 +51,6 @@ theorem loadE_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r4, .r6, .r7
 theorem loadD_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
     (VG.Impl.Rsa.Arm.CrtValues.load (2 * wD)) hc).isSome = true := ⟨_, by taint_decide⟩
 
-theorem setTop_taint :
-    ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r7, .r8, .r9]) (.block (setTop wMod)) hc).isSome = true :=
-  ⟨_, by taint_decide⟩
-
-theorem shl3_taint :
-    ∃ hc, (VG.Taint.check taint (Taint.ofRegs []) (.block [.mov .r6 (.shifted .r6 .lsl 3)]) hc).isSome = true :=
-  ⟨_, by taint_decide⟩
-
 theorem mulMod_taint : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r6, .r7, .r8, .r9])
     (mulMod wZ wE wD wM wMod wT) hc).isSome = true := ⟨_, by taint_decide⟩
 
