@@ -161,7 +161,11 @@ own changes are rebuilt either way, on top of the restored build.
   (`verified_garbage_cpu::TUNING`). It names cores (`zen5`), never a
   property they are thought to share, and its detection lists them by
   family and models, as Linux tells them apart: a choice by it records a
-  measurement on those cores, which another core does not inherit. Never
+  measurement on those cores, which another core does not inherit. It only
+  vetoes, never chooses: an implementation measured slower on those cores
+  than the one its dispatcher would try next lists the bit in its
+  registration's `notWith` (`Registration.notWith`), and is then never
+  chosen there; a base, which the dispatcher falls back on, cannot. Never
   use an unrelated instruction set feature as its stand-in where a
   microarchitecture bit can say it.
   `VG_CPU_FEATURES` may name a microarchitecture on any CPU, so that every

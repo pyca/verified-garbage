@@ -374,6 +374,7 @@ def scrubRegUp {api : Api} (r : Registration api target)
     rw [hw]; exact fun _ _ _ _ _ => True.intro
   extra := r.extra
   vendor := r.vendor
+  notWith := r.notWith
   residue := some ⟨(scrubCodeU_verified r hd hst h8 hok hrb hpost).2⟩
 
 /-- `r`, scrubbed by `scrubRegUp` if its side conditions hold and the

@@ -1630,8 +1630,17 @@ every CPU but where `VG_CPU_FEATURES` is `none`), so that the tests run the
 base everywhere with `VG_CPU_FEATURES=none` (AArch64's `_neon` code needs
 none: AdvSIMD is part of its baseline), or where the compilation target
 enables some (`COMPILED`). It falls back on the base, which needs
-no feature. An implementation that can be chosen only where one before it
-can would never run, and fails the emitter (`armsOf`).
+no feature. An implementation whose registration gives `notWith`
+microarchitectures (`Artifact.notWith`: cores it is measured slower on) is
+never chosen where detection reports one of them, and the dispatcher tries
+the next: this only keeps an implementation from being chosen, so it can
+only leave another the CPU can run, the base at last, which needs no
+feature; a microarchitecture never chooses an implementation. The emitter
+refuses `notWith` on a base, which the dispatcher falls back on. An
+implementation that can be chosen only where one before it can would never
+run, and fails the emitter (`armsOf`): one before it can be chosen wherever
+it can if it needs no feature that one does not, and is kept from being
+chosen on no microarchitecture that one is not.
 
 A function whose base is its only implementation gets a dispatcher too, as
 another name of it, so that the Rust code calling the dispatcher is the same
@@ -1715,12 +1724,14 @@ structure Impl where
   `Artifact.vendor`). -/
   extra : List String := []
   vendor : Option String := none
+  /-- Its registration's `notWith` microarchitectures (`Artifact.notWith`). -/
+  notWith : List String := []
 
 /-- The function `a`, as an implementation a dispatcher may call. -/
 def Impl.ofArtifact (a : Artifact) : Impl :=
   { name := a.name, module := a.module, features := a.features
     gate := a.features.filterMap a.target.printer.featureCfg, extra := a.extra
-    vendor := a.vendor }
+    vendor := a.vendor, notWith := a.notWith }
 
 /-- An implementation a dispatcher may choose, with the `extra` features and
 `vendor`s of its registration. -/
@@ -1728,16 +1739,18 @@ structure Arm where
   impl : Impl
   extra : List String
   vendors : List String
+  notWith : List String := []
 
 /-- The implementations `members` of a function or table of the target `t`,
 but its base, that its dispatcher tries, in their order (see above), or the
 first that it would never choose. -/
 def armsOf (t : String) (members : List Impl) : Except String (List Arm) := do
-  let arms := members.map fun a => (⟨a, a.extra, a.vendor.toList⟩ : Arm)
+  let arms := members.map fun a => (⟨a, a.extra, a.vendor.toList, a.notWith⟩ : Arm)
   -- One that can be chosen only where one before it can would never run.
   let weaker (e l : Arm) : Bool :=
     (e.impl.features ++ e.extra).all (l.impl.features ++ l.extra).contains &&
-      e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains
+      e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains &&
+      e.notWith.all l.notWith.contains
   let _ ← arms.foldlM (init := ([] : List Arm)) fun before l => do
     if let some e := before.find? (weaker · l) then
       throw s!"{t}: {l.impl.name} would never run: its dispatcher tries {e.impl.name} \
@@ -1794,7 +1807,15 @@ def condOf (ind : String) (a : Arm) : String :=
     | none => ("verified_garbage_cpu::COMPILED.0 != 0", "cpu.0 != 0")
     | some n => (s!"verified_garbage_cpu::target_contains({n})", s!"cpu.contains({n})")
   let has := s!"const \{ {target} }\n{ind}    || {detected}"
-  if vs.isEmpty then has else " && ".intercalate vs ++ s!"\n{ind}    && ({has})"
+  let cond := if vs.isEmpty then has else " && ".intercalate vs ++ s!"\n{ind}    && ({has})"
+  -- Never on the microarchitectures of its `notWith`, which detection reports
+  -- (a microarchitecture is no compilation target's feature).
+  match a.notWith with
+  | [] => cond
+  | ns =>
+    let bits := ns.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
+    let not := s!"!cpu.contains(verified_garbage_cpu::Features({" | ".intercalate bits}))"
+    if vs.isEmpty then s!"({cond})\n{ind}    && {not}" else cond ++ s!"\n{ind}    && {not}"
 
 /-- The paragraph of a dispatcher's documentation saying what it runs. -/
 def dispatchNote (base : String) (arms : List Arm) : String :=
@@ -1808,7 +1829,9 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
       s!"the target's vendor is `{v}` (or `VG_CPU_FEATURES` names every feature it needs)"
     let gate := if a.impl.gate.isEmpty then [] else
       [s!"it is compiled (`{", ".intercalate a.impl.gate}`)"]
-    match gate ++ vendor ++ needs ++ extra with
+    let notWith := if a.notWith.isEmpty then [] else
+      [s!"detection does not report {codeList a.notWith}"]
+    match gate ++ vendor ++ needs ++ extra ++ notWith with
     | [] => s!"`{a.impl.name}`"
     | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
   s!"It runs the first of these implementations that applies, in the order its registration \
@@ -1904,13 +1927,13 @@ def vendorOk (v : String) : Bool :=
 def featureOk (f : String) : Bool :=
   !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
 
-/-- The artifact `a`'s vendor, if it names one, and each of its `extra`
-features are as `vendorOk` and `featureOk` require. -/
+/-- The artifact `a`'s vendor, if it names one, and each of its `extra` and
+`notWith` features are as `vendorOk` and `featureOk` require. -/
 def checkChoice (a : Artifact) : Except String Unit := do
   if let some v := a.vendor then
     unless vendorOk v do
       throw s!"{a.target.name}: {a.name} names the vendor `{v}`"
-  for f in a.extra do
+  for f in a.extra ++ a.notWith do
     unless featureOk f do
       throw s!"{a.target.name}: {a.name} needs the feature `{f}`"
 
@@ -1920,6 +1943,9 @@ names of every artifact of the target, none of which may be a
 dispatcher's. -/
 def dispatchers (names : List String) (as : List Artifact) :
     Except String String := do
+  if let some g := (groupsOf as).find? (!·.base.notWith.isEmpty) then
+    throw s!"{g.base.target.name}: {g.base.name} is a base, which its dispatcher falls back on: \
+      `notWith` means nothing for it"
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
     let auto := autoName g.base.name

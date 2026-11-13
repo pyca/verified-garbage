@@ -210,6 +210,7 @@ def withNorm {api : Api} (r : Registration api target) (h16 : 16 ≤ r.stack)
   writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
   extra := r.extra
   vendor := r.vendor
+  notWith := r.notWith
 
 /-- `r`, scrubbed as `scrubRegE` does below the level `evex`, for code that
 leaves in MXCSR a function of MXCSR on entry (`hmx`). -/
@@ -253,6 +254,7 @@ def scrubRegF {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra
     vendor := r.vendor
+    notWith := r.notWith
     residue := some ⟨main.2⟩ }
 
 /-- `r` with every granule of its stack wiped and the vector registers
