@@ -807,7 +807,7 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
   have hJ₅ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) := by
     rw [hm₅, blockAt_frame ft dT0, blockAt_frame fa dS0]
   have hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by rw [hm₅, hf.hH]
-  refine WP.mono (WP.with_rdwr (tag_ok v L ho he₅ hH₅ hR₅ hJ₅)) fun s₆ ⟨ht, hrd₆, hwr₆⟩ =>
+  refine WP.mono (WP.with_rdwr (tag_ok v L (by decide) (TagCall.base v) ho he₅ hH₅ hR₅ hJ₅)) fun s₆ ⟨ht, hrd₆, hwr₆⟩ =>
     ⟨ht.env, (wFrame_cons g₅).trans (tagFrame_one ht.frame), by rw [hrd₆, hrd₅, hrd₄, hrd₁],
       by rw [hwr₆, hwr₅, hwr₄, hwr₁], ?_, ht.j, fun hab => ?_⟩
   · have d48 : ∀ r ∈ tagFrame (W + BitVec.ofNat 64 16) W SP o,

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
@@ -104,40 +104,39 @@ theorem lens_rel : RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp] · · N) (lens v
 end
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
-include L
+variable (v : GcmImpl) {Ctx St W SP : Addr} {N gs : Nat} [Gh : GhFits v N gs] (L : Lay Ctx St W SP N)
+include Gh L
 
-/-- `tag o`, with the same lengths and number of rounds. -/
-theorem tag_rel {o R : Nat} (ho : o = 0 ∨ o = 112) :
-    RelCT isa (fun s₁ s₂ => EnvAgree Ctx St W SP [.rbx, .rbp] s₁ s₂ ∧ RoundsAt s₁.mem W R ∧ RoundsAt s₂.mem W R)
+/-- `tag o`, with the same lengths and number of rounds, and the call of `vg_aes_ctr32` `T`. -/
+theorem tag_rel (hN : 184 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o = 112) :
+    RelCT isa (fun s₁ s₂ => EnvAgree Ctx St W SP [.rbx, .rbp] s₁ s₂ N ∧ RoundsAt s₁.mem W R ∧ RoundsAt s₂.mem W R)
       (tag v.callees o) fun _ _ => True := by
   -- The arguments of the call, in each run.
-  let G : State → Prop := fun s => Env Ctx St W SP s ∧
-    CtrCall s Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1
-  have hG : ∀ s, (Env Ctx St W SP s ∧ RoundsAt s.mem W R) → WP isa (.seq (lens v.callees 16)
+  let G : State → Prop := fun s => Env Ctx St W SP s N ∧
+    CtrCallF s Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1
+  have hG : ∀ s, (Env Ctx St W SP s N ∧ RoundsAt s.mem W R) → WP isa (.seq (lens v.callees 16)
       (.block ([.mov .rax (.mem (at_ .r14 16)), .store (at_ .r15 o) .rax,
         .mov .rax (.mem (at_ .r14 24)), .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13),
         .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14)] ++ ptr .rcx .r15 o ++ [.mov32 .r8 (imm 1)] ++
         ptr .r9 .r15 scrO))) s G := fun s h =>
-    WP.mono (tagMid_ok v L ho h.1 rfl h.2 rfl) fun _ M => ⟨M.env, M.call⟩
-  have hL : ∀ s, Env Ctx St W SP s → WP isa (lens v.callees 16) s (Env Ctx St W SP) := fun s he =>
+    WP.mono (tagMid_ok v L hN ho h.1 rfl h.2 rfl) fun _ M => ⟨M.env, M.call⟩
+  have hL : ∀ s, Env Ctx St W SP s N → WP isa (lens v.callees 16) s (Env Ctx St W SP · N) := fun s he =>
     WP.mono (lens_ok v L (.inr rfl) he rfl) fun _ h => h.1
   have hc : ∃ hc, (taint.check (Taint.ofRegs [.r13, .r14, .r15, .rsp]) (.block ([.mov .rax (.mem (at_ .r14 16)),
       .store (at_ .r15 o) .rax, .mov .rax (.mem (at_ .r14 24)), .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13),
       .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14)] ++ ptr .rcx .r15 o ++ [.mov32 .r8 (imm 1)] ++
       ptr .r9 .r15 scrO)) hc).isSome = true := by
     rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  let P₀ : State → State → Prop := fun s₁ s₂ => EnvAgree Ctx St W SP [.rbx, .rbp] s₁ s₂ ∧
+  let P₀ : State → State → Prop := fun s₁ s₂ => EnvAgree Ctx St W SP [.rbx, .rbp] s₁ s₂ N ∧
     RoundsAt s₁.mem W R ∧ RoundsAt s₂.mem W R
-  have l : RelCT isa P₀ (lens v.callees 16) fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ :=
+  have l : RelCT isa P₀ (lens v.callees 16) fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N :=
     rel_wp ((lens_rel v L (.inr rfl)).mono (fun _ _ h => h.1) fun _ _ h => h)
       (fun _ _ h => ⟨h.1.1, h.1.2.1⟩) hL hL
-  have b : RelCT isa (fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) _ fun _ _ => True :=
+  have b : RelCT isa (fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N) _ fun _ _ => True :=
     rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.2.1, h.2.2, fun _ h => by cases h⟩) hc
   have pre : RelCT isa P₀ _ fun s₁ s₂ => True ∧ G s₁ ∧ G s₂ :=
     rel_wp (RelCT.seq l b) (fun _ _ h => ⟨⟨h.1.1, h.2.1⟩, ⟨h.1.2.1, h.2.2⟩⟩) (fun s h => hG s h) (fun s h => hG s h)
-  refine rel_reassoc2 (RelCT.seq pre (ctr_rel v.ctr fun s₁ s₂ h => ⟨_, _, _, _, _, _, h.2.1.2, h.2.2.2, ?_⟩))
-  rw [h.2.1.1.rsp, h.2.2.1.rsp]
+  exact rel_reassoc2 (RelCT.seq pre (T.rel L ho fun _ _ h => ⟨h.2.1, h.2.2⟩))
 
 end
 

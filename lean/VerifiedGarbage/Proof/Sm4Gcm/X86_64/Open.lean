@@ -215,7 +215,7 @@ theorem openCheck_ok {t : Nat} {D : Addr} {n N al : Nat} {H J : Block}
     fun s₅ ⟨⟨he₅, hr₅, f₅, hbx₅⟩, hrd₅, hwr₅⟩ => ?_)
   rw [hbx₄] at hbx₅
   refine WP.seq (WP.mono (AesGcm.X86_64.WP.with_rdwr
-    (cmp_ok La (o := 112) (.inr rfl) he₅ hbx₅ h1 h16 (length_bytesAt _ _ _) hr₅))
+    (cmp_ok La (by decide) (o := 112) (.inr rfl) he₅ hbx₅ h1 h16 (length_bytesAt _ _ _) hr₅))
     fun s₆ ⟨⟨he₆, hax₆, f₆⟩, hrd₆, hwr₆⟩ => ?_)
   have d256 : ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)], (⟨W + BitVec.ofNat 64 112, 16⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact La.w_w (.inl (by decide)) (by decide) (by decide)

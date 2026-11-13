@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamRun
@@ -149,9 +150,11 @@ theorem streamFinish_spSafe : (streamFinish v.callees).all (fun i => !X86_64.isa
     Bool.and_true]
   decide +kernel
 
-theorem streamFinish_correct (s : State) (hs : Proof.AesGcm.streamFinishX86_64.pre s) :
-    ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamFinishX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := streamFinish_wp v hs
+theorem streamFinish_correct {N gs : Nat} [G : GhFits v N gs] (T : TagCall v N) (hN : 208 ≤ N) (hN' : N < 2 ^ 64) (s : State)
+    (hs : (Proof.AesGcm.streamFinishX86_64 N).pre s) :
+    ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧
+      (Proof.AesGcm.streamFinishX86_64 N).post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := streamFinish_wp v T hN hN' hs
   exact ⟨t, s', he, abiPreserved_of_exec (streamFinish_mx v) he hg, hp⟩
 
 theorem streamVerify_mx : (streamVerify v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -164,9 +167,11 @@ theorem streamVerify_spSafe : (streamVerify v.callees).all (fun i => !X86_64.isa
     Bool.and_true]
   decide +kernel
 
-theorem streamVerify_correct (s : State) (hs : Proof.AesGcm.streamVerifyX86_64.pre s) :
-    ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamVerifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := streamVerify_wp v hs
+theorem streamVerify_correct {N gs : Nat} [G : GhFits v N gs] (T : TagCall v N) (hN : 272 ≤ N) (hN' : N < 2 ^ 64) (s : State)
+    (hs : (Proof.AesGcm.streamVerifyX86_64 N).pre s) :
+    ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧
+      (Proof.AesGcm.streamVerifyX86_64 N).post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := streamVerify_wp v T hN hN' hs
   exact ⟨t, s', he, abiPreserved_of_exec (streamVerify_mx v) he hg, hp⟩
 
 theorem seal_mx : («seal» v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -413,7 +418,8 @@ def finSat : State where
 
 theorem streamFinish_verified (v : GcmImpl) :
     Verified X86_64.target (streamFinish v.callees) (Proof.AesGcm.streamFinishScratchContract X86_64.abi 8) :=
-  Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
+  Verified.of_correct (streamFinish_correct v (TagCall.base v) (by decide) (by decide))
+    (streamFinish_ct v (TagCall.base v) (by decide) (by decide)) (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig, Spec.Gcm.streamFinishPre,
       Proof.AesGcm.streamFinishRoundsPost, Proof.AesGcm.streamFinishX86_64, Proof.AesGcm.finPre, X86_64.abi, Proof.AesGcm.arg,
       Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
@@ -434,12 +440,105 @@ def verSat : State where
 
 theorem streamVerify_verified (v : GcmImpl) :
     Verified X86_64.target (streamVerify v.callees) (Proof.AesGcm.streamVerifyScratchContract X86_64.abi 8) :=
-  Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
+  Verified.of_correct (streamVerify_correct v (TagCall.base v) (by decide) (by decide))
+    (streamVerify_ct v (TagCall.base v) (by decide) (by decide)) (by
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig, Spec.Gcm.streamVerifyPre,
       Proof.AesGcm.streamVerifyRoundsPost, Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, X86_64.abi, Proof.AesGcm.arg,
       Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [verSat] using verSat)
+
+/-! ### `stream_finish` and `stream_verify` with only the working space they use
+
+Over an implementation of `vg_aes_ctr32` that needs no working space of its
+own (`TagCall.free`): the bytes they use themselves (`finish` `[0, 208)`,
+`verify` `[0, 272)`) and, if their `vg_ghash` touches its working space,
+its 256 bytes at 512 (`GhFits`): 768 bytes over `vg_ghash` (`_verified96`),
+and over `vg_ghash_pclmul` and `vg_ghash_vpclmul` 208
+(`streamFinish_verified26`) and 272 (`streamVerify_verified34`). -/
+
+/-- `finSat`, with `k` words of working space. -/
+def finSatK (k : Nat) : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0, 8 * k⟩] }
+
+/-- `verSat`, with `k` words of working space. -/
+def verSatK (k : Nat) : State := { verSat with wr := [⟨0x3000, 80⟩, ⟨0, 8 * k⟩] }
+
+/-- `Proof.AesGcm.streamFinishScratchSig`, with `work: *mut [u64; k]`. -/
+def streamFinishScratchSigK (k : Nat) : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("tag", .array true .u8 16), ("work", .array true .u64 k)]
+
+/-- `Proof.AesGcm.streamFinishRoundsContract`, whatever `work` is (of `k` words). -/
+def streamFinishScratchContractK (k : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (streamFinishScratchSigK k).contract A
+    (pre := fun ctx rounds state aadLen textLen tag _work =>
+      Spec.Gcm.streamFinishPre A.ptrBits ctx rounds state aadLen textLen tag)
+    (post := fun ctx rounds state aadLen textLen tag _work =>
+      Proof.AesGcm.streamFinishRoundsPost A.ptrBits ctx rounds state aadLen textLen tag)
+    (writeArgs := true) (stack := stack)
+
+/-- `Proof.AesGcm.streamVerifyScratchSig`, with `work: *mut [u64; k]`. -/
+def streamVerifyScratchSigK (k : Nat) : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 k)]
+  ret := some .u32
+
+/-- `Proof.AesGcm.streamVerifyRoundsContract`, whatever `work` is (of `k` words). -/
+def streamVerifyScratchContractK (k : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (streamVerifyScratchSigK k).contract A
+    (pre := fun ctx rounds state aadLen textLen tag tagLen _work =>
+      Spec.Gcm.streamVerifyPre A.ptrBits ctx rounds state aadLen textLen tag tagLen)
+    (post := fun ctx rounds state aadLen textLen tag tagLen _work =>
+      Proof.AesGcm.streamVerifyRoundsPost A.ptrBits ctx rounds state aadLen textLen tag tagLen)
+    (writeArgs := true) (stack := stack)
+
+theorem streamFinish_verified96 (v : GcmImpl) (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target (streamFinish v.callees) (streamFinishScratchContractK 96 X86_64.abi 8) :=
+  Verified.of_correct
+    (streamFinish_correct v (G := GhFits.base v (N := 768) (by decide)) (TagCall.free v f 768) (by decide) (by decide))
+    (streamFinish_ct v (G := GhFits.base v (N := 768) (by decide)) (TagCall.free v f 768) (by decide) (by decide)) (by
+    sig_implies [streamFinishScratchContractK, streamFinishScratchSigK, Spec.Gcm.streamFinishPre,
+      Proof.AesGcm.streamFinishRoundsPost, Proof.AesGcm.streamFinishX86_64, Proof.AesGcm.finPre, X86_64.abi, Proof.AesGcm.arg,
+      Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [finSatK] using finSatK 96)
+
+theorem streamVerify_verified96 (v : GcmImpl) (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target (streamVerify v.callees) (streamVerifyScratchContractK 96 X86_64.abi 8) :=
+  Verified.of_correct
+    (streamVerify_correct v (G := GhFits.base v (N := 768) (by decide)) (TagCall.free v f 768) (by decide) (by decide))
+    (streamVerify_ct v (G := GhFits.base v (N := 768) (by decide)) (TagCall.free v f 768) (by decide) (by decide)) (by
+    sig_implies [streamVerifyScratchContractK, streamVerifyScratchSigK, Spec.Gcm.streamVerifyPre,
+      Proof.AesGcm.streamVerifyRoundsPost, Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, X86_64.abi, Proof.AesGcm.arg,
+      Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [verSatK] using verSatK 96)
+
+theorem streamFinish_verified26 (v : GcmImpl) (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee)
+    (g : GhashFree v.gh.fn.code) :
+    Verified X86_64.target (streamFinish v.callees) (streamFinishScratchContractK 26 X86_64.abi 8) :=
+  Verified.of_correct
+    (streamFinish_correct v (G := GhFits.free v g 208) (TagCall.free v f 208) (by decide) (by decide))
+    (streamFinish_ct v (G := GhFits.free v g 208) (TagCall.free v f 208) (by decide) (by decide)) (by
+    sig_implies [streamFinishScratchContractK, streamFinishScratchSigK, Spec.Gcm.streamFinishPre,
+      Proof.AesGcm.streamFinishRoundsPost, Proof.AesGcm.streamFinishX86_64, Proof.AesGcm.finPre, X86_64.abi, Proof.AesGcm.arg,
+      Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [finSatK] using finSatK 26)
+
+theorem streamVerify_verified34 (v : GcmImpl) (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee)
+    (g : GhashFree v.gh.fn.code) :
+    Verified X86_64.target (streamVerify v.callees) (streamVerifyScratchContractK 34 X86_64.abi 8) :=
+  Verified.of_correct
+    (streamVerify_correct v (G := GhFits.free v g 272) (TagCall.free v f 272) (by decide) (by decide))
+    (streamVerify_ct v (G := GhFits.free v g 272) (TagCall.free v f 272) (by decide) (by decide)) (by
+    sig_implies [streamVerifyScratchContractK, streamVerifyScratchSigK, Spec.Gcm.streamVerifyPre,
+      Proof.AesGcm.streamVerifyRoundsPost, Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, X86_64.abi, Proof.AesGcm.arg,
+      Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [verSatK] using verSatK 34)
 
 /-- A state satisfying `vg_aes_gcm_seal`'s precondition (with no nonce, additional data or data, `tag` at
 `0x3000` and `work` at 0). -/
