@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.X86_64.InitScrub
@@ -35,36 +37,41 @@ end VG.Artifacts.Ffdh.X86_64
 namespace VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 
 def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact := [
-  Spec.Ffdh.checkPublicApi.artifact X86_64.target {
+  Spec.Ffdh.checkPublicApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8
     code := Proof.Ffdh.X86_64.CheckPublic.publicCode v e
     verified := Proof.Ffdh.X86_64.CheckPublic.publicCode_verified v e
-    spSafe := Proof.Ffdh.X86_64.CheckPublic.publicCode_sp v e },
-  Spec.Ffdh.exchangeApi.artifact X86_64.target {
+    spSafe := Proof.Ffdh.X86_64.CheckPublic.publicCode_sp v e }
+    (Proof.Ffdh.X86_64.Scrub.checkPublicOut 8)),
+  Spec.Ffdh.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8
     code := Proof.Ffdh.X86_64.Exchange.exchangeCode v e
     verified := Proof.Ffdh.X86_64.Exchange.exchangeCode_verified v e
-    spSafe := Proof.Ffdh.X86_64.Exchange.exchangeCode_sp v e },
-  Spec.Ffdh.checkPrivateApi.artifact X86_64.target {
+    spSafe := Proof.Ffdh.X86_64.Exchange.exchangeCode_sp v e }
+    (Proof.Ffdh.X86_64.Scrub.exchangeOut 8)),
+  Spec.Ffdh.checkPrivateApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8
     code := Proof.Ffdh.X86_64.CheckPrivate.privateCode v e
     verified := Proof.Ffdh.X86_64.CheckPrivate.privateCode_verified v e
-    spSafe := Proof.Ffdh.X86_64.CheckPrivate.privateCode_sp v e },
-  Spec.Ffdh.derivePublicApi.artifact X86_64.target {
+    spSafe := Proof.Ffdh.X86_64.CheckPrivate.privateCode_sp v e }
+    (Proof.Ffdh.X86_64.Scrub.checkPrivateOut 8)),
+  Spec.Ffdh.derivePublicApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8
     code := Proof.Ffdh.X86_64.DerivePublic.deriveCode v e
     verified := Proof.Ffdh.X86_64.DerivePublic.deriveCode_verified v e
-    spSafe := Proof.Ffdh.X86_64.DerivePublic.deriveCode_sp v e },
-  Spec.Ffdh.checkDomainApi.artifact X86_64.target {
+    spSafe := Proof.Ffdh.X86_64.DerivePublic.deriveCode_sp v e }
+    (Proof.Ffdh.X86_64.Scrub.derivePublicOut 8)),
+  Spec.Ffdh.checkDomainApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8
     code := Proof.Ffdh.X86_64.VettedValidation.emittedCode v e
     verified := Proof.Ffdh.X86_64.VettedValidation.verified v e
-    spSafe := Proof.Ffdh.X86_64.VettedValidation.sp_safe v e }]
+    spSafe := Proof.Ffdh.X86_64.VettedValidation.sp_safe v e }
+    (Proof.Ffdh.X86_64.Scrub.checkDomainOut 8 Impl.Ffdh.X86_64.VettedValidation.tableConsts))]
 
 end VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 
@@ -72,12 +79,13 @@ namespace VG.Artifacts.Ffdh.X86_64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
-    Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
+    Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       stack := 8
       code := Proof.Ffdh.X86_64.Cached.precomputeCode v
       verified := Proof.Ffdh.X86_64.Cached.precomputeCode_verified v
-      spSafe := Proof.Ffdh.X86_64.Cached.precomputeCode_sp v },
+      spSafe := Proof.Ffdh.X86_64.Cached.precomputeCode_sp v }
+    (Proof.Ffdh.X86_64.Scrub.generationPrecomputeOut 8 Impl.Ffdh.X86_64.VettedValidation.tableConsts)),
     Spec.Ffdh.cachedKeySearchApi.artifact X86_64.target {
       suffix := v.suffix
       stack := 72
@@ -88,11 +96,12 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.FfdhExp.X86_64.variants.flatMap fun v2 =>
     VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++
   (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
-    Spec.Ffdh.sievedParameterSearchApi.artifact X86_64.target {
+    Spec.Ffdh.sievedParameterSearchApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       stack := 160
       code := Proof.Ffdh.X86_64.Generation.searchCode v
       verified := Proof.Ffdh.X86_64.Generation.search_verified v
-      spSafe := Proof.Ffdh.X86_64.Generation.searchCode_sp v }])
+      spSafe := Proof.Ffdh.X86_64.Generation.searchCode_sp v }
+      (Proof.Ffdh.X86_64.Scrub.sievedParameterSearchOut _))])
 
 end VG.Artifacts.Ffdh.X86_64

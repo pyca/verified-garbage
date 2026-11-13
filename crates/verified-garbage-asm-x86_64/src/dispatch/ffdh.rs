@@ -6,6 +6,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_generate_key_precompute_adx` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES`); or else `vg_ffdh_generate_key_precompute`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
@@ -482,6 +484,8 @@ pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_generate_parameters_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES`); `vg_ffdh_generate_parameters_adx` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES`); or else `vg_ffdh_generate_parameters`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

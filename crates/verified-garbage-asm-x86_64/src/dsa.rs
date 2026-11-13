@@ -45,6 +45,8 @@ pub const VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Fe
 
 /// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -149,7 +151,7 @@ jmp 226f
 .base64 "QYgCSYPCAUmD6wE="
 jne 227b
 226:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk+P7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAEAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_dsa_sign_prevalidated_adx = sym super::dsa::vg_dsa_sign_prevalidated_adx::vg_dsa_sign_prevalidated_adx,
     )
@@ -159,6 +161,8 @@ jne 227b
 pub const VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -911,7 +915,7 @@ jmp 217f
 216:
 .base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
         vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
@@ -922,6 +926,8 @@ jmp 217f
 pub const VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1643,7 +1649,7 @@ jmp 217f
 216:
 .base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
         vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
@@ -1654,6 +1660,8 @@ jmp 217f
 pub const VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2894,7 +2902,7 @@ jmp 217f
 216:
 .base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
         vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
@@ -2905,6 +2913,8 @@ jmp 217f
 pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3002,7 +3012,7 @@ jmp 223f
 .base64 "QYgCSYPCAUmD6wE="
 jne 224b
 223:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk+P7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAEAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_dsa_check_parameters_adx = sym super::dsa::vg_dsa_check_parameters_adx::vg_dsa_check_parameters_adx,
         vg_dsa_derive_key_checked_adx = sym super::dsa::vg_dsa_derive_key_checked_adx::vg_dsa_derive_key_checked_adx,
@@ -3013,6 +3023,8 @@ jne 224b
 pub const VG_DSA_DERIVE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3762,7 +3774,7 @@ jmp 217f
 jne 2191b
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyg="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul_adx = sym super::rsa::vg_rsa_mont_mul_adx::vg_rsa_mont_mul_adx,
         vg_rsa_lazy_mont_mul_adx = sym super::rsa::vg_rsa_lazy_mont_mul_adx::vg_rsa_lazy_mont_mul_adx,
@@ -3770,6 +3782,8 @@ jne 2191b
 }
 
 /// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3874,13 +3888,15 @@ jmp 226f
 .base64 "QYgCSYPCAUmD6wE="
 jne 227b
 226:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk+P7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAEAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
     )
 }
 
 /// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4632,7 +4648,7 @@ jmp 217f
 216:
 .base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
         vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
@@ -4640,6 +4656,8 @@ jmp 217f
 }
 
 /// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5360,7 +5378,7 @@ jmp 217f
 216:
 .base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
         vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
@@ -5368,6 +5386,8 @@ jmp 217f
 }
 
 /// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -6607,7 +6627,7 @@ jmp 217f
 216:
 .base64 "uAAAAABIix9Ii28ITItnEEyLbxhMi3cgTIt/KA=="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
         vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
@@ -6615,6 +6635,8 @@ jmp 217f
 }
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -6711,7 +6733,7 @@ jmp 223f
 .base64 "QYgCSYPCAUmD6wE="
 jne 224b
 223:
-.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
+.base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk+P7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAEAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
         vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
@@ -6719,6 +6741,8 @@ jne 224b
 }
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7467,7 +7491,7 @@ jmp 217f
 jne 2191b
 .base64 "SIsfSItvCEyLZxBMi28YTIt3IEyLfyg="
 217:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rsa_mont_mul = sym super::rsa::vg_rsa_mont_mul::vg_rsa_mont_mul,
         vg_rsa_lazy_mont_mul = sym super::rsa::vg_rsa_lazy_mont_mul::vg_rsa_lazy_mont_mul,
@@ -7475,11 +7499,13 @@ jne 2191b
 }
 
 /// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7495,7 +7521,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES: veri
 /// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `sha`, `bmi2`, `adx`, `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `sha`, `bmi2`, `adx`, `avx512vl` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
@@ -7508,7 +7534,7 @@ call {vg_dsa_parameter_search_3072_sha256_shani_mr_ifma}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNpCSI/f//xf5/hCRYAgAAxf5/hCQ4AgAAxf5/hCQYAgAAxf5/hCT4AQAAxf5/hCTYAQAAxf5/hCS4AQAAxf5/hCSYAQAAxf5/hCR4AQAAxf5/hCRYAQAAxf5/hCQ4AQAAxf5/hCQYAQAAxf5/hCT4AAAAxf5/hCTYAAAAxf5/hCS4AAAAxf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCR4AgAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_sha256_shani_mr_ifma}
@@ -7532,6 +7558,8 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES: verif
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7560,7 +7588,7 @@ call {vg_dsa_parameter_search_3072_sha256_shani_mr_adx}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJIj9///zD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJHgCAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_sha256_shani_mr_adx}
@@ -7584,6 +7612,8 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES: verified_gar
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7612,7 +7642,7 @@ call {vg_dsa_parameter_search_3072_sha256_shani}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJIj9///zD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJHgCAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_sha256_shani}
@@ -7631,11 +7661,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX2);
+pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX2);
 
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7651,7 +7683,7 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES: ver
 /// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512vl`, `avx512ifma` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f`, `bmi1`, `bmi2`, `adx`, `avx512vl`, `avx512ifma` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
@@ -7664,7 +7696,7 @@ call {vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNpCSI/f//xf5/hCRYAgAAxf5/hCQ4AgAAxf5/hCQYAgAAxf5/hCT4AQAAxf5/hCTYAQAAxf5/hCS4AQAAxf5/hCSYAQAAxf5/hCR4AQAAxf5/hCRYAQAAxf5/hCQ4AQAAxf5/hCQYAQAAxf5/hCT4AAAAxf5/hCTYAAAAxf5/hCS4AAAAxf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCR4AgAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma}
@@ -7688,6 +7720,8 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES: veri
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7716,7 +7750,7 @@ call {vg_dsa_parameter_search_3072_sha256_avx2_mr_adx}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJIj9///F/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJHgCAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_sha256_avx2_mr_adx}
@@ -7740,6 +7774,8 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES: verified_ga
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7768,7 +7804,7 @@ call {vg_dsa_parameter_search_3072_sha256_avx2}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJIj9///F/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJHgCAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_sha256_avx2}
@@ -7787,11 +7823,13 @@ jmp 21b
 }
 
 /// The CPU features `vg_dsa_parameter_search_mr_ifma` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
+pub const VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7807,7 +7845,7 @@ pub const VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES: verified_garbage_cpu::Featur
 /// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
+/// * The CPU must support the `avx`, `avx512f`, `bmi2`, `adx`, `avx512vl` and `avx512ifma` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_parameter_search_mr_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
@@ -7820,7 +7858,7 @@ call {vg_dsa_parameter_search_3072_mr_ifma}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNpCSI/f//xf5/hCRYAgAAxf5/hCQ4AgAAxf5/hCQYAgAAxf5/hCT4AQAAxf5/hCTYAQAAxf5/hCS4AQAAxf5/hCSYAQAAxf5/hCR4AQAAxf5/hCRYAQAAxf5/hCQ4AQAAxf5/hCQYAQAAxf5/hCT4AAAAxf5/hCTYAAAAxf5/hCS4AAAAxf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCR4AgAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_mr_ifma}
@@ -7844,6 +7882,8 @@ pub const VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES: verified_garbage_cpu::Feature
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7872,7 +7912,7 @@ call {vg_dsa_parameter_search_3072_mr_adx}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJIj9///zD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJHgCAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048_mr_adx}
@@ -7893,6 +7933,8 @@ jmp 21b
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7920,7 +7962,7 @@ call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJIj9///zD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJHgCAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
 call {vg_dsa_parameter_search_2048}

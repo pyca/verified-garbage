@@ -25,6 +25,8 @@ pub unsafe fn vg_dsa_parameter_search_init_auto(_dit: verified_garbage_cpu::Dit<
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_sign_random_prevalidated_adx` if the CPU supports its features (`VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_sign_random_prevalidated`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -80,6 +82,8 @@ pub unsafe fn vg_dsa_sign_random_prevalidated_auto(_dit: verified_garbage_cpu::D
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_validate_private_key_adx` if the CPU supports its features (`VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES`); or else `vg_dsa_validate_private_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -128,6 +132,8 @@ pub unsafe fn vg_dsa_validate_private_key_auto(_dit: verified_garbage_cpu::Dit<'
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_validate_public_key_adx` if the CPU supports its features (`VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES`); or else `vg_dsa_validate_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -175,6 +181,8 @@ pub unsafe fn vg_dsa_validate_public_key_auto(_dit: verified_garbage_cpu::Dit<'_
 /// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_verify_prevalidated_adx` if the CPU supports its features (`VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_verify_prevalidated`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -227,6 +235,8 @@ pub unsafe fn vg_dsa_verify_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_generate_key_adx` if the CPU supports its features (`VG_DSA_GENERATE_KEY_ADX_FEATURES`); or else `vg_dsa_generate_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -281,6 +291,8 @@ pub unsafe fn vg_dsa_generate_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out:
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_derive_key_adx` if the CPU supports its features (`VG_DSA_DERIVE_KEY_ADX_FEATURES`); or else `vg_dsa_derive_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -333,6 +345,8 @@ pub unsafe fn vg_dsa_derive_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
