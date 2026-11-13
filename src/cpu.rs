@@ -16,7 +16,9 @@ mod tests {
     use verified_garbage_cpu::detect::{NAMES, allowed, runtime};
     #[cfg(feature = "cpu-features-env")]
     use verified_garbage_cpu::detect::{allowed_by, named_by, parse};
-    use verified_garbage_cpu::{COMPILED, Features, detected, feature, requested, target_contains};
+    use verified_garbage_cpu::{
+        COMPILED, Features, TUNING, detected, feature, requested, target_contains,
+    };
 
     /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]
@@ -168,15 +170,76 @@ mod tests {
         }
     }
 
+    /// `cpuid` leaf 1 EAX for a family and model (AMD64 Architecture
+    /// Programmer's Manual, Vol. 3, Appendix E, "CPUID Fn0000_0001_EAX"):
+    /// families from Fh up as base family Fh plus the extended family, with
+    /// the model's high nibble as the extended model.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    fn signature(family: u32, model: u32) -> u32 {
+        if family >= 0xf {
+            (family - 0xf) << 20 | (model >> 4) << 16 | 0xf << 8 | (model & 0xf) << 4
+        } else {
+            family << 8 | (model & 0xf) << 4
+        }
+    }
+
+    /// Zen 5 is AMD's family 1Ah with a model in one of Zen 5's ranges
+    /// (Linux's `arch/x86/kernel/cpu/amd.c`), not Zen 6's of the same
+    /// family, nor another family or vendor's.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_zen5() {
+        let vendor = |v: &[u8; 12]| {
+            let w = |i: usize| u32::from_le_bytes([v[i], v[i + 1], v[i + 2], v[i + 3]]);
+            // EBX, EDX, ECX: the string's first, second and third words.
+            [w(0), w(8), w(4)]
+        };
+        let zen5 = |v: &[u8; 12], family, model| {
+            let [b, c, d] = vendor(v);
+            let leaves = [[1, b, c, d], [signature(family, model), 0, 0, 0]];
+            decode(|leaf, _| leaves[leaf as usize], || 0) & feature::ZEN5 != 0
+        };
+        let amd = b"AuthenticAMD";
+        for model in [0x00, 0x2f, 0x40, 0x44, 0x4f, 0x60, 0x7f, 0xd0, 0xd7] {
+            assert!(zen5(amd, 0x1a, model), "{model:#x}");
+        }
+        // Zen 6's models, and those between.
+        for model in [
+            0x30, 0x3f, 0x50, 0x5f, 0x80, 0xaf, 0xc0, 0xcf, 0xd8, 0xef, 0xff,
+        ] {
+            assert!(!zen5(amd, 0x1a, model), "{model:#x}");
+        }
+        // Zen 3 and Zen 4 (19h), Bulldozer (15h), and a base family below Fh,
+        // with a model of Zen 5's.
+        for family in [0x19, 0x15, 0x6] {
+            assert!(!zen5(amd, family, 0x44), "{family:#x}");
+        }
+        assert!(!zen5(b"GenuineIntel", 0x1a, 0x44));
+        assert!(!zen5(b"HygonGenuine", 0x1a, 0x44));
+    }
+
     /// Detection returns the CPU's features, restricted as
     /// `VG_CPU_FEATURES` says, but for those the compilation target enables,
-    /// which it cannot remove.
+    /// which it cannot remove, and with the microarchitectures it names,
+    /// which it reports on any CPU.
     #[test]
     fn detected_is_allowed() {
+        #[cfg(feature = "cpu-features-env")]
+        let named = named_by(&std::env::var("VG_CPU_FEATURES").unwrap_or_default());
+        #[cfg(not(feature = "cpu-features-env"))]
+        let named = 0;
         assert_eq!(
             detected(),
-            Features(runtime() & allowed(runtime()) | COMPILED.0)
+            Features(runtime() & allowed(runtime()) | named & TUNING.0 | COMPILED.0)
         );
+    }
+
+    /// The microarchitectures are no instruction set feature: the
+    /// compilation target enables none.
+    #[test]
+    fn tuning_is_not_compiled() {
+        assert_eq!(TUNING, Features(feature::ZEN5));
+        assert!(!COMPILED.contains(Features(feature::ZEN5)));
     }
 
     /// The CPU has every feature the compilation target enables, and
@@ -255,6 +318,19 @@ mod tests {
         allowed_by("aes,sha,avx", 0b101);
     }
 
+    /// A microarchitecture may be named on a CPU without it: no code needs
+    /// one, and the tests choose its implementations on every runner.
+    #[cfg(feature = "cpu-features-env")]
+    #[test]
+    fn allowed_by_tuning_the_cpu_lacks() {
+        assert_eq!(allowed_by("zen5", 0), feature::ZEN5);
+        assert_eq!(
+            allowed_by("avx,zen5", feature::AVX),
+            feature::AVX | feature::ZEN5
+        );
+        assert_eq!(named_by("avx,zen5"), feature::AVX | feature::ZEN5);
+    }
+
     /// BMI2 without AVX2 is a configuration no CPU has.
     #[cfg(all(
         feature = "cpu-features-env",
@@ -319,6 +395,7 @@ mod tests {
         assert_eq!(parse("avx512bw"), Some(1 << 19));
         assert_eq!(parse("umaal"), Some(1 << 20));
         assert_eq!(parse("avx512fp16"), Some(1 << 23));
+        assert_eq!(parse("zen5"), Some(1 << 24));
         for bad in ["avx512vbmi", "aes,", "aes,none", " aes", "AES"] {
             assert_eq!(parse(bad), None, "{bad}");
         }

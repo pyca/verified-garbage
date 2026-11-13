@@ -20,7 +20,10 @@
 // features, and not those the compilation target enables (`COMPILED`), which
 // it is limited to the others of; it panics on a name this library does not
 // know or the CPU does not have, rather than quietly test another
-// configuration. On x86 and x86-64,
+// configuration. The microarchitectures (`TUNING`, such as `zen5`) are the
+// exception: no code needs one, so naming one reports it on any CPU, and
+// every runner can test the implementations chosen by it (not naming one,
+// in a value that names others, removes it, as for any feature). On x86 and x86-64,
 // some features are detected only with others that every CPU with them has
 // (`REPORTED_WITH`), so naming one without them panics too. On AArch64 targets
 // other than Apple's, the SHA-3 functions run FEAT_SHA3's Keccak only when it
@@ -46,14 +49,14 @@
 
 use core::sync::atomic::{AtomicU64, Ordering};
 
-use crate::Features;
+use crate::{Features, TUNING};
 // Each target uses only some of the features' bits, and some none.
 #[allow(unused_imports)]
 use crate::feature;
 
 /// Each feature's name and bit, for reading `VG_CPU_FEATURES` and for the
 /// tests: bit `i` is `NAMES[i]`'s.
-pub const NAMES: [(&str, u32); 24] = [
+pub const NAMES: [(&str, u32); 25] = [
     ("ssse3", feature::SSSE3),
     ("sha", feature::SHA),
     ("aes", feature::AES),
@@ -78,6 +81,7 @@ pub const NAMES: [(&str, u32); 24] = [
     ("dit", feature::DIT),
     ("sb", feature::SB),
     ("avx512fp16", feature::AVX512FP16),
+    ("zen5", feature::ZEN5),
 ];
 
 /// Each feature that `decode` reports only with others, and those others:
@@ -205,8 +209,11 @@ fn state() -> u64 {
 #[inline(never)]
 fn detect() -> u64 {
     let runtime = runtime();
-    let features = runtime & allowed(runtime) | COMPILED.0;
-    let s = u64::from(features) | DETECTED_INIT | (u64::from(named()) << 32);
+    let named = named();
+    // A microarchitecture `VG_CPU_FEATURES` names is reported on any CPU
+    // (see the comment at the top of this file).
+    let features = runtime & allowed(runtime) | named & TUNING.0 | COMPILED.0;
+    let s = u64::from(features) | DETECTED_INIT | (u64::from(named) << 32);
     DETECTED.store(s, Ordering::Relaxed);
     s
 }
@@ -261,11 +268,12 @@ pub fn allowed(runtime: u32) -> u32 {
 pub fn allowed_by(names: &str, runtime: u32) -> u32 {
     let allowed =
         parse(names).expect("VG_CPU_FEATURES names a CPU feature this library does not know");
-    // Empty, it names none, though it allows every one.
+    // Empty, it names none, though it allows every one. A microarchitecture
+    // may be named on any CPU (`detect` reports it).
     let lacking = if names.is_empty() {
         0
     } else {
-        allowed & !runtime
+        allowed & !runtime & !TUNING.0
     };
     if lacking != 0 {
         let lacking: std::vec::Vec<&str> = (NAMES.iter())
@@ -328,7 +336,8 @@ pub fn parse(names: &str) -> Option<u32> {
 /// bit 29 is SHA, bit 5 AVX2, bit 3 BMI1, bit 8 BMI2, bit 16 AVX512F, bit 19
 /// ADX, bit 21 AVX512_IFMA and bit 31 AVX512VL, its ECX bit 9 VAES and bit 10
 /// VPCLMULQDQ, its EDX bit 23 AVX512_FP16, and its EAX the highest sub-leaf;
-/// leaf 7 sub-leaf 1 EAX bit 0 is SHA512; AMD reports them in the same bits). AVX, AVX2, SHA512, VAES and
+/// leaf 7 sub-leaf 1 EAX bit 0 is SHA512; AMD reports them in the same bits;
+/// leaf 0 and leaf 1 EAX also tell a Zen 5 core, `is_zen5`). AVX, AVX2, SHA512, VAES and
 /// VPCLMULQDQ (whose instructions are VEX.256-encoded, so also need AVX,
 /// Intel SDM Vol. 2, "VSHA512RNDS2", "AESENC" and "PCLMULQDQ") also need the
 /// operating system to save the `ymm` registers: XCR0 bits 1 and 2, read with
@@ -363,8 +372,8 @@ pub fn runtime() -> u32 {
 /// without leaf 7 too.
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32 {
-    let max = cpuid(0, 0)[0];
-    let ecx = cpuid(1, 0)[2];
+    let [max, vendor_b, vendor_c, vendor_d] = cpuid(0, 0);
+    let [signature, _, ecx, _] = cpuid(1, 0);
     let ssse3 = (ecx >> 9) & 1;
     // These and the others below that need another feature are reported
     // only with it (`REPORTED_WITH`).
@@ -394,6 +403,10 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
     let vpclmulqdq = (ecx7 >> 10) & avx;
     let avx512bw = (ebx >> 30) & avx & zmm;
     let avx512fp16 = (edx7 >> 23) & avx & zmm;
+    let zen5 = u32::from(is_zen5(
+        [vendor_b, vendor_d, vendor_c] == AMD_VENDOR,
+        signature,
+    ));
     (ssse3 * feature::SSSE3)
         | (sha * feature::SHA)
         | (aes * feature::AES)
@@ -411,6 +424,39 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
         | (vpclmulqdq * feature::VPCLMULQDQ)
         | (avx512bw * feature::AVX512BW)
         | (avx512fp16 * feature::AVX512FP16)
+        | (zen5 * feature::ZEN5)
+}
+
+/// `AuthenticAMD`, the vendor string AMD's CPUs return from `cpuid` leaf 0
+/// in EBX, EDX and ECX (AMD64 Architecture Programmer's Manual, Vol. 3,
+/// Appendix E, "CPUID Fn0000_0000_E[D,C,B]X Processor Vendor").
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+const AMD_VENDOR: [u32; 3] = [
+    u32::from_le_bytes(*b"Auth"),
+    u32::from_le_bytes(*b"enti"),
+    u32::from_le_bytes(*b"cAMD"),
+];
+
+/// Whether a CPU, AMD's if `amd`, whose `cpuid` leaf 1 EAX is `signature`,
+/// has a Zen 5 core: family 1Ah with a model of Zen 5's, which Linux tells
+/// apart from Zen 6's, of the same family (`arch/x86/kernel/cpu/amd.c`,
+/// `X86_FEATURE_ZEN5`). The family is the base family (bits 11:8), plus the
+/// extended family (bits 27:20) if the base family is Fh, and the model the
+/// base model (bits 7:4), with the extended model (bits 19:16) above it
+/// then (AMD64 Architecture Programmer's Manual, Vol. 3, Appendix E,
+/// "CPUID Fn0000_0001_EAX Family, Model, Stepping Identifiers").
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn is_zen5(amd: bool, signature: u32) -> bool {
+    let base_family = (signature >> 8) & 0xf;
+    let (family, model) = if base_family == 0xf {
+        (
+            base_family + ((signature >> 20) & 0xff),
+            ((signature >> 12) & 0xf0) | ((signature >> 4) & 0xf),
+        )
+    } else {
+        (base_family, (signature >> 4) & 0xf)
+    };
+    amd && family == 0x1a && matches!(model, 0x00..=0x2f | 0x40..=0x4f | 0x60..=0x7f | 0xd0..=0xd7)
 }
 
 /// AArch64 feature groups, using the same Rust names as the generated
