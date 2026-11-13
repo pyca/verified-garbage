@@ -20,6 +20,11 @@ the lakefile). The interpreter, which runs the registrations, took most of
 the emitter's time on x86-64 to run them: it ran a closure for every
 instruction of every pass. The proofs about each function are where they
 were, in the module its docs name.
+
+A pass a registration needs goes here, with a name, not as a `fun` in the
+registration function (`allLevel` below): the interpreter would run that
+`fun` for every instruction, wherever the function it is given to is
+compiled.
 -/
 
 @[expose] public section

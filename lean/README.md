@@ -202,17 +202,6 @@ is built (`TCB/AuditRecords.lean`; the `lean-modules` skill), so they run on
 a build restored without those parts ([Without the private
 parts](#without-the-private-parts)).
 
-The drivers run the registration files in the interpreter, which is slow
-where a registration computes something of its function's code: a pass over
-the code visits the code of every function it calls again at each call. The
-x86-64 registrations that scrub their function (`Scrub.withScrubAll`,
-`RScrub.withScrub` and the others) decide how from several such passes, so
-the functions that make them are in a module that imports only Lean core
-and the trusted base, `Proof/Framework/X86_64/ScrubChecks.lean`, which Lake
-compiles (`NativeTactics` in `lakefile.toml`): put a new one there, with a
-name, rather than write it as a `fun` in a registration, which the
-interpreter would run for every instruction.
-
 On Linux, each of `Emit.lean`'s drivers maps every `.olean` it imports, and
 a process may map at most `vm.max_map_count` regions of memory (65,530 by
 default on many distributions). The largest driver needs well under that
