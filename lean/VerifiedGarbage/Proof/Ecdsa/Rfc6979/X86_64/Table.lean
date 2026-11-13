@@ -131,8 +131,8 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   ok := w.ok
   C := w.C
   K := w.K
-  satI := by rw [w.hSH, w.hW]; exact w.hmacInit.2.2
-  satF := by rw [w.hSH, w.hW]; exact w.hmacFin.2.2
+  satI := by rw [w.hSH]; exact w.hmacInit.2.2
+  satF := by rw [w.hSH]; exact w.hmacFin.2.2
   f := fnsOf vs
   ecdsa := hC.ecdsa
   hash := rfl

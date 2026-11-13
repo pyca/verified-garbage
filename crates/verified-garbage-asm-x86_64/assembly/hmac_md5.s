@@ -141,15 +141,15 @@ vg_hmac_md5_init:
 21:
 	ret
 20:
-	lea rsp, [rsp-1032]
+	lea rsp, [rsp-776]
 	mov r8, rsp
 	add r8, 8
-	mov QWORD PTR [r8+384], rbx
-	mov QWORD PTR [r8+392], rbp
-	mov QWORD PTR [r8+400], r12
-	mov QWORD PTR [r8+408], r13
-	mov QWORD PTR [r8+416], r14
-	mov QWORD PTR [r8+424], r15
+	mov QWORD PTR [r8+128], rbx
+	mov QWORD PTR [r8+136], rbp
+	mov QWORD PTR [r8+144], r12
+	mov QWORD PTR [r8+152], r13
+	mov QWORD PTR [r8+160], r14
+	mov QWORD PTR [r8+168], r15
 	mov r15, r8
 	mov rbx, rdx
 	mov rbp, rcx
@@ -162,36 +162,36 @@ vg_hmac_md5_init:
 	jmp 29f
 28:
 	mov rdi, r15
-	add rdi, 688
+	add rdi, 432
 	call {vg_md5_init_core}
 	mov rdi, r15
-	add rdi, 688
+	add rdi, 432
 	mov esi, 0
 	mov rdx, rbx
 	mov rcx, rbp
 	mov r8, r15
 	call {vg_md5_update_scratch}
 	mov rdi, r15
-	add rdi, 688
+	add rdi, 432
 	mov rsi, rbp
 	mov rdx, r15
-	add rdx, 800
+	add rdx, 544
 	mov rcx, r15
 	call {vg_md5_finalize_scratch}
 	mov rdx, r15
-	add rdx, 800
+	add rdx, 544
 	mov ecx, 16
 29:
 	mov rdi, r12
 	mov rsi, r13
 	mov r8, r15
 	call {vg_hmac_md5_init_scratch}
-	mov rbx, QWORD PTR [r15+384]
-	mov rbp, QWORD PTR [r15+392]
-	mov r12, QWORD PTR [r15+400]
-	mov r13, QWORD PTR [r15+408]
-	mov r14, QWORD PTR [r15+416]
-	mov r15, QWORD PTR [r15+424]
+	mov rbx, QWORD PTR [r15+128]
+	mov rbp, QWORD PTR [r15+136]
+	mov r12, QWORD PTR [r15+144]
+	mov r13, QWORD PTR [r15+152]
+	mov r14, QWORD PTR [r15+160]
+	mov r15, QWORD PTR [r15+168]
 	mov r11d, 0
 	mov QWORD PTR [rsp+8], r11
 	mov QWORD PTR [rsp+16], r11
@@ -289,39 +289,7 @@ vg_hmac_md5_init:
 	mov QWORD PTR [rsp+752], r11
 	mov QWORD PTR [rsp+760], r11
 	mov QWORD PTR [rsp+768], r11
-	mov QWORD PTR [rsp+776], r11
-	mov QWORD PTR [rsp+784], r11
-	mov QWORD PTR [rsp+792], r11
-	mov QWORD PTR [rsp+800], r11
-	mov QWORD PTR [rsp+808], r11
-	mov QWORD PTR [rsp+816], r11
-	mov QWORD PTR [rsp+824], r11
-	mov QWORD PTR [rsp+832], r11
-	mov QWORD PTR [rsp+840], r11
-	mov QWORD PTR [rsp+848], r11
-	mov QWORD PTR [rsp+856], r11
-	mov QWORD PTR [rsp+864], r11
-	mov QWORD PTR [rsp+872], r11
-	mov QWORD PTR [rsp+880], r11
-	mov QWORD PTR [rsp+888], r11
-	mov QWORD PTR [rsp+896], r11
-	mov QWORD PTR [rsp+904], r11
-	mov QWORD PTR [rsp+912], r11
-	mov QWORD PTR [rsp+920], r11
-	mov QWORD PTR [rsp+928], r11
-	mov QWORD PTR [rsp+936], r11
-	mov QWORD PTR [rsp+944], r11
-	mov QWORD PTR [rsp+952], r11
-	mov QWORD PTR [rsp+960], r11
-	mov QWORD PTR [rsp+968], r11
-	mov QWORD PTR [rsp+976], r11
-	mov QWORD PTR [rsp+984], r11
-	mov QWORD PTR [rsp+992], r11
-	mov QWORD PTR [rsp+1000], r11
-	mov QWORD PTR [rsp+1008], r11
-	mov QWORD PTR [rsp+1016], r11
-	mov QWORD PTR [rsp+1024], r11
-	lea rsp, [rsp+1032]
+	lea rsp, [rsp+776]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -339,23 +307,7 @@ vg_hmac_md5_init:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-1056]
-	movdqu XMMWORD PTR [rsp+1040], xmm0
-	movdqu XMMWORD PTR [rsp+1024], xmm0
-	movdqu XMMWORD PTR [rsp+1008], xmm0
-	movdqu XMMWORD PTR [rsp+992], xmm0
-	movdqu XMMWORD PTR [rsp+976], xmm0
-	movdqu XMMWORD PTR [rsp+960], xmm0
-	movdqu XMMWORD PTR [rsp+944], xmm0
-	movdqu XMMWORD PTR [rsp+928], xmm0
-	movdqu XMMWORD PTR [rsp+912], xmm0
-	movdqu XMMWORD PTR [rsp+896], xmm0
-	movdqu XMMWORD PTR [rsp+880], xmm0
-	movdqu XMMWORD PTR [rsp+864], xmm0
-	movdqu XMMWORD PTR [rsp+848], xmm0
-	movdqu XMMWORD PTR [rsp+832], xmm0
-	movdqu XMMWORD PTR [rsp+816], xmm0
-	movdqu XMMWORD PTR [rsp+800], xmm0
+	lea rsp, [rsp-800]
 	movdqu XMMWORD PTR [rsp+784], xmm0
 	movdqu XMMWORD PTR [rsp+768], xmm0
 	movdqu XMMWORD PTR [rsp+752], xmm0
@@ -406,7 +358,7 @@ vg_hmac_md5_init:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+1056]
+	lea rsp, [rsp+800]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -420,7 +372,7 @@ vg_hmac_md5_init:
 	.p2align 6
 
 vg_hmac_md5_finalize:
-	lea rsp, [rsp-392]
+	lea rsp, [rsp-136]
 	mov r8, rsp
 	add r8, 8
 	mov QWORD PTR [r8+48], rbx
@@ -496,7 +448,7 @@ vg_hmac_md5_finalize:
 	mov r13, QWORD PTR [r15+72]
 	mov r14, QWORD PTR [r15+80]
 	mov r15, QWORD PTR [r15+88]
-	lea rsp, [rsp+392]
+	lea rsp, [rsp+136]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -514,10 +466,10 @@ vg_hmac_md5_finalize:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-408]
+	lea rsp, [rsp-152]
 	movdqu XMMWORD PTR [rsp+136], xmm0
 	movdqu XMMWORD PTR [rsp+120], xmm0
-	lea rsp, [rsp+408]
+	lea rsp, [rsp+152]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx

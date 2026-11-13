@@ -162,18 +162,25 @@ theorem dec_verified (v : Compress) (pv : PrivImpl) :
     Verified target (code (HH v) pv.name pv.code) (Spec.RsaPkcs1Enc.decryptContract abi decStack) :=
   Verified.of_correct (k := decK) (dec_correct v pv) (dec_constantTime v pv) decrypt_implies
 
+/-- The streaming code writes `rsp` only in its callee's frame, for each
+implementation's working space. -/
+theorem core_stream_sp : ∀ so, Proof.Pbkdf2.Md.X86_64.Sha256.SoOk so →
+    (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).updC.allInstrs (fun i => !isa.writesSp i) = true ∧
+      (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).finC.allInstrs (fun i => !isa.writesSp i) = true := by
+  intro so h
+  rcases h with rfl | rfl | rfl <;> exact ⟨by decide +kernel, by decide +kernel⟩
+
 /-- What follows the private-key operation writes `rsp` only in its callees'
 own frames. -/
 theorem afterPriv_spSafe (v : Compress) : (afterPriv (HH v)).all (fun i => !isa.writesSp i) = true := by
   have K := Proof.Pbkdf2.Md.X86_64.Sha256.callees v
-  have hI : (HH v).hmacInit.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacInitSp
-  have hF : (HH v).hmacFin.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacFinSp
+  have C := Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v
+  have hI : (HH v).hmacInit.all (fun i => !isa.writesSp i) = true := Proof.Pbkdf2.Md.X86_64.hmacInit_sp C K
+  have hF : (HH v).hmacFin.all (fun i => !isa.writesSp i) = true := Proof.Pbkdf2.Md.X86_64.hmacFin_sp C K
   have hU : (HH v).updC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs
-    (Proof.Pbkdf2.Md.X86_64.core_updC K.cSp
-      (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.updC.allInstrs _ = true by decide +kernel))
+    (Proof.Pbkdf2.Md.X86_64.core_updC K.cSp (core_stream_sp _ v.hso).1)
   have hFi : (HH v).finC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs
-    (Proof.Pbkdf2.Md.X86_64.core_finC K.cSp
-      (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.finC.allInstrs _ = true by decide +kernel))
+    (Proof.Pbkdf2.Md.X86_64.core_finC K.cSp (core_stream_sp _ v.hso).2)
   have hIn : (HH v).initC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs K.iSp
   simp only [afterPriv, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
     Code.all, hI, hF, hU, hFi, hIn, Bool.and_true, Bool.true_and]

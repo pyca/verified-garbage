@@ -28,8 +28,9 @@ SHA-1 with an implementation `v` of its compression function
 (`Proof/Sha1/X86_64/Variant.lean`), as a variant of `MdHash` (`variant v`), from
 which HMAC and PBKDF2 are emitted (`Generic/MdHash/X86_64/`): its streaming code
 is the generic Merkle–Damgård code (`Stream.params`), its specification
-`Spec.Hmac.sha1S`. The facts about the code HMAC and PBKDF2 add, which do not
-depend on `v`, are checked once (`coreOK`).
+`Spec.Hmac.sha1S`. The facts about the code HMAC and PBKDF2 add, which depend on
+`v` only through the scratch space it uses, are checked once for each
+(`coreOKS`).
 
 `stream v` are the streaming `update` and `finalize` made with `v` (and
 their `_scratch` forms, which HMAC and PBKDF2 call) and the one-shot `digest`
@@ -47,14 +48,16 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Sha1.X86_64 (Compress)
 
 /-- SHA-1's functions, calling the implementation `v` of the compression
-function, named with its suffix. They call `vg_sha1_init`'s code as the
-internal `vg_sha1_init_core`: the function exported as `vg_sha1_init` also
-clears what it leaves (`Proof.Sha1.X86_64.initReg`), which its callers,
-which clear their own, do not need. -/
+function, named with its suffix, giving it the scratch space it uses
+(`Callee.so`) and taking the working space they use (`Hash.wOf`). They call
+`vg_sha1_init`'s code as the internal `vg_sha1_init_core`: the function
+exported as `vg_sha1_init` also clears what it leaves
+(`Proof.Sha1.X86_64.initReg`), which its callers, which clear their own, do
+not need. -/
 def hash (v : Compress) : Hash where
-  P := Impl.Sha1.X86_64.Stream.params
+  P := { Impl.Sha1.X86_64.Stream.params with so := v.callee.so }
   D := 20
-  W := Spec.Hmac.sha1I.scratch
+  W := Hash.wOf { Impl.Sha1.X86_64.Stream.params with so := v.callee.so }
   compN := v.callee.name
   compC := v.callee.code
   initN := "vg_sha1_init_core"
@@ -65,11 +68,14 @@ def hash (v : Compress) : Hash where
   hmacFinN := "vg_hmac_sha1_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha1_iterate" ++ v.suffix
 
-/-- `hash v` without the functions it calls, the same for every `v`. -/
-def coreH : Hash := ⟨Impl.Sha1.X86_64.Stream.params, 20, 56, "", .block [], "", .block [], "", "", "", "",
-  "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+/-- `hash v` without the functions it calls, for an implementation that uses
+`so` bytes of scratch space. -/
+def coreHS (so : Nat) : Hash :=
+  ⟨{ Impl.Sha1.X86_64.Stream.params with so := so }, 20, Hash.wOf { Impl.Sha1.X86_64.Stream.params with so := so },
+    "", .block [], "", .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
 
-theorem coreOK : CoreOK coreH := by
+theorem coreOKS (so : Nat) (h : so = 0 ∨ so = 112) : CoreOK (coreHS so) := by
+  rcases h with rfl | rfl <;>
   refine {
     pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
       ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
@@ -111,58 +117,15 @@ theorem coreOK : CoreOK coreH := by
     fitF := ?_ }
   taint_decide_all
 
-/-- `coreH` with no working space for the compression function
-(`Hash.withSo`), for an implementation that uses none. -/
-def coreH0 : Hash := ⟨Proof.Sha1.X86_64.Stream.params0, 20, 56, "", .block [], "", .block [], "", "", "", "",
-  "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
-
-theorem coreOK0 : CoreOK coreH0 := by
-  refine {
-    pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-    iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
-      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-    hinit := {
-      pro := ⟨?_, ?_⟩
-      argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
-      keys := ⟨?_, ?_⟩
-      mid := ⟨?_, ?_⟩
-      restore := ⟨?_, ?_⟩ }
-    hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-    pbkMx := ?_
-    pbkSp := ?_
-    hinitMx := ?_
-    hinitSp := ?_
-    hinitNs := ?_
-    hinitD := ?_
-    hfinMx := ?_
-    hfinSp := ?_
-    hfinNs := ?_
-    hfinD := ?_
-    hinitXD := ?_
-    hfinXD := ?_
-    pbkXD := ?_
-    iterMx := ?_
-    iterSp := ?_
-    iterNs := ?_
-    iterD := ?_
-    updMx := ?_
-    updNs := ?_
-    updD := ?_
-    finMx := ?_
-    finNs := ?_
-    finD := ?_
-    fitI := ?_
-    fitF := ?_ }
-  taint_decide_all
-
-theorem anyOK : Any.AnyOK coreH := by
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+theorem anyOKS (so : Nat) (h : so = 0 ∨ so = 112) : Any.AnyOK (coreHS so) := by
+  rcases h with rfl | rfl <;> refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
   taint_decide_all
 
 variable (v : Compress)
+
+theorem coreOK : CoreOK (core (hash v)) := coreOKS v.callee.so v.hso
+
+theorem anyOK : Any.AnyOK (core (hash v)) := anyOKS v.callee.so v.hso
 
 theorem callees : Callees (hash v) :=
   .ofTwice rfl
@@ -177,12 +140,27 @@ theorem callees : Callees (hash v) :=
     (cXD := v.noStack)
     (iXD := by simp only [hash] <;> decide +kernel)
 
+/-- The words of working space of `hash v`'s functions. -/
+theorem hashW : (hash v).W = 17 ∨ (hash v).W = 31 := by
+  rcases v.hso with h | h <;> simp only [hash, Hash.wOf, h] <;> decide
+
+/-- The words of working space of `hash v`'s HMAC `init` for a key of at
+most a block. -/
+theorem hashIW : initWords (hash v) = 12 ∨ initWords (hash v) = 26 := by
+  rcases v.hso with h | h <;> simp only [initWords_eq, hash, h] <;> decide
+
 def ok : HashOK (hash v) where
   md := Proof.Sha1.md
-  dims := Proof.Sha1.X86_64.Stream.dims
-  shape := Proof.Sha1.X86_64.Stream.shape
-  taints := Proof.Sha1.X86_64.Stream.taints
-  comp := v.ok
+  dims := ⟨Proof.Sha1.X86_64.Stream.dims.B, Proof.Sha1.X86_64.Stream.dims.N, Proof.Sha1.X86_64.Stream.dims.L,
+    show v.callee.so ≤ 2048 by rcases v.hso with h | h <;> omega⟩
+  shape := ⟨Proof.Sha1.X86_64.Stream.shape.len, Proof.Sha1.X86_64.Stream.shape.lenV,
+    Proof.Sha1.X86_64.Stream.shape.out⟩
+  taints := by
+    show MdStream.X86_64.Taints { Impl.Sha1.X86_64.Stream.params with so := v.callee.so }
+    rcases v.hso with h | h <;> rw [h]
+    · exact Proof.Sha1.X86_64.Stream.taints0
+    · exact Proof.Sha1.X86_64.Stream.taints
+  comp := v.okS
   reloc m m' p q h := by
     apply Vector.ext
     intro j hj
@@ -207,51 +185,163 @@ def ok : HashOK (hash v) where
   hL4 := by simp only [hash] <;> decide
   hNL := by simp only [hash] <;> decide
   hPad := by simp only [hash] <;> decide
-  hso := by simp only [hash] <;> decide
-  fits := by simp only [hash] <;> decide
-  hW := by simp only [hash] <;> decide
+  hso := by
+    show v.callee.so % 8 = 0 ∧ v.callee.so + 48 ≤ 8 * 256
+    rcases v.hso with h | h <;> rw [h] <;> decide
+  fits := by
+    show v.callee.so + 48 + 20 + 64 ≤ 8 * ((v.callee.so + 48 + 20 + 64 + 7) / 8)
+    omega
+  hW := by rcases hashW v with h | h <;> rw [h] <;> decide
   init := Proof.Sha1.X86_64.Stream.init_verified
   initDepth := by simp only [hash] <;> decide +kernel
   initSp := nosp_of (callees v).iNs
-  updMx := Callees.updMx (callees v) coreOK
-  finMx := Callees.finMx (callees v) coreOK
-  updSp := Callees.updSp (callees v) coreOK
-  finSp := Callees.finSp (callees v) coreOK
-  updDepth := Callees.updD (callees v) coreOK
-  finDepth := Callees.finD (callees v) coreOK
+  updMx := Callees.updMx (callees v) (coreOK v)
+  finMx := Callees.finMx (callees v) (coreOK v)
+  updSp := Callees.updSp (callees v) (coreOK v)
+  finSp := Callees.finSp (callees v) (coreOK v)
+  updDepth := Callees.updD (callees v) (coreOK v)
+  finDepth := Callees.finD (callees v) (coreOK v)
 
-theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.sha1I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using initSat 84 56
+/-- `hash v` made with the working space of the slowest implementations
+(`MdHash.okU`). -/
+def okU : HashOK ((hash v).withWs 112 (Hash.wOf { (hash v).P with so := 112 })) :=
+  (ok v).withWs 112 _ (by decide) Proof.Sha1.X86_64.Stream.taints v.ok
+    (by show 112 + 48 + 20 + 64 ≤ 8 * ((112 + 48 + 20 + 64 + 7) / 8); decide)
+    (by show (112 + 48 + 20 + 64 + 7) / 8 ≤ 256; decide) rfl (callees v)
+    (coreOKS 112 (.inr rfl))
 
-/-- A state satisfying the precondition of `init_scratch` with the working
-space `init` uses (`initWords`). -/
-theorem satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha1I.S 26 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using initSat 84 26
+/-! ### The shared contracts are satisfiable
 
-theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.sha1I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha1I, Proof.Hmac.finalizeScratchContract,
-    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using finSat 84 20 56
+With each implementation's working space (`hashW`, `hashIW`). -/
 
-theorem satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I X86_64.abi 8).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.sha1I, Proof.Pbkdf2.iterateContract,
-    Proof.Pbkdf2.iterateSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using Pbkdf2.X86_64.iterSat 84 20 56
+variable {w : Nat}
 
-theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.sha1I.S Spec.Hmac.sha1I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig,
-    Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using initSat 84 140
+theorem satI (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha1I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 84 w, ?_⟩
+  rcases hw with rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha1I X86_64.abi 24).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
-    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
-    X86_64.argRegs] using pbkSat 140
+theorem satW (hw : w = 12 ∨ w = 26) :
+    ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha1I.S w X86_64.abi 16).pre s := by
+  refine ⟨initSat 84 w, ?_⟩
+  rcases hw with rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
 
-theorem satPF :
-    ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.sha1I)).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
-    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
+theorem satF (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Proof.Hmac.finalizeScratchContract Spec.Hmac.sha1I.S w X86_64.abi 16).pre s := by
+  refine ⟨finSat 84 20 w, ?_⟩
+  rcases hw with rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha1I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha1I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
+
+theorem satT (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Proof.Pbkdf2.iterateContract Spec.Hmac.sha1I.S w X86_64.abi 8).pre s := by
+  refine ⟨Pbkdf2.X86_64.iterSat 84 20 w, ?_⟩
+  rcases hw with rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha1I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha1S,
+    Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha1I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.sha1S,
+    Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
+
+theorem satA (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Any.anyScratchContract Spec.Hmac.sha1I.S (w + 84)).pre s := by
+  refine ⟨initSat 84 (w + 84), ?_⟩
+  rcases hw with rfl | rfl <;>
+  first
+    | sig_sat_check [Any.anyScratchContract, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+    | (sig_pre [Any.anyScratchContract, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
+
+theorem satP (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract Spec.Hmac.sha1I.S (w + 84) X86_64.abi 24).pre s := by
+  refine ⟨pbkSat (w + 84), ?_⟩
+  rcases hw with rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.sha1I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
+    X86_64.argRegs]
+    | (sig_pre [Spec.Hmac.sha1I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
+    X86_64.argRegs]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
+
+theorem satPF (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract X86_64.abi (24 + (24 + 8 * (w + 84)))).pre s := by
+  refine ⟨pbkFrameSat, ?_⟩
+  rcases hw with rfl | rfl <;>
+  first
+    | sig_sat_check [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha1I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+    | (sig_pre [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.sha1I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat]
+       sig_and_intros
+       all_goals first
+         | exact Region.disjoint_of_sep (by decide)
+         | decide
+         | rfl)
+
+theorem satIF (hw : w = 12 ∨ w = 26) :
+    ∃ s, (Spec.Hmac.sha1I.initContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+  rcases hw with rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)
+
+theorem satAF (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Spec.Hmac.sha1I.initAnyKeyContract X86_64.abi (24 + (8 + 8 * (w + 84)))).pre s := by
+  unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+  rcases hw with rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
+
+theorem satFF (hw : w = 17 ∨ w = 31) :
+    ∃ s, (Spec.Hmac.sha1I.finalizeContract X86_64.abi (16 + (8 + 8 * w))).pre s := by
+  unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+  rcases hw with rfl | rfl <;>
+  exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial)
 
 /-- The streaming `update` made with `v`, which keeps its working space in a
 frame of its own. -/
@@ -328,40 +418,16 @@ def digFn0 : StreamFn :=
 
 end Zero
 
-/-- A state satisfying the precondition of `init_scratch` with the working
-space `init` uses with no working space for the compression function. -/
-theorem satW0 : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.sha1I.S 12 X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.sha1I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
-    Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using initSat 84 12
-
-/-- The working space of HMAC's `init` with an implementation `v` of the
-compression function that uses none (`hc`), such as `vg_sha1_compress_shani`. -/
-def own0 (v : Compress) (hc : MdStream.X86_64.CalleeOk (P := Proof.Sha1.X86_64.Stream.params0) Proof.Sha1.md
-    v.callee.code) : OwnWs Spec.Hmac.sha1I :=
-  ⟨_, (ok v).withSo 0 (by decide) Proof.Sha1.X86_64.Stream.taints0 hc (by simp only [hash]; decide) rfl (callees v) coreOK0,
-    coreOK0, (callees v).withSo 0, rfl, rfl, 12, by simp only [initWords_eq, Hash.withSo, hash], satW0, by
-    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
-
-/-- The working space of `variant`'s code: the hash function's (`OwnWs`). -/
-def own (v : Compress) : OwnWs Spec.Hmac.sha1I :=
-  ⟨_, (ok v), coreOK, (callees v), rfl, rfl, 26, by simp only [initWords_eq, hash]; decide, satW, by
-    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
-
 /-- SHA-1 with the implementation `v` of its compression function. -/
-def variant (o : OwnWs Spec.Hmac.sha1I := own v) : MdHash :=
-  MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
-    anyOK satA (by decide) Proof.Hmac.sha1_local
-    (by
-      unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    o
-    (by decide)
-    (by
-      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
-      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    (by decide) satPF
-    v.suffix v.features (stream v)
+def variant (stream : List StreamFn := stream v) : MdHash :=
+  MdHash.of (I := Spec.Hmac.sha1I) (ok v) (coreOK v) (callees v)
+    ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 112 (okU v) rfl
+    (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))
+    (by rcases hashW v with h | h <;> omega)
+    (anyOK v) (satA (hashW v)) (by show (hash v).W + 84 < 511; rcases hashW v with h | h <;> omega)
+    Proof.Hmac.sha1_local (satAF (hashW v)) (satW (hashIW v)) (satIF (hashIW v))
+    (by decide) (satFF (hashW v))
+    (by show (hash v).W + 84 < 509; rcases hashW v with h | h <;> omega) (satPF (hashW v))
+    v.suffix v.features stream
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha1

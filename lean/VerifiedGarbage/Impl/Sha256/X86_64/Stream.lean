@@ -38,14 +38,17 @@ namespace VG.Impl.Sha256.X86_64.Stream
 open VG.X86_64
 open VG.Impl.Sha256.X86_64 (at_ compress)
 
-/-- A compression function to call: its symbol and its code. -/
+/-- A compression function to call: its symbol, its code, and the bytes of
+scratch space it uses (`so`), which the functions that call it by name give
+it (`paramsOf`). -/
 structure Callee where
   name : String
   code : Prog isa
+  so : Nat
 
-def Callee.scalar : Callee := ⟨"vg_sha256_compress", compress⟩
-def Callee.shani : Callee := ⟨"vg_sha256_compress_shani", ShaNi.compress⟩
-def Callee.avx2 : Callee := ⟨"vg_sha256_compress_avx2", Avx2.compress⟩
+def Callee.scalar : Callee := ⟨"vg_sha256_compress", compress, 112⟩
+def Callee.shani : Callee := ⟨"vg_sha256_compress_shani", ShaNi.compress, 0⟩
+def Callee.avx2 : Callee := ⟨"vg_sha256_compress_avx2", Avx2.compress, 560⟩
 
 /-- Stores the initial hash value `iv`, sixteen bytes at a time (so that a
 16-byte load of it right after is forwarded from the stores): words

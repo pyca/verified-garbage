@@ -139,8 +139,8 @@ theorem verified (hq : EqCode fld win) (v : Compress) :
 omit [VG.Proof.Ed25519.X86_64.EdArith fld] in
 theorem spSafe (hq : EqCode fld win) (v : Compress) :
     (code fld win fs v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
-  have hu := Proof.Sha512.X86_64.Shared.update_spSafe v.spSafe
-  have hf := Proof.Sha512.X86_64.Shared.finalize_spSafe v.spSafe
+  have hu := Proof.Sha512.X86_64.Shared.updateOwn_spSafe v.hso v.spSafe
+  have hf := Proof.Sha512.X86_64.Shared.finalizeOwn_spSafe v.hso v.spSafe
   have hr : scalarReduce.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs (by lit_decide)
   have he := hq.spSafe
   have hi : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512).all (fun i => !isa.writesSp i) = true := by

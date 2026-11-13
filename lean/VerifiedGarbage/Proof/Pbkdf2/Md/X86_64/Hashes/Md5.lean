@@ -44,7 +44,7 @@ own, do not need. -/
 def hash : Hash where
   P := Impl.Md5.X86_64.Stream.params
   D := 16
-  W := Spec.Hmac.md5I.scratch
+  W := Hash.wOf Impl.Md5.X86_64.Stream.params
   compN := "vg_md5_compress"
   compC := Impl.Md5.X86_64.compress
   initN := "vg_md5_init_core"
@@ -56,7 +56,7 @@ def hash : Hash where
   iterN := "vg_pbkdf2_hmac_md5_iterate"
 
 /-- `hash` without the functions it calls. -/
-def coreH : Hash := ⟨Impl.Md5.X86_64.Stream.params, 16, 48, "", .block [], "", .block [], "", "", "", "",
+def coreH : Hash := ⟨Impl.Md5.X86_64.Stream.params, 16, Hash.wOf Impl.Md5.X86_64.Stream.params, "", .block [], "", .block [], "", "", "", "",
   "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
 
 theorem coreOK : CoreOK coreH := by
@@ -161,9 +161,15 @@ def ok : HashOK hash where
   updDepth := Callees.updD callees coreOK
   finDepth := Callees.finD callees coreOK
 
-theorem satI : ∃ s, (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.initScratchContract, Spec.Hmac.md5I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 48
+/-- `hash`, as `MdHash.okU` takes it: MD5 has one implementation, which uses
+no scratch space. -/
+def okU : HashOK (hash.withWs 0 (Hash.wOf { hash.P with so := 0 })) :=
+  ok.withWs 0 _ (by decide) Proof.Md5.X86_64.Stream.taints Proof.Md5.X86_64.Stream.callee (by decide) (by decide)
+    rfl callees coreOK
+
+theorem satI : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.md5I.S 16 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.md5I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+    Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 16
 
 /-- A state satisfying the precondition of `init_scratch` with the working
 space `init` uses (`initWords`). -/
@@ -171,43 +177,40 @@ theorem satW : ∃ s, (Proof.Hmac.initScratchContract Spec.Hmac.md5I.S 12 X86_64
   inst_sat [Spec.Hmac.md5I, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
     Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 12
 
-theorem satF : ∃ s, (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I X86_64.abi 16).pre s := by
-  inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Spec.Hmac.md5I, Proof.Hmac.finalizeScratchContract,
-    Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using finSat 80 16 48
+theorem satF : ∃ s, (Proof.Hmac.finalizeScratchContract Spec.Hmac.md5I.S 16 X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.md5I, Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig,
+    Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using finSat 80 16 16
 
-theorem satT : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.md5I X86_64.abi 8).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.iterateContract, Spec.Hmac.md5I, Proof.Pbkdf2.iterateContract,
-    Proof.Pbkdf2.iterateSig, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using Pbkdf2.X86_64.iterSat 80 16 48
+theorem satT : ∃ s, (Proof.Pbkdf2.iterateContract Spec.Hmac.md5I.S 16 X86_64.abi 8).pre s := by
+  inst_sat [Spec.Hmac.md5I, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Spec.Hmac.md5S,
+    Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using Pbkdf2.X86_64.iterSat 80 16 16
 
-theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.md5I.S Spec.Hmac.md5I.initAnyKeyScratch).pre s := by
-  inst_sat [Any.anyScratchContract, Spec.Hmac.Instance.initAnyKeyScratch, Spec.Hmac.md5I, Proof.Hmac.initScratchSig,
-    Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 128
+theorem satA : ∃ s, (Any.anyScratchContract Spec.Hmac.md5I.S 96).pre s := by
+  inst_sat [Any.anyScratchContract, Spec.Hmac.md5I, Proof.Hmac.initScratchSig, Spec.Hmac.initPost,
+    Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 96
 
-theorem satP : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I X86_64.abi 24).pre s := by
-  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
-    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi,
-    X86_64.argRegs] using pbkSat 128
+theorem satP : ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract Spec.Hmac.md5I.S 96 X86_64.abi 24).pre s := by
+  inst_sat [Spec.Hmac.md5I, Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig,
+    Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi,
+    X86_64.argRegs] using pbkSat 96
 
-theorem satPF :
-    ∃ s, (Spec.Hmac.md5I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.md5I)).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi,
-    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
-
-/-- The working space of `unscrubbed`'s code: the hash function's (`OwnWs`). -/
-def own : OwnWs Spec.Hmac.md5I :=
-  ⟨_, ok, coreOK, callees, rfl, rfl, 12, by simp only [initWords_eq, hash]; decide, satW, by
-    unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-    exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl)⟩
+theorem satPF : ∃ s, (Spec.Hmac.md5I.pbkdf2Contract X86_64.abi (24 + (24 + 8 * 96))).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.md5I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- `variant` before the residue analysis of HMAC's `finalize`. -/
-def unscrubbed (o : OwnWs Spec.Hmac.md5I := own) : MdHash :=
-  MdHash.of ok coreOK callees ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
+def unscrubbed : MdHash :=
+  MdHash.of (I := Spec.Hmac.md5I) ok coreOK callees ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
+    0 okU rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-    o
+    satW
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
     (by decide)
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
@@ -218,15 +221,15 @@ def unscrubbed (o : OwnWs Spec.Hmac.md5I := own) : MdHash :=
 /-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
 analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H)
+  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) []
 
 theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) .r8
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
       unscrubbed.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.I))) = true :=
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H))) = true :=
   VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
 
 /-- MD5, as a variant of `MdHash`. -/

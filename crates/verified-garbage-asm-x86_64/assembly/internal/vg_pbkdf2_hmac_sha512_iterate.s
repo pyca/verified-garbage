@@ -5,20 +5,20 @@
 // gives.
 
 vg_pbkdf2_hmac_sha512_iterate:
-	mov QWORD PTR [r8+1328], rbx
-	mov QWORD PTR [r8+1336], rbp
-	mov QWORD PTR [r8+1344], r12
-	mov QWORD PTR [r8+1352], r13
-	mov QWORD PTR [r8+1360], r14
-	mov QWORD PTR [r8+1368], r15
+	mov QWORD PTR [r8+192], rbx
+	mov QWORD PTR [r8+200], rbp
+	mov QWORD PTR [r8+208], r12
+	mov QWORD PTR [r8+216], r13
+	mov QWORD PTR [r8+224], r14
+	mov QWORD PTR [r8+232], r15
 	mov r15, r8
 	mov r12, rdi
 	mov r13, rcx
 	mov r14d, edx
 	mov rbx, r8
-	add rbx, 1376
+	add rbx, 240
 	mov rbp, r8
-	add rbp, 1440
+	add rbp, 304
 	mov eax, DWORD PTR [rsi]
 	mov DWORD PTR [rbp], eax
 	mov eax, DWORD PTR [rsi+4]
@@ -259,11 +259,11 @@ vg_pbkdf2_hmac_sha512_iterate:
 	jmp 21f
 20:
 21:
-	mov rbx, QWORD PTR [r15+1328]
-	mov rbp, QWORD PTR [r15+1336]
-	mov r12, QWORD PTR [r15+1344]
-	mov r13, QWORD PTR [r15+1352]
-	mov r14, QWORD PTR [r15+1360]
-	mov r15, QWORD PTR [r15+1368]
+	mov rbx, QWORD PTR [r15+192]
+	mov rbp, QWORD PTR [r15+200]
+	mov r12, QWORD PTR [r15+208]
+	mov r13, QWORD PTR [r15+216]
+	mov r14, QWORD PTR [r15+224]
+	mov r15, QWORD PTR [r15+232]
 	ret
 	.p2align 6

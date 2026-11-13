@@ -5,12 +5,12 @@
 // gives.
 
 vg_sha1_update_scratch_shani:
-	mov QWORD PTR [r8+112], rbx
-	mov QWORD PTR [r8+120], rbp
-	mov QWORD PTR [r8+128], r12
-	mov QWORD PTR [r8+136], r13
-	mov QWORD PTR [r8+144], r14
-	mov QWORD PTR [r8+152], r15
+	mov QWORD PTR [r8], rbx
+	mov QWORD PTR [r8+8], rbp
+	mov QWORD PTR [r8+16], r12
+	mov QWORD PTR [r8+24], r13
+	mov QWORD PTR [r8+32], r14
+	mov QWORD PTR [r8+40], r15
 	mov rbx, rdi
 	mov r15, r8
 	mov rbp, rdx
@@ -149,11 +149,11 @@ vg_sha1_update_scratch_shani:
 226:
 	test r14, r14
 	jne 20b
-	mov rbx, QWORD PTR [r15+112]
-	mov rbp, QWORD PTR [r15+120]
-	mov r12, QWORD PTR [r15+128]
-	mov r13, QWORD PTR [r15+136]
-	mov r14, QWORD PTR [r15+144]
-	mov r15, QWORD PTR [r15+152]
+	mov rbx, QWORD PTR [r15]
+	mov rbp, QWORD PTR [r15+8]
+	mov r12, QWORD PTR [r15+16]
+	mov r13, QWORD PTR [r15+24]
+	mov r14, QWORD PTR [r15+32]
+	mov r15, QWORD PTR [r15+40]
 	ret
 	.p2align 6

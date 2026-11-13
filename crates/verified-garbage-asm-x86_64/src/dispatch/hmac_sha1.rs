@@ -16,7 +16,7 @@
 /// * `outer` must be valid for reads and writes of 84 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 952 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha1_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
@@ -73,7 +73,7 @@ pub unsafe fn vg_hmac_sha1_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner:
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 472 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_sha1_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {

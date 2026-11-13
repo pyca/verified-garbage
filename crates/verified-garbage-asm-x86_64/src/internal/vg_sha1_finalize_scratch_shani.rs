@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize_scratch_shani() {
     core::arch::naked_asm!(
-        r#".base64 "SIlZcEiJaXhMiaGAAAAATImpiAAAAEyJsZAAAABMibmYAAAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SIkZSIlpCEyJYRBMiWkYTIlxIEyJeShIiftJic9IidVJifRJifVJg+U/QbmAAAAAQb4AAAAASYP9OA=="
 jae 20f
 jmp 21f
 20:
@@ -70,7 +70,7 @@ jmp 219f
 call {vg_sha1_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAAww=="
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYsfSYtvCE2LZxBNi28YTYt3IE2LfyjD"
 .p2align 6"#,
         vg_sha1_compress_shani = sym crate::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )

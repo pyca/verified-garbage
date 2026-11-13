@@ -85,6 +85,30 @@ theorem update_spSafe {f : Callee} (h : f.code.all (fun i => !X86_64.isa.writesS
   decide +kernel
 
 open VG.Impl.Sha512.X86_64.Stream (Callee) in
+/-- `update_spSafe`, for `updateOwn`. -/
+theorem updateOwn_spSafe {f : Callee} (hso : f.so = 0 ∨ f.so = 192 ∨ f.so = 1328)
+    (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (Impl.Sha512.X86_64.Stream.updateOwn f).all (fun i => !X86_64.isa.writesSp i) = true := by
+  obtain ⟨n, c, so⟩ := f
+  dsimp only at hso h
+  simp only [Impl.Sha512.X86_64.Stream.updateOwn, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
+    Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith, Code.all, h,
+    Bool.true_and]
+  rcases hso with rfl | rfl | rfl <;> decide +kernel
+
+open VG.Impl.Sha512.X86_64.Stream (Callee) in
+/-- `finalize_spSafe`, for `finalizeOwn`. -/
+theorem finalizeOwn_spSafe {f : Callee} (hso : f.so = 0 ∨ f.so = 192 ∨ f.so = 1328)
+    (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (Impl.Sha512.X86_64.Stream.finalizeOwn f).all (fun i => !X86_64.isa.writesSp i) = true := by
+  obtain ⟨n, c, so⟩ := f
+  dsimp only at hso h
+  simp only [Impl.Sha512.X86_64.Stream.finalizeOwn, Impl.MdStream.X86_64.finalize,
+    Impl.MdStream.X86_64.finalizeBody, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    Code.all, h, Bool.true_and]
+  rcases hso with rfl | rfl | rfl <;> decide +kernel
+
+open VG.Impl.Sha512.X86_64.Stream (Callee) in
 /-- `finalizeScratch`, for any compression function `f` (see `Variant.lean`). -/
 theorem finalizeScratch {f : Callee} (hf : MdStream.X86_64.CalleeOk (P := Stream.params) md f.code)
     (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :

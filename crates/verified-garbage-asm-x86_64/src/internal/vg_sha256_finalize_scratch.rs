@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_finalize_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "SImZMAIAAEiJqTgCAABMiaFAAgAATImpSAIAAEyJsVACAABMiblYAgAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SIlZcEiJaXhMiaGAAAAATImpiAAAAEyJsZAAAABMibmYAAAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
 jae 20f
 jmp 21f
 20:
@@ -70,7 +70,7 @@ jmp 219f
 call {vg_sha256_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAAww=="
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAAww=="
 .p2align 6"#,
         vg_sha256_compress = sym crate::sha256::vg_sha256_compress::vg_sha256_compress,
     )

@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha384_init_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "SYmYYAUAAEmJqGgFAABNiaBwBQAATYmoeAUAAE2JsIAFAABNibiIBQAASIn7SYn0TYnHSInVSYnNSInf"
+        r#".base64 "SYmY8AAAAEmJqPgAAABNiaAAAQAATYmoCAEAAE2JsBABAABNibgYAQAASIn7SYn0TYnHSInVSYnNSInf"
 call {vg_sha384_init_core}
 .base64 "TInn"
 call {vg_sha384_init_core}
@@ -35,7 +35,7 @@ jmp 24f
 call {vg_sha512_compress}
 .base64 "SIn7SYnPTInjTInmSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress}
-.base64 "SIn7SYnPSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
+.base64 "SIn7SYnPSYuf8AAAAEmLr/gAAABNi6cAAQAATYuvCAEAAE2LtxABAABNi78YAQAAww=="
 .p2align 6"#,
         vg_sha384_init_core = sym crate::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
         vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,

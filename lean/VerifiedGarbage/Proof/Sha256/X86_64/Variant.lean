@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Offset
@@ -29,6 +29,10 @@ structure Compress where
   callee : Impl.Sha256.X86_64.Stream.Callee
   /-- It is correct and constant time, and keeps what callers need. -/
   ok : callee.Ok
+  /-- The same with the scratch space it uses (`Callee.so`), which the
+  functions that call it by name give it. -/
+  okS : MdStream.X86_64.CalleeOk (P := Stream.paramsS callee.so) md callee.code
+  hso : callee.so = 0 ∨ callee.so = 112 ∨ callee.so = 560 := by decide
   /-- It never loads MXCSR. -/
   mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
   /-- It never writes the stack pointer. -/

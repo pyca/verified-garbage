@@ -11,11 +11,11 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha256_finalize_scratch_shani() {
     core::arch::naked_asm!(
-        r#".base64 "SYmYYAIAAEmJqGgCAABNiaBwAgAATYmoeAIAAE2JsIACAABNibiIAgAASIn7SYn0SYnNTYnHSInWTIn6SIHCkAIAAEyJ+Q=="
+        r#".base64 "SYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0SYnNTYnHSInWTIn6SIPCYEyJ+Q=="
 call {vg_sha256_finalize_scratch_shani}
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi4eQAgAAiUMgQYuHlAIAAIlDJEGLh5gCAACJQyhBi4ecAgAAiUMsQYuHoAIAAIlDMEGLh6QCAACJQzRBi4eoAgAAiUM4QYuHrAIAAIlDPEiJ3UiDxSC4gAAAAIlFILgAAAAAiUUkiUUoiUUsiUUwiUU0QbxgAAAATIngSAHASAHASAHASA/ISIlDWEiJ7kiJ37oBAAAATIn5"
+.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxBi0dgiUMgQYtHZIlDJEGLR2iJQyhBi0dsiUMsQYtHcIlDMEGLR3SJQzRBi0d4iUM4QYtHfIlDPEiJ3UiDxSC4gAAAAIlFILgAAAAAiUUkiUUoiUUsiUUwiUU0QbxgAAAATIngSAHASAHASAHASA/ISIlDWEiJ7kiJ37oBAAAATIn5"
 call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufYAIAAEmLr2gCAABNi6dwAgAATYuveAIAAE2Lt4ACAABNi7+IAgAAww=="
+.base64 "SIn7SYnPTIntiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39Yww=="
 .p2align 6"#,
         vg_sha256_finalize_scratch_shani = sym crate::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
