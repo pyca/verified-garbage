@@ -63,13 +63,13 @@ theorem seeded_prefix (m : Mem) (B : Addr) {d W j X : Nat} (hjX : j + (W / 2 - 1
   exact ⟨low.symm, low ▸ hP⟩
 
 /-- Setup, seed, reciprocal, public counter and the word loop compute the remainder, for a
-dividend of `xw W top` words. -/
-theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
-    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) {top : Option Nat} (hk : ∀ k, top = some k → k ≤ W / 2)
+dividend of `j₀ + (W / 2 - 1)` words, `j₀` the first digit's index that `st` computes. -/
+theorem codeWith_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) {st : List Instr} {j₀ : Nat} (hst : StartOk st W j₀)
     (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat)
     (hMpos : 0 < wv s.mem B (slot W aM) (W / 2)) :
-    WP isa (code top) s fun t =>
-      (wv s.mem B (slot W aD) W < 2 ^ (64 * xw W top) → wv t.mem B (slot W aR) (W + 1) =
+    WP isa (codeWith st) s fun t =>
+      (wv s.mem B (slot W aD) W < 2 ^ (64 * (j₀ + (W / 2 - 1))) → wv t.mem B (slot W aR) (W + 1) =
         wv s.mem B (slot W aD) W % wv s.mem B (slot W aM) (W / 2)) ∧
       Frm B (allRanges W) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := h.scr.nowrap
@@ -80,19 +80,15 @@ theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
   have hD := h.sl (j := aD) (by decide)
   have sepRM := slot_far (w := W) (i := aR) (j := aM) (by decide)
   have sepRD := slot_far (w := W) (i := aR) (j := aD) (by decide)
-  have hj := j0_add top (W := W) (by omega_arith)
-  have hxw : xw W top ≤ W := by
-    cases top with
-    | none => simp only [xw]; omega_arith
-    | some k => have := hk k rfl; simp only [xw]; omega_arith
-  have hj1 : 1 ≤ j0 W top := by cases top <;> simp only [j0] <;> omega_arith
-  unfold code
-  change WP isa (.seq (VG.Impl.Rsa.X86_64.Keys.zeroA aR) (.seq (seed top) (.seq (.block recipSetup)
-    (.seq VG.Impl.Bignum.X86_64.R2Words.recip (.seq (.block (countSetup top)) (.loop body .ne)))))) s _
+  have hxw := hst.fit
+  have hj1 := hst.pos
+  unfold codeWith
+  change WP isa (.seq (VG.Impl.Rsa.X86_64.Keys.zeroA aR) (.seq (seedWith st) (.seq (.block recipSetup)
+    (.seq VG.Impl.Bignum.X86_64.R2Words.recip (.seq (.block (countSetupWith st)) (.loop body .ne)))))) s _
   refine WP.seq (WP.mono (zeroA_ok h (by decide)) fun s₀ ⟨z₀, o₀, k₀⟩ => ?_)
   have f₀ : Frm B (allRanges W) s.mem s₀.mem := Frm.of_outside o₀ (by simp [allRanges])
   have h₀ := h.congr f₀ (fun _ hr => all_mut hr) k₀ (by decide)
-  refine WP.seq (WP.mono (seed_ok h₀ hW hk) fun s₁ ⟨v₁, oS, kS⟩ => ?_)
+  refine WP.seq (WP.mono (seedWith_ok h₀ hW hst) fun s₁ ⟨v₁, oS, kS⟩ => ?_)
   have o₁ : Outside B (slot W aR) (8 * (W + 2)) s.mem s₁.mem :=
     o₀.trans (oS.mono (Nat.le_refl _) (by omega_arith))
   have f₁ : Frm B (allRanges W) s.mem s₁.mem := Frm.of_outside o₁ (by simp [allRanges])
@@ -119,7 +115,7 @@ theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     exact ⟨(slot W aV, 24), by simp, (Nat.le_refl _), by omega_arith⟩
   have k03 := ((k₀.trans kS).trans k₂).trans k₃
   have h₃ := h₁.congr f₃ (fun _ hr => all_mut hr) (k₂.trans k₃) (by decide)
-  refine WP.seq (WP.mono (countSetup_ok h₃ hZ (top := top) (fun k e => by have := hk k e; omega_arith))
+  refine WP.seq (WP.mono (countSetupWith_ok h₃ hZ hst)
     fun s₄ ⟨ha, m₄, k₄⟩ => ?_)
   have o₄ : Outside B (slot W aV + 16) 8 s₃.mem s₄.mem := by
     rw [m₄]; exact writeW_outside _ _ _ (by omega_arith)
@@ -169,18 +165,18 @@ theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     Nat.lt_of_lt_of_le (by rw [e1]; exact wv_lt _ _ _ _) Mlo
   -- the dividend's words below `j` after the remainder so far
   let R₀ := wv s₄.mem B (slot W aR) (W / 2)
-  let P : Nat → Nat := fun j => R₀ * 2 ^ (64 * (j0 W top - j)) + wv s₄.mem B (slot W aD + 8 * j) (j0 W top - j)
-  have hP : ∀ j, 1 ≤ j → j ≤ j0 W top →
+  let P : Nat → Nat := fun j => R₀ * 2 ^ (64 * (j₀ - j)) + wv s₄.mem B (slot W aD + 8 * j) (j₀ - j)
+  have hP : ∀ j, 1 ≤ j → j ≤ j₀ →
       P (j - 1) = (word s₄.mem B (slot W aD + 8 * (j - 1))).toNat + 2 ^ 64 * P j := fun j h1 h2 => by
     simp only [P]
-    have ew := wv_add s₄.mem B (slot W aD + 8 * (j - 1)) 1 (j0 W top - j)
-    rw [show 1 + (j0 W top - j) = j0 W top - (j - 1) by omega_arith,
+    have ew := wv_add s₄.mem B (slot W aD + 8 * (j - 1)) 1 (j₀ - j)
+    rw [show 1 + (j₀ - j) = j₀ - (j - 1) by omega_arith,
       show slot W aD + 8 * (j - 1) + 8 * 1 = slot W aD + 8 * j by omega_arith] at ew
-    rw [ew, show j0 W top - (j - 1) = (j0 W top - j) + 1 by omega_arith, Nat.mul_add, Nat.pow_add]
+    rw [ew, show j₀ - (j - 1) = (j₀ - j) + 1 by omega_arith, Nat.mul_add, Nat.pow_add]
     simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.pow_zero, Nat.one_mul]
     rw [show 2 ^ (64 * 1) = 2 ^ 64 from rfl, Nat.mul_add]
     ac_rfl
-  have h0 : wv s₄.mem B (slot W aR) (W / 2) = P (j0 W top) % wv s₄.mem B (slot W aM) (W / 2) := by
+  have h0 : wv s₄.mem B (slot W aR) (W / 2) = P (j₀) % wv s₄.mem B (slot W aM) (W / 2) := by
     simp only [P, Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, wv, Nat.add_zero]
     exact (Nat.mod_eq_of_lt R₀lt).symm
   refine WP.mono (loop_ok h₄ hZ hW hj1 (by omega_arith) (by rw [m₄, word_writeW_self]) ha (by rw [eqTop]; exact hd)
@@ -199,19 +195,19 @@ theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     exact zh' i (by omega_arith)
   refine ⟨fun hX => ?_, ?_, ((k03.trans k₄).trans kl).mono (by decide)⟩
   · -- the seed is the dividend's words from `j₀`, so `P 0` is the dividend
-    have hX₄ : wv s₄.mem B (slot W aD) W < 2 ^ (64 * xw W top) := by rw [eqD]; exact hX
-    obtain ⟨pfx, -⟩ := seeded_prefix s₄.mem B (d := slot W aD) hj hxw hX₄
-    have Dj : wv s₄.mem B (slot W aD + 8 * j0 W top) (W / 2 - 1) =
-        wv s₀.mem B (slot W aD + 8 * j0 W top) (W / 2 - 1) := by
+    have hX₄ : wv s₄.mem B (slot W aD) W < 2 ^ (64 * (j₀ + (W / 2 - 1))) := by rw [eqD]; exact hX
+    obtain ⟨pfx, -⟩ := seeded_prefix s₄.mem B (d := slot W aD) rfl hxw hX₄
+    have Dj : wv s₄.mem B (slot W aD + 8 * j₀) (W / 2 - 1) =
+        wv s₀.mem B (slot W aD + 8 * j₀) (W / 2 - 1) := by
       rw [o₄.wv (.inl (by simp only [slot, aD, aV]; omega_arith)) (by omega_arith),
         o₃.wv (.inl (by simp only [slot, aD, aV]; omega_arith)) (by omega_arith),
         oS.wv (.inr (by simp only [slot, aD, aR]; omega_arith)) (by omega_arith)]
-    have seedv : R₀ = wv s₄.mem B (slot W aD + 8 * j0 W top) (W - j0 W top) := by
+    have seedv : R₀ = wv s₄.mem B (slot W aD + 8 * j₀) (W - j₀) := by
       simp only [R₀]; rw [e1, R₄ _ (by omega_arith), v₁, ← Dj, pfx]
     have P0 : P 0 = wv s₄.mem B (slot W aD) W := by
       simp only [P, Nat.sub_zero, Nat.mul_zero, Nat.add_zero]
-      have ed := wv_add s₄.mem B (slot W aD) (j0 W top) (W - j0 W top)
-      rw [show j0 W top + (W - j0 W top) = W by omega_arith, ← seedv] at ed
+      have ed := wv_add s₄.mem B (slot W aD) (j₀) (W - j₀)
+      rw [show j₀ + (W - j₀) = W by omega_arith, ← seedv] at ed
       rw [ed, Nat.add_comm, Nat.mul_comm]
     have := wv_add t.mem B (slot W aR) (W / 2) (W + 1 - W / 2)
     rw [show W / 2 + (W + 1 - W / 2) = W + 1 by omega_arith, hi, Nat.mul_zero, Nat.add_zero] at this
@@ -224,5 +220,18 @@ theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     · exact ⟨(slot W aR, 8 * (W + 2)), by simp [allRanges], (Nat.le_refl _), by omega_arith⟩
     · exact ⟨(slot W aT, 8 * (W / 2 + 1)), by simp [allRanges], (Nat.le_refl _), (Nat.le_refl _)⟩
     · exact ⟨(slot W aV, 24), by simp [allRanges], by omega_arith, by omega_arith⟩
+
+/-- `codeWith_ok` for `code top`, a dividend of `xw W top` words. -/
+theorem code_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
+    (hZ : slot W 17 ≤ Z) (hW : 6 ≤ W) {top : Option Nat} (hk : ∀ k, top = some k → k ≤ W / 2)
+    (hd : 2 ^ 63 ≤ (word s.mem B (slot W aM + 8 * (W / 2 - 1))).toNat)
+    (hMpos : 0 < wv s.mem B (slot W aM) (W / 2)) :
+    WP isa (code top) s fun t =>
+      (wv s.mem B (slot W aD) W < 2 ^ (64 * xw W top) → wv t.mem B (slot W aR) (W + 1) =
+        wv s.mem B (slot W aD) W % wv s.mem B (slot W aM) (W / 2)) ∧
+      Frm B (allRanges W) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hw := h.w2
+  rw [← j0_add top (W := W) (by omega_arith)]
+  exact codeWith_ok h hZ hW (start_startOk hW (by omega_arith) hk) hd hMpos
 
 end VG.Proof.Rsa.X86_64.WordDivide

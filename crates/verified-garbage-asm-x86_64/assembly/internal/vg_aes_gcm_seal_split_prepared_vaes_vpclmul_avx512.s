@@ -550,7 +550,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+192]
 	vpxord zmm6, zmm6, zmm13
 	vmovdqu32 ZMMWORD PTR [rdx+192], zmm6
-	cmp r9, 144
+	cmp r9, 48
 	jb 241f
 	vmovdqu ymm12, YMMWORD PTR [rdi+736]
 	vmovdqu YMMWORD PTR [r11+256], ymm12
@@ -585,6 +585,8 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vmovdqu ymm12, YMMWORD PTR [rdi+768]
 	vmovdqu YMMWORD PTR [r11+736], ymm12
 	vmovdqu32 ZMMWORD PTR [r11+832], zmm1
+	cmp r9, 144
+	jb 243f
 	vpshufb zmm3, zmm14, zmm0
 	vpaddd zmm14, zmm14, zmm15
 	vpshufb zmm4, zmm14, zmm0
@@ -634,7 +636,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm25
 	vaesenc zmm6, zmm6, zmm25
 	cmp rsi, 10
-	je 243f
+	je 245f
 	vaesenc zmm3, zmm3, zmm26
 	vaesenc zmm4, zmm4, zmm26
 	vaesenc zmm5, zmm5, zmm26
@@ -644,7 +646,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm27
 	vaesenc zmm6, zmm6, zmm27
 	cmp rsi, 12
-	je 245f
+	je 247f
 	vaesenc zmm3, zmm3, zmm28
 	vaesenc zmm4, zmm4, zmm28
 	vaesenc zmm5, zmm5, zmm28
@@ -653,12 +655,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm4, zmm4, zmm29
 	vaesenc zmm5, zmm5, zmm29
 	vaesenc zmm6, zmm6, zmm29
+	jmp 248f
+247:
+248:
 	jmp 246f
 245:
 246:
-	jmp 244f
-243:
-244:
 	vaesenclast zmm3, zmm3, zmm31
 	vaesenclast zmm4, zmm4, zmm31
 	vaesenclast zmm5, zmm5, zmm31
@@ -724,7 +726,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm25
 	vaesenc zmm6, zmm6, zmm25
 	cmp rsi, 10
-	je 247f
+	je 249f
 	vaesenc zmm3, zmm3, zmm26
 	vaesenc zmm4, zmm4, zmm26
 	vaesenc zmm5, zmm5, zmm26
@@ -734,7 +736,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm27
 	vaesenc zmm6, zmm6, zmm27
 	cmp rsi, 12
-	je 249f
+	je 251f
 	vaesenc zmm3, zmm3, zmm28
 	vaesenc zmm4, zmm4, zmm28
 	vaesenc zmm5, zmm5, zmm28
@@ -743,12 +745,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm4, zmm4, zmm29
 	vaesenc zmm5, zmm5, zmm29
 	vaesenc zmm6, zmm6, zmm29
+	jmp 252f
+251:
+252:
 	jmp 250f
 249:
 250:
-	jmp 248f
-247:
-248:
 	vaesenclast zmm3, zmm3, zmm31
 	vaesenclast zmm4, zmm4, zmm31
 	vaesenclast zmm5, zmm5, zmm31
@@ -765,7 +767,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+704]
 	vpxord zmm6, zmm6, zmm13
 	vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
-251:
+253:
 	vpshufb zmm3, zmm14, zmm0
 	vpaddd zmm14, zmm14, zmm15
 	vpshufb zmm4, zmm14, zmm0
@@ -852,7 +854,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm25
 	vaesenc zmm6, zmm6, zmm25
 	cmp rsi, 10
-	je 252f
+	je 254f
 	vaesenc zmm3, zmm3, zmm26
 	vaesenc zmm4, zmm4, zmm26
 	vaesenc zmm5, zmm5, zmm26
@@ -862,7 +864,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm27
 	vaesenc zmm6, zmm6, zmm27
 	cmp rsi, 12
-	je 254f
+	je 256f
 	vaesenc zmm3, zmm3, zmm28
 	vaesenc zmm4, zmm4, zmm28
 	vaesenc zmm5, zmm5, zmm28
@@ -871,12 +873,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm4, zmm4, zmm29
 	vaesenc zmm5, zmm5, zmm29
 	vaesenc zmm6, zmm6, zmm29
+	jmp 257f
+256:
+257:
 	jmp 255f
 254:
 255:
-	jmp 253f
-252:
-253:
 	vaesenclast zmm3, zmm3, zmm31
 	vaesenclast zmm4, zmm4, zmm31
 	vaesenclast zmm5, zmm5, zmm31
@@ -978,7 +980,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm25
 	vaesenc zmm6, zmm6, zmm25
 	cmp rsi, 10
-	je 256f
+	je 258f
 	vaesenc zmm3, zmm3, zmm26
 	vaesenc zmm4, zmm4, zmm26
 	vaesenc zmm5, zmm5, zmm26
@@ -988,7 +990,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm27
 	vaesenc zmm6, zmm6, zmm27
 	cmp rsi, 12
-	je 258f
+	je 260f
 	vaesenc zmm3, zmm3, zmm28
 	vaesenc zmm4, zmm4, zmm28
 	vaesenc zmm5, zmm5, zmm28
@@ -997,12 +999,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm4, zmm4, zmm29
 	vaesenc zmm5, zmm5, zmm29
 	vaesenc zmm6, zmm6, zmm29
+	jmp 261f
+260:
+261:
 	jmp 259f
 258:
 259:
-	jmp 257f
-256:
-257:
 	vaesenclast zmm3, zmm3, zmm31
 	vaesenclast zmm4, zmm4, zmm31
 	vaesenclast zmm5, zmm5, zmm31
@@ -1115,7 +1117,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm25
 	vaesenc zmm6, zmm6, zmm25
 	cmp rsi, 10
-	je 260f
+	je 262f
 	vaesenc zmm3, zmm3, zmm26
 	vaesenc zmm4, zmm4, zmm26
 	vaesenc zmm5, zmm5, zmm26
@@ -1125,7 +1127,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm27
 	vaesenc zmm6, zmm6, zmm27
 	cmp rsi, 12
-	je 262f
+	je 264f
 	vaesenc zmm3, zmm3, zmm28
 	vaesenc zmm4, zmm4, zmm28
 	vaesenc zmm5, zmm5, zmm28
@@ -1134,12 +1136,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm4, zmm4, zmm29
 	vaesenc zmm5, zmm5, zmm29
 	vaesenc zmm6, zmm6, zmm29
+	jmp 265f
+264:
+265:
 	jmp 263f
 262:
 263:
-	jmp 261f
-260:
-261:
 	vaesenclast zmm3, zmm3, zmm31
 	vaesenclast zmm4, zmm4, zmm31
 	vaesenclast zmm5, zmm5, zmm31
@@ -1159,7 +1161,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	add rdx, 768
 	sub r9, 48
 	cmp r9, 96
-	jae 251b
+	jae 253b
 	vmovdqu32 zmm1, ZMMWORD PTR [r11+832]
 	vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
 	vmovdqu32 zmm7, ZMMWORD PTR [rdx+64]
@@ -1263,12 +1265,824 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm10, xmm11
 	add rdx, 256
 	sub r9, 16
+	jmp 244f
+243:
+	vmovdqu32 ZMMWORD PTR [r11+896], zmm15
+	vmovdqu32 zmm7, ZMMWORD PTR [rdx]
+	vmovdqu32 zmm1, ZMMWORD PTR [rdx+64]
+	vmovdqu32 zmm12, ZMMWORD PTR [rdx+128]
+	vmovdqu32 zmm15, ZMMWORD PTR [rdx+192]
+	vpshufb zmm7, zmm7, zmm0
+	vpshufb zmm1, zmm1, zmm0
+	vpshufb zmm12, zmm12, zmm0
+	vpshufb zmm15, zmm15, zmm0
+	cmp r9, 64
+	jb 266f
+268:
+	vmovdqu32 zmm11, ZMMWORD PTR [r11+896]
+	vpshufb zmm3, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm4, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm5, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm6, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpxord zmm3, zmm3, zmm16
+	vpxord zmm4, zmm4, zmm16
+	vpxord zmm5, zmm5, zmm16
+	vpxord zmm6, zmm6, zmm16
+	vaesenc zmm3, zmm3, zmm17
+	vaesenc zmm4, zmm4, zmm17
+	vaesenc zmm5, zmm5, zmm17
+	vaesenc zmm6, zmm6, zmm17
+	vaesenc zmm3, zmm3, zmm18
+	vaesenc zmm4, zmm4, zmm18
+	vaesenc zmm5, zmm5, zmm18
+	vaesenc zmm6, zmm6, zmm18
+	vaesenc zmm3, zmm3, zmm19
+	vaesenc zmm4, zmm4, zmm19
+	vaesenc zmm5, zmm5, zmm19
+	vaesenc zmm6, zmm6, zmm19
+	vaesenc zmm3, zmm3, zmm20
+	vaesenc zmm4, zmm4, zmm20
+	vaesenc zmm5, zmm5, zmm20
+	vaesenc zmm6, zmm6, zmm20
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+512]
+	vpxord zmm7, zmm7, zmm2
+	vpclmulqdq zmm9, zmm7, zmm13, 1
+	vpclmulqdq zmm11, zmm7, zmm13, 16
+	vpxord zmm9, zmm9, zmm11
+	vpclmulqdq zmm8, zmm7, zmm13, 0
+	vpclmulqdq zmm7, zmm7, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+576]
+	vpclmulqdq zmm2, zmm1, zmm13, 0
+	vpxord zmm8, zmm8, zmm2
+	vpclmulqdq zmm10, zmm1, zmm13, 17
+	vpxord zmm10, zmm10, zmm7
+	vpclmulqdq zmm11, zmm1, zmm13, 1
+	vpclmulqdq zmm2, zmm1, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm21
+	vaesenc zmm4, zmm4, zmm21
+	vaesenc zmm5, zmm5, zmm21
+	vaesenc zmm6, zmm6, zmm21
+	vaesenc zmm3, zmm3, zmm22
+	vaesenc zmm4, zmm4, zmm22
+	vaesenc zmm5, zmm5, zmm22
+	vaesenc zmm6, zmm6, zmm22
+	vaesenc zmm3, zmm3, zmm23
+	vaesenc zmm4, zmm4, zmm23
+	vaesenc zmm5, zmm5, zmm23
+	vaesenc zmm6, zmm6, zmm23
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+640]
+	vpclmulqdq zmm11, zmm12, zmm13, 1
+	vpclmulqdq zmm2, zmm12, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm12, zmm13, 0
+	vpclmulqdq zmm12, zmm12, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+704]
+	vpclmulqdq zmm2, zmm15, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm15, zmm13, 17
+	vpternlogd zmm10, zmm12, zmm2, 150
+	vpclmulqdq zmm11, zmm15, zmm13, 1
+	vpclmulqdq zmm2, zmm15, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm24
+	vaesenc zmm4, zmm4, zmm24
+	vaesenc zmm5, zmm5, zmm24
+	vaesenc zmm6, zmm6, zmm24
+	vaesenc zmm3, zmm3, zmm25
+	vaesenc zmm4, zmm4, zmm25
+	vaesenc zmm5, zmm5, zmm25
+	vaesenc zmm6, zmm6, zmm25
+	cmp rsi, 10
+	je 269f
+	vaesenc zmm3, zmm3, zmm26
+	vaesenc zmm4, zmm4, zmm26
+	vaesenc zmm5, zmm5, zmm26
+	vaesenc zmm6, zmm6, zmm26
+	vaesenc zmm3, zmm3, zmm27
+	vaesenc zmm4, zmm4, zmm27
+	vaesenc zmm5, zmm5, zmm27
+	vaesenc zmm6, zmm6, zmm27
+	cmp rsi, 12
+	je 271f
+	vaesenc zmm3, zmm3, zmm28
+	vaesenc zmm4, zmm4, zmm28
+	vaesenc zmm5, zmm5, zmm28
+	vaesenc zmm6, zmm6, zmm28
+	vaesenc zmm3, zmm3, zmm29
+	vaesenc zmm4, zmm4, zmm29
+	vaesenc zmm5, zmm5, zmm29
+	vaesenc zmm6, zmm6, zmm29
+	jmp 272f
+271:
+272:
+	jmp 270f
+269:
+270:
+	vaesenclast zmm3, zmm3, zmm31
+	vaesenclast zmm4, zmm4, zmm31
+	vaesenclast zmm5, zmm5, zmm31
+	vaesenclast zmm6, zmm6, zmm31
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+256]
+	vpxord zmm3, zmm3, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+256], zmm3
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+320]
+	vpxord zmm4, zmm4, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+320], zmm4
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+384]
+	vpxord zmm5, zmm5, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+448]
+	vpxord zmm6, zmm6, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
+	vpshufb zmm7, zmm3, zmm0
+	vpshufb zmm1, zmm4, zmm0
+	vpshufb zmm12, zmm5, zmm0
+	vpshufb zmm15, zmm6, zmm0
+	vmovdqu32 zmm11, ZMMWORD PTR [r11+896]
+	vpshufb zmm3, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm4, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm5, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm6, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpxord zmm3, zmm3, zmm16
+	vpxord zmm4, zmm4, zmm16
+	vpxord zmm5, zmm5, zmm16
+	vpxord zmm6, zmm6, zmm16
+	vaesenc zmm3, zmm3, zmm17
+	vaesenc zmm4, zmm4, zmm17
+	vaesenc zmm5, zmm5, zmm17
+	vaesenc zmm6, zmm6, zmm17
+	vaesenc zmm3, zmm3, zmm18
+	vaesenc zmm4, zmm4, zmm18
+	vaesenc zmm5, zmm5, zmm18
+	vaesenc zmm6, zmm6, zmm18
+	vaesenc zmm3, zmm3, zmm19
+	vaesenc zmm4, zmm4, zmm19
+	vaesenc zmm5, zmm5, zmm19
+	vaesenc zmm6, zmm6, zmm19
+	vaesenc zmm3, zmm3, zmm20
+	vaesenc zmm4, zmm4, zmm20
+	vaesenc zmm5, zmm5, zmm20
+	vaesenc zmm6, zmm6, zmm20
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+256]
+	vpclmulqdq zmm11, zmm7, zmm13, 1
+	vpclmulqdq zmm2, zmm7, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm7, zmm13, 0
+	vpclmulqdq zmm7, zmm7, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+320]
+	vpclmulqdq zmm2, zmm1, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm1, zmm13, 17
+	vpternlogd zmm10, zmm7, zmm2, 150
+	vpclmulqdq zmm11, zmm1, zmm13, 1
+	vpclmulqdq zmm2, zmm1, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm21
+	vaesenc zmm4, zmm4, zmm21
+	vaesenc zmm5, zmm5, zmm21
+	vaesenc zmm6, zmm6, zmm21
+	vaesenc zmm3, zmm3, zmm22
+	vaesenc zmm4, zmm4, zmm22
+	vaesenc zmm5, zmm5, zmm22
+	vaesenc zmm6, zmm6, zmm22
+	vaesenc zmm3, zmm3, zmm23
+	vaesenc zmm4, zmm4, zmm23
+	vaesenc zmm5, zmm5, zmm23
+	vaesenc zmm6, zmm6, zmm23
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+384]
+	vpclmulqdq zmm11, zmm12, zmm13, 1
+	vpclmulqdq zmm2, zmm12, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm12, zmm13, 0
+	vpclmulqdq zmm12, zmm12, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+448]
+	vpclmulqdq zmm2, zmm15, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm15, zmm13, 17
+	vpternlogd zmm10, zmm12, zmm2, 150
+	vpclmulqdq zmm11, zmm15, zmm13, 1
+	vpclmulqdq zmm2, zmm15, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm24
+	vaesenc zmm4, zmm4, zmm24
+	vaesenc zmm5, zmm5, zmm24
+	vaesenc zmm6, zmm6, zmm24
+	vaesenc zmm3, zmm3, zmm25
+	vaesenc zmm4, zmm4, zmm25
+	vaesenc zmm5, zmm5, zmm25
+	vaesenc zmm6, zmm6, zmm25
+	cmp rsi, 10
+	je 273f
+	vaesenc zmm3, zmm3, zmm26
+	vaesenc zmm4, zmm4, zmm26
+	vaesenc zmm5, zmm5, zmm26
+	vaesenc zmm6, zmm6, zmm26
+	vaesenc zmm3, zmm3, zmm27
+	vaesenc zmm4, zmm4, zmm27
+	vaesenc zmm5, zmm5, zmm27
+	vaesenc zmm6, zmm6, zmm27
+	cmp rsi, 12
+	je 275f
+	vaesenc zmm3, zmm3, zmm28
+	vaesenc zmm4, zmm4, zmm28
+	vaesenc zmm5, zmm5, zmm28
+	vaesenc zmm6, zmm6, zmm28
+	vaesenc zmm3, zmm3, zmm29
+	vaesenc zmm4, zmm4, zmm29
+	vaesenc zmm5, zmm5, zmm29
+	vaesenc zmm6, zmm6, zmm29
+	jmp 276f
+275:
+276:
+	jmp 274f
+273:
+274:
+	vaesenclast zmm3, zmm3, zmm31
+	vaesenclast zmm4, zmm4, zmm31
+	vaesenclast zmm5, zmm5, zmm31
+	vaesenclast zmm6, zmm6, zmm31
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+512]
+	vpxord zmm3, zmm3, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+512], zmm3
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+576]
+	vpxord zmm4, zmm4, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+576], zmm4
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+640]
+	vpxord zmm5, zmm5, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+640], zmm5
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+704]
+	vpxord zmm6, zmm6, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
+	vpshufb zmm7, zmm3, zmm0
+	vpshufb zmm1, zmm4, zmm0
+	vpshufb zmm12, zmm5, zmm0
+	vpshufb zmm15, zmm6, zmm0
+	vmovdqu32 zmm11, ZMMWORD PTR [r11+896]
+	vpshufb zmm3, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm4, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm5, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm6, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpxord zmm3, zmm3, zmm16
+	vpxord zmm4, zmm4, zmm16
+	vpxord zmm5, zmm5, zmm16
+	vpxord zmm6, zmm6, zmm16
+	vaesenc zmm3, zmm3, zmm17
+	vaesenc zmm4, zmm4, zmm17
+	vaesenc zmm5, zmm5, zmm17
+	vaesenc zmm6, zmm6, zmm17
+	vaesenc zmm3, zmm3, zmm18
+	vaesenc zmm4, zmm4, zmm18
+	vaesenc zmm5, zmm5, zmm18
+	vaesenc zmm6, zmm6, zmm18
+	vaesenc zmm3, zmm3, zmm19
+	vaesenc zmm4, zmm4, zmm19
+	vaesenc zmm5, zmm5, zmm19
+	vaesenc zmm6, zmm6, zmm19
+	vaesenc zmm3, zmm3, zmm20
+	vaesenc zmm4, zmm4, zmm20
+	vaesenc zmm5, zmm5, zmm20
+	vaesenc zmm6, zmm6, zmm20
+	vmovdqu32 zmm13, ZMMWORD PTR [r11]
+	vpclmulqdq zmm11, zmm7, zmm13, 1
+	vpclmulqdq zmm2, zmm7, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm7, zmm13, 0
+	vpclmulqdq zmm7, zmm7, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+64]
+	vpclmulqdq zmm2, zmm1, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm1, zmm13, 17
+	vpternlogd zmm10, zmm7, zmm2, 150
+	vpclmulqdq zmm11, zmm1, zmm13, 1
+	vpclmulqdq zmm2, zmm1, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm21
+	vaesenc zmm4, zmm4, zmm21
+	vaesenc zmm5, zmm5, zmm21
+	vaesenc zmm6, zmm6, zmm21
+	vaesenc zmm3, zmm3, zmm22
+	vaesenc zmm4, zmm4, zmm22
+	vaesenc zmm5, zmm5, zmm22
+	vaesenc zmm6, zmm6, zmm22
+	vaesenc zmm3, zmm3, zmm23
+	vaesenc zmm4, zmm4, zmm23
+	vaesenc zmm5, zmm5, zmm23
+	vaesenc zmm6, zmm6, zmm23
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+128]
+	vpclmulqdq zmm11, zmm12, zmm13, 1
+	vpclmulqdq zmm2, zmm12, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm12, zmm13, 0
+	vpclmulqdq zmm12, zmm12, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+192]
+	vpclmulqdq zmm2, zmm15, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm15, zmm13, 17
+	vpternlogd zmm10, zmm12, zmm2, 150
+	vpclmulqdq zmm11, zmm15, zmm13, 1
+	vpclmulqdq zmm2, zmm15, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm24
+	vaesenc zmm4, zmm4, zmm24
+	vaesenc zmm5, zmm5, zmm24
+	vaesenc zmm6, zmm6, zmm24
+	vaesenc zmm3, zmm3, zmm25
+	vaesenc zmm4, zmm4, zmm25
+	vaesenc zmm5, zmm5, zmm25
+	vaesenc zmm6, zmm6, zmm25
+	vmovdqu32 zmm1, ZMMWORD PTR [r11+832]
+	vpclmulqdq zmm11, zmm8, zmm1, 16
+	vpshufd zmm8, zmm8, 78
+	vpternlogd zmm9, zmm8, zmm11, 150
+	vpclmulqdq zmm11, zmm9, zmm1, 16
+	vpshufd zmm9, zmm9, 78
+	vpternlogd zmm10, zmm9, zmm11, 150
+	vshufi32x4 zmm11, zmm10, zmm10, 14
+	vpxor ymm10, ymm10, ymm11
+	vextracti128 xmm11, ymm10, 1
+	vpxor xmm2, xmm10, xmm11
+	cmp rsi, 10
+	je 277f
+	vaesenc zmm3, zmm3, zmm26
+	vaesenc zmm4, zmm4, zmm26
+	vaesenc zmm5, zmm5, zmm26
+	vaesenc zmm6, zmm6, zmm26
+	vaesenc zmm3, zmm3, zmm27
+	vaesenc zmm4, zmm4, zmm27
+	vaesenc zmm5, zmm5, zmm27
+	vaesenc zmm6, zmm6, zmm27
+	cmp rsi, 12
+	je 279f
+	vaesenc zmm3, zmm3, zmm28
+	vaesenc zmm4, zmm4, zmm28
+	vaesenc zmm5, zmm5, zmm28
+	vaesenc zmm6, zmm6, zmm28
+	vaesenc zmm3, zmm3, zmm29
+	vaesenc zmm4, zmm4, zmm29
+	vaesenc zmm5, zmm5, zmm29
+	vaesenc zmm6, zmm6, zmm29
+	jmp 280f
+279:
+280:
+	jmp 278f
+277:
+278:
+	vaesenclast zmm3, zmm3, zmm31
+	vaesenclast zmm4, zmm4, zmm31
+	vaesenclast zmm5, zmm5, zmm31
+	vaesenclast zmm6, zmm6, zmm31
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+768]
+	vpxord zmm3, zmm3, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+768], zmm3
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+832]
+	vpxord zmm4, zmm4, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+832], zmm4
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+896]
+	vpxord zmm5, zmm5, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+896], zmm5
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+960]
+	vpxord zmm6, zmm6, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+960], zmm6
+	vpshufb zmm7, zmm3, zmm0
+	vpshufb zmm1, zmm4, zmm0
+	vpshufb zmm12, zmm5, zmm0
+	vpshufb zmm15, zmm6, zmm0
+	add rdx, 768
+	sub r9, 48
+	cmp r9, 64
+	jae 268b
+	jmp 267f
+266:
+267:
+	cmp r9, 48
+	jb 281f
+	vmovdqu32 zmm11, ZMMWORD PTR [r11+896]
+	vpshufb zmm3, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm4, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm5, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm6, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpxord zmm3, zmm3, zmm16
+	vpxord zmm4, zmm4, zmm16
+	vpxord zmm5, zmm5, zmm16
+	vpxord zmm6, zmm6, zmm16
+	vaesenc zmm3, zmm3, zmm17
+	vaesenc zmm4, zmm4, zmm17
+	vaesenc zmm5, zmm5, zmm17
+	vaesenc zmm6, zmm6, zmm17
+	vaesenc zmm3, zmm3, zmm18
+	vaesenc zmm4, zmm4, zmm18
+	vaesenc zmm5, zmm5, zmm18
+	vaesenc zmm6, zmm6, zmm18
+	vaesenc zmm3, zmm3, zmm19
+	vaesenc zmm4, zmm4, zmm19
+	vaesenc zmm5, zmm5, zmm19
+	vaesenc zmm6, zmm6, zmm19
+	vaesenc zmm3, zmm3, zmm20
+	vaesenc zmm4, zmm4, zmm20
+	vaesenc zmm5, zmm5, zmm20
+	vaesenc zmm6, zmm6, zmm20
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+256]
+	vpxord zmm7, zmm7, zmm2
+	vpclmulqdq zmm9, zmm7, zmm13, 1
+	vpclmulqdq zmm11, zmm7, zmm13, 16
+	vpxord zmm9, zmm9, zmm11
+	vpclmulqdq zmm8, zmm7, zmm13, 0
+	vpclmulqdq zmm7, zmm7, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+320]
+	vpclmulqdq zmm2, zmm1, zmm13, 0
+	vpxord zmm8, zmm8, zmm2
+	vpclmulqdq zmm10, zmm1, zmm13, 17
+	vpxord zmm10, zmm10, zmm7
+	vpclmulqdq zmm11, zmm1, zmm13, 1
+	vpclmulqdq zmm2, zmm1, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm21
+	vaesenc zmm4, zmm4, zmm21
+	vaesenc zmm5, zmm5, zmm21
+	vaesenc zmm6, zmm6, zmm21
+	vaesenc zmm3, zmm3, zmm22
+	vaesenc zmm4, zmm4, zmm22
+	vaesenc zmm5, zmm5, zmm22
+	vaesenc zmm6, zmm6, zmm22
+	vaesenc zmm3, zmm3, zmm23
+	vaesenc zmm4, zmm4, zmm23
+	vaesenc zmm5, zmm5, zmm23
+	vaesenc zmm6, zmm6, zmm23
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+384]
+	vpclmulqdq zmm11, zmm12, zmm13, 1
+	vpclmulqdq zmm2, zmm12, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm12, zmm13, 0
+	vpclmulqdq zmm12, zmm12, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+448]
+	vpclmulqdq zmm2, zmm15, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm15, zmm13, 17
+	vpternlogd zmm10, zmm12, zmm2, 150
+	vpclmulqdq zmm11, zmm15, zmm13, 1
+	vpclmulqdq zmm2, zmm15, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm24
+	vaesenc zmm4, zmm4, zmm24
+	vaesenc zmm5, zmm5, zmm24
+	vaesenc zmm6, zmm6, zmm24
+	vaesenc zmm3, zmm3, zmm25
+	vaesenc zmm4, zmm4, zmm25
+	vaesenc zmm5, zmm5, zmm25
+	vaesenc zmm6, zmm6, zmm25
+	cmp rsi, 10
+	je 283f
+	vaesenc zmm3, zmm3, zmm26
+	vaesenc zmm4, zmm4, zmm26
+	vaesenc zmm5, zmm5, zmm26
+	vaesenc zmm6, zmm6, zmm26
+	vaesenc zmm3, zmm3, zmm27
+	vaesenc zmm4, zmm4, zmm27
+	vaesenc zmm5, zmm5, zmm27
+	vaesenc zmm6, zmm6, zmm27
+	cmp rsi, 12
+	je 285f
+	vaesenc zmm3, zmm3, zmm28
+	vaesenc zmm4, zmm4, zmm28
+	vaesenc zmm5, zmm5, zmm28
+	vaesenc zmm6, zmm6, zmm28
+	vaesenc zmm3, zmm3, zmm29
+	vaesenc zmm4, zmm4, zmm29
+	vaesenc zmm5, zmm5, zmm29
+	vaesenc zmm6, zmm6, zmm29
+	jmp 286f
+285:
+286:
+	jmp 284f
+283:
+284:
+	vaesenclast zmm3, zmm3, zmm31
+	vaesenclast zmm4, zmm4, zmm31
+	vaesenclast zmm5, zmm5, zmm31
+	vaesenclast zmm6, zmm6, zmm31
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+256]
+	vpxord zmm3, zmm3, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+256], zmm3
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+320]
+	vpxord zmm4, zmm4, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+320], zmm4
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+384]
+	vpxord zmm5, zmm5, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+448]
+	vpxord zmm6, zmm6, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
+	vpshufb zmm7, zmm3, zmm0
+	vpshufb zmm1, zmm4, zmm0
+	vpshufb zmm12, zmm5, zmm0
+	vpshufb zmm15, zmm6, zmm0
+	vmovdqu32 zmm11, ZMMWORD PTR [r11+896]
+	vpshufb zmm3, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm4, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm5, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm6, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpxord zmm3, zmm3, zmm16
+	vpxord zmm4, zmm4, zmm16
+	vpxord zmm5, zmm5, zmm16
+	vpxord zmm6, zmm6, zmm16
+	vaesenc zmm3, zmm3, zmm17
+	vaesenc zmm4, zmm4, zmm17
+	vaesenc zmm5, zmm5, zmm17
+	vaesenc zmm6, zmm6, zmm17
+	vaesenc zmm3, zmm3, zmm18
+	vaesenc zmm4, zmm4, zmm18
+	vaesenc zmm5, zmm5, zmm18
+	vaesenc zmm6, zmm6, zmm18
+	vaesenc zmm3, zmm3, zmm19
+	vaesenc zmm4, zmm4, zmm19
+	vaesenc zmm5, zmm5, zmm19
+	vaesenc zmm6, zmm6, zmm19
+	vaesenc zmm3, zmm3, zmm20
+	vaesenc zmm4, zmm4, zmm20
+	vaesenc zmm5, zmm5, zmm20
+	vaesenc zmm6, zmm6, zmm20
+	vmovdqu32 zmm13, ZMMWORD PTR [r11]
+	vpclmulqdq zmm11, zmm7, zmm13, 1
+	vpclmulqdq zmm2, zmm7, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm7, zmm13, 0
+	vpclmulqdq zmm7, zmm7, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+64]
+	vpclmulqdq zmm2, zmm1, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm1, zmm13, 17
+	vpternlogd zmm10, zmm7, zmm2, 150
+	vpclmulqdq zmm11, zmm1, zmm13, 1
+	vpclmulqdq zmm2, zmm1, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm21
+	vaesenc zmm4, zmm4, zmm21
+	vaesenc zmm5, zmm5, zmm21
+	vaesenc zmm6, zmm6, zmm21
+	vaesenc zmm3, zmm3, zmm22
+	vaesenc zmm4, zmm4, zmm22
+	vaesenc zmm5, zmm5, zmm22
+	vaesenc zmm6, zmm6, zmm22
+	vaesenc zmm3, zmm3, zmm23
+	vaesenc zmm4, zmm4, zmm23
+	vaesenc zmm5, zmm5, zmm23
+	vaesenc zmm6, zmm6, zmm23
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+128]
+	vpclmulqdq zmm11, zmm12, zmm13, 1
+	vpclmulqdq zmm2, zmm12, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm12, zmm13, 0
+	vpclmulqdq zmm12, zmm12, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+192]
+	vpclmulqdq zmm2, zmm15, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm15, zmm13, 17
+	vpternlogd zmm10, zmm12, zmm2, 150
+	vpclmulqdq zmm11, zmm15, zmm13, 1
+	vpclmulqdq zmm2, zmm15, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm24
+	vaesenc zmm4, zmm4, zmm24
+	vaesenc zmm5, zmm5, zmm24
+	vaesenc zmm6, zmm6, zmm24
+	vaesenc zmm3, zmm3, zmm25
+	vaesenc zmm4, zmm4, zmm25
+	vaesenc zmm5, zmm5, zmm25
+	vaesenc zmm6, zmm6, zmm25
+	vmovdqu32 zmm1, ZMMWORD PTR [r11+832]
+	vpclmulqdq zmm11, zmm8, zmm1, 16
+	vpshufd zmm8, zmm8, 78
+	vpternlogd zmm9, zmm8, zmm11, 150
+	vpclmulqdq zmm11, zmm9, zmm1, 16
+	vpshufd zmm9, zmm9, 78
+	vpternlogd zmm10, zmm9, zmm11, 150
+	vshufi32x4 zmm11, zmm10, zmm10, 14
+	vpxor ymm10, ymm10, ymm11
+	vextracti128 xmm11, ymm10, 1
+	vpxor xmm2, xmm10, xmm11
+	cmp rsi, 10
+	je 287f
+	vaesenc zmm3, zmm3, zmm26
+	vaesenc zmm4, zmm4, zmm26
+	vaesenc zmm5, zmm5, zmm26
+	vaesenc zmm6, zmm6, zmm26
+	vaesenc zmm3, zmm3, zmm27
+	vaesenc zmm4, zmm4, zmm27
+	vaesenc zmm5, zmm5, zmm27
+	vaesenc zmm6, zmm6, zmm27
+	cmp rsi, 12
+	je 289f
+	vaesenc zmm3, zmm3, zmm28
+	vaesenc zmm4, zmm4, zmm28
+	vaesenc zmm5, zmm5, zmm28
+	vaesenc zmm6, zmm6, zmm28
+	vaesenc zmm3, zmm3, zmm29
+	vaesenc zmm4, zmm4, zmm29
+	vaesenc zmm5, zmm5, zmm29
+	vaesenc zmm6, zmm6, zmm29
+	jmp 290f
+289:
+290:
+	jmp 288f
+287:
+288:
+	vaesenclast zmm3, zmm3, zmm31
+	vaesenclast zmm4, zmm4, zmm31
+	vaesenclast zmm5, zmm5, zmm31
+	vaesenclast zmm6, zmm6, zmm31
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+512]
+	vpxord zmm3, zmm3, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+512], zmm3
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+576]
+	vpxord zmm4, zmm4, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+576], zmm4
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+640]
+	vpxord zmm5, zmm5, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+640], zmm5
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+704]
+	vpxord zmm6, zmm6, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+704], zmm6
+	vpshufb zmm7, zmm3, zmm0
+	vpshufb zmm1, zmm4, zmm0
+	vpshufb zmm12, zmm5, zmm0
+	vpshufb zmm15, zmm6, zmm0
+	add rdx, 512
+	sub r9, 32
+	jmp 282f
+281:
+282:
+	cmp r9, 32
+	jb 291f
+	vmovdqu32 zmm11, ZMMWORD PTR [r11+896]
+	vpshufb zmm3, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm4, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm5, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpshufb zmm6, zmm14, zmm0
+	vpaddd zmm14, zmm14, zmm11
+	vpxord zmm3, zmm3, zmm16
+	vpxord zmm4, zmm4, zmm16
+	vpxord zmm5, zmm5, zmm16
+	vpxord zmm6, zmm6, zmm16
+	vaesenc zmm3, zmm3, zmm17
+	vaesenc zmm4, zmm4, zmm17
+	vaesenc zmm5, zmm5, zmm17
+	vaesenc zmm6, zmm6, zmm17
+	vaesenc zmm3, zmm3, zmm18
+	vaesenc zmm4, zmm4, zmm18
+	vaesenc zmm5, zmm5, zmm18
+	vaesenc zmm6, zmm6, zmm18
+	vaesenc zmm3, zmm3, zmm19
+	vaesenc zmm4, zmm4, zmm19
+	vaesenc zmm5, zmm5, zmm19
+	vaesenc zmm6, zmm6, zmm19
+	vaesenc zmm3, zmm3, zmm20
+	vaesenc zmm4, zmm4, zmm20
+	vaesenc zmm5, zmm5, zmm20
+	vaesenc zmm6, zmm6, zmm20
+	vmovdqu32 zmm13, ZMMWORD PTR [r11]
+	vpxord zmm7, zmm7, zmm2
+	vpclmulqdq zmm9, zmm7, zmm13, 1
+	vpclmulqdq zmm11, zmm7, zmm13, 16
+	vpxord zmm9, zmm9, zmm11
+	vpclmulqdq zmm8, zmm7, zmm13, 0
+	vpclmulqdq zmm7, zmm7, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+64]
+	vpclmulqdq zmm2, zmm1, zmm13, 0
+	vpxord zmm8, zmm8, zmm2
+	vpclmulqdq zmm10, zmm1, zmm13, 17
+	vpxord zmm10, zmm10, zmm7
+	vpclmulqdq zmm11, zmm1, zmm13, 1
+	vpclmulqdq zmm2, zmm1, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm21
+	vaesenc zmm4, zmm4, zmm21
+	vaesenc zmm5, zmm5, zmm21
+	vaesenc zmm6, zmm6, zmm21
+	vaesenc zmm3, zmm3, zmm22
+	vaesenc zmm4, zmm4, zmm22
+	vaesenc zmm5, zmm5, zmm22
+	vaesenc zmm6, zmm6, zmm22
+	vaesenc zmm3, zmm3, zmm23
+	vaesenc zmm4, zmm4, zmm23
+	vaesenc zmm5, zmm5, zmm23
+	vaesenc zmm6, zmm6, zmm23
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+128]
+	vpclmulqdq zmm11, zmm12, zmm13, 1
+	vpclmulqdq zmm2, zmm12, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vpclmulqdq zmm11, zmm12, zmm13, 0
+	vpclmulqdq zmm12, zmm12, zmm13, 17
+	vmovdqu32 zmm13, ZMMWORD PTR [r11+192]
+	vpclmulqdq zmm2, zmm15, zmm13, 0
+	vpternlogd zmm8, zmm11, zmm2, 150
+	vpclmulqdq zmm2, zmm15, zmm13, 17
+	vpternlogd zmm10, zmm12, zmm2, 150
+	vpclmulqdq zmm11, zmm15, zmm13, 1
+	vpclmulqdq zmm2, zmm15, zmm13, 16
+	vpternlogd zmm9, zmm11, zmm2, 150
+	vaesenc zmm3, zmm3, zmm24
+	vaesenc zmm4, zmm4, zmm24
+	vaesenc zmm5, zmm5, zmm24
+	vaesenc zmm6, zmm6, zmm24
+	vaesenc zmm3, zmm3, zmm25
+	vaesenc zmm4, zmm4, zmm25
+	vaesenc zmm5, zmm5, zmm25
+	vaesenc zmm6, zmm6, zmm25
+	vmovdqu32 zmm1, ZMMWORD PTR [r11+832]
+	vpclmulqdq zmm11, zmm8, zmm1, 16
+	vpshufd zmm8, zmm8, 78
+	vpternlogd zmm9, zmm8, zmm11, 150
+	vpclmulqdq zmm11, zmm9, zmm1, 16
+	vpshufd zmm9, zmm9, 78
+	vpternlogd zmm10, zmm9, zmm11, 150
+	vshufi32x4 zmm11, zmm10, zmm10, 14
+	vpxor ymm10, ymm10, ymm11
+	vextracti128 xmm11, ymm10, 1
+	vpxor xmm2, xmm10, xmm11
+	cmp rsi, 10
+	je 293f
+	vaesenc zmm3, zmm3, zmm26
+	vaesenc zmm4, zmm4, zmm26
+	vaesenc zmm5, zmm5, zmm26
+	vaesenc zmm6, zmm6, zmm26
+	vaesenc zmm3, zmm3, zmm27
+	vaesenc zmm4, zmm4, zmm27
+	vaesenc zmm5, zmm5, zmm27
+	vaesenc zmm6, zmm6, zmm27
+	cmp rsi, 12
+	je 295f
+	vaesenc zmm3, zmm3, zmm28
+	vaesenc zmm4, zmm4, zmm28
+	vaesenc zmm5, zmm5, zmm28
+	vaesenc zmm6, zmm6, zmm28
+	vaesenc zmm3, zmm3, zmm29
+	vaesenc zmm4, zmm4, zmm29
+	vaesenc zmm5, zmm5, zmm29
+	vaesenc zmm6, zmm6, zmm29
+	jmp 296f
+295:
+296:
+	jmp 294f
+293:
+294:
+	vaesenclast zmm3, zmm3, zmm31
+	vaesenclast zmm4, zmm4, zmm31
+	vaesenclast zmm5, zmm5, zmm31
+	vaesenclast zmm6, zmm6, zmm31
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+256]
+	vpxord zmm3, zmm3, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+256], zmm3
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+320]
+	vpxord zmm4, zmm4, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+320], zmm4
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+384]
+	vpxord zmm5, zmm5, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+384], zmm5
+	vmovdqu32 zmm13, ZMMWORD PTR [rdx+r8*1+448]
+	vpxord zmm6, zmm6, zmm13
+	vmovdqu32 ZMMWORD PTR [rdx+448], zmm6
+	vpshufb zmm7, zmm3, zmm0
+	vpshufb zmm1, zmm4, zmm0
+	vpshufb zmm12, zmm5, zmm0
+	vpshufb zmm15, zmm6, zmm0
+	add rdx, 256
+	sub r9, 16
+	jmp 292f
+291:
+292:
+	vmovdqu32 zmm1, ZMMWORD PTR [r11+832]
+	vmovdqu32 zmm15, ZMMWORD PTR [r11+896]
+244:
 	jmp 242f
 241:
 242:
 	cmp r9, 32
-	jb 264f
-266:
+	jb 297f
+299:
 	vpshufb zmm3, zmm14, zmm0
 	vpaddd zmm14, zmm14, zmm15
 	vpshufb zmm4, zmm14, zmm0
@@ -1367,7 +2181,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm25
 	vaesenc zmm6, zmm6, zmm25
 	cmp rsi, 10
-	je 267f
+	je 2100f
 	vaesenc zmm3, zmm3, zmm26
 	vaesenc zmm4, zmm4, zmm26
 	vaesenc zmm5, zmm5, zmm26
@@ -1377,7 +2191,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm27
 	vaesenc zmm6, zmm6, zmm27
 	cmp rsi, 12
-	je 269f
+	je 2102f
 	vaesenc zmm3, zmm3, zmm28
 	vaesenc zmm4, zmm4, zmm28
 	vaesenc zmm5, zmm5, zmm28
@@ -1386,12 +2200,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm4, zmm4, zmm29
 	vaesenc zmm5, zmm5, zmm29
 	vaesenc zmm6, zmm6, zmm29
-	jmp 270f
-269:
-270:
-	jmp 268f
-267:
-268:
+	jmp 2103f
+2102:
+2103:
+	jmp 2101f
+2100:
+2101:
 	vaesenclast zmm3, zmm3, zmm31
 	vaesenclast zmm4, zmm4, zmm31
 	vaesenclast zmm5, zmm5, zmm31
@@ -1411,15 +2225,15 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	add rdx, 256
 	sub r9, 16
 	cmp r9, 32
-	jae 266b
-	jmp 265f
-264:
-265:
+	jae 299b
+	jmp 298f
+297:
+298:
 	mov r8, rbx
 	add r9, rbp
 	cmp r9, 32
-	jb 271f
-273:
+	jb 2104f
+2106:
 	vpshufb zmm3, zmm14, zmm0
 	vpaddd zmm14, zmm14, zmm15
 	vpshufb zmm4, zmm14, zmm0
@@ -1518,7 +2332,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm25
 	vaesenc zmm6, zmm6, zmm25
 	cmp rsi, 10
-	je 274f
+	je 2107f
 	vaesenc zmm3, zmm3, zmm26
 	vaesenc zmm4, zmm4, zmm26
 	vaesenc zmm5, zmm5, zmm26
@@ -1528,7 +2342,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm5, zmm5, zmm27
 	vaesenc zmm6, zmm6, zmm27
 	cmp rsi, 12
-	je 276f
+	je 2109f
 	vaesenc zmm3, zmm3, zmm28
 	vaesenc zmm4, zmm4, zmm28
 	vaesenc zmm5, zmm5, zmm28
@@ -1537,12 +2351,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vaesenc zmm4, zmm4, zmm29
 	vaesenc zmm5, zmm5, zmm29
 	vaesenc zmm6, zmm6, zmm29
-	jmp 277f
-276:
-277:
-	jmp 275f
-274:
-275:
+	jmp 2110f
+2109:
+2110:
+	jmp 2108f
+2107:
+2108:
 	vaesenclast zmm3, zmm3, zmm31
 	vaesenclast zmm4, zmm4, zmm31
 	vaesenclast zmm5, zmm5, zmm31
@@ -1562,10 +2376,10 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	add rdx, 256
 	sub r9, 16
 	cmp r9, 32
-	jae 273b
-	jmp 272f
-271:
-272:
+	jae 2106b
+	jmp 2105f
+2104:
+2105:
 	vpshufb xmm13, xmm14, xmm0
 	vmovdqu XMMWORD PTR [rax], xmm13
 	vmovdqu32 zmm12, ZMMWORD PTR [r11+64]
@@ -1632,13 +2446,13 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 216:
 	mov rax, QWORD PTR [r15+208]
 	cmp rax, 17
-	jb 278f
+	jb 2111f
 	push rax
 	mov rax, QWORD PTR [r15+208]
 	mov QWORD PTR [r15+192], rax
 	shr rax, 4
 	test rax, rax
-	je 280f
+	je 2113f
 	mov rdi, r13
 	mov rsi, QWORD PTR [r15+176]
 	mov rdx, r14
@@ -1659,9 +2473,9 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	sub rax, rcx
 	add rax, QWORD PTR [r15+200]
 	mov QWORD PTR [r15+200], rax
-	jmp 281f
-280:
-281:
+	jmp 2114f
+2113:
+2114:
 	mov rax, QWORD PTR [r15+216]
 	mov QWORD PTR [r15+192], rax
 	lea rax, {VG_GCM_CONSTS}
@@ -1748,30 +2562,30 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 	vaesenc zmm5, zmm5, zmm13
 	cmp rsi, 10
-	je 282f
+	je 2115f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 	vaesenc zmm5, zmm5, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 	vaesenc zmm5, zmm5, zmm13
 	cmp rsi, 12
-	je 284f
+	je 2117f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 	vaesenc zmm5, zmm5, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 	vaesenc zmm5, zmm5, zmm13
-	jmp 285f
-284:
-285:
-	jmp 283f
-282:
-283:
+	jmp 2118f
+2117:
+2118:
+	jmp 2116f
+2115:
+2116:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 	vaesenclast zmm5, zmm5, zmm13
 	vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
 	vzeroupper
 	mov rax, QWORD PTR [r15+208]
 	test rax, rax
-	je 286f
+	je 2119f
 	pxor xmm7, xmm7
 	movdqu XMMWORD PTR [r15+512], xmm7
 	mov rdi, r15
@@ -1785,45 +2599,45 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	shr r8, 4
 	shl r8, 4
 	cmp r8, 0
-	je 288f
-290:
+	je 2121f
+2123:
 	vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 	vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 	vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 	vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 	add r10, 16
 	cmp r10, r8
-	jne 290b
-	jmp 289f
-288:
-289:
+	jne 2123b
+	jmp 2122f
+2121:
+2122:
 	test rcx, 15
-	je 291f
+	je 2124f
 	test rcx, 12
-	je 293f
+	je 2126f
 	test rcx, 8
-	je 295f
+	je 2128f
 	mov rax, QWORD PTR [rsi+r10*1]
 	xor rax, QWORD PTR [rdx+r10*1]
 	mov QWORD PTR [rsi+r10*1], rax
 	mov QWORD PTR [rdi+r10*1], rax
 	add r10, 8
-	jmp 296f
-295:
-296:
+	jmp 2129f
+2128:
+2129:
 	test rcx, 4
-	je 297f
+	je 2130f
 	mov eax, DWORD PTR [rsi+r10*1]
 	xor eax, DWORD PTR [rdx+r10*1]
 	mov DWORD PTR [rsi+r10*1], eax
 	mov DWORD PTR [rdi+r10*1], eax
 	add r10, 4
-	jmp 298f
-297:
-298:
+	jmp 2131f
+2130:
+2131:
 	test rcx, 3
-	je 299f
-2101:
+	je 2132f
+2134:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -1831,13 +2645,13 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2101b
-	jmp 2100f
-299:
-2100:
-	jmp 294f
-293:
-2102:
+	jne 2134b
+	jmp 2133f
+2132:
+2133:
+	jmp 2127f
+2126:
+2135:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -1845,11 +2659,11 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2102b
-294:
-	jmp 292f
-291:
-292:
+	jne 2135b
+2127:
+	jmp 2125f
+2124:
+2125:
 	mov rax, QWORD PTR [r15+184]
 	shl rax, 3
 	bswap rax
@@ -1912,8 +2726,8 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm2, xmm3
 	vmovdqu XMMWORD PTR [r15], xmm2
 	vzeroupper
-	jmp 287f
-286:
+	jmp 2120f
+2119:
 	mov rax, QWORD PTR [r15+184]
 	shl rax, 3
 	bswap rax
@@ -1962,10 +2776,10 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm2, xmm3
 	vmovdqu XMMWORD PTR [r15], xmm2
 	vzeroupper
-287:
+2120:
 	pop rax
-	jmp 279f
-278:
+	jmp 2112f
+2111:
 	mov rax, QWORD PTR [r15+216]
 	mov QWORD PTR [r15+192], rax
 	lea rax, {VG_GCM_CONSTS}
@@ -2006,30 +2820,30 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 	vaesenc zmm5, zmm5, zmm13
 	cmp rsi, 10
-	je 2103f
+	je 2136f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 	vaesenc zmm5, zmm5, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 	vaesenc zmm5, zmm5, zmm13
 	cmp rsi, 12
-	je 2105f
+	je 2138f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 	vaesenc zmm5, zmm5, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 	vaesenc zmm5, zmm5, zmm13
-	jmp 2106f
-2105:
-2106:
-	jmp 2104f
-2103:
-2104:
+	jmp 2139f
+2138:
+2139:
+	jmp 2137f
+2136:
+2137:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 	vaesenclast zmm5, zmm5, zmm13
 	vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
 	vzeroupper
 	mov rax, QWORD PTR [r15+208]
 	test rax, rax
-	je 2107f
+	je 2140f
 	pxor xmm7, xmm7
 	movdqu XMMWORD PTR [r15+512], xmm7
 	mov rdi, r15
@@ -2043,45 +2857,45 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	shr r8, 4
 	shl r8, 4
 	cmp r8, 0
-	je 2109f
-2111:
+	je 2142f
+2144:
 	vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 	vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 	vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 	vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 	add r10, 16
 	cmp r10, r8
-	jne 2111b
-	jmp 2110f
-2109:
-2110:
+	jne 2144b
+	jmp 2143f
+2142:
+2143:
 	test rcx, 15
-	je 2112f
+	je 2145f
 	test rcx, 12
-	je 2114f
+	je 2147f
 	test rcx, 8
-	je 2116f
+	je 2149f
 	mov rax, QWORD PTR [rsi+r10*1]
 	xor rax, QWORD PTR [rdx+r10*1]
 	mov QWORD PTR [rsi+r10*1], rax
 	mov QWORD PTR [rdi+r10*1], rax
 	add r10, 8
-	jmp 2117f
-2116:
-2117:
+	jmp 2150f
+2149:
+2150:
 	test rcx, 4
-	je 2118f
+	je 2151f
 	mov eax, DWORD PTR [rsi+r10*1]
 	xor eax, DWORD PTR [rdx+r10*1]
 	mov DWORD PTR [rsi+r10*1], eax
 	mov DWORD PTR [rdi+r10*1], eax
 	add r10, 4
-	jmp 2119f
-2118:
-2119:
+	jmp 2152f
+2151:
+2152:
 	test rcx, 3
-	je 2120f
-2122:
+	je 2153f
+2155:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -2089,13 +2903,13 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2122b
-	jmp 2121f
-2120:
-2121:
-	jmp 2115f
-2114:
-2123:
+	jne 2155b
+	jmp 2154f
+2153:
+2154:
+	jmp 2148f
+2147:
+2156:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -2103,11 +2917,11 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2123b
-2115:
-	jmp 2113f
-2112:
-2113:
+	jne 2156b
+2148:
+	jmp 2146f
+2145:
+2146:
 	mov rax, QWORD PTR [r15+184]
 	shl rax, 3
 	bswap rax
@@ -2170,8 +2984,8 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm2, xmm3
 	vmovdqu XMMWORD PTR [r15], xmm2
 	vzeroupper
-	jmp 2108f
-2107:
+	jmp 2141f
+2140:
 	mov rax, QWORD PTR [r15+184]
 	shl rax, 3
 	bswap rax
@@ -2220,17 +3034,17 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm2, xmm3
 	vmovdqu XMMWORD PTR [r15], xmm2
 	vzeroupper
-2108:
-279:
+2141:
+2112:
 	jmp 27f
 26:
 	mov eax, 0
 	cmp rbp, 12
-	jne 2124f
+	jne 2157f
 	mov rcx, QWORD PTR [r15+184]
 	or rcx, QWORD PTR [r15+208]
 	cmp rcx, 512
-	jae 2126f
+	jae 2159f
 	mov rcx, QWORD PTR [r15+184]
 	add rcx, 15
 	shr rcx, 4
@@ -2239,29 +3053,29 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	shr rdx, 4
 	add rcx, rdx
 	cmp rcx, 32
-	jae 2128f
+	jae 2161f
 	mov rdx, QWORD PTR [r15+208]
 	mov rcx, rdx
 	shl rcx, 4
 	add rcx, rdx
 	add rcx, QWORD PTR [r15+184]
 	cmp rcx, 17
-	jb 2130f
+	jb 2163f
 	mov eax, 1
-	jmp 2131f
-2130:
-2131:
-	jmp 2129f
-2128:
-2129:
-	jmp 2127f
-2126:
-2127:
-	jmp 2125f
-2124:
-2125:
+	jmp 2164f
+2163:
+2164:
+	jmp 2162f
+2161:
+2162:
+	jmp 2160f
+2159:
+2160:
+	jmp 2158f
+2157:
+2158:
 	test rax, rax
-	je 2132f
+	je 2165f
 	mov rsi, QWORD PTR [r15+224]
 	mov rdi, QWORD PTR [r15+200]
 	mov rcx, QWORD PTR [r15+192]
@@ -2270,8 +3084,8 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	shr r8, 6
 	shl r8, 6
 	cmp r8, 0
-	je 2134f
-2136:
+	je 2167f
+2169:
 	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
 	movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
 	movdqu xmm2, XMMWORD PTR [rsi+r10*1+32]
@@ -2282,44 +3096,44 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	movdqu XMMWORD PTR [rdi+r10*1+48], xmm3
 	add r10, 64
 	cmp r10, r8
-	jne 2136b
-	jmp 2135f
-2134:
-2135:
+	jne 2169b
+	jmp 2168f
+2167:
+2168:
 	mov r8, rcx
 	shr r8, 4
 	shl r8, 4
 	cmp r10, r8
-	je 2137f
-2139:
+	je 2170f
+2172:
 	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
 	movdqu XMMWORD PTR [rdi+r10*1], xmm0
 	add r10, 16
 	cmp r10, r8
-	jne 2139b
-	jmp 2138f
-2137:
-2138:
+	jne 2172b
+	jmp 2171f
+2170:
+2171:
 	cmp r10, rcx
-	je 2140f
+	je 2173f
 	cmp rcx, 16
-	jb 2142f
+	jb 2175f
 	mov r10, rcx
 	sub r10, 16
 	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
 	movdqu XMMWORD PTR [rdi+r10*1], xmm0
-	jmp 2143f
-2142:
-2144:
+	jmp 2176f
+2175:
+2177:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2144b
-2143:
-	jmp 2141f
-2140:
-2141:
+	jne 2177b
+2176:
+	jmp 2174f
+2173:
+2174:
 	mov eax, DWORD PTR [r12]
 	mov ecx, DWORD PTR [r12+4]
 	mov edx, DWORD PTR [r12+8]
@@ -2470,7 +3284,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vshufi32x4 zmm1, zmm1, zmm1, 68
 	mov rax, QWORD PTR [r15+288]
 	cmp rax, 5
-	jb 2145f
+	jb 2178f
 	vbroadcasti32x4 zmm12, XMMWORD PTR [r11]
 	vmovdqu32 zmm7, ZMMWORD PTR [r11]
 	vpclmulqdq zmm8, zmm7, zmm12, 0
@@ -2486,7 +3300,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpternlogd zmm10, zmm9, zmm11, 150
 	vmovdqu32 ZMMWORD PTR [r11+64], zmm10
 	cmp rax, 9
-	jb 2147f
+	jb 2180f
 	vbroadcasti32x4 zmm12, XMMWORD PTR [r11+64]
 	vmovdqu32 zmm7, ZMMWORD PTR [r11]
 	vpclmulqdq zmm8, zmm7, zmm12, 0
@@ -2515,7 +3329,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpternlogd zmm10, zmm9, zmm11, 150
 	vmovdqu32 ZMMWORD PTR [r11+192], zmm10
 	cmp rax, 17
-	jb 2149f
+	jb 2182f
 	vbroadcasti32x4 zmm12, XMMWORD PTR [r11+192]
 	vmovdqu32 zmm7, ZMMWORD PTR [r11]
 	vpclmulqdq zmm8, zmm7, zmm12, 0
@@ -2569,15 +3383,15 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpshufd zmm9, zmm9, 78
 	vpternlogd zmm10, zmm9, zmm11, 150
 	vmovdqu32 ZMMWORD PTR [r11+448], zmm10
-	jmp 2150f
-2149:
-2150:
-	jmp 2148f
-2147:
-2148:
-	jmp 2146f
-2145:
-2146:
+	jmp 2183f
+2182:
+2183:
+	jmp 2181f
+2180:
+2181:
+	jmp 2179f
+2178:
+2179:
 	vpxord zmm2, zmm2, zmm2
 	vmovdqu32 ZMMWORD PTR [r15+512], zmm2
 	vmovdqu32 ZMMWORD PTR [r15+576], zmm2
@@ -2598,16 +3412,16 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	shr r8, 6
 	shl r8, 6
 	cmp r8, 0
-	je 2151f
-2153:
+	je 2184f
+2186:
 	vmovdqu32 zmm4, ZMMWORD PTR [rsi+r10*1]
 	vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm4
 	add r10, 64
 	cmp r10, r8
-	jne 2153b
-	jmp 2152f
-2151:
-2152:
+	jne 2186b
+	jmp 2185f
+2184:
+2185:
 	mov eax, 1
 	shl rax, cl
 	sub rax, 1
@@ -2647,7 +3461,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov r9, QWORD PTR [r15+280]
 	add r9, 4
 	shr r9, 2
-2154:
+2187:
 	vpshufb zmm3, zmm14, zmm0
 	vpaddd zmm14, zmm14, zmm15
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi]
@@ -2671,29 +3485,29 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 	vaesenc zmm3, zmm3, zmm13
 	cmp rsi, 10
-	je 2155f
+	je 2188f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 	vaesenc zmm3, zmm3, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 	vaesenc zmm3, zmm3, zmm13
 	cmp rsi, 12
-	je 2157f
+	je 2190f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 	vaesenc zmm3, zmm3, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 	vaesenc zmm3, zmm3, zmm13
-	jmp 2158f
-2157:
-2158:
-	jmp 2156f
-2155:
-2156:
+	jmp 2191f
+2190:
+2191:
+	jmp 2189f
+2188:
+2189:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 	vaesenclast zmm3, zmm3, zmm13
 	vmovdqu32 ZMMWORD PTR [rdx], zmm3
 	add rdx, 64
 	sub r9, 1
-	jne 2154b
+	jne 2187b
 	mov rdi, QWORD PTR [r15+296]
 	add rdi, QWORD PTR [r15+272]
 	shl rdi, 4
@@ -2708,45 +3522,45 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	shr r8, 4
 	shl r8, 4
 	cmp r8, 0
-	je 2159f
-2161:
+	je 2192f
+2194:
 	vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 	vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 	vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 	vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 	add r10, 16
 	cmp r10, r8
-	jne 2161b
-	jmp 2160f
-2159:
-2160:
+	jne 2194b
+	jmp 2193f
+2192:
+2193:
 	test rcx, 15
-	je 2162f
+	je 2195f
 	test rcx, 12
-	je 2164f
+	je 2197f
 	test rcx, 8
-	je 2166f
+	je 2199f
 	mov rax, QWORD PTR [rsi+r10*1]
 	xor rax, QWORD PTR [rdx+r10*1]
 	mov QWORD PTR [rsi+r10*1], rax
 	mov QWORD PTR [rdi+r10*1], rax
 	add r10, 8
-	jmp 2167f
-2166:
-2167:
+	jmp 2200f
+2199:
+2200:
 	test rcx, 4
-	je 2168f
+	je 2201f
 	mov eax, DWORD PTR [rsi+r10*1]
 	xor eax, DWORD PTR [rdx+r10*1]
 	mov DWORD PTR [rsi+r10*1], eax
 	mov DWORD PTR [rdi+r10*1], eax
 	add r10, 4
-	jmp 2169f
-2168:
-2169:
+	jmp 2202f
+2201:
+2202:
 	test rcx, 3
-	je 2170f
-2172:
+	je 2203f
+2205:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -2754,13 +3568,13 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2172b
-	jmp 2171f
-2170:
-2171:
-	jmp 2165f
-2164:
-2173:
+	jne 2205b
+	jmp 2204f
+2203:
+2204:
+	jmp 2198f
+2197:
+2206:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -2768,11 +3582,11 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2173b
-2165:
-	jmp 2163f
-2162:
-2163:
+	jne 2206b
+2198:
+	jmp 2196f
+2195:
+2196:
 	mov rdi, QWORD PTR [r15+288]
 	shl rdi, 4
 	add rdi, r15
@@ -2796,7 +3610,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxord zmm8, zmm8, zmm8
 	vpxord zmm9, zmm9, zmm9
 	vpxord zmm10, zmm10, zmm10
-2174:
+2207:
 	vmovdqu32 zmm12, ZMMWORD PTR [r11+128]
 	vmovdqu32 zmm7, ZMMWORD PTR [rdx+128]
 	vpshufb zmm7, zmm7, zmm0
@@ -2810,7 +3624,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	add rdx, 64
 	sub r11, 64
 	sub r9, 1
-	jne 2174b
+	jne 2207b
 	vpclmulqdq zmm11, zmm8, zmm1, 16
 	vpshufd zmm8, zmm8, 78
 	vpternlogd zmm9, zmm8, zmm11, 150
@@ -2826,10 +3640,10 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm2, xmm3
 	vmovdqu XMMWORD PTR [r15], xmm2
 	vzeroupper
-	jmp 2133f
-2132:
+	jmp 2166f
+2165:
 	cmp rbp, 12
-	je 2175f
+	je 2208f
 	mov eax, 0
 	mov QWORD PTR [r14], rax
 	mov QWORD PTR [r14+8], rax
@@ -2843,7 +3657,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	sub rax, rbp
 	add r12, rax
 	test rcx, rcx
-	je 2177f
+	je 2210f
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -2851,12 +3665,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_vpclmul}
-	jmp 2178f
-2177:
-2178:
+	jmp 2211f
+2210:
+2211:
 	mov rcx, rbp
 	test rcx, rcx
-	je 2179f
+	je 2212f
 	mov eax, 0
 	mov QWORD PTR [r15+96], rax
 	mov QWORD PTR [r15+104], rax
@@ -2864,12 +3678,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	add rdi, 96
 	mov rsi, r12
 	mov r10d, 0
-2181:
+2214:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2181b
+	jne 2214b
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -2880,9 +3694,9 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_vpclmul}
-	jmp 2180f
-2179:
-2180:
+	jmp 2213f
+2212:
+2213:
 	mov ebx, 0
 	mov rbp, QWORD PTR [r15+216]
 	mov rax, rbx
@@ -2907,8 +3721,8 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_vpclmul}
-	jmp 2176f
-2175:
+	jmp 2209f
+2208:
 	mov eax, DWORD PTR [r12]
 	mov ecx, DWORD PTR [r12+4]
 	mov edx, DWORD PTR [r12+8]
@@ -2917,7 +3731,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov DWORD PTR [r14+4], ecx
 	mov DWORD PTR [r14+8], edx
 	mov DWORD PTR [r14+12], esi
-2176:
+2209:
 	mov eax, DWORD PTR [r14]
 	mov ecx, DWORD PTR [r14+4]
 	mov edx, DWORD PTR [r14+8]
@@ -2943,7 +3757,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	sub rax, rbp
 	add r12, rax
 	test rcx, rcx
-	je 2182f
+	je 2215f
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -2951,12 +3765,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_vpclmul}
-	jmp 2183f
-2182:
-2183:
+	jmp 2216f
+2215:
+2216:
 	mov rcx, rbp
 	test rcx, rcx
-	je 2184f
+	je 2217f
 	mov eax, 0
 	mov QWORD PTR [r15+96], rax
 	mov QWORD PTR [r15+104], rax
@@ -2964,12 +3778,12 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	add rdi, 96
 	mov rsi, r12
 	mov r10d, 0
-2186:
+2219:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2186b
+	jne 2219b
 	mov rdi, r13
 	add rdi, 240
 	mov rsi, r14
@@ -2980,13 +3794,13 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov r8, r15
 	add r8, 512
 	call {vg_ghash_vpclmul}
-	jmp 2185f
-2184:
-2185:
+	jmp 2218f
+2217:
+2218:
 	mov rax, QWORD PTR [r15+192]
 	shr rax, 4
 	test rax, rax
-	je 2187f
+	je 2220f
 	mov rdi, r13
 	mov rsi, QWORD PTR [r15+176]
 	mov rdx, r14
@@ -3006,9 +3820,9 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	pop rax
 	pop rax
 	pop rax
-	jmp 2188f
-2187:
-2188:
+	jmp 2221f
+2220:
+2221:
 	mov rax, QWORD PTR [r15+192]
 	mov rcx, rax
 	and rcx, 15
@@ -3018,17 +3832,17 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov rdi, QWORD PTR [r15+200]
 	add rdi, rax
 	test rcx, rcx
-	je 2189f
+	je 2222f
 	mov r10d, 0
-2191:
+2224:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2191b
-	jmp 2190f
-2189:
-2190:
+	jne 2224b
+	jmp 2223f
+2222:
+2223:
 	mov rax, QWORD PTR [r15+192]
 	mov rcx, rax
 	and rcx, 15
@@ -3044,7 +3858,7 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov QWORD PTR [r15+192], rax
 	shr rax, 4
 	test rax, rax
-	je 2192f
+	je 2225f
 	mov rdi, r13
 	mov rsi, QWORD PTR [r15+176]
 	mov rdx, r14
@@ -3065,9 +3879,9 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	sub rax, rcx
 	add rax, QWORD PTR [r15+200]
 	mov QWORD PTR [r15+200], rax
-	jmp 2193f
-2192:
-2193:
+	jmp 2226f
+2225:
+2226:
 	mov rax, QWORD PTR [r15+216]
 	mov QWORD PTR [r15+192], rax
 	lea rax, {VG_GCM_CONSTS}
@@ -3154,30 +3968,30 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+144]
 	vaesenc zmm5, zmm5, zmm13
 	cmp rsi, 10
-	je 2194f
+	je 2227f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+160]
 	vaesenc zmm5, zmm5, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+176]
 	vaesenc zmm5, zmm5, zmm13
 	cmp rsi, 12
-	je 2196f
+	je 2229f
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+192]
 	vaesenc zmm5, zmm5, zmm13
 	vbroadcasti32x4 zmm13, XMMWORD PTR [rdi+208]
 	vaesenc zmm5, zmm5, zmm13
-	jmp 2197f
-2196:
-2197:
-	jmp 2195f
-2194:
-2195:
+	jmp 2230f
+2229:
+2230:
+	jmp 2228f
+2227:
+2228:
 	vbroadcasti32x4 zmm13, XMMWORD PTR [r10]
 	vaesenclast zmm5, zmm5, zmm13
 	vmovdqu32 ZMMWORD PTR [r15+1024], zmm5
 	vzeroupper
 	mov rax, QWORD PTR [r15+208]
 	test rax, rax
-	je 2198f
+	je 2231f
 	pxor xmm7, xmm7
 	movdqu XMMWORD PTR [r15+512], xmm7
 	mov rdi, r15
@@ -3191,45 +4005,45 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	shr r8, 4
 	shl r8, 4
 	cmp r8, 0
-	je 2200f
-2202:
+	je 2233f
+2235:
 	vmovdqu xmm4, XMMWORD PTR [rsi+r10*1]
 	vpxor xmm4, xmm4, XMMWORD PTR [rdx+r10*1]
 	vmovdqu XMMWORD PTR [rsi+r10*1], xmm4
 	vmovdqu XMMWORD PTR [rdi+r10*1], xmm4
 	add r10, 16
 	cmp r10, r8
-	jne 2202b
-	jmp 2201f
-2200:
-2201:
+	jne 2235b
+	jmp 2234f
+2233:
+2234:
 	test rcx, 15
-	je 2203f
+	je 2236f
 	test rcx, 12
-	je 2205f
+	je 2238f
 	test rcx, 8
-	je 2207f
+	je 2240f
 	mov rax, QWORD PTR [rsi+r10*1]
 	xor rax, QWORD PTR [rdx+r10*1]
 	mov QWORD PTR [rsi+r10*1], rax
 	mov QWORD PTR [rdi+r10*1], rax
 	add r10, 8
-	jmp 2208f
-2207:
-2208:
+	jmp 2241f
+2240:
+2241:
 	test rcx, 4
-	je 2209f
+	je 2242f
 	mov eax, DWORD PTR [rsi+r10*1]
 	xor eax, DWORD PTR [rdx+r10*1]
 	mov DWORD PTR [rsi+r10*1], eax
 	mov DWORD PTR [rdi+r10*1], eax
 	add r10, 4
-	jmp 2210f
-2209:
-2210:
+	jmp 2243f
+2242:
+2243:
 	test rcx, 3
-	je 2211f
-2213:
+	je 2244f
+2246:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -3237,13 +4051,13 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2213b
-	jmp 2212f
-2211:
-2212:
-	jmp 2206f
-2205:
-2214:
+	jne 2246b
+	jmp 2245f
+2244:
+2245:
+	jmp 2239f
+2238:
+2247:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	movzx r9d, BYTE PTR [rdx+r10*1]
 	xor rax, r9
@@ -3251,11 +4065,11 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 2214b
-2206:
-	jmp 2204f
-2203:
-2204:
+	jne 2247b
+2239:
+	jmp 2237f
+2236:
+2237:
 	mov rax, QWORD PTR [r15+184]
 	shl rax, 3
 	bswap rax
@@ -3318,8 +4132,8 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm2, xmm3
 	vmovdqu XMMWORD PTR [r15], xmm2
 	vzeroupper
-	jmp 2199f
-2198:
+	jmp 2232f
+2231:
 	mov rax, QWORD PTR [r15+184]
 	shl rax, 3
 	bswap rax
@@ -3368,9 +4182,9 @@ vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512:
 	vpxor xmm2, xmm2, xmm3
 	vmovdqu XMMWORD PTR [r15], xmm2
 	vzeroupper
-2199:
+2232:
 	pop rax
-2133:
+2166:
 27:
 	mov rdi, QWORD PTR [rsp+40]
 	mov rax, QWORD PTR [r15]

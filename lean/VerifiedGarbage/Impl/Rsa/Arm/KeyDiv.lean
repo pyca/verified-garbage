@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Impl.Bignum.Arm.Row
+public import VerifiedGarbage.Impl.Bignum.Arm.MaskRow
 public import VerifiedGarbage.Impl.Bignum.Arm.WideMul
 
 /-!
@@ -176,42 +177,41 @@ def estB : List Instr :=
 
 /-! ## A step's subtraction -/
 
-/-- `[t]`'s `dw + 1` words zeroed (copied from `[aZ]`, zero). -/
-def clearT (t : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 t ++ ptr .r10 0 ++ ptr .r12 0 ++ [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1),
-    .mov .r11 (.imm 0)])) copyWords
+/-- The quotient's digit `q̂ - c` (`c` the borrow, `sC`) at the window's word of `[q]`, from the
+window's offset in `r1`. -/
+def digit (q : Nat) : List Instr :=
+  ptr .r2 q ++ [.dp .add .r2 .r2 (.reg .r1), .ldr .r3 .r8 sQ, .ldr .r12 .r8 sC, .dp .sub .r3 .r3 (.reg .r12),
+    .str .r3 .r2 0]
 
-/-- `[t] := q̂ [m]` over `dw` words, the carry stored as word `dw`. -/
-def prodT (m t : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 t ++ ptr .r12 m ++ [.mov .lr (.shifted .r9 .lsr 1), .ldr .r1 .r8 sQ, .mov .r11 (.imm 0)]))
-    (.seq row (.block ([.str .r11 .r0 0] ++ ctx)))
+def digitOf : Option Nat → List Instr
+  | none => []
+  | some q => digit q
 
-/-- The window's address (word `j` of `[r]`) into `r`, through `t`; in the code, a
-block ends after the load of the offset, as for `estA`. -/
-def winPtr (r : Reg) (j : Nat) (t : Reg) : List Instr := ptr r j ++ [.ldr t .r8 sJ, .dp .add r r (.reg t)]
+/-- `Y := Y - q̂ [m]` in place over the window's `dw + 1` words: a row of `q̂` over `[nm]`'s low `dw` words
+(`β^dw - m`), then the top word less `q̂` plus the carry, its sign into `sC`. A block ends after the load of
+the window's offset. -/
+def mulSubW (r nm : Nat) : Prog isa := seqs [
+  .block (ptr .r0 r ++ [.ldr .r1 .r8 sJ]),
+  .block ([.dp .add .r0 .r0 (.reg .r1)] ++ ptr .r12 nm ++
+    [.mov .lr (.shifted .r9 .lsr 1), .ldr .r1 .r8 sQ, .mov .r11 (.imm 0)]),
+  row,
+  .block ([.ldr .r2 .r0 0, .dp .add .r2 .r2 (.reg .r11), .dp .sub .r2 .r2 (.reg .r1), .str .r2 .r0 0,
+    .mov .r2 (.shifted .r2 .lsr 31), .str .r2 .r8 sC] ++ ctx)]
 
-/-- `[u] := Y - [t]` over `dw + 1` words, the borrow into `sC`. -/
-def subT (r t u : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 u ++ ptr .r10 r ++ [.ldr .r1 .r8 sJ]))
-    (.seq (.block ([.dp .add .r10 .r10 (.reg .r1)] ++ ptr .r12 t ++
-      [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)]))
-    (.seq subRow (.block [.str .r11 .r8 sC])))
+/-- `[m]` added back to the window under the mask of its sign (`sC`), the carry into its top word, after
+the quotient's digit into `[q]` for `qo = some q`. -/
+def addBackW (r m : Nat) (qo : Option Nat := none) : Prog isa := seqs [
+  .block (ptr .r0 r ++ [.ldr .r1 .r8 sJ]),
+  .block (digitOf qo ++ [.dp .add .r0 .r0 (.reg .r1)] ++ ptr .r12 m ++
+    [.mov .lr (.shifted .r9 .lsr 1), .ldr .r1 .r8 sC, .mov .r2 (.imm 0), .dp .sub .r1 .r2 (.reg .r1),
+      .mov .r11 (.imm 0)]),
+  maskRow,
+  .block [.ldr .r2 .r0 0, .dp .add .r2 .r2 (.reg .r11), .str .r2 .r0 0]]
 
-/-- `Y := [u] - [t]` over `dw + 1` words. -/
-def subBack (r t u : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 r ++ [.ldr .r1 .r8 sJ]))
-    (.seq (.block ([.dp .add .r0 .r0 (.reg .r1)] ++ ptr .r10 u ++ ptr .r12 t ++
-      [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1), .mov .r11 (.imm 0)])) subRow)
-
-/-- `[t] := [nm]` if the borrow (`sC`) is set, else zero, over `dw + 1` words. -/
-def selT (t nm : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 t ++ ptr .r10 0 ++ ptr .r12 nm ++ [.mov .lr (.shifted .r9 .lsr 1), .dp .add .lr .lr (.imm 1),
-    .ldr .r11 .r8 sC])) selectRow
-
-/-- A step: the estimate, `Y - q̂ [m]`, `[m]` added back where negative, and
-the window a word down. -/
-def step (r m t nm u : Nat) : Prog isa := seqs [.block (estA r), .block estB, clearT t, prodT m t, subT r t u,
-  selT t nm, subBack r t u, .block [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]]
+/-- A step: the estimate, `Y - q̂ [m]` in place, `[m]` added back where negative (after the quotient's
+digit into `[q]` for `qo = some q`), and the window a word down. -/
+def step (r m _t nm _u : Nat) (qo : Option Nat := none) : Prog isa := seqs [.block (estA r), .block estB,
+  mulSubW r nm, addBackW r m qo, .block [.ldr .r0 .r8 sJ, .subs .r0 .r0 (.imm 4), .str .r0 .r8 sJ]]
 
 /-- The window's first offset: at word `w - dw`, or at word `t` for a dividend
 below `2^(32 (t + dw))` (`top = some t`). -/
@@ -235,11 +235,11 @@ def fixTop (m : Nat) : List Instr :=
     .dp .add .r2 .r2 (.reg .r3), .str .r2 .r0 0]
 
 /-- `[r] := [a] mod [m]`, for `[m]` of `w / 2` words, its top word not zero,
-through `[t]`, `[nm]` and `[u]`. The steps run while the window's offset, counted
-down, does not underflow. -/
-def divW (a r m t nm u : Nat) (top : Option Nat := none) : Prog isa :=
-  seqs [prep a r m nm top, .loop (.seq (step r m t nm u) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne,
-    step r m t nm u]
+through `[t]`, `[nm]` and `[u]`, and for `qo = some q` the quotient's digits into the zero
+`[q]`. The steps run while the window's offset, counted down, does not underflow. -/
+def divW (a r m _t nm _u : Nat) (top : Option Nat := none) (qo : Option Nat := none) : Prog isa :=
+  seqs [prep a r m nm top, .loop (.seq (step r m _t nm _u qo) (.block [.ldr .r0 .r8 sJ, .cmp .r0 (.imm 0)])) .ne,
+    step r m _t nm _u qo]
 
 /-! ## Balanced keys -/
 

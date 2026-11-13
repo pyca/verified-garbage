@@ -14,10 +14,9 @@ working space, word 1 `p`, word 2 `q`), its arguments' offsets above it, and
 the wrapper around its body (`codeWith`): the entry, the check of `n` (an
 invalid modulus writes zeros at once, `fail`), the loads of `n`, `e` and `d`
 into the key working space at `scratch` (`Impl/Rsa/Arm/KeyWs.lean`) with
-`w = 2 ⌈n_len / 8⌉ + 2` words of 32 bits, the product `M = d e` (`prod`), by
-`mulMod` modulo `2^(32 W - 1)` over the `8 e_len` bits of `e` with the
-working space read with `W = 2 w + 2` words, and the factors written under
-the mask (`stores`). `clrTop` clears the words of an array above
+`w = 2 ⌈n_len / 8⌉ + 2` words of 32 bits (the product `M = d e`, with the
+working space read with `W = 2 w + 2` words, is `RecoverDet.prodW`), and the
+factors written under the mask (`stores`). `clrTop` clears the words of an array above
 Montgomery multiplication's numbers, which key generation, Miller–Rabin and
 FFDH use too.
 -/
@@ -111,17 +110,6 @@ def loadArg (o j : Nat) : List (Prog isa) := [.block [.ldrSp .r4 o, .ldrSp .r6 (
 /-- `n`, `e` and `d` read (`e` and `d` to the arrays `wE` and `wD` with `W`). -/
 def loads : Prog isa := seqs ([.block setupK, zero] ++ loadArg aoN aN ++ loadArg aoE (2 * wE) ++
   loadArg aoD (2 * wD))
-
-/-- The top word of `[j]` := `2^31`: `[j] = 2^(32 w - 1)` if it was zero. -/
-def setTop (j : Nat) : List Instr :=
-  ptr .r0 j ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2), .dp .sub .r0 .r0 (.imm 4),
-    .mov .r1 (.imm 0x80000000), .str .r1 .r0 0]
-
-/-- With `W`: the modulus `2^(32 W - 1)`, and `8 e_len` steps. -/
-def prodSet : List Instr := ctxW ++ setTop wMod ++ [.ldrSp .r6 aoEl, .mov .r6 (.shifted .r6 .lsl 3)]
-
-/-- `M := d e`. -/
-def prod : Prog isa := .seq (.block prodSet) (mulMod wZ wE wD wM wMod wT)
 
 /-! ## Montgomery multiplication's working space -/
 

@@ -39,7 +39,6 @@ namespace VG.Proof.Rsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.CrtValues
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN)
-open VG.Impl.Rsa.X86_64 (copyWords)
 
 /-- The registers the inverse at the primes' width needs pinned: `ws`'s and
 the width in `r13`. -/
@@ -128,46 +127,58 @@ theorem invQS_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
       obtain ⟨ht, hmt, -⟩ := cvInvFrame h' f k L
       exact ⟨I, m₀, c, rfl, ht, L, O, hmt.trans hm⟩
 
-/-- The doublings of `qTail`. -/
-theorem tailDbl_ct : RelCT isa (Two GA) (.seq (.block dblSetup) (.loop tailDbl .ne)) (Two GA) := by
-  have e : dblSetup = ws ++ (tailK ++ [.mov .r11 (.reg .rax), .alu .and .r11 (.imm 63), .alu .add .r11 (.imm 1),
-      .mov .r12 (.reg .r13), .alu .add .r12 (.imm 1)]) := by simp only [dblSetup, List.append_assoc]
+/-- The shift of `qTail`: `[x₂] 2^T` into word `Q` of `[d]`. -/
+theorem qShift_ct : RelCT isa (Two GA) (.seq (.block shSetup) (wordLoop 1 shlClBody)) (Two GA) := by
+  have e : shSetup = ws ++ ([.shift .shr .r12 1, .mov .rax (.reg .r12), .shift .shl .rax 4, .alu .sub .rax (.reg .r12),
+      .alu .add .rax (.imm 10), .mov .rcx (.reg .rax), .alu .and .rcx (.imm 63), .shift .shr .rax 6,
+      .shift .shl .rax 3, .alu .add .r12 (.imm 1)] ++ (base aX₂ .r8 ++ (base aD .rsi ++ ([.alu .add .rsi (.reg .rax)] ++
+      [.mov .rax (.mem (at0 .r8)), .shiftCl .shl .rax, .store (at0 .rsi) .rax])))) := by
+    simp only [shSetup, List.append_assoc]
   rw [e]
   refine ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) (by taint_decide) fun p s h => ?_
   rw [← e]
   obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
-  refine WP.seq (WP.mono (dblSetup_ok h'.ws) fun s₃ ⟨r11, r12, r9, m₃, k₃⟩ => ?_)
-  have h₃ := h'.step (rs := []) (by rw [m₃]; exact Frm.refl _ _ _) (by simp) (by simp) k₃ (by decide)
-  exact WP.mono (tailLoop_ok h₃ r9 r12 r11) fun t ⟨ht, o, _, _⟩ =>
-    ⟨I, m₀, c, rfl, ht, L, O, by rw [mword_out o, m₃]; exact hm⟩
-
-/-- The placement of `qTail`. -/
-theorem placeCopy_ct : RelCT isa (Two GA) (.seq (.block place) copyWords) (Two GA) := by
-  have e : place = ws ++ (tailK ++ ([.shift .shr .rax 6, .mov .r13 (.reg .rax), .alu .sub .r12 (.reg .r13),
-      .shift .shl .r13 3] ++ (base aX₂ .rsi ++ (base aD .rbx ++ [.alu .add .rbx (.reg .r13)])))) := by
-    simp only [place, List.append_assoc]
-  rw [e]
-  refine ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) (by taint_decide) fun p s h => ?_
-  rw [← e]
-  obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
-  exact WP.mono (placeCopy_ok h') fun t ⟨ht, _, o⟩ => ⟨I, m₀, c, rfl, ht, L, O, by
+  exact WP.mono (qShift_ok h') fun t ⟨ht, _, o⟩ => ⟨I, m₀, c, rfl, ht, L, O, by
     rw [← hm]
     exact o.word (Or.inl (by have := hdr_lt_slot (wk I.k) aD (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith))
       (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega_arith)⟩
+
+/-- `qTail`'s reduction, from the dividend's top digit (`startT`). -/
+theorem wordFastT_ct : RelCT isa (Two GA) (.seq (.block VG.Impl.Rsa.X86_64.WordDivide.normalize)
+    (VG.Impl.Rsa.X86_64.WordDivide.codeWith VG.Impl.Rsa.X86_64.WordDivide.startT)) (Two GA) := by
+  refine two_post (two_map (fun p : CvP => (⟨p.B, p.Z, wk p.k, 0⟩ : WordDivide.Pub)) ?_
+    (WordDivide.fastAtWith_ct ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩ (fun W => tailQ W + 2)
+      fun W hW hW' => startT_ok hW hW')) ?_
+  · rintro p s ⟨I, m₀, c, rfl, h, L, O, hm⟩
+    have hk := L.k1
+    have hz := L.z
+    refine ⟨h.ws, ?_, ?_⟩
+    · change slot (wk I.k) 17 ≤ I.Z
+      simp only [slot, Impl.Bignum.hdrBytes, wk]; omega_using [hk, hz]
+    · change 6 ≤ wk I.k
+      unfold wk; omega_using [hk]
+  · intro p s h
+    obtain ⟨I, m₀, c, rfl, hs, L, O, hm⟩ := h
+    have hk := L.k1
+    have hz := L.z
+    have hZ : slot (wk I.k) 17 ≤ I.Z := by
+      simp only [slot, Impl.Bignum.hdrBytes, wk]; omega_using [hk, hz]
+    have hW : 6 ≤ wk I.k := by unfold wk; omega_using [hk]
+    exact WP.mono (WordDivide.fastAtWith_ok hs.ws hZ hW (startT_ok hW hs.ws.w2)) fun t ⟨_, ff, kk⟩ =>
+      (show GA I.pub s from ⟨I, m₀, c, rfl, hs, L, O, hm⟩).wordFrame ff kk
 
 theorem qTail_ct : RelCT isa (Two GA) (seqs qTail) (Two GA) := by
   unfold qTail
   exact ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
     (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
-    (ct_cons (by simp) tailDbl_ct
     (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-    (ct_cons (by simp) placeCopy_ct
-    (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
-    (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
-    (ct_cons (by simp) wordFast_ct
+    (ct_cons (by simp) qShift_ct
     (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
     (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
-    (ct_one (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))))))))))))
+    (ct_cons (by simp) wordFastT_ct
+    (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
+    (ct_cons (by simp) (copyA_ct (by decide) (by decide) (by decide) (by taint_decide))
+    (ct_one (copyA_ct (by decide) (by decide) (by decide) (by taint_decide)))))))))))
 
 theorem invPart_ct [InvLaw] : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
   unfold invPart gcdPart

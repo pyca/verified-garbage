@@ -126,7 +126,7 @@ theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) (h
         · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right
             (Offset.sub_base _ (by omega)))
       (by simp only [aregs, List.length_cons, List.length_nil]; omega))
-    fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃⟩ => ?_
+    fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃, _⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   rw [hm₂, i₂, o₂] at b₃
   rw [hm₂, o₂] at fr₃
