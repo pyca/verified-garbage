@@ -160,6 +160,9 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | mov32 d s => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | store m r => exact storeStepKD_nil h hs
   | store32 m r => exact storeStepKD_nil h hs
+  | addMem m r | addMem32 m r =>
+    simp only [stepKD, stepKDFn, addMemStepK, storeStepK] at hs
+    obtain ⟨-, rfl⟩ := some_cond hs; exact h
   | store8 m r => exact storeStepKD_nil h hs
   | store16 m r => exact storeStepKD_nil h hs
   | alu op d s => obtain ⟨-, rfl⟩ := some_cond hs; exact aluBasesK_nil h ..

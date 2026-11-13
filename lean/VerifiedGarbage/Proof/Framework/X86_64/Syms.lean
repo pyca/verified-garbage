@@ -88,6 +88,9 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
     simp only [Taint.execAluW_eq, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; split <;> rfl
   | vmovdquTbl d m n ws | movdquTbl d m n ws => simp only [reduceExec] at h; split at h <;> cases h; rfl
+  | addMem m r | addMem32 m r =>
+    simp only [reduceExec, execAddMem, execAddMem32, State.store64, State.store32, Option.bind_eq_some_iff] at h
+    obtain ⟨_, _, h⟩ := h; split at h <;> cases h; rfl
   | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
   | _ => simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
 

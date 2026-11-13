@@ -237,6 +237,10 @@ inductive Instr
   /-- Two-operand ALU instruction `op r32, src` (32-bit; `DWORD PTR` for a
   memory source). An immediate is used as is. -/
   | alu32 (op : AluOp) (dst : Reg) (src : Src)
+  /-- `add QWORD PTR [dst], src` (`REX.W 01 /r`, `execAddMem`). -/
+  | addMem (dst : MemOp) (src : Reg)
+  /-- `add DWORD PTR [dst], r32` (`01 /r`, `execAddMem32`). -/
+  | addMem32 (dst : MemOp) (src : Reg)
   /-- `op r32, count` (32-bit) with an immediate count. Only counts `1 ≤ count ≤ 31`
   are modelled; any other count faults. -/
   | shift32 (op : ShiftOp) (dst : Reg) (count : Nat)
@@ -637,6 +641,8 @@ def exec : Instr → State → Option State
   | .mov32 d src, s => (readSrc32 s src).map fun v => s.setReg32 d v
   | .store32 m r, s => s.store32 (s.ea m) ((s.gpr r).setWidth 32)
   | .alu32 op d src, s => execAlu32 op d src s
+  | .addMem m r, s => execAddMem m r s
+  | .addMem32 m r, s => execAddMem32 m r s
   | .shift32 op d n, s => execShift32 op d n s
   | .bswap32 d, s => some (s.setReg32 d (bswap32 ((s.gpr d).setWidth 32)))
   | .rorx32 d r n, s => execRorx32 d r n s
@@ -894,6 +900,8 @@ def addrs : Instr → State → List Addr
   | .mov32 _ src, s => srcAddrs s src
   | .store32 m _, s => [s.ea m]
   | .alu32 _ _ src, s => srcAddrs s src
+  | .addMem m _, s => [s.ea m]
+  | .addMem32 m _, s => [s.ea m]
   | .shift32 .., _ => []
   | .bswap32 _, _ => []
   | .rorx32 .., _ => []
@@ -1059,7 +1067,8 @@ def Instr.dst : Instr → Option Reg
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _
   | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. => some d
-  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
+  | .store .. | .store32 .. | .addMem .. | .addMem32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore ..
+  | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..

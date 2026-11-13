@@ -122,6 +122,26 @@ def execAluW (op : AluOp) (dst : Reg) (b : BitVec 64) (s : State) : Option State
   | .xor => let r := a ^^^ b; some ((arithFlags s r false false).setReg dst r)
   | .test => let r := a &&& b; some (arithFlags s r false false)
 
+/-- SDM Vol. 2, "ADD—Add", `REX.W + 01 /r`, "ADD r/m64, r64", with a memory
+destination: `DEST := DEST + SRC`, the destination the 8 bytes at the
+address (little-endian, SDM Vol. 1 §1.3.1), read and then written, faulting
+where either is not permitted; CF, OF, ZF and SF are set by the result, as
+for the register form (`execAluW .add`). No alignment is required. -/
+def execAddMem (m : MemOp) (src : Reg) (s : State) : Option State :=
+  (s.load64 (s.ea m)).bind fun a =>
+  let b := s.gpr src
+  let r := a + b
+  (arithFlags s r (2 ^ 64 ≤ a.toNat + b.toNat) (addOverflow a b r)).store64 (s.ea m) r
+
+/-- SDM Vol. 2, "ADD—Add", `01 /r`, "ADD r/m32, r32", with a memory
+destination: `execAddMem` on the 4 bytes at the address and the low 32 bits
+of the register, the flags set by the 32-bit result, as for `execAlu32 .add`. -/
+def execAddMem32 (m : MemOp) (src : Reg) (s : State) : Option State :=
+  (s.load32 (s.ea m)).bind fun a =>
+  let b := (s.gpr src).setWidth 32
+  let r := a + b
+  (arithFlags s r (2 ^ 32 ≤ a.toNat + b.toNat) (addOverflow a b r)).store32 (s.ea m) r
+
 /-- The 32-bit forms of `execAlu`: the same operations on the low 32 bits,
 with the flags computed from the 32-bit result. CMP and TEST write no
 register; every other operation zero-extends its result (SDM Vol. 1 §3.4.1.1). -/

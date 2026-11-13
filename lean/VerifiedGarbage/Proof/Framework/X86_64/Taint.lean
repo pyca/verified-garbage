@@ -192,6 +192,12 @@ def storeSlots (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × N
 def storeStep (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Option T :=
   if memPub τ m then some { τ with slots := storeSlots τ m w p } else none
 
+/-- `add [m], r` on `w` bytes: a store to a public address of the sum of the
+slot's old value and `r`, whose flags are functions of the same two; both
+are public iff the slot and `r` are. -/
+def addMemStep (τ : T) (m : MemOp) (w : Nat) (r : Reg) : Option T :=
+  storeStep { τ with flags := slotPub τ m w && pub τ r } m w (slotPub τ m w && pub τ r)
+
 def usesCarry : AluOp → Bool
   | .adc | .sbb => true
   | _ => false
@@ -266,6 +272,8 @@ def step (τ : T) : Instr → Option T
   | .store32 m r => storeStep τ m 4 (pub τ r)
   | .store8 m r => storeStep τ m 1 (pub τ r)
   | .store16 m r => storeStep τ m 2 (pub τ r)
+  | .addMem m r => addMemStep τ m 8 r
+  | .addMem32 m r => addMemStep τ m 4 r
   | .alu op d src => aluStep τ op d src true
   | .alu32 op d src => aluStep τ op d src false
   -- The result is a function of the old value of `d`, and so are the
@@ -831,7 +839,8 @@ def dstOf : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
   | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
-  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
+  | .store .. | .store32 .. | .addMem .. | .addMem32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore ..
+  | .movdquTbl .. | .xop _
   | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
@@ -1367,6 +1376,72 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 2) hok (by decide) fun hp => by rw [ha.reg hp]⟩
+  | addMem m r =>
+    simp only [step, addMemStep, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [reduceExec, execAddMem, State.load64, State.store64,
+      Option.bind_eq_some_iff] at e₁ e₂
+    obtain ⟨a₁, hl₁, e₁⟩ := e₁; obtain ⟨a₂, hl₂, e₂⟩ := e₂
+    split at hl₁ <;> [skip; cases hl₁]; split at hl₂ <;> [skip; cases hl₂]
+    cases hl₁; cases hl₂
+    split at e₁ <;> [skip; cases e₁]; split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    -- The sum's operands agree where the slot and `r` are public, and so do
+    -- the flags it sets.
+    have hab : slotPub τ m 8 && pub τ r = true →
+        s₁.mem.readW (s₁.ea m) 64 = s₂.mem.readW (s₂.ea m) 64 ∧ s₁.gpr r = s₂.gpr r :=
+      fun hp => by
+        obtain ⟨h₁, h₂⟩ := Bool.and_eq_true_iff.mp hp
+        exact ⟨ha.readW (w := 64) hok h₁, by rw [ha.reg h₂]⟩
+    have ha' : Agree { τ with flags := slotPub τ m 8 && pub τ r }
+        (arithFlags s₁ (s₁.mem.readW (s₁.ea m) 64 + s₁.gpr r)
+          (2 ^ 64 ≤ (s₁.mem.readW (s₁.ea m) 64).toNat + (s₁.gpr r).toNat)
+          (addOverflow (s₁.mem.readW (s₁.ea m) 64) (s₁.gpr r)
+            (s₁.mem.readW (s₁.ea m) 64 + s₁.gpr r)))
+        (arithFlags s₂ (s₂.mem.readW (s₂.ea m) 64 + s₂.gpr r)
+          (2 ^ 64 ≤ (s₂.mem.readW (s₂.ea m) 64).toNat + (s₂.gpr r).toNat)
+          (addOverflow (s₂.mem.readW (s₂.ea m) 64) (s₂.gpr r)
+            (s₂.mem.readW (s₂.ea m) 64 + s₂.gpr r))) :=
+      ha.keep ⟨fun q hq => by simpa only [arithFlags_gpr] using ha.rf.1 q hq, fun hf => by
+          obtain ⟨h₁, h₂⟩ := hab hf
+          simp only [arithFlags_cf, arithFlags_zf, arithFlags_sf, arithFlags_of, h₁, h₂, and_self]⟩
+        rfl rfl rfl rfl rfl rfl (fun q h => ha.wf₁.2 q h) (fun q h => ha.wf₂.2 q h) ha.lo ha.xr
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha'.store (n := 8) hok (by decide) fun hp => by
+      obtain ⟨h₁, h₂⟩ := hab hp; rw [h₁, h₂]⟩
+  | addMem32 m r =>
+    simp only [step, addMemStep, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [reduceExec, execAddMem32, State.load32, State.store32,
+      Option.bind_eq_some_iff] at e₁ e₂
+    obtain ⟨a₁, hl₁, e₁⟩ := e₁; obtain ⟨a₂, hl₂, e₂⟩ := e₂
+    split at hl₁ <;> [skip; cases hl₁]; split at hl₂ <;> [skip; cases hl₂]
+    cases hl₁; cases hl₂
+    split at e₁ <;> [skip; cases e₁]; split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    -- The sum's operands agree where the slot and `r` are public, and so do
+    -- the flags it sets.
+    have hab : slotPub τ m 4 && pub τ r = true →
+        s₁.mem.readW (s₁.ea m) 32 = s₂.mem.readW (s₂.ea m) 32 ∧ (s₁.gpr r).setWidth 32 = (s₂.gpr r).setWidth 32 :=
+      fun hp => by
+        obtain ⟨h₁, h₂⟩ := Bool.and_eq_true_iff.mp hp
+        exact ⟨ha.readW (w := 32) hok h₁, by rw [ha.reg h₂]⟩
+    have ha' : Agree { τ with flags := slotPub τ m 4 && pub τ r }
+        (arithFlags s₁ (s₁.mem.readW (s₁.ea m) 32 + (s₁.gpr r).setWidth 32)
+          (2 ^ 32 ≤ (s₁.mem.readW (s₁.ea m) 32).toNat + ((s₁.gpr r).setWidth 32).toNat)
+          (addOverflow (s₁.mem.readW (s₁.ea m) 32) ((s₁.gpr r).setWidth 32)
+            (s₁.mem.readW (s₁.ea m) 32 + (s₁.gpr r).setWidth 32)))
+        (arithFlags s₂ (s₂.mem.readW (s₂.ea m) 32 + (s₂.gpr r).setWidth 32)
+          (2 ^ 32 ≤ (s₂.mem.readW (s₂.ea m) 32).toNat + ((s₂.gpr r).setWidth 32).toNat)
+          (addOverflow (s₂.mem.readW (s₂.ea m) 32) ((s₂.gpr r).setWidth 32)
+            (s₂.mem.readW (s₂.ea m) 32 + (s₂.gpr r).setWidth 32))) :=
+      ha.keep ⟨fun q hq => by simpa only [arithFlags_gpr] using ha.rf.1 q hq, fun hf => by
+          obtain ⟨h₁, h₂⟩ := hab hf
+          simp only [arithFlags_cf, arithFlags_zf, arithFlags_sf, arithFlags_of, h₁, h₂, and_self]⟩
+        rfl rfl rfl rfl rfl rfl (fun q h => ha.wf₁.2 q h) (fun q h => ha.wf₂.2 q h) ha.lo ha.xr
+    exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha'.store (n := 4) hok (by decide) fun hp => by
+      obtain ⟨h₁, h₂⟩ := hab hp; rw [h₁, h₂]⟩
   | movdquLoad d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -2110,6 +2185,9 @@ def storeStepK (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Option T :=
   match τ with
   | ⟨rg, f, l, b, _, lo, x⟩ => bif memPub τ m then some ⟨rg, f, l, b, storeSlotsK τ m w p, lo, x⟩ else none
 
+def addMemStepK (τ : T) (m : MemOp) (w : Nat) (r : Reg) : Option T :=
+  storeStepK { τ with flags := slotPubK τ m w && pub τ r } m w (slotPubK τ m w && pub τ r)
+
 def mulxStepK (τ : T) (hi lo : Reg) (src : Src) : T :=
   let p := pub τ .rdx && srcPub τ src
   match τ with
@@ -2169,6 +2247,8 @@ def stepK (τ : T) : Instr → Option T
   | .store32 m r => storeStepK τ m 4 (pub τ r)
   | .store8 m r => storeStepK τ m 1 (pub τ r)
   | .store16 m r => storeStepK τ m 2 (pub τ r)
+  | .addMem m r => addMemStepK τ m 8 r
+  | .addMem32 m r => addMemStepK τ m 4 r
   | .alu op d src => aluStepK τ op d src true
   | .alu32 op d src => aluStepK τ op d src false
   | .shift32 _ d _ | .shift _ d _ | .btr d _ =>
@@ -2283,6 +2363,9 @@ theorem storeSlotsK_eq : storeSlotsK = storeSlots := by
 theorem storeStepK_eq : storeStepK = storeStep := by
   funext τ m w p; simp only [storeStepK, storeStep, storeSlotsK_eq, Bool.cond_eq_ite]
 
+theorem addMemStepK_eq : addMemStepK = addMemStep := by
+  funext τ m w r; simp only [addMemStepK, addMemStep, storeStepK_eq, slotPubK_eq]
+
 theorem aluBasesK_eq : aluBasesK = aluBases := by
   funext τ op d src wide
   cases op <;> cases src <;> simp only [aluBasesK, aluBases, killK_eq, append_eq, map_eq, filter_eq,
@@ -2309,7 +2392,7 @@ theorem stepK_eq : stepK = step := by
   case vmovdquStore l _ _ => cases l <;> simp only [stepK, step, storeStepK_eq]
   case xop op => cases op <;> simp only [stepK, step, setXK_eq]
   all_goals simp only [stepK, step, srcOkK_eq, setK_eq, loadPubK_eq, movBasesK_eq, killK_eq,
-    storeStepK_eq, aluStepK_eq, mulxStepK_eq, adxStepK_eq, cmovStepK_eq, Bool.cond_eq_ite]
+    storeStepK_eq, addMemStepK_eq, aluStepK_eq, mulxStepK_eq, adxStepK_eq, cmovStepK_eq, Bool.cond_eq_ite]
 
 theorem memB_eq (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : memB a l = l.contains a := by
   simp only [memB, any_eq, beq_eq, regEq_eq, List.contains_eq_any_beq]
@@ -2445,6 +2528,8 @@ def stepKDFn : Instr → Step
   | .store32 m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r)⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r)⟩
   | .store16 m r => ⟨fun τ => storeStepKD τ m 2 (pub τ r)⟩
+  | .addMem m r => ⟨fun τ => addMemStepK τ m 8 r⟩
+  | .addMem32 m r => ⟨fun τ => addMemStepK τ m 4 r⟩
   | .alu op d src => ⟨fun τ => aluStepK τ op d src true⟩
   | .alu32 op d src => ⟨fun τ => aluStepK τ op d src false⟩
   | .shift32 _ d _ | .shift _ d _ | .btr d _ => ⟨fun τ =>

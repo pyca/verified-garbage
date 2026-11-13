@@ -275,6 +275,16 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
   | movzx16 d m => simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load16_patch hc]; rfl
   | store m r => exact store64_patch hc _ _
   | store32 m r => exact store32_patch hc _ _
+  | addMem m r =>
+    simp only [exec, execAddMem, bind_map_patch]
+    rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]
+    congr 1; funext a
+    exact store64_patch (s := arithFlags s _ _ _) hc _ _
+  | addMem32 m r =>
+    simp only [exec, execAddMem32, bind_map_patch]
+    rw [show (s.patch H hv u).ea m = s.ea m from rfl, load32_patch hc]
+    congr 1; funext a
+    exact store32_patch (s := arithFlags s _ _ _) hc _ _
   | store8 m r => exact store8_patch hc _ _
   | store16 m r => exact store16_patch hc _ _
   | alu op d src =>

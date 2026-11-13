@@ -536,6 +536,10 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .mov32 d (.imm v) => some [plusReg false [] 0xB8 (reg d) (le 4 v.toNat)]
   | .mov32 d (.mem m) => (legacy [] false [0x8B] (reg d) (.mem m)).map ([·])
   | .store32 m r => (legacy [] false [0x89] (reg r) (.mem m)).map ([·])
+  -- "ADD": `REX.W 01 /r` (ADD r/m64, r64) and `01 /r` (ADD r/m32, r32), with a
+  -- memory destination.
+  | .addMem m r => (legacy [] true [0x01] (reg r) (.mem m)).map ([·])
+  | .addMem32 m r => (legacy [] false [0x01] (reg r) (.mem m)).map ([·])
   -- The ALU instructions (`Enc.alu`).
   | .alu op d s => (Enc.alu true op d s).map ([·])
   | .aluTbl op d m .. => (Enc.alu true op d (.mem m)).map ([·])

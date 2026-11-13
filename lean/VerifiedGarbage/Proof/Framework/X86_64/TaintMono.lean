@@ -448,6 +448,22 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     exact hp.imp (fun hp => hp.imp hw.srcPubM h.loadPubM) hw.loPubM
   | store m r => exact h.store m (by decide) (hw.pubM) hs
   | store32 m r => exact h.store m (by decide) (hw.pubM) hs
+  | addMem m r =>
+    simp only [step, addMemStep] at hs ⊢
+    have hpq : (slotPub τ m 8 && pub τ r) = true → (slotPub σ m 8 && pub σ r) = true := fun hp => by
+      obtain ⟨h₁, h₂⟩ := Bool.and_eq_true_iff.mp hp
+      exact Bool.and_eq_true_iff.mpr ⟨h.loadPubM (src := .mem m) h₁, hw.pubM h₂⟩
+    exact Le.store (τ := { τ with flags := slotPub τ m 8 && pub τ r })
+      (σ := { σ with flags := slotPub σ m 8 && pub σ r })
+      ⟨⟨h.regs, hpq, h.lens, h.bases, h.slots, h.lo, h.xregs⟩, h.fn⟩ m (w := 8) (by decide) hpq hs
+  | addMem32 m r =>
+    simp only [step, addMemStep] at hs ⊢
+    have hpq : (slotPub τ m 4 && pub τ r) = true → (slotPub σ m 4 && pub σ r) = true := fun hp => by
+      obtain ⟨h₁, h₂⟩ := Bool.and_eq_true_iff.mp hp
+      exact Bool.and_eq_true_iff.mpr ⟨h.loadPubM (src := .mem m) h₁, hw.pubM h₂⟩
+    exact Le.store (τ := { τ with flags := slotPub τ m 4 && pub τ r })
+      (σ := { σ with flags := slotPub σ m 4 && pub σ r })
+      ⟨⟨h.regs, hpq, h.lens, h.bases, h.slots, h.lo, h.xregs⟩, h.fn⟩ m (w := 4) (by decide) hpq hs
   | store8 m r => exact h.store m (by decide) (hw.pubM) hs
   | store16 m r => exact h.store m (by decide) (hw.pubM) hs
   | alu op d src | alu32 op d src =>
@@ -920,7 +936,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     subst hs
     exact bit_set (ne_of_dst rfl hc) hr _
   all_goals
-    simp only [step] at hs
+    simp only [step, addMemStep, storeStep] at hs
     first
     | (simp only [Option.some.injEq] at hs; subst hs
        first | exact hr | (rw [noX_regs]; exact hr) | exact bit_set (ne_of_dst rfl hc) hr _)

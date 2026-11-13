@@ -183,6 +183,14 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load16_widen hc hv]; rfl
   | store m r => exact store64_widen hw h
   | store32 m r => exact store32_widen hw h
+  | addMem m r =>
+    simp only [reduceExec, execAddMem, Option.bind_eq_some_iff] at h ⊢
+    obtain ⟨a, ha, h⟩ := h
+    exact ⟨a, load64_widen hc ha, store64_widen (s := arithFlags s _ _ _) hw h⟩
+  | addMem32 m r =>
+    simp only [reduceExec, execAddMem32, Option.bind_eq_some_iff] at h ⊢
+    obtain ⟨a, ha, h⟩ := h
+    exact ⟨a, load32_widen hc ha, store32_widen (s := arithFlags s _ _ _) hw h⟩
   | store8 m r => exact store8_widen hw h
   | store16 m r => exact store16_widen hw h
   | alu op d src =>
@@ -492,6 +500,12 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     simp only [reduceExec, State.store512] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | stmxcsr m =>
     simp only [reduceExec, State.store32] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
+  | addMem m r =>
+    simp only [reduceExec, execAddMem, State.store64, Option.bind_eq_some_iff] at h
+    obtain ⟨_, _, h⟩ := h; split at h <;> cases h; exact ⟨rfl, rfl⟩
+  | addMem32 m r =>
+    simp only [reduceExec, execAddMem32, State.store32, Option.bind_eq_some_iff] at h
+    obtain ⟨_, _, h⟩ := h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | ldmxcsr m =>
     simp only [reduceExec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
     split at h <;> cases h; exact ⟨rfl, rfl⟩
@@ -510,6 +524,14 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
 
 theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.mem := by
   cases i with
+  | addMem m r =>
+    simp only [reduceExec, execAddMem, State.store64, Option.bind_eq_some_iff] at h
+    obtain ⟨_, _, h⟩ := h; split at h <;> cases h
+    rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
+  | addMem32 m r =>
+    simp only [reduceExec, execAddMem32, State.store32, Option.bind_eq_some_iff] at h
+    obtain ⟨_, _, h⟩ := h; split at h <;> cases h
+    rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | store m r =>
     simp only [reduceExec, State.store64] at h; split at h <;> cases h
     rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
@@ -739,6 +761,10 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     cases i <;> cases hd
     · simp only [reduceExec, State.store64] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, State.store32] at h; split at h <;> cases h; rfl
+    · simp only [reduceExec, execAddMem, State.store64, Option.bind_eq_some_iff] at h
+      obtain ⟨_, _, h⟩ := h; split at h <;> cases h; rfl
+    · simp only [reduceExec, execAddMem32, State.store32, Option.bind_eq_some_iff] at h
+      obtain ⟨_, _, h⟩ := h; split at h <;> cases h; rfl
     · simp only [reduceExec, State.store8] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, State.store16] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl

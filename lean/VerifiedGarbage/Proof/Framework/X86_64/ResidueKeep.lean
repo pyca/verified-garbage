@@ -85,7 +85,7 @@ theorem exec_pres (i : Instr) (s : State) (hi : i.vecLevel ≤ 1) :
   case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
     cases len <;> simp only [reduceExec, State.store128, State.store256] <;> pres_go
   all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
-      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
+      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, execAddMem, execAddMem32, State.store64,
       State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
       State.storeMasked512, State.storeMasked512B]
   all_goals pres_go

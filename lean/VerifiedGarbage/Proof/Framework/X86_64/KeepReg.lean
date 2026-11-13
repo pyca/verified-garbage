@@ -165,6 +165,10 @@ theorem exec_xmm {i : Instr} (hw : writesVec i = false) {s s' : State} (h : exec
           (simp only [exec, State.store128, State.store256] at h; split at h <;> cases h; rfl))
       | (simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
          split at h <;> cases h; rfl)
+      | (simp only [exec, execAddMem, execAddMem32, State.store64, State.store32,
+            Option.bind_eq_some_iff] at h
+         obtain ⟨_, _, h⟩ := h
+         split at h <;> cases h; rfl)
       | (simp only [exec, execMulx] at h; split at h
          · cases h
          · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl)

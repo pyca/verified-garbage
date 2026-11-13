@@ -57,7 +57,7 @@ theorem exec_unknowns_pres (i : Instr) (s : State) :
   case e5InsertLoad d _ _ _ =>
     simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVz_eq]
   all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
-      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
+      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, execAddMem, execAddMem32, State.store64,
       State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
       State.storeMasked512, State.storeMasked512B]
   all_goals uk_go
@@ -110,6 +110,13 @@ theorem exec_store {i : Instr} {m : MemOp} {w : Nat} (hi : storeW i = some (m, w
     | (obtain ⟨rfl, rfl⟩ := hi
        simp only [reduceExec, State.store64, State.store32, State.store8, State.store16, State.store128,
          State.store256, State.store512] at e
+       split at e <;> [skip; cases e]
+       cases e
+       exact writeW_out (by omega))
+    | (obtain ⟨rfl, rfl⟩ := hi
+       simp only [reduceExec, execAddMem, execAddMem32, State.store64, State.store32,
+         Option.bind_eq_some_iff] at e
+       obtain ⟨_, _, e⟩ := e
        split at e <;> [skip; cases e]
        cases e
        exact writeW_out (by omega))

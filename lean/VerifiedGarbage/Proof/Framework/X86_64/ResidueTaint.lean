@@ -212,6 +212,8 @@ def ubNew (τ : FT) : Instr → Option (Reg × Nat)
 def storeW : Instr → Option (MemOp × Nat)
   | .store m _ => some (m, 8)
   | .store32 m _ => some (m, 4)
+  | .addMem m _ => some (m, 8)
+  | .addMem32 m _ => some (m, 4)
   | .store8 m _ => some (m, 1)
   | .store16 m _ => some (m, 2)
   | .movdquStore m _ => some (m, 16)
@@ -502,8 +504,9 @@ of a pointer from a slot (`post`) or of the argument area (`argPost`: a load
 `[rsp + disp]` without an index), no bound (`ubNew`) or flags (`flOf`), no
 zeroing idiom, and no write of registers other than `Taint.dstOf`'s. -/
 def isPlain : Instr → Bool
-  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquStore .. | .vmovdquStore ..
-  | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _ | .kStore .. | .kStore8 .. => false
+  | .store .. | .store32 .. | .addMem .. | .addMem32 .. | .store8 .. | .store16 .. | .movdquStore ..
+  | .vmovdquStore .. | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _ | .kStore .. | .kStore8 ..
+    => false
   | .mov _ (.mem _) | .mov _ (.imm _) | .mov32 _ (.imm _) => false
   | .mov32 _ (.mem m) => !(regEq m.base .rsp && m.index.isNone)
   | .alu .and _ (.imm _) | .alu32 .and _ (.imm _) => false
