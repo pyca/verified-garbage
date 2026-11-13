@@ -214,6 +214,7 @@ def updateSReg (v : BackendS) : Registration Spec.Blake2.updateSApi X86_64.targe
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
     stack := 8 + 584
+    notWith := v.notWith
     verified := v.update_framed
     spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe } (updateSOut _) [] (pubOk_nil _)
     v.updateRes
@@ -225,6 +226,7 @@ def finalizeSReg (v : BackendS) : Registration Spec.Blake2.finalizeSApi X86_64.t
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
     stack := 8 + 584
+    notWith := v.notWith
     verified := v.finalize_framed
     spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe } (finalizeSOut _) [] (pubOk_nil _)
     v.finalizeRes
