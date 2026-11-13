@@ -297,10 +297,10 @@ def MidW (s0 t : State) : Prop :=
   num t.mem (cvB s0) (cvW s0) aDR2 = cvD s0 % fP s0 ∧ num t.mem (cvB s0) (cvW s0) aDR3 = cvD s0 % fQ s0
 
 /-- The comparisons, the inverse and `checks`' set-up, the zero array again, and `fixT (p - 1)`. -/
-theorem chunkW_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (h : SA s0 s) (hB : BalCv s0)
+theorem chunkW_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} {s0 s : State} (h : SA s0 s) (hB : BalCv s0)
     (e : num s.mem (cvB s0) (cvW s0) aDR = cvP s0 * cvQ s0 % 2 ^ (32 * cvW s0)) :
-    WP isa (seqs chunkW) s fun t => SW s0 (xW s0) t ∧ num t.mem (cvB s0) (cvW s0) aDD = fP s0 := by
-  rw [show chunkW = [eqS sE1 aDR aDQ aT1, eqS sE2 aZero aZero aT1] ++ (invSetup ++ (checksB ++
+    WP isa (seqs (chunkW um)) s fun t => SW s0 (xW s0) t ∧ num t.mem (cvB s0) (cvW s0) aDD = fP s0 := by
+  rw [show chunkW um = [eqS sE1 aDR aDQ aT1, eqS sE2 aZero aZero aT1] ++ (invSetup ++ (checksB um ++
     [copy 0 aZero, copy aDD aP, .block (clrLow aDD ++ VG.Impl.Rsa.Arm.KeyDiv.fixTop aDD)])) from rfl,
     wp_seqs_append (List.cons_ne_nil _ _) (by unfold invSetup; simp)]
   refine WP.mono (cmpW_ok h e) fun t1 h1 => ?_
@@ -323,8 +323,8 @@ theorem chunkW_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (h : SA s0 s) (h
   exact WP.mono (setW_ok s4 (d' := aP) (by decide)
     (by rw [k4.num (by decide) (by decide) (fit _ (by decide)), h3.p]) hB.p_lt) fun t ⟨ht, et, _⟩ => ⟨ht, et⟩
 
-theorem midW_eq : midW = seqs (([.block (ctx ++ bitOf sPodd aP), VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ] :
-    List (Prog isa)) ++ (chunkW ++ ([VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR2 aDD aDQ aDT aT1, copy aDD aQ,
+theorem midW_eq (um : Bool) : midW um = seqs (([.block (ctx ++ bitOf sPodd aP), VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ] :
+    List (Prog isa)) ++ (chunkW um ++ ([VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR2 aDD aDQ aDT aT1, copy aDD aQ,
       .block (clrLow aDD ++ VG.Impl.Rsa.Arm.KeyDiv.fixTop aDD), VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR3 aDD aDQ aDT aT1] :
         List (Prog isa)))) :=
   rfl
@@ -351,8 +351,8 @@ theorem div3W_ok {s0 s : State} (h : SW s0 (xW s0) s) (hB : BalCv s0)
     ⟨⟨ht.base, ht.mask⟩, by rw [k _ (by decide) (by decide), e2], et⟩
 
 /-- A balanced key's checks and values. -/
-theorem midW_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (h : StA s0 s) (hB : BalCv s0) :
-    WP isa midW s (MidW s0) := by
+theorem midW_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} {s0 s : State} (h : StA s0 s) (hB : BalCv s0) :
+    WP isa (midW um) s (MidW s0) := by
   rw [midW_eq, wp_seqs_append (List.cons_ne_nil _ _) (by simp)]
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (oddW_ok h) fun t1 h1 => ?_

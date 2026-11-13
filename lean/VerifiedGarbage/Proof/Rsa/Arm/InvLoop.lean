@@ -112,10 +112,10 @@ theorem rep_of_mod {n : Nat} {x : Int} {L : Nat} (hn : n < 2 ^ (L + 1))
 theorem nB_le {k : Nat} (hk : k ≤ 1024) : 32 * nB k + 30 < 2 ^ 32 := by simp only [nB]; omega
 
 /-- A batch takes the state after `i` batches to the state after `i + 1`. -/
-theorem batch_ok {σ s : State} {B : BitVec 32} {Z W k N p iv x i : Nat} (hN : 15 ≤ N) (hN' : N ≤ 256) (hW8 : 8 ≤ W)
+theorem batch_ok {um : Bool} {σ s : State} {B : BitVec 32} {Z W k N p iv x i : Nat} (hN : 15 ≤ N) (hN' : N ≤ 256) (hW8 : 8 ≤ W)
     (I : BI σ s B Z W k N p iv x i) (hi : i < nB k)
     (hpk : p < 2 ^ (32 * k)) (hx : x < 2 ^ (32 * k)) :
-    WP isa batch s fun t => BI σ t B Z W k N p iv x (i + 1) ∧ t.z = decide (i + 1 = nB k) := by
+    WP isa (batch um) s fun t => BI σ t B Z W k N p iv x (i + 1) ∧ t.z = decide (i + 1 = nB k) := by
   have g := I.geo
   have hW : 1 ≤ W := Nat.le_trans g.kpos g.kle
   have hL : k + 1 ≤ W + 2 := by have := g.kle; omega
@@ -320,9 +320,9 @@ theorem batch_ok {σ s : State} {B : BitVec 32} {Z W k N p iv x i : Nat} (hN : 1
     simp only [decide_eq_decide]; omega
 
 /-- The `3 (k + 1)` batches. -/
-theorem batches_ok {σ s : State} {B : BitVec 32} {Z W k N p iv x : Nat} (hN : 15 ≤ N) (hN' : N ≤ 256) (hW8 : 8 ≤ W)
+theorem batches_ok {um : Bool} {σ s : State} {B : BitVec 32} {Z W k N p iv x : Nat} (hN : 15 ≤ N) (hN' : N ≤ 256) (hW8 : 8 ≤ W)
     (I : BI σ s B Z W k N p iv x 0) (hpk : p < 2 ^ (32 * k)) (hx : x < 2 ^ (32 * k)) :
-    WP isa (.loop batch .ne) s fun t => BI σ t B Z W k N p iv x (nB k) := by
+    WP isa (.loop (batch um) .ne) s fun t => BI σ t B Z W k N p iv x (nB k) := by
   refine WP.loop (M := isa) (fun n t => ∃ i, i + n = nB k ∧ 0 < n ∧ BI σ t B Z W k N p iv x i) ?_ (nB k) s
     ⟨0, by omega, by simp only [nB]; omega, I⟩
   rintro n t ⟨i, hin, hn, hi⟩
@@ -1137,9 +1137,9 @@ open VG.Impl.Rsa.Arm.Keys.Inv
 open VG.Proof.X25519.Arm VG.Proof.Rsa.Arm.Inv
 open VG.Proof.Rsa.Divstep (oddInput)
 
-theorem inverseK_ok {σ : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk σ B Z W k N) (hN15 : 15 ≤ N)
+theorem inverseK_ok {um : Bool} {σ : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk σ B Z W k N) (hN15 : 15 ≤ N)
     (hN : N ≤ 256) (hW8 : 8 ≤ W) :
-    WP isa VG.Impl.Rsa.Arm.Keys.inverse σ fun t => Gk t B Z W k N ∧ Keep B W invArrs invSlots σ.mem t.mem ∧
+    WP isa (VG.Impl.Rsa.Arm.Keys.inverse um) σ fun t => Gk t B Z W k N ∧ Keep B W invArrs invSlots σ.mem t.mem ∧
       Rest (.r6 :: opRegs) σ t ∧
       (nk σ.mem B W aM k % 2 = 1 → 1 < nk σ.mem B W aM k →
         nk t.mem B W 1 W = Nat.gcd (nk σ.mem B W 0 k) (nk σ.mem B W aM k) ∧

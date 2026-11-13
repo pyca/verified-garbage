@@ -27,9 +27,9 @@ abbrev invArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, aT1, aT2, aT3, aT4]
 abbrev invSlots : List Nat := [sOdd, sB, sC]
 
 class InvLaw : Prop where
-  inverseK_ok {σ : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk σ B Z W k N) (hN15 : 15 ≤ N)
+  inverseK_ok {um : Bool} {σ : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk σ B Z W k N) (hN15 : 15 ≤ N)
       (hN : N ≤ 256) (hW8 : 8 ≤ W) :
-    WP isa VG.Impl.Rsa.Arm.Keys.inverse σ fun t => Gk t B Z W k N ∧ Keep B W invArrs invSlots σ.mem t.mem ∧
+    WP isa (VG.Impl.Rsa.Arm.Keys.inverse um) σ fun t => Gk t B Z W k N ∧ Keep B W invArrs invSlots σ.mem t.mem ∧
       Rest (.r6 :: opRegs) σ t ∧
       (nk σ.mem B W aM k % 2 = 1 → 1 < nk σ.mem B W aM k →
         nk t.mem B W 1 W = Nat.gcd (nk σ.mem B W 0 k) (nk σ.mem B W aM k) ∧

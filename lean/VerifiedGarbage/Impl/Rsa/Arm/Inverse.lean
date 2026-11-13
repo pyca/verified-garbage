@@ -175,14 +175,25 @@ def coefStore (t : Nat) : List Instr :=
     .dp .bic .r3 .r1 (.shifted .r3 .lsl 16), .str .r3 .r12 (coefOff t + 4)]
 
 /-- `hi:lo += |c| (x ^ m)` for coefficient `t` and the word `x` at `[xs + xo]`, through `r6`, `r7`,
-`r9`, `r10`. -/
-def term (xs : Reg) (xo t : Nat) (lo hi : Reg) : List Instr :=
+`r9`, `r10`: as four 16 × 16-bit products. -/
+def termB (xs : Reg) (xo t : Nat) (lo hi : Reg) : List Instr :=
   [.ldr .r6 xs xo, .ldr .r7 .r12 (coefOff t), .dp .eor .r6 .r6 (.reg .r7),
    .mov .r7 (.shifted .r6 .lsr 16), .dp .bic .r6 .r6 (.shifted .r7 .lsl 16),
    .ldr .r9 .r12 (coefOff t + 4), .mul .r10 .r6 .r9, .adds lo lo (.reg .r10), .adc hi hi (.imm 0),
    .mul .r10 .r7 .r9, .adds lo lo (.shifted .r10 .lsl 16), .adc hi hi (.shifted .r10 .lsr 16),
    .ldr .r9 .r12 (coefOff t + 8), .mul .r10 .r6 .r9, .adds lo lo (.shifted .r10 .lsl 16),
    .adc hi hi (.shifted .r10 .lsr 16), .mla hi .r7 .r9 hi]
+
+/-- `termB` by one `umaal` (CPU feature `umaal`): `|c|` from its halves, `r10:lo := (x ^ m) |c| + lo`,
+then `hi += r10`. -/
+def termU (xs : Reg) (xo t : Nat) (lo hi : Reg) : List Instr :=
+  [.ldr .r6 xs xo, .ldr .r7 .r12 (coefOff t), .dp .eor .r6 .r6 (.reg .r7),
+   .ldr .r9 .r12 (coefOff t + 4), .ldr .r10 .r12 (coefOff t + 8), .dp .add .r9 .r9 (.shifted .r10 .lsl 16),
+   .mov .r10 (.imm 0), .umaal lo .r10 .r6 .r9, .dp .add hi hi (.reg .r10)]
+
+/-- A term: `termU` where `um` (the inverse's `umaal` variant), else `termB`. -/
+def term (xs : Reg) (xo t : Nat) (lo hi : Reg) (um : Bool := false) : List Instr :=
+  if um then termU xs xo t lo hi else termB xs xo t lo hi
 
 /-- Word 0 of a row's sum (`lo`): its top two bits into the row's word 0 (`[p]`), and the carry down. -/
 def out0 (p lo hi : Reg) : List Instr :=
@@ -236,15 +247,15 @@ def restore (sh : List Nat) : List Instr :=
   [.mov .r9 (.shifted .r9 .lsr 2)]
 
 /-- The two rows' words `0` (`zo = 0`) or `i` (`zo = 4`) over `[r0]`, `[r1]`. -/
-def fgTerms (zo : Nat) : List Instr :=
-  term .r0 zo 0 .r2 .r3 ++ term .r0 zo 2 .r4 .r5 ++ term .r1 zo 1 .r2 .r3 ++ term .r1 zo 3 .r4 .r5
+def fgTerms (zo : Nat) (um : Bool := false) : List Instr :=
+  term .r0 zo 0 .r2 .r3 um ++ term .r0 zo 2 .r4 .r5 um ++ term .r1 zo 1 .r2 .r3 um ++ term .r1 zo 3 .r4 .r5 um
 
 /-- `(f, g) := ((u f + v g) / 2^30, (q f + r g) / 2^30)`. -/
-def fgPass : Prog isa := seqs [
+def fgPass (um : Bool := false) : Prog isa := seqs [
   .block (spill ++ rowPrep bF bG cU cV 0 1 0 ++ rowPrep bF bG cQ cR 2 3 1 ++
     [.ldr .r2 .r12 (carryOff 0), .mov .r3 (.imm 0), .ldr .r4 .r12 (carryOff 1), .mov .r5 (.imm 0)] ++
-    ptr .r0 bF ++ ptr .r1 bG ++ fgTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
-  .loop (.block (fgTerms 4 ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
+    ptr .r0 bF ++ ptr .r1 bG ++ fgTerms 0 um ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
+  .loop (.block (fgTerms 4 um ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
     [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4)] ++ wordDone)) .ne,
   .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ restore [2])]
 
@@ -262,22 +273,22 @@ def mdPrep (c₁ c₂ : Coef) (t row : Nat) : List Instr :=
    .str .r4 .r12 (carryOff row)]
 
 /-- The two rows' words `0` or `i` over `[r0]`, `[r1]` and `m` at `[r11]`. -/
-def deTerms (zo : Nat) : List Instr :=
-  fgTerms zo ++ term .r11 zo 4 .r2 .r3 ++ term .r11 zo 5 .r4 .r5
+def deTerms (zo : Nat) (um : Bool := false) : List Instr :=
+  fgTerms zo um ++ term .r11 zo 4 .r2 .r3 um ++ term .r11 zo 5 .r4 .r5 um
 
 /-- `(d, e) := ((u d + v e + md₁ m) / 2^30, (q d + r e + md₂ m) / 2^30)`. -/
-def dePass : Prog isa := seqs [
+def dePass (um : Bool := false) : Prog isa := seqs [
   .block (spill ++ rowPrep bD bE cU cV 0 1 0 ++ rowPrep bD bE cQ cR 2 3 1 ++
     mdPrep cU cV 4 0 ++ mdPrep cQ cR 5 1 ++
     [.ldr .r2 .r12 (carryOff 0), .mov .r3 (.imm 0), .ldr .r4 .r12 (carryOff 1), .mov .r5 (.imm 0)] ++
-    ptr .r0 bD ++ ptr .r1 bE ++ ptr .r11 bP ++ deTerms 0 ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
-  .loop (.block (deTerms 4 ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
+    ptr .r0 bD ++ ptr .r1 bE ++ ptr .r11 bP ++ deTerms 0 um ++ out0 .r0 .r2 .r3 ++ out0 .r1 .r4 .r5),
+  .loop (.block (deTerms 4 um ++ outW .r0 .r2 .r3 ++ outW .r1 .r4 .r5 ++
     [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r11 .r11 (.imm 4)] ++ wordDone)) .ne,
   .block (outTop .r0 .r2 0 ++ outTop .r1 .r4 1 ++ restore [2, 1])]
 
-def update : Prog isa := seqs [fgPass, dePass, .block [.subs .r6 .r6 (.imm 32)]]
+def update (um : Bool := false) : Prog isa := seqs [fgPass um, dePass um, .block [.subs .r6 .r6 (.imm 32)]]
 
-def batch : Prog isa := .seq divsteps update
+def batch (um : Bool := false) : Prog isa := .seq divsteps (update um)
 
 /-- `-m⁻¹ mod 2^32` from `m`'s low word in `r5`: from `x = m`, right modulo 8,
 four Newton steps `x (2 - m x)`, then negated. -/
@@ -327,6 +338,6 @@ def finish : Prog isa := seqs [
 end Inv
 
 open VG.Impl.Rsa.Arm.Keys.Inv in
-def inverse : Prog isa := seqs [init, .loop batch .ne, finish]
+def inverse (um : Bool := false) : Prog isa := seqs [init, .loop (batch um) .ne, finish]
 
 end VG.Impl.Rsa.Arm.Keys

@@ -66,8 +66,8 @@ theorem remW_eq {s0 : State} (hm : Spec.Rsa.modulusValid (cvN s0) (cvK s0) = tru
   obtain ⟨-, a, b⟩ := VG.Proof.Rsa.top_words hm rfl (by simp only [cvW] at w16; omega) hp hq e
   exact ⟨VG.Proof.Rsa.fixT_of_ge a, VG.Proof.Rsa.fixT_of_ge b⟩
 
-theorem valid_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (h : Base s0 s)
-    (hm : Spec.Rsa.modulusValid (cvN s0) (cvK s0) = true) : WP isa valid s (ValidPost s0) := by
+theorem valid_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} {s0 s : State} (h : Base s0 s)
+    (hm : Spec.Rsa.modulusValid (cvN s0) (cvK s0) = true) : WP isa (valid um) s (ValidPost s0) := by
   unfold valid
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (loads_ok h) fun t1 h1 => ?_

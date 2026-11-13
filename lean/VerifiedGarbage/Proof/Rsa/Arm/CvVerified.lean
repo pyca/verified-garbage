@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Rsa.Arm.CvCorrect
+import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 
 /-! # `vg_rsa_crt_values` on ARMv7 is verified against the shared RSA contract -/
 
@@ -44,8 +45,16 @@ theorem cv_contract_sat : ∃ s, (Spec.Rsa.crtValuesContract abi 0).pre s := by
     [cvSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords]
     using cvSatState
 
-/-- `vg_rsa_crt_values`. -/
-theorem crt_values_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] : Verified target code (Spec.Rsa.crtValuesContract abi 0) :=
+/-- `vg_rsa_crt_values`, either variant of its inverse. -/
+theorem crt_values_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} :
+    Verified target (code um) (Spec.Rsa.crtValuesContract abi 0) :=
   ⟨cv_contract_correct, cv_contract_ct, cv_contract_sat⟩
+
+/-- `vg_rsa_crt_values` (`um = false`) or `vg_rsa_crt_values_umaal` (`um`). -/
+theorem crt_values_for_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (um : Bool) :
+    Verified target (codeFor um) (Spec.Rsa.crtValuesContract abi 0) := by
+  cases um
+  · exact crt_values_verified
+  · exact VG.Proof.Bignum.Arm.umaalArithmetic_verified crt_values_verified
 
 end VG.Proof.Rsa.Arm.CrtValues
