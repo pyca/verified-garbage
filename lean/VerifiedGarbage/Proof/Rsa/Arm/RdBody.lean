@@ -345,8 +345,8 @@ theorem prodW_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
     · simp [AWp, VG.Proof.Rsa.Arm.Recover.AW1, upd, VG.Impl.Rsa.Arm.Recover.wM, VG.Impl.Rsa.Arm.Recover.wZ, VG.Impl.Rsa.Arm.Recover.wE,
         VG.Impl.Rsa.Arm.Recover.wD]
 
-theorem validD_vp [InvLaw] (hv : Spec.Rsa.modulusValid P.n P.K = true) (he : P.el ≤ 8) :
-    VP (fun σ s => True ∧ Bs P σ s) VG.Impl.Rsa.Arm.RecoverDet.valid (FeD P (In P) (pF' P) (qF' P) (okF' P)) := by
+theorem validD_vp [InvLaw] {um : Bool} (hv : Spec.Rsa.modulusValid P.n P.K = true) (he : P.el ≤ 8) :
+    VP (fun σ s => True ∧ Bs P σ s) (VG.Impl.Rsa.Arm.RecoverDet.valid um) (FeD P (In P) (pF' P) (qF' P) (okF' P)) := by
   have hn0 : 0 < P.n := by
     simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv; omega
   have hn2 : 2 ≤ P.n := by
@@ -409,9 +409,9 @@ theorem feD_res (hv : Spec.Rsa.modulusValid P.n P.K = true) (he : P.el ≤ 8) {�
     · rw [bq]; simp [outQD, okF', no]
 
 /-- The body after the entry: Z iff `n` is valid. -/
-theorem bodyD_vp [InvLaw] (he : P.el ≤ 8) :
+theorem bodyD_vp [InvLaw] {um : Bool} (he : P.el ≤ 8) :
     VP (fun σ s => Bs P σ s ∧ s.z = Spec.Rsa.modulusValid P.n P.K)
-      (.ite .eq VG.Impl.Rsa.Arm.RecoverDet.valid VG.Impl.Rsa.Arm.Recover.fail) (ResD P) := by
+      (.ite .eq (VG.Impl.Rsa.Arm.RecoverDet.valid um) VG.Impl.Rsa.Arm.Recover.fail) (ResD P) := by
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) ?_ ?_
   · show some s₁.z = some s₂.z
     rw [h₁.2, h₂.2]

@@ -49,9 +49,9 @@ abbrev GS (P : RP) (E : State → Prop) (f : Nat × Nat × Nat → Nat × Nat ×
 
 theorem invArrs_eq : invArrs = [0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14] := rfl
 
-theorem gcd_vp [InvLaw] {f : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop}
+theorem gcd_vp [InvLaw] {um : Bool} {f : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → Prop}
     (hodd : ∀ σ, E σ → (ts P f σ (32 * P.w)).1 % 2 = 1) :
-    VP (fun σ s => E σ ∧ TI P f σ (32 * P.w) s) gcd (GS P E f) := by
+    VP (fun σ s => E σ ∧ TI P f σ (32 * P.w) s) (gcd um) (GS P E f) := by
   simp only [gcd, seqs]
   -- `[0] := x / 2^k`.
   let AC := fun σ => upd (AT P f σ (32 * P.w)) aGx (AT P f σ (32 * P.w) aX2)

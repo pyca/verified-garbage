@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyDiv
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskRow
 public import VerifiedGarbage.Impl.Bignum.Arm.ShiftK
+public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 
 /-! # RSA prime recovery by SP 800-56B Rev. 2 Appendix C.2 on ARMv7
 
@@ -280,7 +281,7 @@ def twos : Prog isa := seqs [twosInit, ctz aU sTu, ctz aX2 sKx, .block kMin,
 /-- `gcd(u, x / 2^k)` into `aG`: `gcdOnly`'s, or 1 where `u = 1`. -/
 def gcdPost : Prog isa := .seq (eqS sU1 aU aOneN aW) (sel aG aG1 aOneN sU1)
 
-def gcd : Prog isa := seqs [copy aGx aX2, gcdOnly, gcdPost]
+def gcd (um : Bool := false) : Prog isa := seqs [copy aGx aX2, gcdOnly um, gcdPost]
 
 /-! ## Products by rows: `[o] := [x] y` modulo `2^(32 W)`, wide, for `y` the narrow array `2 Y` (the low
 `w` words of the wide `Y`): a row per word of `y`. -/
@@ -709,14 +710,21 @@ def factors : Prog isa := seqs [add aP aB aY aT1 aZN, .block clr11, half aP,
 
 /-! ## The function -/
 
-def det : Prog isa := seqs [deMinus, twos, gcd, rowProd wA wX3 17, divA, divB,
+def det (um : Bool := false) : Prog isa := seqs [deMinus, twos, gcd um, rowProd wA wX3 17, divA, divB,
   square, minus4n, sqrt, factors]
 
 /-- Once `n` is known valid. -/
-def valid : Prog isa := seqs [VG.Impl.Rsa.Arm.Recover.loads, prodW, det,
+def valid (um : Bool := false) : Prog isa := seqs [VG.Impl.Rsa.Arm.Recover.loads, prodW, det um,
   VG.Impl.Rsa.Arm.Recover.stores]
 
-/-- `vg_rsa_recover_primes_det`. -/
-def code : Prog isa := VG.Impl.Rsa.Arm.Recover.codeWith (.ite .eq valid VG.Impl.Rsa.Arm.Recover.fail)
+/-- `vg_rsa_recover_primes_det`; `um` its inverse's `umaal` variant. -/
+def code (um : Bool := false) : Prog isa :=
+  VG.Impl.Rsa.Arm.Recover.codeWith (.ite .eq (valid um) VG.Impl.Rsa.Arm.Recover.fail)
+
+/-- `vg_rsa_recover_primes_det_umaal`: the `umaal` inverse in the GCD, and `umaal` rows (`umaalArithmetic`). -/
+def codeU : Prog isa := VG.Impl.Bignum.Arm.umaalArithmetic (code true)
+
+/-- The code of a variant (`Proof/Variants/RsaInverse/Arm.lean`). -/
+def codeFor (um : Bool) : Prog isa := if um then codeU else code
 
 end VG.Impl.Rsa.Arm.RecoverDet

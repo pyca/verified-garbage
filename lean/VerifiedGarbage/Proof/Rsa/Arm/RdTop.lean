@@ -25,6 +25,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Taint5
+import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -424,8 +425,10 @@ open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm.Keys VG.Impl.Rsa.Arm.Recover VG.Pro
 open VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.RecoverDet (bodyD_vp ResD)
 
+variable {um : Bool}
+
 /-- The body after the entry. -/
-abbrev bodyD : Prog isa := .ite .eq VG.Impl.Rsa.Arm.RecoverDet.valid fail
+abbrev bodyD (um : Bool) : Prog isa := .ite .eq (VG.Impl.Rsa.Arm.RecoverDet.valid um) fail
 
 /-- The public parameters. -/
 abbrev mkPD (s : State) : RP := mkP s
@@ -435,7 +438,7 @@ variable {s : State}
 
 /-- A call's result. -/
 theorem rd_ok [InvLaw] (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) :
-    WP isa VG.Impl.Rsa.Arm.RecoverDet.code s fun t => abiPreserved s t ∧
+    WP isa (VG.Impl.Rsa.Arm.RecoverDet.code um) s fun t => abiPreserved s t ∧
       Spec.Rsa.writtenAll t.mem [(State.addr (s.gpr .r0), (stackArg s 1).toNat),
         (State.addr (s.gpr .r2), (stackArg s 1).toNat)] (t.gpr .r0)
         ((Spec.Rsa.primesKeyDet (Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
@@ -451,7 +454,7 @@ theorem rd_ok [InvLaw] (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) :
   rw [WP.seq_iff]
   have pre := in_x h usp urd umem
   have sz := pre.sizes
-  obtain ⟨tr, v, run, bo, res⟩ := (bodyD_vp (P := mkP s) he).wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
+  obtain ⟨tr, v, run, bo, res⟩ := (bodyD_vp (um := um) (P := mkP s) he).wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
   have cov := h.xCovers sz
   have run' := Exec.widen (rd := u.rd) (wr := u.wr) run
     (Covers.append (Covers.refl _) (by rw [uwr]; exact cov)) (by rw [uwr]; exact cov)
@@ -510,10 +513,10 @@ end
 theorem body_wideD [InvLaw] {s u : State} (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) (usp : u.sp = s.sp - BitVec.ofNat 32 56) (urd : u.rd = s.rd)
     (uwr : u.wr = (pcPushed s).wr) (umem : u.mem = entryMem s)
     (uz : u.z = Spec.Rsa.modulusValid (mkP s).n (mkP s).K) :
-    ∃ tr v, Exec isa bodyD (u.withRegions u.rd (xRegs s)) tr v ∧
-      Exec isa bodyD u tr (v.withRegions u.rd u.wr) ∧ v.sp = s.sp - BitVec.ofNat 32 56 := by
+    ∃ tr v, Exec isa (bodyD um) (u.withRegions u.rd (xRegs s)) tr v ∧
+      Exec isa (bodyD um) u tr (v.withRegions u.rd u.wr) ∧ v.sp = s.sp - BitVec.ofNat 32 56 := by
   have pre := in_x h usp urd umem
-  obtain ⟨tr, v, run, bo, _⟩ := (bodyD_vp (P := mkP s) he).wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
+  obtain ⟨tr, v, run, bo, _⟩ := (bodyD_vp (um := um) (P := mkP s) he).wp _ _ ⟨⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, uz⟩
   have cov := h.xCovers pre.sizes
   have run' := Exec.widen (rd := u.rd) (wr := u.wr) run
     (Covers.append (Covers.refl _) (by rw [uwr]; exact cov)) (by rw [uwr]; exact cov)
@@ -522,7 +525,7 @@ theorem body_wideD [InvLaw] {s u : State} (h : CIn s) (he : (stackArg s 3).toNat
 
 /-- Two calls with the same public parameters. -/
 theorem rd_ct [InvLaw] : RelCT isa (fun s t => (CIn s ∧ (stackArg s 3).toNat ≤ 8) ∧ CIn t ∧ s.sp = t.sp ∧
-    mkPD s = mkPD t ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1) VG.Impl.Rsa.Arm.RecoverDet.code
+    mkPD s = mkPD t ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1) (VG.Impl.Rsa.Arm.RecoverDet.code um)
     (fun _ _ => True) := by
   unfold VG.Impl.Rsa.Arm.RecoverDet.code codeWith
   apply RelCT.frame (fun _ _ h => h.2.2.1)
@@ -563,7 +566,7 @@ theorem rd_ct [InvLaw] : RelCT isa (fun s t => (CIn s ∧ (stackArg s 3).toNat �
           have uz2' := uz2
           change _ = Spec.Rsa.modulusValid (mkPD t0).n (mkPD t0).K at uz2'
           rw [← hP] at uz2'
-          have trB := ((bodyD_vp (P := mkPD s0) he).ct _ _ _ _ _ _
+          have trB := ((bodyD_vp (um := um) (P := mkPD s0) he).ct _ _ _ _ _ _
             ⟨_, _, ⟨⟨pre1, rfl, rfl, rfl, Frame.refl _ _⟩, uz1⟩, ⟨⟨pre2, rfl, rfl, rfl, Frame.refl _ _⟩, uz2'⟩⟩
             runB1 runB2).1
           have trR := ((stackLoads_ct pcCalleeSaved : RelCT isa (fun s t => s.sp = t.sp)
@@ -582,7 +585,7 @@ theorem cinD_of_pre (s : State) (h : (Spec.Rsa.recoverPrimesDetContract abi 56).
     fp, fq, fn, fe, fd, fS, valid, pl, ql, el1, by omega, dl1, dl2, scr⟩, el8⟩
 
 theorem rd_contract_correct [InvLaw] (s : State) (h : (Spec.Rsa.recoverPrimesDetContract abi 56).pre s) :
-    ∃ tr t, Exec isa VG.Impl.Rsa.Arm.RecoverDet.code s tr t ∧ abiPreserved s t ∧
+    ∃ tr t, Exec isa (VG.Impl.Rsa.Arm.RecoverDet.code um) s tr t ∧ abiPreserved s t ∧
       (Spec.Rsa.recoverPrimesDetContract abi 56).post s t := by
   obtain ⟨hc, he⟩ := cinD_of_pre s h
   obtain ⟨tr, t, run, preserved, post⟩ := rd_ok hc he
@@ -606,7 +609,7 @@ theorem mkPD_eq {s t : State} (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t.gpr .r0) (p
   rw [hn, he, sp, p0, p2, a0, a1, a2, a3, a4, a5, a6, a7]
 
 theorem rd_contract_ct [InvLaw] : ConstantTime isa (Spec.Rsa.recoverPrimesDetContract abi 56).pre
-    (Spec.Rsa.recoverPrimesDetContract abi 56).pub VG.Impl.Rsa.Arm.RecoverDet.code := by
+    (Spec.Rsa.recoverPrimesDetContract abi 56).pub (VG.Impl.Rsa.Arm.RecoverDet.code um) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := cinD_of_pre s hs
   have it := (cinD_of_pre t ht).1
@@ -626,7 +629,14 @@ theorem rd_contract_sat : ∃ s, (Spec.Rsa.recoverPrimesDetContract abi 56).pre 
 
 /-- `vg_rsa_recover_primes_det`. -/
 theorem recover_primes_det_verified [InvLaw] :
-    Verified target VG.Impl.Rsa.Arm.RecoverDet.code (Spec.Rsa.recoverPrimesDetContract abi 56) :=
+    Verified target (VG.Impl.Rsa.Arm.RecoverDet.code um) (Spec.Rsa.recoverPrimesDetContract abi 56) :=
   ⟨rd_contract_correct, rd_contract_ct, rd_contract_sat⟩
+
+/-- A variant of `vg_rsa_recover_primes_det` (`Proof/Variants/RsaInverse/Arm.lean`). -/
+theorem recover_primes_det_for_verified [InvLaw] (um : Bool) :
+    Verified target (VG.Impl.Rsa.Arm.RecoverDet.codeFor um) (Spec.Rsa.recoverPrimesDetContract abi 56) := by
+  cases um
+  · exact recover_primes_det_verified
+  · exact VG.Proof.Bignum.Arm.umaalArithmetic_verified recover_primes_det_verified
 
 end VG.Proof.Rsa.Arm.Recover
