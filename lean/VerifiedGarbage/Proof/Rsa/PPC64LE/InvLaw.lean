@@ -16,7 +16,7 @@ in `r11` (`1 ≤ n ≤ w`, and `n + 1 ≤ w` for an odd `n`: the inverse works o
 `m > 1`, `y < m` with `y x ≡ gcd(x, m) (mod m)` in array 3, `w` digits each;
 it writes only arrays 1–7 and 11–14 and the registers `r0` and `r3`–`r12`.
 `inverseS` leaves `y` without its doublings: `y 2^(5 (3 ⌈n / 2⌉ + 2)) x ≡
-gcd(x, m) (mod m)`.
+gcd(x, m) (mod m)`; `gcd` leaves only `gcd(x, m)`.
 -/
 
 @[expose] public section
@@ -50,5 +50,12 @@ class InvLaw : Prop where
         (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
           (m : Int) ∣ ((num t.mem B w 3 * 2 ^ (5 * (3 * ((n + 1) / 2) + 2)) % m : Nat) : Int) * x -
             num t.mem B w 1 ∧ num t.mem B w 3 < m)
+  gcd_ok {s : State} {B : Addr} {Z w N n : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
+      (hw : 10 ≤ w) (h11 : s.gpr .r11 = BitVec.ofNat 64 n) (hn1 : 1 ≤ n) (hnw : n ≤ w) (hfit : n + n % 2 ≤ w)
+      {x m : Nat} (hx : num s.mem B w 0 = x) (hxn : x < 2 ^ (32 * n)) (hm : num s.mem B w 8 = m)
+      (hmn : m < 2 ^ (32 * n)) (hodd : m % 2 = 1) :
+      WP isa VG.Impl.Rsa.PPC64LE.InvBatch.gcd s fun t => Ws t B Z w N ∧
+        KeyWorkspace.Keep B w invBatchArrs [] s.mem t.mem ∧ Keep invBatchRegs s t ∧
+        (1 < m → num t.mem B w 1 = Nat.gcd x m)
 
 end VG.Proof.Rsa.PPC64LE

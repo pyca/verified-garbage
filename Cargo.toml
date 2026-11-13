@@ -85,8 +85,8 @@ license = "Apache-2.0 OR BSD-3-Clause"
 repository = "https://github.com/pyca/verified-garbage"
 publish = false
 
-# The lints of the hand-written crates (`lints.workspace = true`), not the
-# generated ones. Every import names what it imports: no glob imports
+# The lints of every crate of the workspace (`lints.workspace = true`), the
+# generated ones too. Every import names what it imports: no glob imports
 # (`warn-on-all-wildcard-imports` in `clippy.toml`: none from a `prelude`
 # either). Clippy does not check test builds for them.
 [workspace.lints.clippy]
