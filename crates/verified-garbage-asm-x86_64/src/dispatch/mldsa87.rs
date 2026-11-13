@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_keygen_avx512` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX512_FEATURES`); `vg_mldsa87_keygen_avx2` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX2_FEATURES`); or else `vg_mldsa87_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 32 bytes.
@@ -64,6 +66,8 @@ pub unsafe fn vg_mldsa87_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: 
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
 ///
 /// It runs `vg_mldsa87_pk_tr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
