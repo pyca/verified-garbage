@@ -43,11 +43,11 @@ abbrev SP : Addr := s.gpr .rsp
 abbrev cR : Region := ⟨C s, 16⟩
 abbrev yR : Region := ⟨Y s, 16⟩
 abbrev dR : Region := ⟨D s, n s * 16⟩
-abbrev sR : Region := ⟨S s, 2112⟩
+abbrev sR (NB : Nat) : Region := ⟨S s, NB⟩
 /-- The stack argument `scratch`. -/
 abbrev aR : Region := ⟨SP s + BitVec.ofNat 64 8, 8⟩
 /-- What the code writes: the counter, `Y`, the data and `scratch`. -/
-abbrev wR : List Region := [cR s, yR s, dR s, sR s]
+abbrev wR (NB : Nat) : List Region := [cR s, yR s, dR s, sR s NB]
 
 end
 
@@ -55,42 +55,46 @@ end
 abbrev kR (M : CtxMode) (s : State) : Region := ⟨K s, M.len⟩
 
 /-- `blocksPreM M`, by name. -/
-structure BP (M : CtxMode) (s : State) : Prop where
+structure BP (M : CtxMode) (s : State) (NB : Nat) : Prop where
   rd : s.rd = [kR M s, aR s]
-  wr : s.wr = wR s
+  wr : s.wr = wR s NB
   k_c : (kR M s).Disjoint (cR s)
   k_y : (kR M s).Disjoint (yR s)
   k_d : (kR M s).Disjoint (dR s)
-  k_s : (kR M s).Disjoint (sR s)
+  k_s : (kR M s).Disjoint (sR s NB)
   c_y : (cR s).Disjoint (yR s)
   c_d : (cR s).Disjoint (dR s)
-  c_s : (cR s).Disjoint (sR s)
+  c_s : (cR s).Disjoint (sR s NB)
   c_a : (cR s).Disjoint (aR s)
   y_d : (yR s).Disjoint (dR s)
-  y_s : (yR s).Disjoint (sR s)
+  y_s : (yR s).Disjoint (sR s NB)
   y_a : (yR s).Disjoint (aR s)
-  d_s : (dR s).Disjoint (sR s)
+  d_s : (dR s).Disjoint (sR s NB)
   d_a : (dR s).Disjoint (aR s)
-  s_a : (sR s).Disjoint (aR s)
+  s_a : (sR s NB).Disjoint (aR s)
   r_c : (⟨SP s, 8⟩ : Region).Disjoint (cR s)
   r_y : (⟨SP s, 8⟩ : Region).Disjoint (yR s)
   r_d : (⟨SP s, 8⟩ : Region).Disjoint (dR s)
-  r_s : (⟨SP s, 8⟩ : Region).Disjoint (sR s)
+  r_s : (⟨SP s, 8⟩ : Region).Disjoint (sR s NB)
   t_k : (below (SP s) 8).Disjoint (kR M s)
   t_c : (below (SP s) 8).Disjoint (cR s)
   t_y : (below (SP s) 8).Disjoint (yR s)
   t_d : (below (SP s) 8).Disjoint (dR s)
-  t_s : (below (SP s) 8).Disjoint (sR s)
+  t_s : (below (SP s) 8).Disjoint (sR s NB)
   w_k : (K s).toNat + M.len ≤ 2 ^ 64
   w_c : (C s).toNat + 16 ≤ 2 ^ 64
   w_y : (Y s).toNat + 16 ≤ 2 ^ 64
   w_d : (D s).toNat + n s * 16 ≤ 2 ^ 64
-  w_s : (S s).toNat + 2112 ≤ 2 ^ 64
+  w_s : (S s).toNat + NB ≤ 2 ^ 64
   w_sp : (SP s).toNat + 16 ≤ 2 ^ 64
   rounds : (s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14
   ok : M.ok s.mem (K s)
+  /-- Room for the interleaved loops' working space at any alignment. -/
+  big : 1152 ≤ NB
+  nlt : NB < 2 ^ 64
 
-theorem BP.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksPreM M s) : BP M s := by
+theorem BP.ofM {M : CtxMode} {s : State} {NB : Nat} (h : Proof.AesGcm.blocksPreM M s NB)
+    (hNB : 1152 ≤ NB := by decide) (hlt : NB < 2 ^ 64 := by decide) : BP M s NB := by
   simp only [Proof.AesGcm.blocksPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret, Proof.AesGcm.stk,
     Proof.AesGcm.rounds] at h
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
@@ -101,7 +105,7 @@ theorem BP.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksPreM M s) : BP 
   have a₃₃ := h
   clear h
   exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
-    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩
+    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, hNB, hlt⟩
 
 /-! ## The arguments kept -/
 
@@ -119,25 +123,24 @@ structure Kept (s : State) (q : Nat) (m : Mem) : Prop where
 abbrev kR' (s : State) : Region := ⟨S s, 48⟩
 
 section
-variable {M : CtxMode} {s : State} (hp : BP M s)
+variable {M : CtxMode} {s : State} {NB : Nat} (hp : BP M s NB)
 include hp
 
-theorem s_in {d k : Nat} (h : d + k ≤ 2112) : InRegions s.wr (S s + BitVec.ofNat 64 d) k :=
-  in_off (rs := s.wr) (by rw [hp.wr]; exact covers_of_mem (by simp)) h (by decide)
+theorem s_in {d k : Nat} (h : d + k ≤ 1152) : InRegions s.wr (S s + BitVec.ofNat 64 d) k :=
+  in_off (rs := s.wr) (by rw [hp.wr]; exact covers_of_mem (by simp)) (by have := hp.big; omega) hp.nlt
 
-theorem s_in' {d k : Nat} (h : d + k ≤ 2112) : InRegions (s.rd ++ s.wr) (S s + BitVec.ofNat 64 d) k :=
+theorem s_in' {d k : Nat} (h : d + k ≤ 1152) : InRegions (s.rd ++ s.wr) (S s + BitVec.ofNat 64 d) k :=
   in_left (s_in hp h)
 
 theorem a_in : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 8) 8 :=
   ⟨aR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩
 
-omit hp in
 /-- The slots of the arguments are in `scratch`, apart from the powers. -/
-theorem kR'_sub : (kR' s).Sub (sR s) := Region.sub_prefix (by decide)
+theorem kR'_sub : (kR' s).Sub (sR s NB) := Region.sub_prefix (by have := hp.big; omega)
 
 /-- What a frame of the regions written keeps: the stack argument and the
 return address. -/
-theorem keep_a {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s + BitVec.ofNat 64 8) 64 =
+theorem keep_a {m m' : Mem} (hf : Frame (wR s NB) m m') : m'.readW (SP s + BitVec.ofNat 64 8) 64 =
     m.readW (SP s + BitVec.ofNat 64 8) 64 :=
   hf.readW (r := aR s) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -147,7 +150,7 @@ theorem keep_a {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s + BitVec.o
     · exact hp.d_a.symm
     · exact hp.s_a.symm) (by decide)
 
-theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.readW (SP s) 64 :=
+theorem keep_r {m m' : Mem} (hf : Frame (wR s NB) m m') : m'.readW (SP s) 64 = m.readW (SP s) 64 :=
   hf.readW (r := ⟨SP s, 8⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -162,32 +165,32 @@ theorem arg_eq : s.mem.readW (SP s + BitVec.ofNat 64 8) 64 = S s := rfl
 /-- The entry: the arguments kept, with `scratch` in `r11`. -/
 theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧ (∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r) ∧
     Kept s 0 s₁.mem ∧ Frame [kR' s] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-  have w₁ := s_in hp (show 0 + 8 ≤ 2112 by decide)
-  have w₂ := s_in hp (show 8 + 8 ≤ 2112 by decide)
-  have w₃ := s_in hp (show 16 + 8 ≤ 2112 by decide)
-  have w₄ := s_in hp (show 24 + 8 ≤ 2112 by decide)
-  have w₅ := s_in hp (show 32 + 8 ≤ 2112 by decide)
-  have w₆ := s_in hp (show 40 + 8 ≤ 2112 by decide)
+  have w₁ := s_in hp (show 0 + 8 ≤ 1152 by decide)
+  have w₂ := s_in hp (show 8 + 8 ≤ 1152 by decide)
+  have w₃ := s_in hp (show 16 + 8 ≤ 1152 by decide)
+  have w₄ := s_in hp (show 24 + 8 ≤ 1152 by decide)
+  have w₅ := s_in hp (show 32 + 8 ≤ 1152 by decide)
+  have w₆ := s_in hp (show 40 + 8 ≤ 1152 by decide)
   have a₀ := a_in hp
-  have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
+  have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ NB → d + 8 ≤ NB →
       Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep _ h (by omega) (by omega)
-  have s₁₂ := sep 0 8 (by decide) (by decide) (by decide)
-  have s₁₃ := sep 0 16 (by decide) (by decide) (by decide)
-  have s₁₄ := sep 0 24 (by decide) (by decide) (by decide)
-  have s₁₅ := sep 0 32 (by decide) (by decide) (by decide)
-  have s₁₆ := sep 0 40 (by decide) (by decide) (by decide)
+    fun a d h ha hd => Offset.sep _ h (by have := hp.nlt; omega) (by have := hp.nlt; omega)
+  have s₁₂ := sep 0 8 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₁₃ := sep 0 16 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₁₄ := sep 0 24 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₁₅ := sep 0 32 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₁₆ := sep 0 40 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
   simp only [BitVec.add_zero] at s₁₂ s₁₃ s₁₄ s₁₅ s₁₆
-  have s₂₃ := sep 8 16 (by decide) (by decide) (by decide)
-  have s₂₄ := sep 8 24 (by decide) (by decide) (by decide)
-  have s₂₅ := sep 8 32 (by decide) (by decide) (by decide)
-  have s₂₆ := sep 8 40 (by decide) (by decide) (by decide)
-  have s₃₄ := sep 16 24 (by decide) (by decide) (by decide)
-  have s₃₅ := sep 16 32 (by decide) (by decide) (by decide)
-  have s₃₆ := sep 16 40 (by decide) (by decide) (by decide)
-  have s₄₅ := sep 24 32 (by decide) (by decide) (by decide)
-  have s₄₆ := sep 24 40 (by decide) (by decide) (by decide)
-  have s₅₆ := sep 32 40 (by decide) (by decide) (by decide)
+  have s₂₃ := sep 8 16 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₂₄ := sep 8 24 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₂₅ := sep 8 32 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₂₆ := sep 8 40 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₃₄ := sep 16 24 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₃₅ := sep 16 32 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₃₆ := sep 16 40 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₄₅ := sep 24 32 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₄₆ := sep 24 40 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
+  have s₅₆ := sep 32 40 (by decide) (by have := hp.big; omega) (by have := hp.big; omega)
   have hn : BitVec.ofNat 64 (n s - 0) = s.gpr .r9 := by simp
   apply WP.of_runBlock
   refine ⟨_, by simp only [entry, argCtx, argRounds, argCtr, argY, argData, argN]; xrun [a₀, arg_eq, w₁, w₂, w₃, w₄, w₅, w₆],

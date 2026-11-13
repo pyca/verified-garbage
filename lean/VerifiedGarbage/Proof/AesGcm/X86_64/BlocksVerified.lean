@@ -116,6 +116,23 @@ theorem decryptBlocks_xdepth :
       Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth, GcmImpl.callees, i.decP.xdepth, i.decPS.xdepth, Option.getD_some, v.ctr.noStack, v.gh.noStack, Nat.max_le, Bool.true_and,
       Bool.and_true, Bool.false_eq_true, ↓reduceIte] <;> decide +kernel
 
+/-- `encryptBlocksM_correct`, with `NB` bytes of working space and calls of
+`vg_aes_ctr32` and `vg_ghash` with `cs` and `gs` of it (`Fits`). -/
+theorem encryptBlocksMN_correct {cs gs NB : Nat} (F : Fits v cs gs) (hcs : 64 + cs ≤ NB) (hgs : 64 + gs ≤ NB)
+    (hNB : 1152 ≤ NB) (hlt : NB < 2 ^ 64) (s : State) (hs : (Proof.AesGcm.encryptBlocksX86_64M M NB).pre s) :
+    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS))) s t s' ∧ abiPreserved s s' ∧
+      Proof.AesGcm.encryptBlocksX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := Blocks.encrypt_wpN v F hcs hgs hNB hlt st hs
+  exact ⟨t, s', he, abiPreserved_of_exec (encryptBlocks_mx v st) he hg, hp⟩
+
+/-- `decryptBlocksM_correct`, with `NB` bytes of working space. -/
+theorem decryptBlocksMN_correct {cs gs NB : Nat} (F : Fits v cs gs) (hcs : 64 + cs ≤ NB) (hgs : 64 + gs ≤ NB)
+    (hNB : 1152 ≤ NB) (hlt : NB < 2 ^ 64) (s : State) (hs : (Proof.AesGcm.decryptBlocksX86_64M M NB).pre s) :
+    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS))) s t s' ∧ abiPreserved s s' ∧
+      Proof.AesGcm.decryptBlocksX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := Blocks.decrypt_wpN v F hcs hgs hNB hlt st hs
+  exact ⟨t, s', he, abiPreserved_of_exec (decryptBlocks_mx v st) he hg, hp⟩
+
 theorem encryptBlocksM_correct (s : State) (hs : (Proof.AesGcm.encryptBlocksX86_64M M).pre s) :
     ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS))) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.encryptBlocksX86_64.post s s' := by
