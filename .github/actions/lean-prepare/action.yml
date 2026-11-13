@@ -168,10 +168,12 @@ runs:
     # A shard's build reads only `modules`; the rest of the build is read by
     # the job that assembles it, which checks every module: the last shard
     # to finish, normally, and which that is no shard knows before it has
-    # built. So each shard unpacks the rest too, in the background, at a low
-    # priority while the shard builds, rather than after its build, when the
-    # run waits for nothing else (17-21 s). From here on, not sooner:
-    # started while Mathlib was unpacked, it made that take 16 s, not 5.
+    # built. So each shard unpacks the rest too, in the background, while
+    # the shard builds, rather than after its build, when the run waits for
+    # nothing else (17-21 s). At the lowest priority, so that it takes only
+    # the CPUs the build leaves idle (at `nice -n 10` the shards' builds
+    # took 16-33 s longer), and from here on, not sooner: started while
+    # Mathlib was unpacked, it made that take 16 s, not 5.
     # None of these modules is one the shard's build reads or writes, and
     # `lean_shards.py outputs` leaves them out of what the shard uploads.
     # `lean-shard` (ci.yml) waits for the status before it assembles.
@@ -184,9 +186,13 @@ runs:
         (
           # Not `-e`: a failure must still write the status.
           set +e
-          nice -n 10 python3 ci/lean_cache.py restore lean --empty-private --except "$MODULES" \
+          start=$(date +%s)
+          nice -n 19 python3 ci/lean_cache.py restore lean --empty-private --except "$MODULES" \
             > "$RUNNER_TEMP/lean-rest.log" 2>&1
-          echo $? > "$RUNNER_TEMP/lean-rest.status.tmp"
+          status=$?
+          echo "Unpacking the rest of the build in the background took $(($(date +%s) - start)) s." \
+            >> "$RUNNER_TEMP/lean-rest.log"
+          echo "$status" > "$RUNNER_TEMP/lean-rest.status.tmp"
           mv "$RUNNER_TEMP/lean-rest.status.tmp" "$RUNNER_TEMP/lean-rest.status"
         ) < /dev/null > /dev/null 2>&1 &
     # Saved with the next project build, so publishing can fetch the exact
