@@ -1,13 +1,18 @@
 ---
 name: benchmarking
-description: "Use when a change could make code slower or claims to make it faster, or when running benchmarks or the Benchmarks workflow: how to measure only what the change affects, locally and with a scoped manual workflow run."
+description: "Use before optimizing code, when a change could make code slower or claims to make it faster, or when running benchmarks or the Benchmarks workflow: how to measure only what the change affects, locally and with a scoped manual workflow run."
 ---
 
 # Measuring a change's speed
 
-When making code faster, consider instructions the target's ISA model
-lacks as well as those it has. Adding one is a TCB change (CLAUDE.md's
-rules apply), justified by a Benchmarks run of an implementation that uses it.
+When making code faster, look in the vendor's manual for instructions that
+do the hot operations better, including ones the target's ISA model lacks.
+Measure such an instruction before modelling it: on a `bench/` branch,
+write the code using it by hand (`asm!`, intrinsics, edits to the generated
+crates: anything goes there) and run the Benchmarks workflow on it against
+`main`. If it is faster, open a TCB PR that adds the instruction alone,
+explaining why it is wanted and linking that run with its numbers, then
+delete the branch. The verified implementation follows once the model merges.
 
 Measure only what the change affects. `python3 ci/bench_arches.py --choices`
 lists the architectures, each one's `VG_CPU_FEATURES` configurations and the

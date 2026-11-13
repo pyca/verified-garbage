@@ -55,6 +55,9 @@ own changes are rebuilt either way, on top of the restored build.
   code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
   and Thumb, as text), and its assembly file, the text of that code,
   `assembly/<module>.s`, which is not compiled: read the code there.
+  The one exception is a prototype measuring an instruction the ISA model
+  lacks (the `benchmarking` skill): it lives only on a `bench/` branch,
+  is never opened as a PR, and is deleted once measured.
 * **The cryptography is in the verified code, never in Rust.** The Rust
   around a verified function is tested, not proven, so it does only what
   cannot be verified: it checks the API's arguments, lays out buffers and
