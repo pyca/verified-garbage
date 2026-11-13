@@ -61,6 +61,15 @@ def setupFile (file out : System.FilePath) : IO UInt32 := do
   IO.FS.writeFile out r.stdout
   return 0
 
+/-- The size of the sources of the registration modules `mods`, in bytes: how much
+a part's driver has to do grows with its registrations (their artifacts, and what
+each computes of its code), which the number of its modules, about the same for
+every part, does not show. -/
+def sourceBytes (mods : List String) : IO Nat :=
+  mods.foldlM (init := 0) fun n m => do
+    let file := (System.mkFilePath (m.splitOn ".")).addExtension "lean"
+    return n + (← file.metadata).byteSize.toNat
+
 def main (args : List String) : IO UInt32 := do
   let libs ← nativeTCB
   for lib in libs do
@@ -87,11 +96,13 @@ def main (args : List String) : IO UInt32 := do
     if ← targets.pathExists then IO.FS.removeFile targets
     let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
       (if check then args.drop 1 else args)
-    return (driver, setup, targets, text.length, partArgs)
+    return (driver, setup, targets, ← sourceBytes mods, partArgs)
   -- Lake's setup for the largest part first, alone: it builds what that driver imports
   -- that is out of date, which is most of what the others import too. Several `lake
   -- setup-file`s building the same modules at once fail, each removing or replacing
-  -- the files another is writing.
+  -- the files another is writing. The largest by its registrations' sources
+  -- (`sourceBytes`), which is the part whose driver takes the longest: the others
+  -- wait for this setup, and the whole run for that driver.
   let first := (jobs.map (·.2.2.2.1)).foldl max 0
   let some (fDriver, fSetup, _) := jobs.find? (·.2.2.2.1 == first)
     | IO.eprintln "no registration files"; return 1
