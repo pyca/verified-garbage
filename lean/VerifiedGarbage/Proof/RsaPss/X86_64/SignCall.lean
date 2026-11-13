@@ -159,37 +159,6 @@ theorem priv_pre {s t : State} (hp : SPre tsH tsG s) (hsp : t.gpr .rsp = fb s)
     hp.wQi, by rw [toNat_off (by omega_using [hk1, hsl, wS, c2]), hsc]; omega_using [hsl, wS, c2], ⟨hk1, hk2⟩, trivial, trivial, hp.L1, hp.L2, hp.pl1, hp.pl2,
     hp.ql1, hp.ql2, hp.hdpl, hp.hqil, hp.hdql, by unfold Spec.Rsa.scratchWords; rw [hsc]; omega_using [hsl]⟩
 
-theorem priv_covers {s t : State} (hp : SPre tsH tsG s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) :
-    Covers (pRd s ++ pWr s) (t.rd ++ t.wr) ∧ Covers (pWr s) t.wr := by
-  have hk2 := hp.k2; have hsl := hp.hsl; have hk1 := hp.k1
-  have hsi := hp.hsi
-  have c1 : oEm = 2560 := rfl
-  have c2 : oRsa = 8192 := rfl
-  have hsc : (stackArg s 15 - 1024#64).toNat = (stackArg s 15).toNat - 1024 := by
-    rw [BitVec.toNat_sub, show (1024#64).toNat = 1024 from rfl]; omega_using [hsl]
-  have hfr : frR s ∈ t.wr := by rw [hwr]; exact List.mem_cons_self ..
-  have hscr : (⟨stackArg s 14, (stackArg s 15).toNat * 8⟩ : Region) ∈ t.wr := by rw [hwr, hp.hwr]; simp
-  have hout : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region) ∈ t.wr := by rw [hwr, hp.hwr]; simp
-  have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
-  have cw : Covers (pWr s) t.wr := Covers.of_sub fun r hr => by
-    simp only [pWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, hout, 0, z _, by dsimp only; omega_using [hsi]⟩
-    · exact ⟨_, hscr, oRsa, rfl, by dsimp only; rw [hsc]; omega_using [hsl, c2]⟩
-  refine ⟨Covers.append_left (Covers.of_sub fun r hr => ?_) cw.right, cw⟩
-  have hin : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [hrd]; exact hx)
-  simp only [pRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, List.mem_append_right _ hscr, oEm, rfl, by dsimp only; omega_using [hsl, c1]⟩
-  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, hin _ (hp.hrd _ (by simp)), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
-
 /-- Bytes apart from a frame's regions. -/
 theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {len : Nat}
     (hd : ∀ r ∈ rs, (⟨p, len⟩ : Region).Disjoint r) (hl : len ≤ 2 ^ 64) :
@@ -310,31 +279,6 @@ theorem privWith_call {privN : String} {privC : Prog isa} {k : Contract isa}
       b (R := ⟨stackArg s 8, (stackArg s 1).toNat⟩) (by rw [← hp.hqil]; exact hp.dKqi) (by rw [← hp.hqil]; exact hp.dOqi)
         (by rw [← hp.hqil]; exact hp.dqis) (by have := hp.wQi; have := hp.hqil; dsimp only; omega_using [])] at hpost
     exact hpost
-
-theorem priv_call {privN : String} {privC : Prog isa}
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hsp : SpSafe privC) (hd : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
-    {s t : State} (hp : SPre tsH tsG s) (hst : t.gpr .rsp = fb s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr)
-    (hM : Frame (wrR s) s.mem t.mem)
-    (hargs : ∀ i < 14, word t.mem (fb s) (8 * i) = pArg s i) (hdi : t.gpr .rdi = s.gpr .rdi)
-    (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = s.gpr .rdx) (hcx : t.gpr .rcx = s.gpr .rcx)
-    (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    WP isa (.call privN privC) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧
-      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
-      Frame (wrR s) s.mem t'.mem ∧
-      (∀ x, ((frR s).Contains x 1 ∨ (⟨stackArg s 14, oRsa⟩ : Region).Contains x 1) → t'.mem x = t.mem x) ∧
-      Spec.Rsa.writtenOutcome t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
-        (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
-          (Spec.Rsa.bytesAt t.mem (off (stackArg s 14) oEm) (s.gpr .rcx).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)) :=
-  let ⟨hc, hw⟩ := priv_covers hp hrd hwr
-  privWith_call (k := chkContract) (fun _ _ h => h) hv hsp hd hp hst hM hargs hdi hdx hcx h8 h9
-    (priv_pre hp hst hargs hdi hsi hdx hcx h8 h9) hc hw
 
 /-! ## The stack arguments -/
 

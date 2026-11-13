@@ -58,17 +58,13 @@ open VG.Impl.Mgf1.X86_64 (sp seqs mgfXor)
 open VG.Proof.MlKem.X86_64 (Keep ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
-open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl privK privStack)
+open VG.Proof.RsaPkcs1Enc.X86_64 (privK privStack)
 open VG.Proof.Pbkdf2.Md.X86_64 (MdHash)
 open VG.Impl.Mgf1.X86_64.Table (Fns)
 open VG.Proof.HashTable.X86_64 (tableOf tables fnsOf names Coh tabOK_of held_tableOf hashAt_tableOf fnsGood_of
   mem_names)
 
 /-! ## The taint checks -/
-
-theorem dHead_taint : (taint.check (Taint.ofRegs [.rsp]) (.block (decPrologue ++ privArgs))
-    (taint.hintOf (Taint.ofRegs [.rsp]) (.block (decPrologue ++ privArgs)))).isSome = true := by
-  decide +kernel
 
 /-- `decBodyP`'s head: `decBody`'s, then `pre` and `pre_len` to the frame. -/
 theorem dHeadP_taint : ∃ hc, (taint.check (Taint.ofRegs [.rsp])
@@ -264,18 +260,6 @@ theorem privD_view {a s t : State} {W : Nat → BitVec 64} (S : DSib ts Xs a s) 
       FrD.bytes hfE hp.dKe hp.dOe hp.dMe hp.des.symm (by have := hp.wE; omega)]
     exact S.2.2.2.2.1.symm
 
-theorem privD_ct (v : PrivImpl) : RelCT isa (Two (DAt ts Xs DSet)) (.call v.name v.code) fun _ _ => True := by
-  refine RelCT.callEx (k := privK) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
-  have hp₁ := S₁.1.1.1
-  have hp₂ := S₂.1.1.1
-  obtain ⟨r₁, g₁, n₁, e₁⟩ := privD_view S₁ j₁.call
-  obtain ⟨r₂, g₂, n₂, e₂⟩ := privD_view S₂ j₂.call
-  obtain ⟨c₁, w₁⟩ := privD_covers hp₁ j₁.call
-  obtain ⟨c₂, w₂⟩ := privD_covers hp₂ j₂.call
-  exact ⟨privRdD s₁, privWrD s₁, privRdD s₂, privWrD s₂, privD_pre hp₁ j₁.call, privD_pre hp₂ j₂.call,
-    ⟨List.map_inj_left.mp (r₁.trans r₂.symm), g₁.trans g₂.symm, n₁.trans n₂.symm, e₁.trans e₂.symm⟩,
-    c₁, w₁, c₂, w₂, by rw [j₁.he.rsp, j₂.he.rsp, S₁.fb, S₂.fb]⟩
-
 /-! ## `decMain` -/
 
 section
@@ -441,10 +425,6 @@ omit hc in
 theorem decFail_ct : RelCT isa (Two (DAt ts Xs DW)) decFail fun _ _ => True :=
   d_taintF (fun _ _ _ h => h) [] [21, 23, 29] (by decide) nopin ⟨_, by taint_decide⟩
 
-/-- After the call. -/
-def JC (s t : State) : Prop :=
-  EnvD s t ∧ Lay t (fb s) (stackArg s 15) ∧ ∃ V, Rep t.mem (fb s) (stackArg s 15) V (privW s)
-
 /-- After the address of the table of the label's hash function to its slot,
 with frame words `W` that hold the arguments. -/
 def JS (s t : State) : Prop :=
@@ -473,9 +453,6 @@ theorem JS.after {s t t' : State} (h : JS s t) (k : Keep [] t t') (hm : t'.mem =
   let ⟨V, W, hA, R⟩ := h.2.2
   ⟨h.1.step k.2.1 k.2.2 (k.gpr (by simp)) (keep_cs3 k rfl) hmx (by rw [hm]; exact Frame.refl _ _),
     h.2.1.congr (k.gpr (by simp)) k.2.2 (by rw [hm]), V, W, hA, hm ▸ R⟩
-
-theorem dtabSlot_taint : ∃ hc, (taint.check (frT [] [] 3) (.block (tabSlot 17)) hc).isSome = true :=
-  ⟨_, by taint_decide⟩
 
 theorem dlenLoad_taint : ∃ hc, (taint.check (frT [] [35] 3) (.block lenLoad) hc).isSome = true :=
   ⟨_, by taint_decide⟩
@@ -547,61 +524,6 @@ theorem decAfterTab_ct {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
       (fun s t _ h e => ⟨⟨⟨h.1.1.1.1, by have := cf_false h.1.1.1.2 e; omega⟩, h.1.2⟩, h.2, h.1.1.2⟩)
       (decMain_ct hc hw₁ hw))
 
-
-include hc in
-theorem decBody_ct (v : PrivImpl) {w₁ w : MdHash} (hw₁ : w₁ ∈ vs) (hw : w ∈ vs) :
-    RelCT isa (Two (DAt (tables vs) Xs fun s t => (JA s t ∧ HS (tableOf w) s t) ∧ HL (tableOf w₁) s))
-      (decBody (fnsOf vs) v.name v.code) fun _ _ => True := by
-  have hz := sizes w₁.ok.stream
-  have hsD : w₁.H.stream.D = w₁.H.D := rfl
-  have hD65 : w₁.H.D < 65 := by omega
-  unfold decBody seqs seqs seqs seqs
-  refine RelCT.seq (d_post (J' := fun s t => (DSet s t ∧ HS (tableOf w) s t) ∧ HL (tableOf w₁) s)
-    (two_taint [.rsp] (d_pins_rsp fun s t _ h => by rw [h.1.1]; rfl) dHead_taint)
-    fun s t hs h => by
-      obtain ⟨⟨rfl, hs'⟩, hl⟩ := h
-      exact WP.mono_syms (decHead_ok (hs.1)) fun _ e sy => ⟨⟨e, hs'.1, sy.trans hs'.2⟩, hl⟩) ?_
-  refine RelCT.seq (d_post (J' := fun s t => (JC s t ∧ HS (tableOf w) s t) ∧ HL (tableOf w₁) s)
-    ((privD_ct v).mono (fun _ _ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ⟨a, ⟨s₁, S₁, j₁.1.1⟩, ⟨s₂, S₂, j₂.1.1⟩⟩)
-      fun _ _ h => h) fun s t hs h =>
-    WP.mono_syms (privD_call v (hs.1) h.1.1) fun _ ⟨he, L, R, _⟩ sy => ⟨⟨⟨he, L, _, R⟩, h.1.2.1,
-      sy.trans h.1.2.2⟩, h.2⟩) ?_
-  -- The address of the table of the label's hash function to its slot.
-  refine RelCT.seq (d_post (J' := fun s t => (JS s t ∧ HS (tableOf w) s t) ∧ HL (tableOf w₁) s)
-    (d_taintF (fun _ _ _ ⟨⟨⟨he, L, V, R⟩, _⟩, _⟩ => ⟨he, L, V, _, R, ArgsD_privW _⟩) [] [] (by decide) nopin
-      dtabSlot_taint) fun s t hs h => ?_) ?_
-  · obtain ⟨⟨⟨he, L, V, R⟩, hs'⟩, hl⟩ := h
-    have hp := hs.1
-    obtain ⟨-, -, hd⟩ := hs.2
-    obtain ⟨hmL, -, hDmL⟩ := held_tableOf hl
-    exact WP.mono_syms (wp_good (block_good _ rfl) (tabSlot_ok L R (dtabL hp he hs'.2 (tabOK_of hc hd hw₁) hmL hDmL)))
-      fun t' ⟨⟨k, L', R', _⟩, sp, mx, f⟩ sy => ⟨⟨⟨he.step k.2.1 k.2.2 sp (keep_cs3 k (by decide)) mx f, L', V, _,
-        ArgsD_privW s, R'⟩, hs'.1, sy.trans hs'.2⟩, hl⟩
-  exact decAfterTab_ct hc hw₁ hw
-
-include hc in
-theorem dec_constantTime (v : PrivImpl) :
-    ConstantTime isa (decK (tables vs)).pre (decK (tables vs)).pub (decrypt (fnsOf vs) v.name v.code) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
-  obtain ⟨⟨T₁, hT₁, hheld₁⟩, ⟨T, hT, hheld⟩, -⟩ := DPre.tab _ h₁
-  obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
-  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  have key := relCT_alloc (P := fun x y => (decK (tables vs)).pre x ∧ (decK (tables vs)).pre y ∧
-      (decK (tables vs)).pub x y ∧ Abi.tableHeld 64 x.mem (stackArg x 17) (FnTable.words isa x (tableOf w₁)) ∧
-      Abi.tableHeld 64 x.mem (stackArg x 18) (FnTable.words isa x (tableOf w)))
-    ((decBody_ct (Xs := fun _ _ => True) hc v hw₁ hw).mono (fun _ _ ⟨x, y, ⟨hx, hy, hxy, hh₁, hh⟩, ex, ey⟩ =>
-      ⟨x, ⟨x, ⟨⟨DPreT.of hx, trivial⟩, decPub_refl _ x⟩, ⟨ex, hh, by rw [ex]; rfl⟩, hh₁⟩,
-        ⟨y, ⟨⟨DPreT.of hy, trivial⟩, hxy⟩, ⟨ey, (hxy.2.2.2.2.2.2 _ (List.mem_map_of_mem hw)).mp hh, by rw [ey]; rfl⟩,
-          (hxy.2.2.2.2.2.1 _ (List.mem_map_of_mem hw₁)).mp hh₁⟩⟩) fun _ _ h => h)
-  exact (key _ _ _ _ _ _ ⟨h₁, h₂, hpub, hheld₁, hheld⟩ e₁ e₂).1
-
-include hc in
-/-- `vg_rsa_oaep_decrypt` meets the shared contract, with the tables of `vs`
-for both of its hash functions. -/
-theorem dec_verified (v : PrivImpl) (hsat : ∃ s, (decC (tables vs)).pre s) :
-    Verified target (decrypt (fnsOf vs) v.name v.code) (decC (tables vs)) :=
-  Verified.of_correct (k := decK (tables vs)) (dec_correct hc v) (dec_constantTime hc v)
-    (dec_implies (tables vs) hsat)
 
 end
 

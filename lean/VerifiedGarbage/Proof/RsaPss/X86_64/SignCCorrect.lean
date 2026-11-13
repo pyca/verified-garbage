@@ -187,32 +187,6 @@ def PStep (args : List Instr) (privN : String) (privC : Prog isa) (s : State) : 
           (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
           (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat))
 
-/-- `vg_rsa_private_checked`'s arguments and call. -/
-theorem privStep_ok {privN : String} {privC : Prog isa}
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hspC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) {s : State} (hp : SPre tsH tsG s) :
-    PStep privArgs privN privC s := by
-  intro u V W L hrd hw hM R h16 h17 h18 h19 h20 h22
-  have hk2 := hp.k2
-  refine WP.seq (WP.mono_mx (by decide) (WP.keepIn (by decide) (by exact Nat.zero_le 16)
-    (privArgs_ok hp L hrd (argsKept_of hp hM) R h16 h17 h18 h19 h20 h22))
-    fun u2 ⟨⟨k10, L10, ⟨W2, R10, hW2a, hW2b⟩, h2di, h2si, h2dx, h2cx, h2r8, h2r9⟩, f10⟩ hx10 => ?_)
-  have hw10 : u2.wr = frR s :: s.wr := k10.2.2.trans hw
-  have hM10 := frame_keep hp hw L.rsp hM f10
-  refine WP.mono (priv_call hv hspC hdC hp L10.rsp (k10.2.1.trans hrd) hw10 hM10
-    (fun i hi => (R10.fr i (by unfold nW frameBytes; omega_arith)).trans (hW2a i hi)) h2di h2si h2dx h2cx h2r8 h2r9)
-    fun u3 ⟨rd3, wr3, cs3, mx3, _, hk3, hout3⟩ => ?_
-  have R3' : Rep u3.mem (fb s) (stackArg s 14) V W2 := R10.of_keep L10.geo fun x hx => hk3 x hx
-  have hem : Spec.Rsa.bytesAt u2.mem (off (stackArg s 14) oEm) (s.gpr .rcx).toNat =
-      Spec.Rsa.bytesAt u.mem (off (stackArg s 14) oEm) (s.gpr .rcx).toNat :=
-    Rep.bytes_eq R10 R (by unfold oEm oRsa; omega_arith)
-  refine ⟨W2, L10.of_rep' R10 R3' rfl (cs3 .rsp (by decide)) wr3, wr3.trans k10.2.2, fun r hr => ?_,
-    by rw [mx3, hx10], R3', fun j h hj => hW2b j hj (by omega_arith), by rw [← hem]; exact hout3⟩
-  have hr3 : r = .r13 ∨ r = .r14 ∨ r = .r15 := by simpa using hr
-  have h1 : r ∈ calleeSaved := by rcases hr3 with rfl | rfl | rfl <;> decide
-  have h2 : r ∉ [Reg.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] := by rcases hr3 with rfl | rfl | rfl <;> decide
-  rw [cs3 r h1, k10.gpr h2]
-
 /-- `signC`'s frame, with the arguments `args` of the private-key operation,
 which `PStep` describes. -/
 theorem signCWith_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String} {privC : Prog isa}
@@ -391,15 +365,5 @@ theorem signCWith_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : Strin
     rw [hem] at hout3
     rw [signOut, RsaPss.sign_encode₂ H G heb, hHl, he, bytesAt_length]
     exact hout3
-
-theorem signC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String} {privC : Prog isa}
-    (hspE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g)) (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack)
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hspC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) {s : State}
-    (h : (signK tsH tsG).pre s) {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} (E : ESel f g s i T Hs Gs) :
-    WP isa (Impl.RsaPss.X86_64.signC f g privN privC) s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
-      (signK tsH tsG).post s s' ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 :=
-  have hp := SPre.of tsH tsG h
-  signCWith_ok hspE hdE hp (privStep_ok hv hspC hdC hp) E
 
 end VG.Proof.RsaPss.X86_64

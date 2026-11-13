@@ -284,9 +284,6 @@ structure DCall (s : State) (W : Nat → BitVec 64) (t : State) : Prop where
   r8 : t.gpr .r8 = s.gpr .r9
   r9 : t.gpr .r9 = stackArg s 0
 
-theorem DSet.call {s t : State} (h : DSet s t) : DCall s (privW s) t :=
-  ⟨h.he, h.R, fun _ _ => rfl, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9⟩
-
 theorem privArgs_ok {s u : State} (hp : DPre s) (L : Lay u (fb s) (stackArg s 15)) {V : Nat → Byte}
     (R : Rep u.mem (fb s) (stackArg s 15) V (decW s)) (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem)
     (hfr : frR s ∈ u.wr) :

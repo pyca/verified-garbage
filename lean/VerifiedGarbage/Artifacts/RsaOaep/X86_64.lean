@@ -101,21 +101,13 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
 
 namespace VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaOaep.X86_64 (decStack dec_ok dec_spSafe decPrecomputed_ok decP_spSafe OK)
-open VG.Proof.RsaPkcs1Enc.X86_64 (privOf privNameP privCodeP)
+open VG.Proof.RsaOaep.X86_64 (decStack decPrecomputed_ok decP_spSafe OK)
+open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP)
 open VG.Proof.MdHashTable.X86_64 (tables)
 open VG.Proof.HashTable.X86_64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.decryptMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      suffix := qualifiedName "" [("crt", c.suffix)]
-      extra := c.extra
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
-      stack := decStack
-      verified := dec_ok vs h (privOf c)
-      spSafe := dec_spSafe vs (privOf c) } (VG.Proof.RsaOaep.X86_64.dec_postOut _)),
     Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
       suffix := qualifiedName "" [("crt", c.suffix)]
       extra := c.extra

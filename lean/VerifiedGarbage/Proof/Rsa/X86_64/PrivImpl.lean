@@ -30,39 +30,19 @@ namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Rsa.X86_64
 
-/-- An implementation of `vg_rsa_private_crt` on x86-64. -/
+/-- An implementation of `vg_rsa_private_crt_precomputed` on x86-64. -/
 structure CrtImpl where
-  /-- Its symbol and code. -/
-  name : String
-  code : Prog isa
-  /-- Its calls make no calls. -/
-  depth : code.depth = 1
-  ok : ∀ s, crtContract.clear.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ crtContract.post s s'
-  ct : ConstantTime isa crtContract.clear.pre crtContract.pub code
-  /-- It never writes the stack pointer. -/
-  nosp : NoSp code
-  spSafe : code.all (fun i => !isa.writesSp i) = true
-  /-- The suffix of the name of `vg_rsa_public_precompute`, and its code. -/
-  montSuffix : String
-  pc : Prog isa
-  pcOk : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s'
-  pcCt : ConstantTime isa pcContract.clear.pre pcContract.pub pc
-  pcMx : pc.allInstrs (fun i => !loadsMxcsr i) = true
   /-- The independently verified public operation used to check the result. -/
   pubOp : PublicImpl
-  pcNosp : NoSp pc
-  pcDepth : pc.depth = 1
-  pcSpSafe : pc.all (fun i => !isa.writesSp i) = true
-  /-- What the names of `vg_rsa_private_checked`'s instances end with (e.g.
+  /-- What the names of `vg_rsa_private_checked_precomputed`'s instances end with (e.g.
   `_adx`; nothing for the baseline implementation). -/
   suffix : String
   /-- The CPU features its code and that of the public operation require,
-  which `vg_rsa_private_checked` requires too. -/
+  which `vg_rsa_private_checked_precomputed` requires too. -/
   features : List String
-  /-- `vg_rsa_private_crt_precomputed`'s instance with the same code but
-  for `R² mod n`, which it copies from the key's precomputed values: its
-  symbol and code, proven against `crtContractP` as `code` is against
-  `crtContract`. -/
+  /-- `vg_rsa_private_crt_precomputed`'s instance, which copies `R² mod n`
+  from the key's precomputed values: its symbol and code, proven against
+  `crtContractP`. -/
   nameP : String
   codeP : Prog isa
   depthP : codeP.depth = 1

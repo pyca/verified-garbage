@@ -30,27 +30,11 @@ namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 open VG VG.X86_64 VG.Impl.RsaPkcs1Sig.X86_64.Sign
 open VG.Impl.RsaPkcs1Sig.X86_64.Verify (sp lea)
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
-open VG.Proof.Rsa.X86_64 (CrtImpl chkContract code_correct code_spSafe)
+open VG.Proof.Rsa.X86_64 (CrtImpl chkContract)
 
 /-! ## The private operation -/
 
-/-- The names of the public operations `vg_rsa_private_checked` calls. -/
-def pcName (v : CrtImpl) : String := Spec.Rsa.publicPrecomputeApi.name ++ v.montSuffix
 def pdName (v : CrtImpl) : String := v.pubOp.name
-
-/-- `vg_rsa_private_checked`'s name and code, for `v`. -/
-def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
-def privCode (v : CrtImpl) : Prog isa :=
-  Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) v.pc (pdName v) v.pubOp.code
-
-theorem privCode_depth (v : CrtImpl) : (privCode v).x86_64Depth = 3256 := by
-  simp only [privCode, Impl.Rsa.X86_64.PrivChecked.code, Impl.Rsa.X86_64.PrivChecked.body,
-    Impl.Rsa.X86_64.PrivChecked.check, Impl.Rsa.X86_64.PrivChecked.tail, List.cons_append, List.nil_append,
-    Impl.Bignum.X86_64.seqs, Code.x86_64Depth, x86_64Depth_noSp v.nosp, v.depth, x86_64Depth_noSp v.pcNosp,
-    v.pcDepth, x86_64Depth_noSp v.pubOp.nosp, v.pubOp.depth, X86_64.Instr.frameBytes,
-    Impl.Rsa.X86_64.PrivChecked.frameBytes, Impl.Rsa.X86_64.PrivChecked.cmpLoop,
-    Impl.Rsa.X86_64.PrivChecked.releaseLoop]
-  rfl
 
 /-- What a call of the private operation on `EM` gives, from `t`: `out`
 holds the signature of `EM`, or zeros; the frame is kept. -/
@@ -132,28 +116,5 @@ theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
   · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sEl
   · have := (fb_toNat hp).1
     exact hf.bytes (R := ⟨off (fb s) d, n⟩) (frame_apart hp hd) (by dsimp only; unfold frameBytes at hd; omega) hi
-
-/-- A slot kept by a call that keeps the frame's bytes. -/
-theorem slot_of_bytes {s t t' : State} {d : Nat} (hd : d + 8 ≤ frameBytes)
-    (h : ∀ d n, d + n ≤ frameBytes → ∀ i < n,
-      t'.mem (off (fb s) d + BitVec.ofNat 64 i) = t.mem (off (fb s) d + BitVec.ofNat 64 i)) :
-    word t'.mem (fb s) d = word t.mem (fb s) d :=
-  Mem.readW_congr fun b hb => h d 8 hd b (by omega)
-
-/-- The call of `vg_rsa_private_checked`: `out` holds the signature of
-`EM`, or zeros. -/
-theorem priv_call (v : CrtImpl) {s t : State} (hp : PreS s) (he : Env s t)
-    (hw : ∀ i < 14, word t.mem (fb s) (8 * i) = callArg s i)
-    (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rsi) (hdx : t.gpr .rdx = s.gpr .rdx)
-    (hcx : t.gpr .rcx = s.gpr .rcx) (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    WP isa (.call (privName v) (privCode v)) t fun t' => Env s t' ∧ PrivPost s t t' := by
-  obtain ⟨hc, hcw⟩ := priv_covers hp he
-  have hd := privCode_depth v
-  unfold privCode at hd
-  refine WP.mono (privWith_call (code_correct v (pcName v) (pdName v)) (fun _ _ h => h) (code_spSafe v _ _) hd hp
-    he.core hw hdi hdx hcx h8 h9 (priv_pre hp he.rsp hw hdi hsi hdx hcx h8 h9) hc hcw) fun t' h => ⟨?_, h⟩
-  obtain ⟨hc', -, hb, -⟩ := h
-  exact ⟨hc'.rsp, hc'.rd, hc'.wr, hc'.mem, (slot_of_bytes (by decide) hb).trans he.sOut,
-    (slot_of_bytes (by decide) hb).trans he.sOl, hc'.sN, hc'.sK, hc'.sE, hc'.sEl⟩
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Sgn

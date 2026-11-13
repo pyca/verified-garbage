@@ -624,17 +624,6 @@ def finish : List (Prog isa) := zeroAccs ++ [
   storeBE,
   .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
 
-/-- The computation, once `n` is known valid. -/
-def main (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
-  seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul ex ++ pPhase mul ex ++ finish)
-
-/-- `vg_rsa_private_crt`, with the multiplication `mul` and the
-exponentiation `ex` (`expLoop mul tabSelect`, or `expLoop5S sq mul tabSelectV`
-with AVX2). -/
-def code (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
-  .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
-    (.ite .ne fail (main mul ex))
-
 /-- `main` with `R² mod n` from `pre` (`nSetupP`), and without the check of
 `p q = n`, which `pre` implies (`checksP`). -/
 def mainP (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=

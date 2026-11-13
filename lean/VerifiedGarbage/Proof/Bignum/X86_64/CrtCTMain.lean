@@ -1,14 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+import VerifiedGarbage.Proof.Bignum.CrtResult
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+meta import VerifiedGarbage.Proof.Bignum.CrtResult
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
@@ -378,22 +384,5 @@ theorem outArr_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) (by taint_decide)
 
 /-! ## `main` -/
-
-/-- `main` leaks the same in runs that agree on the public data, given that
-its parts do. -/
-theorem crtMain_ct (M : Mont) (E : CrtExpL M) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPhaseCT M E)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    RelCT isa (Two (Stage R0)) (Crt.main M.mm E.code) fun _ _ => True := by
-  rw [crtMain_eq]
-  refine RelCT.seqs_append (by simp [nSetup]) (by simp [qPhase]) (RelCT.seq (R := Two (Stage R3)) ?_ ?_)
-  · refine RelCT.seqs_append (by simp [nSetup]) (by simp [checks])
-      (RelCT.seq (R := Two (Stage R2)) ?_ (checksS_ct hC))
-    refine RelCT.seqs_append (by simp [nSetup]) (by simp [primesSetup])
-      (RelCT.seq (R := Two (Stage R1)) ?_ (setupS_ct hS))
-    exact stage_step (nSetup_ct M) fun p σ xb _ _ _ _ _ t h hv ht => by
-      subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
-  rw [List.append_assoc]
-  refine RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M E hQ) ?_)
-  exact RelCT.seqs_append (by simp [pPhase]) (by simp [finish]) (RelCT.seq (pS_ct M E hP) hF)
 
 end VG.Proof.Bignum.X86_64

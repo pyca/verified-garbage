@@ -29,20 +29,10 @@ open VG.Impl.Mgf1.X86_64 (seqs)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Proof.RsaPkcs1Sig.X86_64 (pubChecked)
-open VG.Proof.RsaPkcs1Enc.X86_64 (PrivImpl)
 
 theorem Good.all {c : Prog isa} (h : Good c) : c.all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (by
     rw [Code.allInstrs_eq]
     exact List.all_eq_true.mpr fun i hi => by rw [SpSafe.of_noSp h.noSp i hi]; rfl)
-
-theorem dec_spSafe (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (v : PrivImpl) :
-    (decrypt (Proof.HashTable.X86_64.fnsOf vs) v.name v.code).all (fun i => !isa.writesSp i) = true := by
-  obtain ⟨hgi, hgu, hgf⟩ := Proof.HashTable.X86_64.fnsGood_of vs
-  simp only [decrypt, decBody, byLen, lens, decTail, decMain, mgfT, seqs, Code.all,
-    decFail_good.all, (hashLabelT_good hgi hgu hgf oLh).all, (Table.mgfT_good hgi hgu hgf _).all,
-    (accLh_good _).all, (scan_good _).all, (clearBuf_good _).all, copyT_good.all, shift_good.all,
-    outLoop_good.all, v.spSafe]
-  rfl
 
 end VG.Proof.RsaOaep.X86_64

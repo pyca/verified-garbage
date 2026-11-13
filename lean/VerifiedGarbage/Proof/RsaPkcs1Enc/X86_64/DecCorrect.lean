@@ -31,9 +31,6 @@ open VG.Proof.Sha256.X86_64 (Compress)
 /-- Everything after the private-key operation. -/
 abbrev rest (H : Impl.Pbkdf2.Md.X86_64.Hash) : Prog isa := afterPriv H
 
-theorem body_eq (H : Impl.Pbkdf2.Md.X86_64.Hash) (privN : String) (priv : Prog isa) :
-    body H privN priv = .seq (.block setup) (.seq (.call privN priv) (rest H)) := rfl
-
 theorem rest_ok (v : Compress) {s t : State} (hp : DPre s) (h : PostPriv s t)
     (hcs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r) :
     WP isa (rest (HH v)) t (Fin s (t.gpr .rax) (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (kOf s)) (amOf s)
@@ -168,15 +165,5 @@ theorem decWith_ok (v : Compress) {A : List Instr} {B : Prog isa} {s : State} (h
     simp only [decK]
     rw [freed_mem, freed_rax]
     exact this
-
-theorem dec_correct (v : Compress) (pv : PrivImpl) (s : State) (h : decK.pre s) :
-    ∃ t s', Exec isa (code (HH v) pv.name pv.code) s t s' ∧ abiPreserved s s' ∧ decK.post s s' := by
-  have hp := dPre_of h
-  refine decWith_ok v hp (WP.mono_mx (by decide +kernel)
-    (WP.keep [.rax, .rsi, .rdx, .rcx, .r8, .r9] (setup_run hp) (by decide +kernel))
-    fun t₁ ⟨h₁, k₁⟩ hmx₁ => WP.mono (priv_call pv hp h₁) fun t₂ ⟨hpost, hcs₂, hmx₂⟩ =>
-      ⟨hpost, fun r hr hr' => ?_, by rw [hmx₂, hmx₁]⟩)
-  rw [hcs₂ r hr, k₁.cs (by decide) r hr]
-  simp only [allocState_gpr, hr', ↓reduceIte]
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

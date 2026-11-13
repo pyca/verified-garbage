@@ -94,18 +94,6 @@ def callArgsP : List Instr := callArgs ++ copyArg 12 ++ copyArg 13
 def afterEncWith (args : List Instr) (privName : String) (priv : Prog isa) : Prog isa :=
   .seq (.block test0) (.ite .e zeroSlots (.seq (.block args) (.seq (.call privName priv) wipe)))
 
-/-- After the encoding. -/
-def afterEnc (privName : String) (priv : Prog isa) : Prog isa := afterEncWith callArgs privName priv
-
-/-- The body of the frame. -/
-def body (privName : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block (slotStores ++ encArgs)) (.seq encode (afterEnc privName priv))
-
-/-- `vg_rsa_pkcs1_sign`, calling `vg_rsa_private_checked` (`priv`) by its
-name. -/
-def code (privName : String) (priv : Prog isa) : Prog isa :=
-  .frame (.alloc frameBytes) (body privName priv) (.free frameBytes)
-
 /-- The body of `codeP`'s frame. -/
 def bodyP (privName : String) (priv : Prog isa) : Prog isa :=
   .seq (.block (slotStores ++ encArgs)) (.seq encode (afterEncWith callArgsP privName priv))

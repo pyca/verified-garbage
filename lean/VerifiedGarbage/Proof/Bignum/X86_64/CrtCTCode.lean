@@ -39,14 +39,9 @@ abbrev CCEq (p : CCPub) (s : State) : Prop :=
     stackArg s 8 = p.m.qip ∧ (stackArg s 1).toNat = p.m.pl ∧ (stackArg s 3).toNat = p.m.ql ∧
     Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat = p.m.nb
 
-/-- A state the contract allows, with the public data `p`. -/
-def CCRel (p : CCPub) (s : State) : Prop := crtContract.pre s ∧ CCEq p s
-
 /-- What the entry and the modulus' check use of a relation `Rel` between
 the public data and the states it allows (`crtEntryWith_ct`). -/
 abbrev CCOk {α : Type} (f : α → CCPub) (Rel : α → State → Prop) : Prop := ∀ p s, Rel p s → CrtCtx s ∧ CCEq (f p) s
-
-theorem ccRel_ok : CCOk id CCRel := fun _ _ h => ⟨crtCtx_of h.1, h.2⟩
 
 theorem crtEntry_split : Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) =
     ([.mov .r11 (.mem { base := .rsp, disp := 88 })] : List Instr) ++
@@ -66,10 +61,6 @@ def CC3W {α : Type} (f : α → CCPub) (Rel : α → State → Prop) (p : α) (
   ∃ s t₁, Rel p s ∧ CrtHeadPost s t₁ ∧ t.mem = t₁.mem ∧ Keep [.rax, .rbp, .rsi] t₁ t ∧
     t.zf = some (Spec.Rsa.modulusValid (f p).m.N (f p).m.k)
 
-abbrev CC1 := CC1W id CCRel
-abbrev CC2 := CC2W CCRel
-abbrev CC3 := CC3W id CCRel
-
 /-- `main`'s hypotheses after the head and the modulus' check. -/
 theorem cc3W_pre {α : Type} {f : α → CCPub} {Rel : α → State → Prop} (hR : CCOk f Rel) {p : α} {t : State} (h : CC3W f Rel p t) :
     ∃ xb pb qb dpb dqb qib, CrtPre t (f p).m.B (f p).m.Z (f p).m.k (f p).m.op (f p).m.np (f p).m.ip (f p).m.pp (f p).m.qp (f p).m.dpp (f p).m.dqp
@@ -81,11 +72,6 @@ theorem cc3W_pre {α : Type} {f : α → CCPub} {Rel : α → State → Prop} (h
   rw [hnp, hk] at hnb
   rw [hnb] at this
   exact ⟨_, _, _, _, _, _, this⟩
-
-theorem cc3_pre {p : CCPub} {t : State} (h : CC3 p t) :
-    ∃ xb pb qb dpb dqb qib, CrtPre t p.m.B p.m.Z p.m.k p.m.op p.m.np p.m.ip p.m.pp p.m.qp p.m.dpp p.m.dqp
-      p.m.qip p.m.pl p.m.ql p.m.nb xb pb qb dpb dqb qib :=
-  cc3W_pre ccRel_ok h
 
 variable (M : Mont) (E : CrtExpL M)
 
@@ -164,41 +150,10 @@ theorem crtEntryWith_ct {α : Type} {f : α → CCPub} {Rel : α → State → P
       fun t' ⟨⟨hsi, hcx⟩, k'⟩ => ⟨hsi, hcx, (k'.gpr (by decide)).trans hpre.rdi⟩
   · exact hM
 
-/-- `vg_rsa_private_crt` leaks the same in runs that agree on the public data,
-given that `main`'s parts do. -/
-theorem crtCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPhaseCT M E)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    RelCT isa (Two CCRel) (Crt.code M.mm E.code) fun _ _ => True := by
-  unfold Crt.code
-  refine crtEntryWith_ct ccRel_ok _ ?_
-  have toM : ∀ p t, CC3 p t ∧ isa.eval .ne t = some false → Stage R0 p.m t := by
-    rintro p t ⟨h, he⟩
-    obtain ⟨xb, pb, qb, dpb, dqb, qib, hpre⟩ := cc3_pre h
-    obtain ⟨_, _, _, _, _, _, hz⟩ := h
-    have hv : Spec.Rsa.modulusValid p.m.N p.m.k = true := by
-      simp only [eval, hz] at he; simpa using he
-    exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, rfl⟩
-  exact (crtMain_ct M E hS hC hQ hP hF).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
-    ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
-
 /-- The public data of a state. -/
 def ccPubOf (s : State) : CCPub :=
   ⟨⟨stackArg s 10, (stackArg s 11).toNat * 8, (s.gpr .rcx).toNat, s.gpr .rdi, s.gpr .rdx, s.gpr .r8,
     stackArg s 0, stackArg s 2, stackArg s 4, stackArg s 6, stackArg s 8, (stackArg s 1).toNat,
     (stackArg s 3).toNat, Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat⟩, s.gpr .rsp⟩
-
-/-- `vg_rsa_private_crt` is constant time but for `n`, given that `main`'s
-parts are. -/
-theorem crtCode_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPhaseCT M E)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    ConstantTime isa crtContract.pre crtContract.pub (Crt.code M.mm E.code) := by
-  refine RelCT.constantTime ((crtCode_ct M E hS hC hQ hP hF).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_⟩)
-    fun _ _ h => h)
-  · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
-  · obtain ⟨hr, a0, a1, a2, a3, a4, -, a6, -, a8, -, a10, a11, hn⟩ := hp
-    have r : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₂.gpr r = s₁.gpr r := fun r h => (hr r h).symm
-    exact ⟨h₂, r .rsp (by decide), a10.symm, by rw [← a11]; rfl, by rw [r .rcx (by decide)]; rfl,
-      r .rdi (by decide), r .rdx (by decide), r .r8 (by decide), a0.symm, a2.symm, a4.symm, a6.symm, a8.symm,
-      by rw [← a1]; rfl, by rw [← a3]; rfl, hn.symm⟩
 
 end VG.Proof.Bignum.X86_64

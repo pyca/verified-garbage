@@ -39,11 +39,6 @@ def postRest (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   ((subModArr aT Public.aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++
     ([mul Public.aY aT aChunk] : List (Prog isa))) ++ ([.block [leave]] : List (Prog isa))))
 
-theorem post_eq (mul : Nat → Nat → Nat → Prog isa) :
-    CrtIfma.post mul = (([.block [.mov .rdi (.mem (hdr sWsP))]] : List (Prog isa)) ++ redc mul Public.aR2) ++
-      postRest mul := by
-  simp only [CrtIfma.post, postRest, enterP, List.append_assoc, List.cons_append, List.nil_append]
-
 theorem postP_eq (mul : Nat → Nat → Nat → Prog isa) :
     CrtIfma.postP mul = (([.block [.mov .rdi (.mem (hdr sWsP))]] : List (Prog isa)) ++ CrtIfma.r2X false aXc) ++
       postRest mul := by
@@ -207,48 +202,6 @@ theorem postWith_ok (M : Mont) {c₀ : List (Prog isa)} (hc₀ : c₀ ≠ []) {s
   · by_cases h : r = .rdi
     · subst h; rw [hg'.rdi, hg.rdi]
     · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
-
-/-- `post`: with `q`'s result in its `aY`, `p`'s `aY := h` as `pPhase` leaves
-it. Only `p`'s workspace changes. -/
-theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
-    {N X oq op wx m1 : Nat} {qp : Addr} {qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hw2 : w = 2 * wx)
-    (hq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wx mq)
-    (hhiq : oq + slot wx 8 + wsTab wx ≤ Z)
-    (hlo : slot w 8 ≤ op) (hhi : op + slot wx 8 + wsTab wx ≤ oq) (hwx2 : 2 ≤ wx)
-    (hsp : word s.mem B (8 * sWsP) = off B op) (hws : WsAt s.mem B op wx mx) (hX : XVals s B op wx mx X)
-    (hX1 : 1 < X) (hXodd : X % 2 = 1)
-    (hyl : wv s.mem (off B op) (slot wx Public.aY) wx < X)
-    (hyc : X ∣ N → wv s.mem (off B op) (slot wx Public.aY) wx % X = m1 * 2 ^ (64 * wx) % X)
-    (hmask : word s.mem (off B op) (8 * sMaskX) = mask c) (hc : c = true → X ∣ N)
-    (hqp : word s.mem B (8 * sQinv) = qp) (hql : word s.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length)
-    (hqs : Src s B Z qp qib) (hq1 : 1 ≤ qib.length) (hq2 : qib.length < 2 ^ 31) (hqw : (qib.length + 7) / 8 ≤ wx)
-    (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    WP isa (seqs (CrtIfma.post M.mm)) s (PostPost s B Z w minv mx X oq op wx m1 qib c) := by
-  have hn := hg.scr.nowrap
-  have hoL : op + slot wx 8 ≤ 2 ^ 64 := by omega_using [hhiq, hhi, hn]
-  have hwx : wx ≤ w := by omega_using [hw2]
-  have hK := nChunks_two hw2 (by omega_using [hwx2])
-  have hRR : Nat.Coprime (2 ^ (64 * wx * 2)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
-  have e2 : 2 ^ (64 * w) = 2 ^ (64 * wx * 2) := by rw [hw2]; congr 1; omega_using []
-  have lY := slot_le (w := wx) (show Public.aY < 8 by decide)
-  have hrm : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMaskX := fun r hr => by
-    simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn, slot, hdrBytes] <;>
-      omega_using []
-  have rY := redcRanges_arr wx (j := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide)
-  have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
-  have hz := hg.scr.nowrap
-  rw [post_eq]
-  refine postWith_ok M (by simp) hg hw28 hw2 hq hwsq hhiq hlo hhi hwx2 hXodd hyl hyc hmask hc hqp hql hqs hq1 hq2 hqw hqi
-    (WP.mono (enterRedc_ok M (j := Public.aR2) (by decide) hg hw28 hlo (by omega_using [hhiq, hhi]) hwx2 hwx (by decide)
-      hsp hws hX hX1) fun s₁ ⟨hc₁, hX₁, hlt₁, hv₁, f₁, r₁, k₁⟩ => ⟨hc₁, hX₁, hlt₁, fun hd => ?_,
-        f₁, r₁.wv_eq (fun r hr => by have := rY r hr; omega_using [this]) (by omega_using [lY, hoL]),
-        r₁.word_eq hrm (by omega_using [hmx, hoL]), k₁⟩)
-  rw [hK] at hv₁
-  exact VG.Proof.Bignum.mont_cancel hRR (by
-    rw [hv₁, ← Nat.mod_mod_of_dvd _ hd, hN.r2, Nat.mod_mod_of_dvd _ hd, e2, ← Nat.pow_add])
 
 /-- `postP`: `post` with `R_p² mod p` from `pre`'s words from `r2XOff false`
 (whose value `V` is it where `n`'s mask `c` is set; where it is clear the
