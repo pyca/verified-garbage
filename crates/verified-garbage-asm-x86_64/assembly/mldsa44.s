@@ -844,19 +844,6 @@ vg_mldsa44_keygen_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-32]
 	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+32]
@@ -3301,19 +3288,6 @@ vg_mldsa44_sign_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-40]
 	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
@@ -3366,19 +3340,6 @@ vg_mldsa44_sign_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-40]
 	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
@@ -3398,20 +3359,6 @@ vg_mldsa44_sign_prepared_avx512:
 vg_mldsa44_sign_avx2:
 	mov r9d, 0
 	call {vg_mldsa44_sign_with_cache_avx2}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -3448,20 +3395,6 @@ vg_mldsa44_sign_avx2:
 vg_mldsa44_sign_prepared_avx2:
 	mov r9d, 1
 	call {vg_mldsa44_sign_with_cache_avx2}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -3498,20 +3431,6 @@ vg_mldsa44_sign_prepared_avx2:
 vg_mldsa44_sign:
 	mov r9d, 0
 	call {vg_mldsa44_sign_with_cache}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -3549,20 +3468,6 @@ vg_mldsa44_sign:
 vg_mldsa44_sign_prepared:
 	mov r9d, 1
 	call {vg_mldsa44_sign_with_cache}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -3750,19 +3655,6 @@ vg_mldsa44_sign_message_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-112]
 	vmovdqu YMMWORD PTR [rsp+80], ymm0
 	vmovdqu YMMWORD PTR [rsp+48], ymm0
@@ -3934,19 +3826,6 @@ vg_mldsa44_sign_message_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-112]
 	vmovdqu YMMWORD PTR [rsp+80], ymm0
 	vmovdqu YMMWORD PTR [rsp+48], ymm0
@@ -4085,20 +3964,6 @@ vg_mldsa44_sign_message_avx2:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4254,20 +4119,6 @@ vg_mldsa44_sign_message_prepared_avx2:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4423,20 +4274,6 @@ vg_mldsa44_sign_message:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -4595,20 +4432,6 @@ vg_mldsa44_sign_message_prepared:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -4683,19 +4506,6 @@ vg_mldsa44_verify_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-40]
 	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
@@ -4748,19 +4558,6 @@ vg_mldsa44_verify_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-40]
 	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
@@ -4780,20 +4577,6 @@ vg_mldsa44_verify_prepared_avx512:
 vg_mldsa44_verify_avx2:
 	mov r8d, 0
 	call {vg_mldsa44_verify_with_cache_avx2}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4830,20 +4613,6 @@ vg_mldsa44_verify_avx2:
 vg_mldsa44_verify_prepared_avx2:
 	mov r8d, 1
 	call {vg_mldsa44_verify_with_cache_avx2}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4880,20 +4649,6 @@ vg_mldsa44_verify_prepared_avx2:
 vg_mldsa44_verify:
 	mov r8d, 0
 	call {vg_mldsa44_verify_with_cache}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -4931,20 +4686,6 @@ vg_mldsa44_verify:
 vg_mldsa44_verify_prepared:
 	mov r8d, 1
 	call {vg_mldsa44_verify_with_cache}
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -5130,19 +4871,6 @@ vg_mldsa44_verify_message_cached_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-112]
 	vmovdqu YMMWORD PTR [rsp+80], ymm0
 	vmovdqu YMMWORD PTR [rsp+48], ymm0
@@ -5312,19 +5040,6 @@ vg_mldsa44_verify_message_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-112]
 	vmovdqu YMMWORD PTR [rsp+80], ymm0
 	vmovdqu YMMWORD PTR [rsp+48], ymm0
@@ -5461,20 +5176,6 @@ vg_mldsa44_verify_message_cached_avx2:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -5628,20 +5329,6 @@ vg_mldsa44_verify_message_prepared_avx2:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -5795,20 +5482,6 @@ vg_mldsa44_verify_message_cached:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -5965,20 +5638,6 @@ vg_mldsa44_verify_message_prepared:
 	pop r11
 	pop r11
 21:
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2

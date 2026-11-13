@@ -27384,19 +27384,6 @@ vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-632]
 	vmovdqu YMMWORD PTR [rsp+600], ymm0
 	vmovdqu YMMWORD PTR [rsp+568], ymm0
@@ -27709,19 +27696,6 @@ vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-632]
 	vmovdqu YMMWORD PTR [rsp+600], ymm0
 	vmovdqu YMMWORD PTR [rsp+568], ymm0
@@ -27996,19 +27970,6 @@ vg_dsa_parameter_search_mr_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-632]
 	vmovdqu YMMWORD PTR [rsp+600], ymm0
 	vmovdqu YMMWORD PTR [rsp+568], ymm0

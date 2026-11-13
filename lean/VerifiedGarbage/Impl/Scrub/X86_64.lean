@@ -158,17 +158,19 @@ def chunks (n : Nat) : List Nat := chunksAux (n / 4080 + 1) n
 /-- The clearing: the SSE registers `xs`, at the level `evex` `zmm16`–`zmm31`
 too, and the general-purpose registers
 `ps` (`xmm0` and `r11`, which the wipe stores, if it stores any), at the
-level `evex` MXCSR's status flags, the stack,
-then the result's upper bits and the general-purpose registers `gs`. -/
-def scrubTail (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) :
-    Prog isa :=
+level `f` `evex` (by default `v`) MXCSR's status flags, the stack,
+then the result's upper bits and the general-purpose registers `gs`. Code
+that leaves the same MXCSR in two runs along the same path needs no `mxFix`
+(`f` below `evex`), even if it writes `zmm16`–`zmm31`. -/
+def scrubTail (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat)
+    (f : VecLevel := v) : Prog isa :=
   .seq (.block (xs.map (zeroX v) ++ clearHigh v ++ ps.map zeroR))
-    (.seq (mxFix v) (.seq (wipe v.wide ks cs) (.block (retFix retBits ++ gs.map zeroR))))
+    (.seq (mxFix f) (.seq (wipe v.wide ks cs) (.block (retFix retBits ++ gs.map zeroR))))
 
 /-- `c`, then the clearing. -/
-def scrub (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) (c : Prog isa) :
-    Prog isa :=
-  .seq c (scrubTail v retBits xs ps gs ks cs)
+def scrub (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) (c : Prog isa)
+    (f : VecLevel := v) : Prog isa :=
+  .seq c (scrubTail v retBits xs ps gs ks cs f)
 
 /-! ## What to clear
 

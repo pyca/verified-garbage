@@ -48,7 +48,7 @@ implementation `c`, calling the base-point multiplication `bs` (`vg_ed25519_scal
 the suffix `fs`). -/
 def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) : Artifact :=
-  Spec.Ed25519.signExpandedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.Ed25519.signExpandedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.SignCached.codeExpanded bs fs c.callee c.suffix
     stack := 264
@@ -62,7 +62,7 @@ what it leaves), calling `vg_ed25519_public_key_expanded` with the suffix `fs`, 
 base-point multiplication is `bs`. -/
 def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) : Artifact :=
-  Spec.Ed25519.keyPairApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.Ed25519.keyPairApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ c.suffix ++ "_core")
       (Proof.Ed25519.X86_64.KeyPair.dgCode c) ("vg_ed25519_public_key_expanded" ++ fs)

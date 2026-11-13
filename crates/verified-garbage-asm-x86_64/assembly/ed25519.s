@@ -93,20 +93,6 @@ vg_ed25519_verify_shani_ifma:
 	pop r11
 	pop r11
 	pop r11
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -370,36 +356,7 @@ vg_ed25519_sign_expanded_shani_ifma:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-264]
 	vmovdqu YMMWORD PTR [rsp+232], ymm0
 	vmovdqu YMMWORD PTR [rsp+200], ymm0
@@ -454,36 +411,7 @@ vg_ed25519_key_pair_shani_ifma:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-1632]
 	vmovdqu YMMWORD PTR [rsp+1600], ymm0
 	vmovdqu YMMWORD PTR [rsp+1568], ymm0
@@ -1584,20 +1512,6 @@ vg_ed25519_verify_avx2_ifma:
 	pop r11
 	pop r11
 	pop r11
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -1861,36 +1775,7 @@ vg_ed25519_sign_expanded_avx2_ifma:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-264]
 	vmovdqu YMMWORD PTR [rsp+232], ymm0
 	vmovdqu YMMWORD PTR [rsp+200], ymm0
@@ -1945,36 +1830,7 @@ vg_ed25519_key_pair_avx2_ifma:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-1632]
 	vmovdqu YMMWORD PTR [rsp+1600], ymm0
 	vmovdqu YMMWORD PTR [rsp+1568], ymm0
@@ -3075,20 +2931,6 @@ vg_ed25519_verify_ifma:
 	pop r11
 	pop r11
 	pop r11
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -3352,36 +3194,7 @@ vg_ed25519_sign_expanded_ifma:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-264]
 	vmovdqu YMMWORD PTR [rsp+232], ymm0
 	vmovdqu YMMWORD PTR [rsp+200], ymm0
@@ -3436,36 +3249,7 @@ vg_ed25519_key_pair_ifma:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	vpxorq zmm16, zmm16, zmm16
-	vpxorq zmm17, zmm17, zmm17
-	vpxorq zmm18, zmm18, zmm18
-	vpxorq zmm19, zmm19, zmm19
-	vpxorq zmm20, zmm20, zmm20
-	vpxorq zmm21, zmm21, zmm21
-	vpxorq zmm22, zmm22, zmm22
-	vpxorq zmm23, zmm23, zmm23
-	vpxorq zmm24, zmm24, zmm24
-	vpxorq zmm25, zmm25, zmm25
-	vpxorq zmm26, zmm26, zmm26
-	vpxorq zmm27, zmm27, zmm27
-	vpxorq zmm28, zmm28, zmm28
-	vpxorq zmm29, zmm29, zmm29
-	vpxorq zmm30, zmm30, zmm30
-	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-1632]
 	vmovdqu YMMWORD PTR [rsp+1600], ymm0
 	vmovdqu YMMWORD PTR [rsp+1568], ymm0

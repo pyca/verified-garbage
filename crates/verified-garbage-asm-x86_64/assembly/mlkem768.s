@@ -134,19 +134,6 @@ vg_mlkem768_keygen_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-56]
 	vmovdqu YMMWORD PTR [rsp+24], ymm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
@@ -207,19 +194,6 @@ vg_mlkem768_encaps_h_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-56]
 	vmovdqu YMMWORD PTR [rsp+24], ymm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
@@ -280,19 +254,6 @@ vg_mlkem768_encaps_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-56]
 	vmovdqu YMMWORD PTR [rsp+24], ymm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
@@ -353,19 +314,6 @@ vg_mlkem768_decaps_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-56]
 	vmovdqu YMMWORD PTR [rsp+24], ymm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
@@ -392,20 +340,6 @@ vg_mlkem768_keygen_avx2:
 	mov esi, 32768
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
 	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
@@ -451,20 +385,6 @@ vg_mlkem768_encaps_h_avx2:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -508,20 +428,6 @@ vg_mlkem768_encaps_avx2:
 	mov esi, 32768
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
 	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
@@ -567,20 +473,6 @@ vg_mlkem768_decaps_avx2:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -624,20 +516,6 @@ vg_mlkem768_keygen_avx:
 	mov esi, 32768
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
 	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
@@ -683,20 +561,6 @@ vg_mlkem768_encaps_h_avx:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -740,20 +604,6 @@ vg_mlkem768_encaps_avx:
 	mov esi, 32768
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
 	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
@@ -799,20 +649,6 @@ vg_mlkem768_decaps_avx:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -856,20 +692,6 @@ vg_mlkem768_keygen:
 	mov esi, 32768
 	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
 	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
@@ -916,20 +738,6 @@ vg_mlkem768_encaps_h:
 	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -975,20 +783,6 @@ vg_mlkem768_encaps:
 	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -1033,20 +827,6 @@ vg_mlkem768_decaps:
 	mov esi, 32768
 	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
-	lea rsp, [rsp+16]
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
 	lea rsp, [rsp+16]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1

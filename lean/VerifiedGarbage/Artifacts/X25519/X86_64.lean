@@ -18,6 +18,7 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.X25519.X86_64.Scrub
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
@@ -31,24 +32,24 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 namespace VG.Artifacts.X25519.X86_64
 
 def artifacts : List Artifact := [
-  Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := "_ifma"
     code := Impl.Xdh.X86_64.exchange "vg_x25519_ifma" Impl.X25519.X86_64.x25519Ifma 32
     stack := 24
     verified := Proof.X25519.X86_64.Exchange.exchange_ifma }
     (Proof.X25519.X86_64.Scrub.exchangeOut [] 24)),
-  Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := "_adx"
     code := Impl.Xdh.X86_64.exchange "vg_x25519_adx" Impl.X25519.X86_64.x25519Adx 32
     stack := 24
     verified := Proof.X25519.X86_64.Exchange.exchange_adx }
     (Proof.X25519.X86_64.Scrub.exchangeOut [] 24)),
-  Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     code := Impl.Xdh.X86_64.exchange "vg_x25519" Impl.X25519.X86_64.x25519 32
     stack := 24
     verified := Proof.X25519.X86_64.Exchange.exchange_baseline }
     (Proof.X25519.X86_64.Scrub.exchangeOut [] 24)),
-  Spec.X25519.x25519BaseApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.X25519.x25519BaseApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := "_ifma"
     code := Impl.X25519.X86_64.Base.x25519BaseIfma
     stack := 8
