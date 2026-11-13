@@ -32,7 +32,7 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom ctr32 aesWith)
 /-- What a call needs, from a state `s` with `scratch` at `rsp`: the key
 context at `K` for `R` rounds, the counter block at `C`, `Y` at `Y`, `q`
 blocks at `D` and working space at `S`. -/
-structure BlkCall (M : Gcm.X86_64.Stitch.CtxMode) (s : State) (K C Y D S : Addr) (R q : Nat) : Prop where
+structure BlkCall (M : Gcm.X86_64.Stitch.CtxMode) (s : State) (K C Y D S : Addr) (R q : Nat) (NB : Nat := 2112) : Prop where
   rdi : s.gpr .rdi = K
   rsi : s.gpr .rsi = BitVec.ofNat 64 R
   rdx : s.gpr .rdx = C
@@ -45,27 +45,27 @@ structure BlkCall (M : Gcm.X86_64.Stitch.CtxMode) (s : State) (K C Y D S : Addr)
   w_c : C.toNat + 16 ≤ 2 ^ 64
   w_y : Y.toNat + 16 ≤ 2 ^ 64
   w_d : D.toNat + q * 16 ≤ 2 ^ 64
-  w_s : S.toNat + 2112 ≤ 2 ^ 64
+  w_s : S.toNat + NB ≤ 2 ^ 64
   w_sp : (s.gpr .rsp - 8).toNat + 16 ≤ 2 ^ 64
   k_c : (⟨K, M.len⟩ : Region).Disjoint ⟨C, 16⟩
   k_y : (⟨K, M.len⟩ : Region).Disjoint ⟨Y, 16⟩
   k_d : (⟨K, M.len⟩ : Region).Disjoint ⟨D, q * 16⟩
-  k_s : (⟨K, M.len⟩ : Region).Disjoint ⟨S, 2112⟩
+  k_s : (⟨K, M.len⟩ : Region).Disjoint ⟨S, NB⟩
   c_y : (⟨C, 16⟩ : Region).Disjoint ⟨Y, 16⟩
   c_d : (⟨C, 16⟩ : Region).Disjoint ⟨D, q * 16⟩
-  c_s : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2112⟩
+  c_s : (⟨C, 16⟩ : Region).Disjoint ⟨S, NB⟩
   y_d : (⟨Y, 16⟩ : Region).Disjoint ⟨D, q * 16⟩
-  y_s : (⟨Y, 16⟩ : Region).Disjoint ⟨S, 2112⟩
-  d_s : (⟨D, q * 16⟩ : Region).Disjoint ⟨S, 2112⟩
+  y_s : (⟨Y, 16⟩ : Region).Disjoint ⟨S, NB⟩
+  d_s : (⟨D, q * 16⟩ : Region).Disjoint ⟨S, NB⟩
   /-- The stack: `scratch` on it, and the return addresses of the call and of
   its calls, in the 24 bytes from `rsp - 16`. -/
   t_k : (⟨s.gpr .rsp - 16, 24⟩ : Region).Disjoint ⟨K, M.len⟩
   t_c : (⟨s.gpr .rsp - 16, 24⟩ : Region).Disjoint ⟨C, 16⟩
   t_y : (⟨s.gpr .rsp - 16, 24⟩ : Region).Disjoint ⟨Y, 16⟩
   t_d : (⟨s.gpr .rsp - 16, 24⟩ : Region).Disjoint ⟨D, q * 16⟩
-  t_s : (⟨s.gpr .rsp - 16, 24⟩ : Region).Disjoint ⟨S, 2112⟩
-  reads : Covers ([⟨K, M.len⟩, ⟨s.gpr .rsp, 8⟩] ++ [⟨C, 16⟩, ⟨Y, 16⟩, ⟨D, q * 16⟩, ⟨S, 2112⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨C, 16⟩, ⟨Y, 16⟩, ⟨D, q * 16⟩, ⟨S, 2112⟩] s.wr
+  t_s : (⟨s.gpr .rsp - 16, 24⟩ : Region).Disjoint ⟨S, NB⟩
+  reads : Covers ([⟨K, M.len⟩, ⟨s.gpr .rsp, 8⟩] ++ [⟨C, 16⟩, ⟨Y, 16⟩, ⟨D, q * 16⟩, ⟨S, NB⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨Y, 16⟩, ⟨D, q * 16⟩, ⟨S, NB⟩] s.wr
   /-- What the key context holds, as its kind says. -/
   ok : M.ok s.mem K
 
@@ -74,12 +74,12 @@ theorem sep_of_disj {a b : Addr} {n k : Nat} (h : (⟨a, n⟩ : Region).Disjoint
 
 namespace BlkCall
 
-variable {M : Gcm.X86_64.Stitch.CtxMode} {s : State} {K C Y D S : Addr} {R q : Nat} (h : BlkCall M s K C Y D S R q)
+variable {M : Gcm.X86_64.Stitch.CtxMode} {s : State} {K C Y D S : Addr} {R q NB : Nat} (h : BlkCall M s K C Y D S R q NB)
 include h
 
 /-- The regions the callee may read and write. -/
 abbrev rd (M : Gcm.X86_64.Stitch.CtxMode) (s : State) (K : Addr) : List Region := [⟨K, M.len⟩, ⟨s.gpr .rsp, 8⟩]
-abbrev wr (C Y D S : Addr) (q : Nat) : List Region := [⟨C, 16⟩, ⟨Y, 16⟩, ⟨D, q * 16⟩, ⟨S, 2112⟩]
+abbrev wr (C Y D S : Addr) (q : Nat) (NB : Nat := 2112) : List Region := [⟨C, 16⟩, ⟨Y, 16⟩, ⟨D, q * 16⟩, ⟨S, NB⟩]
 
 omit h in
 theorem stackArgAddr_eq (rd wr : List Region) : stackArgAddr (s.callEntry.withRegions rd wr) 0 = s.gpr .rsp := by
@@ -107,22 +107,22 @@ theorem arg_sub : Region.Sub ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsp - 16, 24⟩ := by
   conv => lhs; rw [e]
   exact Offset.sub_base _ (by decide)
 
-theorem arg_eq : stackArg (s.callEntry.withRegions (rd M s K) (wr C Y D S q)) 0 = S := by
-  have hsa := stackArgAddr_eq (s := s) (rd M s K) (wr C Y D S q)
+theorem arg_eq : stackArg (s.callEntry.withRegions (rd M s K) (wr C Y D S q NB)) 0 = S := by
+  have hsa := stackArgAddr_eq (s := s) (rd M s K) (wr C Y D S q NB)
   have sep : Mem.Sep (s.gpr .rsp) (64 / 8) (s.gpr .rsp - 8) (64 / 8) := by
     have := Offset.sep_below (s.gpr .rsp) 8 (a := 0) (n := 8) (b := 8) (k := 8) (by decide) (by decide)
       (.inr (by decide)) (by decide) (by decide)
     simpa using this
   unfold stackArg; rw [hsa, State.withRegions_mem, State.callEntry_mem, Mem.readW_writeW_sep sep (by decide), h.arg]
 
-theorem pre : Proof.AesGcm.blocksPreM M (s.callEntry.withRegions (rd M s K) (wr C Y D S q)) := by
+theorem pre : Proof.AesGcm.blocksPreM M (s.callEntry.withRegions (rd M s K) (wr C Y D S q NB)) NB := by
   have hq : (BitVec.ofNat 64 q).toNat = q := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
   have hR : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
-  have hsa := stackArgAddr_eq (s := s) (rd M s K) (wr C Y D S q)
+  have hsa := stackArgAddr_eq (s := s) (rd M s K) (wr C Y D S q NB)
   have harg := h.arg_eq
-  have hok : M.ok (s.callEntry.withRegions (rd M s K) (wr C Y D S q)).mem K := by
+  have hok : M.ok (s.callEntry.withRegions (rd M s K) (wr C Y D S q NB)).mem K := by
     rw [State.withRegions_mem]
     exact M.frame (callEntry_frame s) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -220,15 +220,15 @@ end
 open Gcm.X86_64.Stitch (CtxMode) in
 /-- An implementation of `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`
 for a key context of kind `M`, with what its callers need of it. -/
-structure BlkFn (M : CtxMode) where
+structure BlkFn (M : CtxMode) (NB : Nat := 2112) where
   enc : Fn
   dec : Fn
-  encOk : ∀ s, (Proof.AesGcm.encryptBlocksX86_64M M).pre s →
+  encOk : ∀ s, (Proof.AesGcm.encryptBlocksX86_64M M NB).pre s →
     ∃ t s', Exec isa enc.code s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.encryptBlocksX86_64.post s s'
-  decOk : ∀ s, (Proof.AesGcm.decryptBlocksX86_64M M).pre s →
+  decOk : ∀ s, (Proof.AesGcm.decryptBlocksX86_64M M NB).pre s →
     ∃ t s', Exec isa dec.code s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.decryptBlocksX86_64.post s s'
-  encCt : ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub enc.code
-  decCt : ConstantTime isa (Proof.AesGcm.decryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub dec.code
+  encCt : ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M NB).pre Proof.AesGcm.blocksPub enc.code
+  decCt : ConstantTime isa (Proof.AesGcm.decryptBlocksX86_64M M NB).pre Proof.AesGcm.blocksPub dec.code
   encNosp : NoSp enc.code
   decNosp : NoSp dec.code
   encDepth : enc.code.depth = 1
@@ -250,6 +250,29 @@ def GcmImpl.blkM (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (Stit
   decOk := decryptBlocksM_correct v st
   encCt := Blocks.encrypt_ct v st
   decCt := Blocks.decrypt_ct v st
+  encNosp := encryptBlocks_nosp v st
+  decNosp := decryptBlocks_nosp v st
+  encDepth := encryptBlocks_depth v st
+  decDepth := decryptBlocks_depth v st
+  encMx := encryptBlocks_mx v st
+  decMx := decryptBlocks_mx v st
+  encSp := encryptBlocks_spSafe v st
+  decSp := decryptBlocks_spSafe v st
+  encXd := encryptBlocks_xdepth v st
+  decXd := decryptBlocks_xdepth v st
+
+open Gcm.X86_64.Stitch (CtxMode) in
+/-- `GcmImpl.blkM`, with `NB` bytes of working space, of which the calls of
+`vg_aes_ctr32` and `vg_ghash` take `cs` and `gs` (`Fits`). -/
+def GcmImpl.blkMN (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) (e d : String)
+    {cs gs NB : Nat} (F : Fits v cs gs) (hcs : 64 + cs ≤ NB) (hgs : 64 + gs ≤ NB) (hNB : 1152 ≤ NB)
+    (hlt : NB < 2 ^ 64) : BlkFn M NB where
+  enc := ⟨e, Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st) (encSmall st) (encSmall4 st) (st.map (·.encS))⟩
+  dec := ⟨d, Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st) (decSmall st) (decSmall4 st) (st.map (·.decS))⟩
+  encOk := encryptBlocksMN_correct v st F hcs hgs hNB hlt
+  decOk := decryptBlocksMN_correct v st F hcs hgs hNB hlt
+  encCt := Blocks.encrypt_ctN v F hcs hgs hNB hlt st
+  decCt := Blocks.decrypt_ctN v F hcs hgs hNB hlt st
   encNosp := encryptBlocks_nosp v st
   decNosp := decryptBlocks_nosp v st
   encDepth := encryptBlocks_depth v st
@@ -312,15 +335,15 @@ def GcmImpl.withBlk (v : GcmImpl) {M : CtxMode} (B : BlkFn M) : Callees :=
   { v.callees with enc := B.enc, dec := B.dec }
 
 /-- What a call leaves, besides its result. -/
-structure BlkPost (s : State) (C Y D S : Addr) (q : Nat) (s' : State) : Prop where
+structure BlkPost (s : State) (C Y D S : Addr) (q : Nat) (s' : State) (NB : Nat := 2112) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame (BlkCall.wr C Y D S q ++ [below (s.gpr .rsp) 16]) s.mem s'.mem
+  frame : Frame (BlkCall.wr C Y D S q NB ++ [below (s.gpr .rsp) 16]) s.mem s'.mem
 
 namespace BlkCall
 
-variable {M : Gcm.X86_64.Stitch.CtxMode} {s : State} {K C Y D S : Addr} {R q : Nat} (h : BlkCall M s K C Y D S R q)
+variable {M : Gcm.X86_64.Stitch.CtxMode} {s : State} {K C Y D S : Addr} {R q NB : Nat} (h : BlkCall M s K C Y D S R q NB)
 include h
 
 /-- The values the call reads, at its entry, after the return address is stored. -/
@@ -347,9 +370,9 @@ theorem entry_eqs :
 end BlkCall
 
 /-- A call of `vg_aes_gcm_encrypt_blocks`. -/
-theorem blkE_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C Y D S : Addr} {R q : Nat}
-    (h : BlkCall M s K C Y D S R q) :
-    WP isa (.call B.enc.name B.enc.code) s fun s' => BlkPost s C Y D S q s' ∧
+theorem blkE_call {M : Gcm.X86_64.Stitch.CtxMode} {NB : Nat} (B : BlkFn M NB) {s : State} {K C Y D S : Addr} {R q : Nat}
+    (h : BlkCall M s K C Y D S R q NB) :
+    WP isa (.call B.enc.name B.enc.code) s fun s' => BlkPost s C Y D S q s' NB ∧
       blocksAt s'.mem D q = ctr32 (aesWith R (Spec.Aes.bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C)
         (blocksAt s.mem D q) ∧
       blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 q (blockAt s.mem C) ∧
@@ -358,9 +381,9 @@ theorem blkE_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
   have hR : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
-  refine WP.call (k := Proof.AesGcm.encryptBlocksX86_64M M) B.encOk
+  refine WP.call (k := Proof.AesGcm.encryptBlocksX86_64M M NB) B.encOk
     B.encNosp (by rw [B.encDepth]; decide)
-    (rd := BlkCall.rd M s K) (wr := BlkCall.wr C Y D S q) h.pre h.reads h.writes ?_
+    (rd := BlkCall.rd M s K) (wr := BlkCall.wr C Y D S q NB) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
   rw [B.encDepth] at hf
   obtain ⟨eK, eC, eY, eD, eH⟩ := h.entry_eqs
@@ -373,9 +396,9 @@ theorem blkE_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C
   exact ⟨⟨hrd, hwr, hcs, hf⟩, hpost.1, hpost.2.1, by rw [hpost.1]; exact hpost.2.2⟩
 
 /-- A call of `vg_aes_gcm_decrypt_blocks`. -/
-theorem blkD_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C Y D S : Addr} {R q : Nat}
-    (h : BlkCall M s K C Y D S R q) :
-    WP isa (.call B.dec.name B.dec.code) s fun s' => BlkPost s C Y D S q s' ∧
+theorem blkD_call {M : Gcm.X86_64.Stitch.CtxMode} {NB : Nat} (B : BlkFn M NB) {s : State} {K C Y D S : Addr} {R q : Nat}
+    (h : BlkCall M s K C Y D S R q NB) :
+    WP isa (.call B.dec.name B.dec.code) s fun s' => BlkPost s C Y D S q s' NB ∧
       blocksAt s'.mem D q = ctr32 (aesWith R (Spec.Aes.bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C)
         (blocksAt s.mem D q) ∧
       blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 q (blockAt s.mem C) ∧
@@ -384,9 +407,9 @@ theorem blkD_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
   have hR : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
-  refine WP.call (k := Proof.AesGcm.decryptBlocksX86_64M M) B.decOk
+  refine WP.call (k := Proof.AesGcm.decryptBlocksX86_64M M NB) B.decOk
     B.decNosp (by rw [B.decDepth]; decide)
-    (rd := BlkCall.rd M s K) (wr := BlkCall.wr C Y D S q) h.pre h.reads h.writes ?_
+    (rd := BlkCall.rd M s K) (wr := BlkCall.wr C Y D S q NB) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
   rw [B.decDepth] at hf
   obtain ⟨eK, eC, eY, eD, eH⟩ := h.entry_eqs
@@ -400,10 +423,10 @@ theorem blkD_call {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State} {K C
 
 /-- Two calls of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` with the same
 arguments leak the same. -/
-theorem blk_pub {M : Gcm.X86_64.Stitch.CtxMode} {s₁ s₂ : State} {K C Y D S : Addr} {R q : Nat}
-    (h₁ : BlkCall M s₁ K C Y D S R q) (h₂ : BlkCall M s₂ K C Y D S R q) (hsp : s₁.gpr .rsp = s₂.gpr .rsp) :
-    Proof.AesGcm.blocksPub (s₁.callEntry.withRegions (BlkCall.rd M s₁ K) (BlkCall.wr C Y D S q))
-      (s₂.callEntry.withRegions (BlkCall.rd M s₂ K) (BlkCall.wr C Y D S q)) := by
+theorem blk_pub {M : Gcm.X86_64.Stitch.CtxMode} {s₁ s₂ : State} {K C Y D S : Addr} {R q NB : Nat}
+    (h₁ : BlkCall M s₁ K C Y D S R q NB) (h₂ : BlkCall M s₂ K C Y D S R q NB) (hsp : s₁.gpr .rsp = s₂.gpr .rsp) :
+    Proof.AesGcm.blocksPub (s₁.callEntry.withRegions (BlkCall.rd M s₁ K) (BlkCall.wr C Y D S q NB))
+      (s₂.callEntry.withRegions (BlkCall.rd M s₂ K) (BlkCall.wr C Y D S q NB)) := by
   simp only [Proof.AesGcm.blocksPub, Proof.AesGcm.arg, h₁.arg_eq, h₂.arg_eq, State.withRegions_gpr,
     State.callEntry_rsp, State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp),
@@ -412,19 +435,19 @@ theorem blk_pub {M : Gcm.X86_64.Stitch.CtxMode} {s₁ s₂ : State} {K C Y D S :
     h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
-theorem blkE_rel {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {P : State → State → Prop}
+theorem blkE_rel {M : Gcm.X86_64.Stitch.CtxMode} {NB : Nat} (B : BlkFn M NB) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C Y D S : Addr, ∃ R q : Nat,
-      BlkCall M s₁ K C Y D S R q ∧ BlkCall M s₂ K C Y D S R q ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+      BlkCall M s₁ K C Y D S R q NB ∧ BlkCall M s₂ K C Y D S R q NB ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call B.enc.name B.enc.code) fun _ _ => True := by
-  refine RelCT.callEx (k := Proof.AesGcm.encryptBlocksX86_64M M) B.encOk B.encCt fun s₁ s₂ hp => ?_
+  refine RelCT.callEx (k := Proof.AesGcm.encryptBlocksX86_64M M NB) B.encOk B.encCt fun s₁ s₂ hp => ?_
   obtain ⟨K, C, Y, D, S, R, q, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   exact ⟨_, _, _, _, h₁.pre, h₂.pre, blk_pub h₁ h₂ hsp, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
 
-theorem blkD_rel {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {P : State → State → Prop}
+theorem blkD_rel {M : Gcm.X86_64.Stitch.CtxMode} {NB : Nat} (B : BlkFn M NB) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C Y D S : Addr, ∃ R q : Nat,
-      BlkCall M s₁ K C Y D S R q ∧ BlkCall M s₂ K C Y D S R q ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+      BlkCall M s₁ K C Y D S R q NB ∧ BlkCall M s₂ K C Y D S R q NB ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call B.dec.name B.dec.code) fun _ _ => True := by
-  refine RelCT.callEx (k := Proof.AesGcm.decryptBlocksX86_64M M) B.decOk B.decCt fun s₁ s₂ hp => ?_
+  refine RelCT.callEx (k := Proof.AesGcm.decryptBlocksX86_64M M NB) B.decOk B.decCt fun s₁ s₂ hp => ?_
   obtain ⟨K, C, Y, D, S, R, q, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   exact ⟨_, _, _, _, h₁.pre, h₂.pre, blk_pub h₁ h₂ hsp, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
 

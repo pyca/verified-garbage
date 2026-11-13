@@ -38,7 +38,7 @@ theorem mask_nat (x : Addr) : (x &&& (-64)).toNat = x.toNat / 64 * 64 := by
   have hd := Nat.mod_add_div x.toNat 64
   rw [Nat.mod_eq_of_lt (by omega)]
 
-theorem ptr_eq (aligned : Bool) (p : Addr) (hp : p.toNat + 2112 ≤ 2^64) :
+theorem ptr_eq (aligned : Bool) (p : Addr) {NB : Nat} (hp : p.toNat + NB ≤ 2^64) (hNB : 128 ≤ NB := by decide) :
     ptr aligned p = p + BitVec.ofNat 64 (offset aligned p) := by
   apply BitVec.eq_of_toNat_eq
   cases aligned with

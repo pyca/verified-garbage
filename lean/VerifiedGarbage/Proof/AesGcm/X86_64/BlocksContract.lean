@@ -43,13 +43,14 @@ def blocksPre (s : State) : Prop :=
     (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64 ∧ rounds s
 
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode) in
-/-- What both need, for a key context of kind `M`. -/
-def blocksPreM (M : CtxMode) (s : State) : Prop :=
+/-- What both need, for a key context of kind `M`, with `NB` bytes of
+working space (2112, all that any implementation needs). -/
+def blocksPreM (M : CtxMode) (s : State) (NB : Nat := 2112) : Prop :=
   let ctx : Region := ⟨s.gpr .rdi, M.len⟩
   let ctr : Region := ⟨s.gpr .rdx, 16⟩
   let y : Region := ⟨s.gpr .rcx, 16⟩
   let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat * 16⟩
-  let scr : Region := ⟨arg s 0, 2112⟩
+  let scr : Region := ⟨arg s 0, NB⟩
   s.rd = [ctx, args s 1] ∧ s.wr = [ctr, y, data, scr] ∧
     ctx.Disjoint ctr ∧ ctx.Disjoint y ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
     ctr.Disjoint y ∧ ctr.Disjoint data ∧ ctr.Disjoint scr ∧ ctr.Disjoint (args s 1) ∧
@@ -59,7 +60,7 @@ def blocksPreM (M : CtxMode) (s : State) : Prop :=
     (stk s).Disjoint ctx ∧ (stk s).Disjoint ctr ∧ (stk s).Disjoint y ∧ (stk s).Disjoint data ∧
     (stk s).Disjoint scr ∧
     (s.gpr .rdi).toNat + M.len ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .r8).toNat + (s.gpr .r9).toNat * 16 ≤ 2 ^ 64 ∧ (arg s 0).toNat + 2112 ≤ 2 ^ 64 ∧
+    (s.gpr .r8).toNat + (s.gpr .r9).toNat * 16 ≤ 2 ^ 64 ∧ (arg s 0).toNat + NB ≤ 2 ^ 64 ∧
     (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64 ∧ rounds s ∧ M.ok s.mem (s.gpr .rdi)
 
 def blocksPub (s₁ s₂ : State) : Prop :=
@@ -92,15 +93,15 @@ def decryptBlocksX86_64 : Contract isa where
 
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode) in
 /-- `vg_aes_gcm_encrypt_blocks`, for a key context of kind `M`. -/
-def encryptBlocksX86_64M (M : CtxMode) : Contract isa where
-  pre := blocksPreM M
+def encryptBlocksX86_64M (M : CtxMode) (NB : Nat := 2112) : Contract isa where
+  pre s := blocksPreM M s NB
   post := encryptBlocksX86_64.post
   pub := blocksPub
 
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode) in
 /-- `vg_aes_gcm_decrypt_blocks`, for a key context of kind `M`. -/
-def decryptBlocksX86_64M (M : CtxMode) : Contract isa where
-  pre := blocksPreM M
+def decryptBlocksX86_64M (M : CtxMode) (NB : Nat := 2112) : Contract isa where
+  pre s := blocksPreM M s NB
   post := decryptBlocksX86_64.post
   pub := blocksPub
 

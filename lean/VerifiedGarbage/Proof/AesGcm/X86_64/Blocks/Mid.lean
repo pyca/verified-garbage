@@ -44,21 +44,21 @@ end
 
 /-- The first `q` blocks done and `ys` hashed, the arguments kept for what
 is left after `k` blocks. -/
-structure Mid (s : State) (q k : Nat) (ys : List Block) (st : State) : Prop where
+structure Mid (s : State) (NB : Nat) (q k : Nat) (ys : List Block) (st : State) : Prop where
   q_le : q ≤ n s
   rsp : st.gpr .rsp = SP s
   saved : ∀ r ∈ calleeSaved, st.gpr r = s.gpr r
   rd : st.rd = s.rd
   wr : st.wr = s.wr
   kept : Kept s k st.mem
-  frame : Frame (wR s) s.mem st.mem
+  frame : Frame (wR s NB) s.mem st.mem
   data : blocksAt st.mem (D s) q = ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)
   rest : blocksAt st.mem (dq s q) (n s - q) = blocksAt s.mem (dq s q) (n s - q)
   ctr : blockAt st.mem (C s) = Nat.repeat inc32 q (cb s)
   y : blockAt st.mem (Y s) = ghashFrom (hk s) (y₀ s) ys
 
 section
-variable {M : CtxMode} {s : State} (hp : BP M s)
+variable {M : CtxMode} {s : State} {NB : Nat} (hp : BP M s NB)
 include hp
 
 /-- The slots of the arguments are apart from the other regions written. -/
@@ -66,9 +66,9 @@ theorem kR'_disj : ∀ r ∈ [cR s, yR s, dR s], (kR' s).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (hp.c_s.sub_right (kR'_sub (s := s))).symm
-  · exact (hp.y_s.sub_right (kR'_sub (s := s))).symm
-  · exact (hp.d_s.sub_right (kR'_sub (s := s))).symm
+  · exact (hp.c_s.sub_right ((kR'_sub hp))).symm
+  · exact (hp.y_s.sub_right ((kR'_sub hp))).symm
+  · exact (hp.d_s.sub_right ((kR'_sub hp))).symm
 
 omit hp in
 theorem Kept.frame {k : Nat} {m m' : Mem} (h : Kept s k m) {rs : List Region} (hf : Frame rs m m')
@@ -88,9 +88,9 @@ theorem block_kR' {m m' : Mem} (hf : Frame [kR' s] m m') {p : Addr} (hd : (⟨p,
 
 theorem mid_entry {s₁ : State} (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    Mid s 0 0 [] s₁ := by
-  have hfw : Frame (wR s) s.mem s₁.mem :=
-    hf.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨sR s, by simp, kR'_sub⟩
+    Mid s NB 0 0 [] s₁ := by
+  have hfw : Frame (wR s NB) s.mem s₁.mem :=
+    hf.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨sR s NB, by simp, (kR'_sub hp)⟩
   refine ⟨Nat.zero_le _, hg _ (by decide), fun r hr => hg r ?_, hrd, hwr, hk, hfw, rfl, ?_, ?_, ?_⟩
   · intro e; subst e; simp [calleeSaved] at hr
   · simp only [dq, Nat.mul_zero, BitVec.add_zero, Nat.sub_zero]
@@ -103,11 +103,11 @@ theorem mid_entry {s₁ : State} (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr 
 
 /-- `Mid` through a frame of `scratch`'s slots that keeps the registers but
 `r11`, `r8` and `rax`. -/
-theorem Mid.slots {q k k' : Nat} {ys : List Block} {st st' : State} (h : Mid s q k ys st)
+theorem Mid.slots {q k k' : Nat} {ys : List Block} {st st' : State} (h : Mid s NB q k ys st)
     (hg : ∀ r, r ≠ .r11 → r ≠ .r8 → r ≠ .rax → st'.gpr r = st.gpr r) (hk : Kept s k' st'.mem)
-    (hf : Frame [kR' s] st.mem st'.mem) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : Mid s q k' ys st' := by
-  have hfw : Frame (wR s) st.mem st'.mem :=
-    hf.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨sR s, by simp, kR'_sub⟩
+    (hf : Frame [kR' s] st.mem st'.mem) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : Mid s NB q k' ys st' := by
+  have hfw : Frame (wR s NB) st.mem st'.mem :=
+    hf.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨sR s NB, by simp, (kR'_sub hp)⟩
   refine ⟨h.q_le, by rw [hg _ (by decide) (by decide) (by decide), h.rsp], fun r hr => ?_, hrd.trans h.rd,
     hwr.trans h.wr, hk, h.frame.trans hfw, ?_, ?_, ?_, ?_⟩
   · rw [hg r (fun e => by subst e; simp [calleeSaved] at hr) (fun e => by subst e; simp [calleeSaved] at hr)
@@ -127,8 +127,8 @@ theorem Mid.slots {q k k' : Nat} {ys : List Block} {st st' : State} (h : Mid s q
 
 /-- `rest`: the arguments of the `n mod 16` blocks after the first
 `16 ⌊n / 16⌋`. -/
-theorem rest_ok {q : Nat} (hq : q = n s - n s % 16) {ys : List Block} {st : State} (h : Mid s q 0 ys st) :
-    WP isa (.block rest) st (Mid s q q ys) := by
+theorem rest_ok {q : Nat} (hq : q = n s - n s % 16) {ys : List Block} {st : State} (h : Mid s NB q 0 ys st) :
+    WP isa (.block rest) st (Mid s NB q q ys) := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have a₀ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 8) 8 := by
     rw [h.rd, h.wr, h.rsp]; exact a_in hp
@@ -145,7 +145,7 @@ theorem rest_ok {q : Nat} (hq : q = n s - n s % 16) {ys : List Block} {st : Stat
   rw [toNat_ofNat_of_lt hn, imm_eq (by decide)] at e15
   have esub : BitVec.ofNat 64 (n s) - BitVec.ofNat 64 (n s % 16) = BitVec.ofNat 64 q := by
     rw [hq]; exact ofNat_sub (Nat.mod_le _ _) hn
-  have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
+  have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 1152 → d + 8 ≤ 1152 →
       Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
     fun a d h ha hd => Offset.sep _ h (by omega) (by omega)
   have kp : ∀ d, d + 8 ≤ 32 → ∀ v w : BitVec 64,
