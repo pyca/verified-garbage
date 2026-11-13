@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Rsa.RecoverDet
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Ring
 
 -- separate module: target-independent, shared verbatim by every architecture's square root by words
 
@@ -60,8 +59,8 @@ theorem step_inv {β s r A P q : Nat} (h : s * s + r = A) (hq : IsDigit β s (r 
     (s * β + q) * (s * β + q) + (r * (β * β) + P - (2 * s * β + q) * q) = A * (β * β) + P ∧
       r * (β * β) + P - (2 * s * β + q) * q ≤ 2 * (s * β + q) := by
   obtain ⟨lo, hi⟩ := hq
-  have e1 : (s * β + q) * (s * β + q) = s * s * (β * β) + (2 * s * β + q) * q := by ring
-  have e2 : (2 * s * β + (q + 1)) * (q + 1) = (2 * s * β + q) * q + (2 * (s * β + q) + 1) := by ring
+  have e1 : (s * β + q) * (s * β + q) = s * s * (β * β) + (2 * s * β + q) * q := by grind
+  have e2 : (2 * s * β + (q + 1)) * (q + 1) = (2 * s * β + q) * q + (2 * (s * β + q) + 1) := by grind
   rw [e2] at hi
   rw [e1, ← h, Nat.add_mul (s * s) r (β * β)]
   generalize (2 * s * β + q) * q = K at lo hi ⊢
@@ -78,9 +77,9 @@ theorem digit_exists (β s R : Nat) : ∃ q, IsDigit β s R q := by
     omega
   obtain ⟨q, rfl⟩ : ∃ q, t = s * β + q := ⟨t - s * β, by omega⟩
   refine ⟨q, ?_, ?_⟩
-  · have e : (s * β + q) * (s * β + q) = s * β * (s * β) + (2 * s * β + q) * q := by ring
+  · have e : (s * β + q) * (s * β + q) = s * β * (s * β) + (2 * s * β + q) * q := by grind
     omega
-  · have e : (s * β + q + 1) * (s * β + q + 1) = s * β * (s * β) + (2 * s * β + (q + 1)) * (q + 1) := by ring
+  · have e : (s * β + q + 1) * (s * β + q + 1) = s * β * (s * β) + (2 * s * β + (q + 1)) * (q + 1) := by grind
     omega
 
 /-- The digit is below `β` where `r ≤ 2 s` and `P < β²`. -/
@@ -107,8 +106,8 @@ theorem div_le_digit_succ {β s R q : Nat} (hβ : β ≤ 2 * s) (hd : 0 < 2 * s 
     (hq : R < (2 * s * β + (q + 1)) * (q + 1)) : R / (2 * s * β) ≤ q + 1 := by
   have hsq : (q + 1) * (q + 1) ≤ 2 * s * β :=
     Nat.le_trans (Nat.mul_le_mul hqβ hqβ) (by rw [Nat.mul_comm (2 * s)]; exact Nat.mul_le_mul_left _ hβ)
-  have e : (2 * s * β + (q + 1)) * (q + 1) = 2 * s * β * (q + 1) + (q + 1) * (q + 1) := by ring
-  have e' : 2 * s * β * (q + 2) = 2 * s * β * (q + 1) + 2 * s * β := by ring
+  have e : (2 * s * β + (q + 1)) * (q + 1) = 2 * s * β * (q + 1) + (q + 1) * (q + 1) := by grind
+  have e' : 2 * s * β * (q + 2) = 2 * s * β * (q + 1) + 2 * s * β := by grind
   have : R < 2 * s * β * (q + 2) := by rw [e'] ; rw [e] at hq; omega
   exact Nat.lt_succ_iff.mp ((Nat.div_lt_iff_lt_mul hd).mpr (by rw [Nat.mul_comm]; exact this))
 
@@ -117,7 +116,7 @@ theorem correction_step (a q : Nat) (hq : 1 ≤ q) :
     (a + q) * q = (a + (q - 1)) * (q - 1) + (a + 2 * q - 1) := by
   obtain ⟨p, rfl⟩ : ∃ p, q = p + 1 := ⟨q - 1, by omega⟩
   rw [Nat.add_sub_cancel, show a + 2 * (p + 1) - 1 = a + 2 * p + 1 by omega]
-  ring
+  grind
 
 /-! ## Normalization -/
 
@@ -130,11 +129,11 @@ theorem two_pow_dvd_of_sq : ∀ (c : Nat) {s X : Nat}, s * s = 4 ^ c * X → 2 ^
       · exact e
       · exfalso
         have h1 : s * s % 2 = 1 := by rw [Nat.mul_mod, e]
-        have h2 : s * s = 4 * (4 ^ c * X) := by rw [h]; ring
+        have h2 : s * s = 4 * (4 ^ c * X) := by rw [h]; grind
         omega
     obtain ⟨t, rfl⟩ : ∃ t, s = 2 * t := ⟨s / 2, by omega⟩
     have ht : t * t = 4 ^ c * X := by
-      have : 4 * (t * t) = 4 * (4 ^ c * X) := by rw [show 4 * (t * t) = 2 * t * (2 * t) by ring, h]; ring
+      have : 4 * (t * t) = 4 * (4 ^ c * X) := by rw [show 4 * (t * t) = 2 * t * (2 * t) by grind, h]; grind
       omega
     rw [Nat.pow_succ, Nat.mul_comm (2 ^ c) 2]
     exact Nat.mul_dvd_mul_left 2 (two_pow_dvd_of_sq c ht)

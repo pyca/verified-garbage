@@ -10,7 +10,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 `InvLaw`: for `a` in array 0 and `m` in array `aM`, each `k` words (`k` in
 `r9`), for an odd `m > 1`, `inverse` leaves `gcd(a, m)` in array 1 and
 `inv30 k a m` in array 3, each zero-filled to the stride's `W` words, and
-`x = inv30 k a m` is below `m` with `x a ≡ gcd(a, m) (mod m)`. Its proofs
+`x = inv30 k a m` is below `m` with `x a ≡ gcd(a, m) (mod m)`; `gcdOnly` leaves `gcd(a, m)` alone in
+array 1. Its proofs
 (`InvLoop.lean`) import the algebra of the divsteps' convergence, so callers
 take it as an instance, which the registrations supply, rather than import
 them.
@@ -34,6 +35,12 @@ class InvLaw : Prop where
       (nk σ.mem B W aM k % 2 = 1 → 1 < nk σ.mem B W aM k →
         nk t.mem B W 1 W = Nat.gcd (nk σ.mem B W 0 k) (nk σ.mem B W aM k) ∧
         nk t.mem B W 3 W = VG.Proof.Rsa.Divstep.inv30 k (nk σ.mem B W 0 k) (nk σ.mem B W aM k))
+  gcdK_ok {um : Bool} {σ : State} {B : BitVec 32} {Z W k N : Nat} (h : Gk σ B Z W k N) (hN15 : 15 ≤ N)
+      (hN : N ≤ 256) (hW8 : 8 ≤ W) :
+    WP isa (VG.Impl.Rsa.Arm.Keys.gcdOnly um) σ fun t => Gk t B Z W k N ∧ Keep B W invArrs invSlots σ.mem t.mem ∧
+      Rest (.r6 :: opRegs) σ t ∧
+      (nk σ.mem B W aM k % 2 = 1 → 1 < nk σ.mem B W aM k →
+        nk t.mem B W 1 W = Nat.gcd (nk σ.mem B W 0 k) (nk σ.mem B W aM k))
   inv30_spec {n a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) (ha : a < 2 ^ (32 * n)) (hmn : m < 2 ^ (32 * n)) :
     (m : Int) ∣ (VG.Proof.Rsa.Divstep.inv30 n a m : Int) * a - Nat.gcd a m ∧
       VG.Proof.Rsa.Divstep.inv30 n a m < m

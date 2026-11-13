@@ -335,9 +335,21 @@ def finish : Prog isa := seqs [
   sub1 bT2 bZ bA1, .block fSign, sel1 bA2 bA1 bT2,
   sub1 bT2 bZ bP, sub1 bT1 bA2 bT2, .block (signTop bA2), sel1 3 bA2 bT1 true]
 
+/-! ## The gcd alone -/
+
+/-- A batch of the gcd: the divsteps and the pass over `(f, g)`, without `(d, e)`. -/
+def batchG (um : Bool := false) : Prog isa := .seq divsteps (seqs [fgPass um, .block [.subs .r6 .r6 (.imm 32)]])
+
+/-- `[1] = |f|`, `k` words of zeros to the width. -/
+def finishG : Prog isa := seqs [zeroW 1, sub1 bT1 bZ bF, .block fSign, sel1 1 bF bT1 true]
+
 end Inv
 
 open VG.Impl.Rsa.Arm.Keys.Inv in
 def inverse (um : Bool := false) : Prog isa := seqs [init, .loop (batch um) .ne, finish]
+
+open VG.Impl.Rsa.Arm.Keys.Inv in
+/-- `gcd(a, m)` alone into array 1: `inverse` without `(d, e)` and its end. -/
+def gcdOnly (um : Bool := false) : Prog isa := seqs [init, .loop (batchG um) .ne, finishG]
 
 end VG.Impl.Rsa.Arm.Keys

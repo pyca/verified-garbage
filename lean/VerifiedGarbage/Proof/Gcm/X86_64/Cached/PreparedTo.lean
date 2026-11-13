@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZC.Loop
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZC
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
 import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
@@ -28,7 +30,6 @@ open VG.Proof.Gcm.X86_64.StitchZR (ctx_keep powP48_ok)
 open VG.Proof.Gcm.X86_64.StitchZRTo (setupPTo_ok)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
 open VG.Impl.Gcm.X86_64.StitchZ (tab)
-open VG.Impl.Gcm.X86_64.StitchZHTo (bigPTo)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Spec.Gcm (Block)
 
@@ -52,13 +53,14 @@ theorem setup_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
     (by rw [hR.a.r10, hR.a.rdi])) fun t ⟨hK, hf⟩ => ?_
   exact ⟨P, ready_frame hR hf, hpw, hK⟩
 
-theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+/-- `StitchZH.bigS`, out of place. -/
+theorem bigSTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
-        FinOk48 (hk s₀) T) (h96 : 96 ≤ nb s₀) {s : State}
+        FinOk48 (hk s₀) T) {s : State}
     (hI : EInvTo s₀ P 1 s)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa bigPTo s fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa (Impl.Gcm.X86_64.StitchZH.bigS true) s fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hP' := hp.toPrepared
   have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (by decide) (by decide) (by decide)
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -81,9 +83,9 @@ theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
   have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
-  exact (bigRestTo_ok hp hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
-    hA₁ hv pm g₁
+  exact WP.mono (StitchZC.bigSelM_ok hp.toM hf hT (fun k l => by simp only [T, ↓reduceIte]) (hI.toM hp)
+    (hA₁.toM hp) hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
-    (hCache.keep hh₁ (hA₁.keys hp)))
+    (hCache.keep hh₁ (hA₁.keys hp))) fun _ ⟨e, h, hk⟩ => ⟨e, h.toTo, hk⟩
 
 end VG.Proof.Gcm.X86_64.StitchZHTo

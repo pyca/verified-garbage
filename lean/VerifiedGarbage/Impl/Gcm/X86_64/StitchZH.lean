@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZC
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchToDec
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
@@ -33,7 +34,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
-open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP bigMinPE)
+open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
@@ -63,7 +64,18 @@ def bigRest (ld : Bool := false) : Prog isa :=
   .seq (batch 4 (fun _ => []) false ld) (.seq (batch 8 (fun _ => []) false ld)
     (.seq (.loop (body48 ld) .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
 
-def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (bigRest ld)
+/-- At least 48 blocks, the first group encrypted: the powers of 48 blocks,
+then the groups after the first, all but the last hashed. Below
+`StitchZ.bigMinPE` blocks, where `bigRest` is not worth its start and its
+end (see there), each is hashed from registers between the rounds of the
+next (`StitchZC.bigRestC`), which measured faster there than `body`'s loop
+on Emerald Rapids, Zen 4 and Zen 5. From `bigMinPE` blocks on they are
+hashed from the output, three groups behind (`bigRest`): on Zen 4 and
+Zen 5 that is the faster for long messages (by 3 to 10% at 16 KiB), its
+multiplications never waiting for a group still being encrypted. -/
+def bigS (ld : Bool := false) : Prog isa :=
+  .seq (.block powP48)
+    (.seq (.block [.alu .cmp .r9 (.imm StitchZ.bigMinPE)]) (.ite .b (StitchZC.bigRestC ld) (bigRest ld)))
 
 def bigDP (ix : Bool := false) : Prog isa :=
   .seq (.block powP48) (.seq (.loop (dbody48 ix) .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
@@ -180,13 +192,14 @@ def rem : Prog isa := remG [] .rdx
 def tailR (r : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .e (.block (storeCtr ++ lastG ++ storeY)) r)
 
-/-- Encryption, for any number of blocks from 16 on: the blocks after the
-last group, if any, by `rem`. -/
+/-- Encryption, for any number of blocks from 16 on: from 48 on, the
+groups after the first three at a time (`bigS`); the blocks after the last
+group, if any, by `rem`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
-        (.seq (.ite .b (.block []) bigP)
+      (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
+        (.seq (.ite .b (.block []) bigS)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem))))))
 
