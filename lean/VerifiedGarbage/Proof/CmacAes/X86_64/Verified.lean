@@ -223,7 +223,7 @@ section
 The code before the call and after it is checked by the taint analysis, from
 the registers the correctness proof pins (the arguments, then `rbx` and
 `rbp`); the call of `vg_aes_ctr32` is constant time by its own proof
-(`ctr_rel`).
+(`SubCall.rel`, from `ctr_rel` or `ctr_relF`).
 -/
 
 namespace VG.Proof.CmacAes.X86_64
@@ -231,35 +231,14 @@ namespace VG.Proof.CmacAes.X86_64
 open VG VG.X86_64 VG.Impl.CmacAes.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
-/-- What is known between the code before the call and the call. -/
-structure SMid (s₀ : State) (W K S : Addr) (R : Nat) (s : State) : Prop where
-  pre : CallPre s W (S + BitVec.ofNat 64 2048) K S R
-  rbx : s.gpr .rbx = K
-  rbp : s.gpr .rbp = S
-  rsp : s.gpr .rsp = s₀.gpr .rsp
-
-theorem smid_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S R) :
-    WP isa (.block subkeysPre) s₀ (SMid s₀ W K S R) := by
-  have sw := hp.scr_wrap
-  have kw := hp.k_wrap
-  have inS (d : Nat) (h : d + 8 ≤ 2176) : InRegions s₀.wr (s₀.gpr .rcx + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr, hp.rcx]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega))
-  have inK (d : Nat) (h : d + 8 ≤ 32) : InRegions s₀.wr (s₀.gpr .rdx + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr, hp.rdx]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega))
-  obtain ⟨s₁, run₁, rdi₁, rsi₁, rdx₁, rcx₁, r8₁, r9₁, rbx₁, rbp₁, cs₁, mem₁, rd₁, wr₁⟩ :=
-    subkeysPre_ok s₀ (inS _ (by decide)) (inS _ (by decide)) (inS _ (by decide)) (inS _ (by decide))
-      (inK _ (by decide)) (inK _ (by decide))
-  have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := cs₁ .rsp (by simp [calleeSaved]) (by decide) (by decide)
-  exact WP.of_runBlock ⟨s₁, run₁,
-    callPre_of hp rdi₁ rsi₁ rdx₁ rcx₁ r8₁ r9₁ rsp₁ mem₁ rd₁ wr₁, by rw [rbx₁, hp.rdx], by rw [rbp₁, hp.rcx], rsp₁⟩
-
-theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : subkeysX86_64.pre s₀)
-    (h0' : subkeysX86_64.pre s₀') (hq : subkeysX86_64.pub s₀ s₀') :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (subkeys v.callee) fun _ _ => True := by
-  obtain ⟨q1, q2, q3, q4, q5⟩ := hq
-  have hp := SPre.of h0
-  have hp' : SPre s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat := by
-    rw [q1, q2, q3, q4]; exact SPre.of h0'
+theorem subkeys_relG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : SubCall c Z X) {s₀ s₀' : State}
+    {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S R (Z S)) (hp' : SPre s₀' W K S R (Z S))
+    (q : s₀.gpr .rsp = s₀'.gpr .rsp) :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (subkeys c) fun _ _ => True := by
+  have q1 : s₀.gpr .rdi = s₀'.gpr .rdi := by rw [hp.rdi, hp'.rdi]
+  have q2 : s₀.gpr .rsi = s₀'.gpr .rsi := BitVec.eq_of_toNat_eq (by rw [hp.rsi, hp'.rsi])
+  have q3 : s₀.gpr .rdx = s₀'.gpr .rdx := by rw [hp.rdx, hp'.rdx]
+  have q4 : s₀.gpr .rcx = s₀'.gpr .rcx := by rw [hp.rcx, hp'.rcx]
   obtain ⟨_, hA⟩ : ∃ h, (taint.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) (.block subkeysPre) h).isSome =
       true := ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ h, (taint.check (Taint.ofRegs [.rbx, .rbp]) (.block subkeysPost) h).isSome = true :=
@@ -270,23 +249,19 @@ theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : subkeysX86_64.pre
       refine Taint.agree_ofRegs fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
-    (F₁ := SMid s₀ _ _ _ _) (F₂ := SMid s₀' _ _ _ _) fun a b h => by
+    (F₁ := SMid s₀ W K S R) (F₂ := SMid s₀' W K S R) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨smid_wp hp, smid_wp hp'⟩
-  have c := (ctr_rel v (P := fun s₁ s₂ =>
-      SMid s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat s₁ ∧
-      SMid s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat s₂) fun s₁ s₂ h =>
-      ⟨_, _, _, _, _, h.1.pre, h.2.pre, by rw [h.1.rsp, h.2.rsp, q5]⟩).wp
-    (F₁ := fun (s : State) => s.gpr .rbx = s₀.gpr .rdx ∧ s.gpr .rbp = s₀.gpr .rcx)
-    (F₂ := fun (s : State) => s.gpr .rbx = s₀.gpr .rdx ∧ s.gpr .rbp = s₀.gpr .rcx) fun s₁ s₂ h =>
-      ⟨WP.mono (ctr_call v h.1.pre) fun _ hc =>
+  have c := (T.rel (P := fun s₁ s₂ => SMid s₀ W K S R s₁ ∧ SMid s₀' W K S R s₂) hp hp' q fun _ _ h => h).wp
+    (F₁ := fun (s : State) => s.gpr .rbx = K ∧ s.gpr .rbp = S)
+    (F₂ := fun (s : State) => s.gpr .rbx = K ∧ s.gpr .rbp = S) fun s₁ s₂ h =>
+      ⟨WP.mono (T.ok hp h.1) fun _ hc =>
         ⟨by rw [hc.saved .rbx (by simp [calleeSaved]), h.1.rbx],
           by rw [hc.saved .rbp (by simp [calleeSaved]), h.1.rbp]⟩,
-       WP.mono (ctr_call v h.2.pre) fun _ hc =>
+       WP.mono (T.ok hp' h.2) fun _ hc =>
         ⟨by rw [hc.saved .rbx (by simp [calleeSaved]), h.2.rbx],
           by rw [hc.saved .rbp (by simp [calleeSaved]), h.2.rbp]⟩⟩
   have b := RelCT.taint (A := taint)
-    (P := fun s₁ s₂ => (s₁.gpr .rbx = s₀.gpr .rdx ∧ s₁.gpr .rbp = s₀.gpr .rcx) ∧
-      (s₂.gpr .rbx = s₀.gpr .rdx ∧ s₂.gpr .rbp = s₀.gpr .rcx)) _
+    (P := fun s₁ s₂ => (s₁.gpr .rbx = K ∧ s₁.gpr .rbp = S) ∧ (s₂.gpr .rbx = K ∧ s₂.gpr .rbp = S)) _
     (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -294,6 +269,27 @@ theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : subkeysX86_64.pre
       · rw [h.1.2, h.2.2]) hB
   exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((c.mono (fun _ _ h => h) fun _ _ h => h.2).seq b)
+
+theorem subkeys_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : subkeysX86_64.pre s₀)
+    (h0' : subkeysX86_64.pre s₀') (hq : subkeysX86_64.pub s₀ s₀') :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (subkeys v.callee) fun _ _ => True := by
+  obtain ⟨q1, q2, q3, q4, q5⟩ := hq
+  have hp' : SPre s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat ⟨s₀.gpr .rcx, 2176⟩ := by
+    rw [q1, q2, q3, q4]; exact SPre.of h0'
+  exact subkeys_relG (SubCall.base v) (SPre.of h0) hp' q5
+
+theorem subkeysF_rel (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s₀ s₀' : State}
+    (h0 : subkeysX86_64F.pre s₀) (h0' : subkeysX86_64F.pre s₀') (hq : subkeysX86_64F.pub s₀ s₀') :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (subkeys v.callee) fun _ _ => True := by
+  obtain ⟨q1, q2, q3, q4, q5⟩ := hq
+  have hp' : SPre s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat
+      ⟨s₀.gpr .rcx + BitVec.ofNat 64 2048, 32⟩ := by
+    rw [q1, q2, q3, q4]; exact SPre.ofF h0'
+  exact subkeys_relG (SubCall.free v f) (SPre.ofF h0) hp' q5
+
+theorem subkeysF_ct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
+    ConstantTime isa subkeysX86_64F.pre subkeysX86_64F.pub (subkeys v.callee) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (subkeysF_rel v f h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem subkeys_ct (v : Ctr32Impl) :
     ConstantTime isa subkeysX86_64.pre subkeysX86_64.pub (subkeys v.callee) :=
@@ -423,6 +419,12 @@ theorem update_correct (v : Ctr32Impl) (s : State) (hs : updateX86_64.pre s) :
 theorem subkeys_correct (v : Ctr32Impl) (s : State) (hs : subkeysX86_64.pre s) :
     ∃ t s', Exec isa (subkeys v.callee) s t s' ∧ abiPreserved s s' ∧ subkeysX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := subkeys_wp v hs
+  exact ⟨t, s', he, abiPreserved_of_exec (subkeys_mx v) he hg, hp⟩
+
+theorem subkeysF_correct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (s : State)
+    (hs : subkeysX86_64F.pre s) :
+    ∃ t s', Exec isa (subkeys v.callee) s t s' ∧ abiPreserved s s' ∧ subkeysX86_64F.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := subkeysF_wp v f hs
   exact ⟨t, s', he, abiPreserved_of_exec (subkeys_mx v) he hg, hp⟩
 
 theorem finalizeF_correct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (s : State)

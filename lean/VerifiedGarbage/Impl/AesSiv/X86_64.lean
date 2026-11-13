@@ -32,7 +32,9 @@ key context, `[256, 2432)` the working space of the functions called, and
 `[2560, 2576)` S2V's state `D`.
 
 * `init` expands `K1` into the context, derives its subkeys after it and
-  expands `K2` after them.
+  expands `K2` after them. Over implementations of AES that need no working
+  space (`initF`), its scratch buffer is only the 72 bytes of the registers it
+  saves and of `vg_cmac_aes_subkeys`'s counter block and saved registers.
 * `encrypt` and `decrypt` start S2V with `D = AES-CMAC(K1, <zero>)`
   (`vg_cmac_aes_finalize` of the zero block from a zero state), then, for
   each component `S` of associated data, compute `AES-CMAC(K1, S)` into the
@@ -151,10 +153,14 @@ def initPre : List Instr :=
    .mov .r13 (.reg .rcx), .mov .r14 (.reg .rsi), .shift .shr .r14 3, .alu .add .r14 (imm 6),
    .mov .rsi (.reg .rbp), .alu .add .rcx (imm csOff)] : List Instr)
 
-/-- The arguments of `vg_cmac_aes_subkeys(schedule = rdi, rounds = rsi, subkeys = rdx, scratch = rcx)`. -/
-def initMid₁ : List Instr :=
+/-- The arguments of `vg_cmac_aes_subkeys(schedule = rdi, rounds = rsi, subkeys = rdx, scratch = rcx)`,
+its scratch buffer at `x` (sign-extended) from the working space. -/
+def initMid₁At (x : BitVec 32) : List Instr :=
   [.mov .rdi (.reg .r12), .mov .rsi (.reg .r14), .mov .rdx (.reg .r12), .alu .add .rdx (imm 240),
-   .mov .rcx (.reg .r13), .alu .add .rcx (imm csOff)]
+   .mov .rcx (.reg .r13), .alu .add .rcx (.imm x)]
+
+/-- … at `csOff`, with the working space of the functions called. -/
+def initMid₁ : List Instr := initMid₁At (BitVec.ofNat 32 csOff)
 
 /-- The arguments of `vg_aes_expand_key_scratch` for `K2`. -/
 def initMid₂ : List Instr :=
@@ -164,12 +170,28 @@ def initMid₂ : List Instr :=
 /-- The registers restored, with `r13` (restored last) the working space. -/
 def initPost : List Instr := restoreCode .r13 initRestored
 
-def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
+/-- `init`, with `vg_cmac_aes_subkeys`'s scratch buffer at `x` from the working space. -/
+def initAt (x : BitVec 32) (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block initPre)
     (.seq (.call e.name e.code)
-      (.seq (.block initMid₁)
+      (.seq (.block (initMid₁At x))
         (.seq (.call ("vg_cmac_aes_subkeys" ++ sfx) (Impl.CmacAes.X86_64.subkeys c))
           (.seq (.block initMid₂) (.seq (.call e.name e.code) (.block initPost))))))
+
+def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa := initAt (BitVec.ofNat 32 csOff) e c sfx
+
+/-- Where `initF` puts `vg_cmac_aes_subkeys`'s scratch buffer, from the working
+space less `saveOff`: its counter block and the registers it saves, at
+`2048` from there, then follow ours. -/
+def initFOff : BitVec 32 := BitVec.ofInt 32 ((saveOff : Int) + 40 - 2048)
+
+/-- `init` over implementations of `vg_aes_ctr32` and `vg_aes_expand_key_scratch`
+that need no working space, given `scratch - saveOff`: our saved registers
+are then the first 40 bytes of the scratch buffer, and `vg_cmac_aes_subkeys`,
+given a scratch buffer at `initFOff` from there, writes only the 32 bytes
+after them, so that our scratch buffer is those 72 bytes. -/
+def initF (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block [.alu .sub .rcx (imm saveOff)]) (initAt initFOff e c sfx)
 
 /-! ## S2V's first state -/
 

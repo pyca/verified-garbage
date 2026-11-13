@@ -113,8 +113,6 @@ x86_64 vg_aes_siv_decrypt_aesni
 x86_64 vg_aes_siv_encrypt
 x86_64 vg_aes_siv_encrypt_aesni
 x86_64 vg_aes_siv_init
-x86_64 vg_aes_siv_init_aesni
-x86_64 vg_aes_siv_init_vaes
 x86_64 vg_camellia_ctr_final
 x86_64 vg_cast5_cbc_decrypt_chained
 x86_64 vg_cast5_cbc_encrypt_chained
@@ -155,8 +153,6 @@ x86_64 vg_cmac_aes_absorb
 x86_64 vg_cmac_aes_absorb_aesni
 x86_64 vg_cmac_aes_finish
 x86_64 vg_cmac_aes_init
-x86_64 vg_cmac_aes_init_aesni
-x86_64 vg_cmac_aes_init_vaes
 x86_64 vg_ecdsa_brainpoolp256r1_sign
 x86_64 vg_ecdsa_brainpoolp384r1_sign
 x86_64 vg_ecdsa_brainpoolp512r1_sign

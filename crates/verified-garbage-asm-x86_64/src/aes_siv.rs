@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_siv_init_vaes` requires (`Artifact.features`).
-pub const VG_AES_SIV_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+pub const VG_AES_SIV_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
 
 /// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -16,18 +18,18 @@ pub const VG_AES_SIV_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `ctx` must be valid for reads and writes of 512 bytes.
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `ssse3`, `avx`, `avx2` and `vaes` target features.
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `aes`, `ssse3`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
+        r#".base64 "SI1kJKhIieFIg8EISIHpoAAAAEiJmaAAAABIiamoAAAATImhsAAAAEyJqbgAAABMibHAAAAASIn7SIn1SNHtSYnUSYnNSYn2ScHuA0mDxgZIie5IgcEAAQAA"
 call {vg_aes_expand_key_scratch_aesni}
-.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
+.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwcj4//8="
 call {vg_cmac_aes_subkeys_vaes}
 .base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
 call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
+.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjWQkWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSYxf5/RCRIxf5/RCQoxf5/RCQITIkcJEiNZCRoMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
@@ -41,24 +43,26 @@ pub const VG_AES_SIV_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 512 bytes.
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
+        r#".base64 "SI1kJKhIieFIg8EISIHpoAAAAEiJmaAAAABIiamoAAAATImhsAAAAEyJqbgAAABMibHAAAAASIn7SIn1SNHtSYnUSYnNSYn2ScHuA0mDxgZIie5IgcEAAQAA"
 call {vg_aes_expand_key_scratch_aesni}
-.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
+.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwcj4//8="
 call {vg_cmac_aes_subkeys_aesni}
 .base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
 call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
+.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjWQkWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSY8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRoMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,

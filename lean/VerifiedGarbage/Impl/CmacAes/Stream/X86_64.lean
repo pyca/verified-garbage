@@ -41,7 +41,10 @@ called, and `[2176, 2224)` our caller's callee-saved registers.
   the `h` bytes held back as the last bytes. Over an implementation of
   `vg_aes_ctr32` that needs no working space (`finishF`), its scratch buffer
   is only the 16 bytes of `vg_cmac_aes_finalize`'s counter block, which it
-  passes as `scratch - 2048`.
+  passes as `scratch - 2048`. `init` over such implementations (`initF`)
+  is given `scratch - 2048` the same way, and its scratch buffer is the 152
+  bytes from `vg_cmac_aes_subkeys`'s counter block to the end of its saved
+  registers.
 
 Only the pointers, the key length, `count` and `len` can affect timing: the
 branches are on them, and so are the number of bytes copied and of blocks
@@ -87,6 +90,14 @@ def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
     (.seq (.call e.name e.code)
       (.seq (.block initMid) (.seq (.call ("vg_cmac_aes_subkeys" ++ sfx) (Impl.CmacAes.X86_64.subkeys c))
         (.block initPost))))
+
+/-- `init` over implementations of `vg_aes_ctr32` and `vg_aes_expand_key_scratch`
+that need no working space, given `scratch - 2048`: `vg_cmac_aes_subkeys` then
+writes only its counter block and the registers it saves, at
+`scratch + 2048`, so that our scratch buffer is the 152 bytes from there to
+the end of our saved registers. -/
+def initF (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block [.alu .sub .rcx (.imm (BitVec.ofNat 32 2048))]) (init e c sfx)
 
 /-! ## Copying bytes -/
 

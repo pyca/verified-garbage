@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Init
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Init
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.AbsorbCorrect
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
@@ -699,6 +699,22 @@ theorem finish_correct (v : Ctr32Impl) (s : State) (hs : finishX86_64.pre s) :
   obtain ⟨t, s', he, hg, hp⟩ := finish_wp v hs
   exact ⟨t, s', he, abiPreserved_of_exec (finish_mx v) he hg, hp⟩
 
+theorem initF_mx (v : Ctr32Impl) :
+    (initF ekF v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have h : ekF.code.allInstrs (fun i => !loadsMxcsr i) = true := Ctr32Impl.aesni.expandMxcsr
+  simp only [initF, init, Code.allInstrs, h, subkeys_mx v]; decide +kernel
+
+theorem initF_spSafe (v : Ctr32Impl) :
+    (initF ekF v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h : ekF.code.all (fun i => !X86_64.isa.writesSp i) = true := Ctr32Impl.aesni.expandSpSafe
+  simp only [initF, init, Code.all, h, subkeys_spSafe v]; decide +kernel
+
+theorem initF_correct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (s : State)
+    (hs : initX86_64F.pre s) :
+    ∃ t s', Exec isa (initF ekF v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ initX86_64F.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := initF_wp v f hs
+  exact ⟨t, s', he, abiPreserved_of_exec (initF_mx v) he hg, hp⟩
+
 theorem finishF_mx (v : Ctr32Impl) : (finishF v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [finishF, finPreF, lastLen, Code.allInstrs, finalize_mx v]; decide +kernel
 
@@ -729,6 +745,28 @@ theorem init_verified (v : Ctr32Impl) :
   Verified.of_correct (init_correct v) (init_ct v) (by
     sig_implies [initScratchContract, initScratchSig, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost, initX86_64, X86_64.abi,
       X86_64.argRegs] [initSat] using initSat)
+
+/-- `vg_cmac_aes_init` with `scratch: *mut [u64; 19]`, for `initF`. -/
+def initScratchSigF : Sig where
+  params := [("state", .array true .u64 38), ("key", .slice false .u8 "key_len"),
+    ("scratch", .array true .u64 19)]
+
+/-- `aesInitContract`, whatever `scratch` is (of 19 words). -/
+def initScratchContractF {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  initScratchSigF.contract A
+    (pre := fun state key keyLen _scratch => Spec.Cmac.aesInitPre A.ptrBits state key keyLen)
+    (post := fun state key keyLen _scratch => Spec.Cmac.aesInitPost A.ptrBits state key keyLen)
+    (stack := stack)
+
+/-- A state satisfying `vg_cmac_aes_init`'s precondition, with 152 bytes of
+working space. -/
+def initSatF : State := { initSat with wr := [⟨0x1000, 304⟩, ⟨0x4000, 152⟩] }
+
+theorem initF_verified (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
+    Verified X86_64.target (initF ekF v.callee v.suffix) (initScratchContractF X86_64.abi 16) :=
+  Verified.of_correct (initF_correct v f) (initF_ct v f) (by
+    sig_implies [initScratchContractF, initScratchSigF, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost,
+      initX86_64F, initX86_64, X86_64.abi, X86_64.argRegs] [initSatF, initSat] using initSatF)
 
 /-- A state satisfying `vg_cmac_aes_absorb`'s precondition (with no data). -/
 def absorbSat : State where
