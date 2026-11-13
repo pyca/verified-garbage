@@ -232,6 +232,29 @@ theorem ctx_gh {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) {a n : Nat} (ha : a + n 
 theorem stk_gh {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) :
     (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 512, g⟩ := L.kw.sub_right (ghSub hg)
 
+omit L in
+/-- `vg_ghash`'s working space is within the part of `W` from 512 on. -/
+theorem gh_hi {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) :
+    Region.Sub ⟨W + BitVec.ofNat 64 512, g⟩ ⟨W + BitVec.ofNat 64 512, N - 512⟩ := by
+  rcases hg with rfl | h
+  · intro a ha; simp only [Region.Contains] at ha; omega
+  · exact Region.sub_prefix (by omega)
+
+omit L in
+/-- The part of `W` from 512 on (none if `W` is shorter) is within `W`. -/
+theorem hiSub : Region.Sub ⟨W + BitVec.ofNat 64 512, N - 512⟩ ⟨W, N⟩ := by
+  by_cases h5 : 512 ≤ N
+  · exact wSub (by omega)
+  · intro a ha; simp only [Region.Contains] at ha; omega
+
+/-- Parts of `W` before 512 are apart from the part from 512 on (none if
+`W` is shorter). -/
+theorem w_hi {d k : Nat} (h : d + k ≤ 512) (hk : d + k ≤ N) :
+    (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, N - 512⟩ := by
+  by_cases h5 : 512 ≤ N
+  · exact L.w_w (.inl h) hk (by omega)
+  · rw [show N - 512 = 0 by omega]; exact disj_empty
+
 end Lay
 
 namespace Perm

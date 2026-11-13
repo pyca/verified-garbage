@@ -1,14 +1,18 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -34,30 +38,32 @@ namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
 open VG.Spec.Gcm (Block blockAt)
 
-/-- The lengths and rounds kept in `W`. -/
-def FinS (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (s : State) : Prop :=
-  Env Ctx St W SP s ∧ RoundsAt s.mem W R ∧ s.mem.readW (W + BitVec.ofNat 64 184) 64 = aL ∧
+/-- The lengths and rounds kept in `W` (of `N` bytes). -/
+def FinS (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (N : Nat) (s : State) : Prop :=
+  Env Ctx St W SP s N ∧ RoundsAt s.mem W R ∧ s.mem.readW (W + BitVec.ofNat 64 184) 64 = aL ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = tL
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
-include L
+variable (v : GcmImpl) {Ctx St W SP : Addr} {N gs : Nat} [G : GhFits v N gs] (L : Lay Ctx St W SP N)
+include G L
 
-omit L in
-theorem FinS.keep {R : Nat} {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St W SP R aL tL s)
+omit G L in
+theorem FinS.keep {R : Nat} {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St W SP R aL tL N s)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : FinS Ctx St W SP R aL tL s' :=
+    (hwr : s'.wr = s.wr) : FinS Ctx St W SP R aL tL N s' :=
   ⟨h.1.keep hg hrd hwr, by rw [hm]; exact h.2.1, by rw [hm]; exact h.2.2.1, by rw [hm]; exact h.2.2.2⟩
 
-theorem FinS.frame {R : Nat} {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St W SP R aL tL s)
-    (he : Env Ctx St W SP s') (hf : Frame (tFrame St W SP 16) s.mem s'.mem) : FinS Ctx St W SP R aL tL s' := by
-  have dT : ∀ d, 176 ≤ d → d + 8 ≤ 512 → ∀ r ∈ tFrame St W SP 16, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
+omit G in
+theorem FinS.frame (hN : 200 ≤ N) {R : Nat} {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St W SP R aL tL N s)
+    (hg : gs = 0 ∨ 512 + gs ≤ N) (he : Env Ctx St W SP s' N) (hf : Frame (tFrame St W SP 16 gs) s.mem s'.mem) :
+    FinS Ctx St W SP R aL tL N s' := by
+  have dT : ∀ d, 176 ≤ d → d + 8 ≤ 200 → ∀ r ∈ tFrame St W SP 16 gs, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
     intro d h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact L.w_w (.inr (by omega)) (by omega) L.le
+    · exact L.w_gh hg (by omega) (by omega)
     · exact (L.stk_w (by omega)).symm
   refine ⟨he, rounds_frame hf (dT 176 (by decide) (by decide)) h.2.1, ?_, ?_⟩
   · rw [hf.readW (r := ⟨W + BitVec.ofNat 64 184, 8⟩) (Region.contains_self _ _) (dT 184 (by decide) (by decide))
@@ -65,30 +71,31 @@ theorem FinS.frame {R : Nat} {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St
   · rw [hf.readW (r := ⟨W + BitVec.ofNat 64 192, 8⟩) (Region.contains_self _ _) (dT 192 (by decide) (by decide))
       (by decide), h.2.2.2]
 
-omit L in
-theorem env_agree {s₁ s₂ : State} (e₁ : Env Ctx St W SP s₁) (e₂ : Env Ctx St W SP s₂) :
+omit G L in
+theorem env_agree {s₁ s₂ : State} (e₁ : Env Ctx St W SP s₁ N) (e₂ : Env Ctx St W SP s₂ N) :
     ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s₁.gpr r = s₂.gpr r :=
   EnvAgree.regs (rs := []) ⟨e₁, e₂, fun _ h => by cases h⟩
 
 /-- After loading the lengths. -/
-def FinA (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (s : State) : Prop :=
-  FinS Ctx St W SP R aL tL s ∧ s.zf = some (decide (tL.toNat = 0)) ∧ s.gpr .rax = aL ∧ s.gpr .rbx = tL
+def FinA (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (N : Nat) (s : State) : Prop :=
+  FinS Ctx St W SP R aL tL N s ∧ s.zf = some (decide (tL.toNat = 0)) ∧ s.gpr .rax = aL ∧ s.gpr .rbx = tL
 
 /-- With the length of the buffered input in `rbx` (modulo 16 if `k`). -/
-def FinB (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (k : Bool) (s : State) : Prop :=
-  FinS Ctx St W SP R aL tL s ∧ s.gpr .rbx =
+def FinB (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (k : Bool) (N : Nat) (s : State) : Prop :=
+  FinS Ctx St W SP R aL tL N s ∧ s.gpr .rbx =
     if k then BitVec.ofNat 64 ((if tL = 0 then aL else tL).toNat % 16) else if tL = 0 then aL else tL
 
 /-- With the lengths for the tag. -/
-def FinD (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (s : State) : Prop :=
-  FinS Ctx St W SP R aL tL s ∧ s.gpr .rbx = aL ∧ s.gpr .rbp = tL
+def FinD (Ctx St W SP : Addr) (R : Nat) (aL tL : BitVec 64) (N : Nat) (s : State) : Prop :=
+  FinS Ctx St W SP R aL tL N s ∧ s.gpr .rbx = aL ∧ s.gpr .rbp = tL
 
-omit L in
-theorem finA_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP R aL tL s) :
+omit G L in
+theorem finA_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP R aL tL N s)
+    (hN : 200 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
     WP isa (.block [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)),
-      .alu .test .rbx (.reg .rbx)]) s (FinA Ctx St W SP R aL tL) := by
-  have r₁ := h.1.perm.wR (show 192 + 8 ≤ 2560 by decide)
-  have r₂ := h.1.perm.wR (show 184 + 8 ≤ 2560 by decide)
+      .alu .test .rbx (.reg .rbx)]) s (FinA Ctx St W SP R aL tL N) := by
+  have r₁ := h.1.perm.wR (show 192 + 8 ≤ N by omega) hN'
+  have r₂ := h.1.perm.wR (show 184 + 8 ≤ N by omega) hN'
   obtain ⟨s₁, run₁, hbx₁, hax₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)), .alu .test .rbx (.reg .rbx)] s =
         some s₁ ∧
@@ -107,18 +114,18 @@ theorem finA_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)
 
-omit L in
+omit G L in
 theorem finSel_rel {R : Nat} {aL tL : BitVec 64} :
-    RelCT isa (fun s₁ s₂ => True ∧ FinA Ctx St W SP R aL tL s₁ ∧ FinA Ctx St W SP R aL tL s₂)
+    RelCT isa (fun s₁ s₂ => True ∧ FinA Ctx St W SP R aL tL N s₁ ∧ FinA Ctx St W SP R aL tL N s₂)
       (.ite .e (.block [.mov .rbx (.reg .rax)]) (.block []))
-      fun s₁ s₂ => FinB Ctx St W SP R aL tL false s₁ ∧ FinB Ctx St W SP R aL tL false s₂ := by
+      fun s₁ s₂ => FinB Ctx St W SP R aL tL false N s₁ ∧ FinB Ctx St W SP R aL tL false N s₂ := by
   refine rel_ite_e (fun _ _ h => by rw [h.2.1.2.1, h.2.2.2.1]) ?_ ?_
   · by_cases h0 : tL = 0
     swap
     · exact RelCT.of_false fun _ _ h => by
         have := h.1.2.1.2.1.symm.trans h.2; simp at this; exact h0 (BitVec.eq_of_toNat_eq (by simpa using this))
-    have hM : ∀ s, FinA Ctx St W SP R aL tL s → WP isa (.block [.mov .rbx (.reg .rax)]) s
-        (FinB Ctx St W SP R aL tL false) :=
+    have hM : ∀ s, FinA Ctx St W SP R aL tL N s → WP isa (.block [.mov .rbx (.reg .rax)]) s
+        (FinB Ctx St W SP R aL tL false N) :=
       fun s h => WP.run (Q := fun s₂ => s₂ = s.setReg .rbx (s.gpr .rax)) ⟨_, by xrun [], rfl⟩ fun s₂ e => by
         subst e
         exact ⟨h.1.keep (fun r hr => by
@@ -133,9 +140,9 @@ theorem finSel_rel {R : Nat} {aL tL : BitVec 64} :
     exact RelCT.block_nil fun _ _ h => ⟨⟨h.1.2.1.1, by rw [h.1.2.1.2.2.2]; simp only [h0, ↓reduceIte, Bool.false_eq_true]⟩,
       ⟨h.1.2.2.1, by rw [h.1.2.2.2.2.2]; simp only [h0, ↓reduceIte, Bool.false_eq_true]⟩⟩
 
-omit L in
-theorem finMod_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinB Ctx St W SP R aL tL false s) :
-    WP isa (.block [.alu .and .rbx (imm 15)]) s (FinB Ctx St W SP R aL tL true) := by
+omit G L in
+theorem finMod_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinB Ctx St W SP R aL tL false N s) :
+    WP isa (.block [.alu .and .rbx (imm 15)]) s (FinB Ctx St W SP R aL tL true N) := by
   have hand := and15 (if tL = 0 then aL else tL)
   rw [imm_eq (by decide)] at hand
   obtain ⟨s₁, run₁, hbx₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.alu .and .rbx (imm 15)] s = some s₁ ∧
@@ -149,12 +156,13 @@ theorem finMod_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinB Ctx St W S
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide)
 
-omit L in
-theorem finD_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP R aL tL s) :
+omit G L in
+theorem finD_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP R aL tL N s)
+    (hN : 200 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
     WP isa (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))]) s
-      (FinD Ctx St W SP R aL tL) := by
-  have r₃ := h.1.perm.wR (show 184 + 8 ≤ 2560 by decide)
-  have r₄ := h.1.perm.wR (show 192 + 8 ≤ 2560 by decide)
+      (FinD Ctx St W SP R aL tL N) := by
+  have r₃ := h.1.perm.wR (show 184 + 8 ≤ N by omega) hN'
+  have r₄ := h.1.perm.wR (show 192 + 8 ≤ N by omega) hN'
   obtain ⟨s₅, run₅, hbx₅, hbp₅, hg₅, hm₅, hrd₅, hwr₅⟩ : ∃ s₅, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
       .mov .rbp (.mem (at_ .r15 tlenO))] s = some s₅ ∧
       s₅.gpr .rbx = aL ∧ s₅.gpr .rbp = tL ∧ (∀ r, r ≠ .rbx → r ≠ .rbp → s₅.gpr r = s.gpr r) ∧
@@ -169,63 +177,67 @@ theorem finD_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP 
   rcases hr with rfl | rfl | rfl | rfl <;> exact hg₅ _ (by decide) (by decide)
 
 /-- The buffered bytes absorbed. -/
-theorem finFlush_rel {R : Nat} {aL tL : BitVec 64} :
-    RelCT isa (fun s₁ s₂ => FinB Ctx St W SP R aL tL true s₁ ∧ FinB Ctx St W SP R aL tL true s₂)
-      (flush v.callees 16) fun s₁ s₂ => True ∧ FinS Ctx St W SP R aL tL s₁ ∧ FinS Ctx St W SP R aL tL s₂ := by
-  have hF : ∀ s, FinB Ctx St W SP R aL tL true s → WP isa (flush v.callees 16) s (FinS Ctx St W SP R aL tL) :=
+theorem finFlush_rel (hN : 200 ≤ N) {R : Nat} {aL tL : BitVec 64} :
+    RelCT isa (fun s₁ s₂ => FinB Ctx St W SP R aL tL true N s₁ ∧ FinB Ctx St W SP R aL tL true N s₂)
+      (flush v.callees 16) fun s₁ s₂ => True ∧ FinS Ctx St W SP R aL tL N s₁ ∧ FinS Ctx St W SP R aL tL N s₂ := by
+  have hF : ∀ s, FinB Ctx St W SP R aL tL true N s → WP isa (flush v.callees 16) s (FinS Ctx St W SP R aL tL N) :=
     fun s ⟨h, hbx⟩ => WP.mono (flush_ok v L (yo := 16) (.inr rfl)
       (x := List.replicate ((if tL = 0 then aL else tL).toNat % 16) 0) ⟨h.1, rfl⟩ (by simpa using hbx))
-      fun _ o => h.frame L o.env o.frame
-  have f : RelCT isa (fun s₁ s₂ => FinB Ctx St W SP R aL tL true s₁ ∧ FinB Ctx St W SP R aL tL true s₂)
+      fun _ o => h.frame L hN G.fit o.env o.frame
+  have f : RelCT isa (fun s₁ s₂ => FinB Ctx St W SP R aL tL true N s₁ ∧ FinB Ctx St W SP R aL tL true N s₂)
       (flush v.callees 16) fun _ _ => True :=
     (flush_rel v L (.inr rfl)).mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1, fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2, h.2.2]⟩) fun _ _ h => h
   exact rel_wp f (fun _ _ h => h) hF hF
 
 /-- The tag. -/
-theorem finTag2_rel {o R : Nat} (ho : o = 0 ∨ o = 112) {aL tL : BitVec 64} :
-    RelCT isa (fun s₁ s₂ => True ∧ FinS Ctx St W SP R aL tL s₁ ∧ FinS Ctx St W SP R aL tL s₂)
+theorem finTag2_rel (hN : 208 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o = 112) {aL tL : BitVec 64} :
+    RelCT isa (fun s₁ s₂ => True ∧ FinS Ctx St W SP R aL tL N s₁ ∧ FinS Ctx St W SP R aL tL N s₂)
       (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))]) (tag v.callees o))
       fun _ _ => True := by
-  have d := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ FinS Ctx St W SP R aL tL s₁ ∧ FinS Ctx St W SP R aL tL s₂)
+  have d := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ FinS Ctx St W SP R aL tL N s₁ ∧ FinS Ctx St W SP R aL tL N s₂)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.2.1.1 h.2.2.1) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h.2) (fun s h => finD_ok h) (fun s h => finD_ok h)
-  have t : RelCT isa (fun s₁ s₂ => True ∧ FinD Ctx St W SP R aL tL s₁ ∧ FinD Ctx St W SP R aL tL s₂)
+    (fun _ _ h => h.2) (fun s h => finD_ok h (by omega) L.nlt) (fun s h => finD_ok h (by omega) L.nlt)
+  have t : RelCT isa (fun s₁ s₂ => True ∧ FinD Ctx St W SP R aL tL N s₁ ∧ FinD Ctx St W SP R aL tL N s₂)
       (tag v.callees o) fun _ _ => True :=
-    (tag_rel v L (R := R) ho).mono (fun _ _ h => ⟨⟨h.2.1.1.1, h.2.2.1.1, fun r hr => by
+    (tag_rel v L (by omega) T (R := R) ho).mono (fun _ _ h => ⟨⟨h.2.1.1.1, h.2.2.1.1, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [h.2.1.2.1, h.2.2.2.1]
       · rw [h.2.1.2.2, h.2.2.2.2]⟩, h.2.1.1.2.1, h.2.2.1.2.1⟩) fun _ _ h => h
   exact RelCT.seq d t
 
-/-- `finTag o`, with the same lengths and number of rounds. -/
-theorem finTag_rel {o R : Nat} (ho : o = 0 ∨ o = 112) {aL tL : BitVec 64} :
-    RelCT isa (fun s₁ s₂ => FinS Ctx St W SP R aL tL s₁ ∧ FinS Ctx St W SP R aL tL s₂) (finTag v.callees o)
+/-- `finTag o`, with the same lengths and number of rounds, and the call of `vg_aes_ctr32` `T`. -/
+theorem finTag_rel (hN : 208 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o = 112) {aL tL : BitVec 64} :
+    RelCT isa (fun s₁ s₂ => FinS Ctx St W SP R aL tL N s₁ ∧ FinS Ctx St W SP R aL tL N s₂) (finTag v.callees o)
       fun _ _ => True := by
-  have a := rel_wp (rel_taint (P := fun s₁ s₂ => FinS Ctx St W SP R aL tL s₁ ∧ FinS Ctx St W SP R aL tL s₂)
+  have a := rel_wp (rel_taint (P := fun s₁ s₂ => FinS Ctx St W SP R aL tL N s₁ ∧ FinS Ctx St W SP R aL tL N s₂)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.1 h.2.1) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) (fun s h => finA_ok h) (fun s h => finA_ok h)
-  have b := rel_wp (rel_taint (P := fun s₁ s₂ => FinB Ctx St W SP R aL tL false s₁ ∧ FinB Ctx St W SP R aL tL false s₂)
+    (fun _ _ h => h) (fun s h => finA_ok h (by omega) L.nlt) (fun s h => finA_ok h (by omega) L.nlt)
+  have b := rel_wp (rel_taint (P := fun s₁ s₂ => FinB Ctx St W SP R aL tL false N s₁ ∧ FinB Ctx St W SP R aL tL false N s₂)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.1.1 h.2.1.1) ⟨_, by taint_decide⟩) (fun _ _ h => h)
     (fun s h => finMod_ok h) (fun s h => finMod_ok h)
-  exact RelCT.seq a (RelCT.seq finSel_rel (RelCT.seq b (RelCT.seq ((finFlush_rel v L).mono (fun _ _ h => h.2)
-    fun _ _ h => h) (finTag2_rel v L ho))))
+  exact RelCT.seq a (RelCT.seq finSel_rel (RelCT.seq b (RelCT.seq ((finFlush_rel v L (by omega)).mono (fun _ _ h => h.2)
+    fun _ _ h => h) (finTag2_rel v L hN T ho))))
 
 end
 
 /-- The environment, and the address `T` of `tag` in memory at `b + d`. -/
-def TagAt (Ctx St W SP : Addr) (b : Reg) (d : Nat) (T : Addr) (s : State) : Prop :=
-  Env Ctx St W SP s ∧ s.mem.readW (s.gpr b + BitVec.ofNat 64 d) 64 = T ∧
+def TagAtN (Ctx St W SP : Addr) (b : Reg) (d : Nat) (T : Addr) (N : Nat) (s : State) : Prop :=
+  Env Ctx St W SP s N ∧ s.mem.readW (s.gpr b + BitVec.ofNat 64 d) 64 = T ∧
     InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 d) 8
 
+/-- `TagAtN`, with the 2560 bytes of working space of the others. -/
+abbrev TagAt (Ctx St W SP : Addr) (b : Reg) (d : Nat) (T : Addr) : State → Prop :=
+  TagAtN Ctx St W SP b d T 2560
+
 /-- `tagOut src`, with the address of `tag` the same `T` in both runs. -/
-theorem tagOut_rel {Ctx St W SP T : Addr} {b : Reg} {d : Nat} (hb : b ∈ [Reg.r13, .r14, .r15, .rsp])
+theorem tagOut_rel {Ctx St W SP T : Addr} {b : Reg} {d N : Nat} (hb : b ∈ [Reg.r13, .r14, .r15, .rsp])
     (hc : ∃ hc, (taint.check (Taint.ofRegs [b]) (.block [.mov .rdi (.mem (at_ b d))]) hc).isSome = true)
-    {P : State → State → Prop} (hP : ∀ s₁ s₂, P s₁ s₂ → TagAt Ctx St W SP b d T s₁ ∧ TagAt Ctx St W SP b d T s₂) :
-    RelCT isa P (.block (tagOut (at_ b d))) fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ := by
-  have hL : ∀ s, TagAt Ctx St W SP b d T s →
-      WP isa (.block [.mov .rdi (.mem (at_ b d))]) s fun s' => Env Ctx St W SP s' ∧ s'.gpr .rdi = T :=
+    {P : State → State → Prop} (hP : ∀ s₁ s₂, P s₁ s₂ → TagAtN Ctx St W SP b d T N s₁ ∧ TagAtN Ctx St W SP b d T N s₂) :
+    RelCT isa P (.block (tagOut (at_ b d))) fun s₁ s₂ => Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N := by
+  have hL : ∀ s, TagAtN Ctx St W SP b d T N s →
+      WP isa (.block [.mov .rdi (.mem (at_ b d))]) s fun s' => Env Ctx St W SP s' N ∧ s'.gpr .rdi = T :=
     fun s ⟨he, hT, r₁⟩ => by
       obtain ⟨s₁, run₁, hdi, hg, hrd, hwr⟩ : ∃ s₁, runBlock isa [.mov .rdi (.mem (at_ b d))] s = some s₁ ∧
           s₁.gpr .rdi = T ∧ (∀ r, r ≠ .rdi → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
@@ -236,13 +248,13 @@ theorem tagOut_rel {Ctx St W SP T : Addr} {b : Reg} {d : Nat} (hb : b ∈ [Reg.r
       refine WP.of_runBlock ⟨s₁, run₁, he.keep (fun r hr => ?_) hrd hwr, hdi⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide)
-  have hb' : ∀ s₁ s₂, Env Ctx St W SP s₁ → Env Ctx St W SP s₂ → s₁.gpr b = s₂.gpr b := fun s₁ s₂ e₁ e₂ =>
+  have hb' : ∀ s₁ s₂, Env Ctx St W SP s₁ N → Env Ctx St W SP s₂ N → s₁.gpr b = s₂.gpr b := fun s₁ s₂ e₁ e₂ =>
     env_agree e₁ e₂ b hb
   have a := rel_wp (rel_taint (P := P) [b] (fun s₁ s₂ h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hb' _ _ (hP _ _ h).1.1 (hP _ _ h).2.1)
       hc) hP hL hL
   have c := rel_env (by decide) (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩)
-    (rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ ∧ s₁.gpr .rdi = T) ∧ (Env Ctx St W SP s₂ ∧
+    (rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ N ∧ s₁.gpr .rdi = T) ∧ (Env Ctx St W SP s₂ N ∧
       s₂.gpr .rdi = T)) (c := .block [.mov .rax (.mem (at_ .r15 0)), .mov .rdx (.mem (at_ .r15 8)),
         .store (at_ .rdi 0) .rax, .store (at_ .rdi 8) .rdx]) ([.rdi] ++ [.r13, .r14, .r15, .rsp])
       (fun _ _ h => EnvAgree.regs ⟨h.2.1.1, h.2.2.1, fun r hr => by

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Aes.X86_64.Scrub
@@ -232,5 +233,93 @@ def sm4StreamAadReg (n : GhashName) : Registration Spec.Sm4.Gcm.streamAadApi X86
     stack := 784
     verified := streamAad_framed96 (ghOf n)
     spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) } (streamAadOut _)
+
+/-! ## `vg_aes_gcm_stream_finish` and `vg_aes_gcm_stream_verify`
+
+Over an implementation of `vg_aes_ctr32` that needs no working space
+(`Aes.X86_64.Ctr32Impl.free`), in a frame of only the working space they
+use rather than 2.5 KB: over `vg_ghash_pclmul` and `vg_ghash_vpclmul`,
+which need none either, the 208 and 272 bytes they use themselves
+(`streamFinish_framed26`, `streamVerify_framed34`), and with `vg_ghash`'s
+256 bytes at 512, 768 (`_framed96`); followed by the clearing of that whole
+frame (`X86_64.Scrub.withScrubAll`). Over the others, as before.
+`vg_aes_gcm_seal_gather_prepared` calls the first by name: the instances
+over the first are internal functions of their own,
+`vg_aes_gcm_stream_finish<suffix>_core` (`finFn`), with the code as it was. -/
+
+theorem streamFinishOut (stack : Nat) :
+    PostOut (Spec.Gcm.streamFinishContract X86_64.abi stack) (Spec.Gcm.streamFinishSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, st, al, tl, tag], _ =>
+      simp only [Spec.Gcm.streamFinishSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size] at hb
+      intro key hk _ _ iv a c hr hA hT
+      show Spec.Aes.bytesAt m₂ tag 16 = _
+      rw [bytesAt_of0 hb.2.2 (by decide)]
+      exact h key hk iv a c hr hA hT
+
+theorem streamVerifyOut (stack : Nat) :
+    PostOut (Spec.Gcm.streamVerifyContract X86_64.abi stack) (Spec.Gcm.streamVerifySig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen _ h => by
+    match vs, hlen with
+    | [ctx, rounds, st, al, tl, tag, tagLen], _ => exact h
+
+/-- The implementations AES-GCM's streaming functions call with `c` and `n`
+(as the registration file's). -/
+def pairOf (c : Ctr32Impl) (n : GhashName) : GcmImpl :=
+  { ctr := c, key := if c.features.isEmpty then KeyImpl.scalar else KeyImpl.aesni, gh := n.impl }
+
+/-- `vg_aes_gcm_stream_finish` over `c` and `n`: in 232 bytes of stack (792
+over `vg_ghash`), all cleared, for an implementation of `vg_aes_ctr32` that
+needs no working space. -/
+def streamFinishReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.streamFinishApi X86_64.target :=
+  match c.free, (pairOf c n).gh.free with
+  | some f, some g =>
+    withScrubAll {
+      suffix := c.suffix ++ n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 224 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
+      stack := 232
+      verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed26 (pairOf c n) f g)
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
+  | some f, none =>
+    withScrubAll {
+      suffix := c.suffix ++ n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
+      stack := 792
+      verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed96 (pairOf c n) f)
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
+  | none, _ => {
+      suffix := c.suffix ++ n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
+      stack := 2584
+      verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed (pairOf c n))
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) }
+
+/-- `vg_aes_gcm_stream_verify` over `c` and `n`: in 304 bytes of stack (800
+over `vg_ghash`), all cleared, for an implementation of `vg_aes_ctr32` that
+needs no working space. -/
+def streamVerifyReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.streamVerifyApi X86_64.target :=
+  match c.free, (pairOf c n).gh.free with
+  | some f, some g =>
+    withScrubAll {
+      suffix := c.suffix ++ n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 296 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
+      stack := 304
+      verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed34 (pairOf c n) f g)
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
+  | some f, none =>
+    withScrubAll {
+      suffix := c.suffix ++ n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 792 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
+      stack := 800
+      verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed96 (pairOf c n) f)
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
+  | none, _ => {
+      suffix := c.suffix ++ n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
+      stack := 2592
+      verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed (pairOf c n))
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) }
 
 end VG.Proof.AesGcm.X86_64.Scrub

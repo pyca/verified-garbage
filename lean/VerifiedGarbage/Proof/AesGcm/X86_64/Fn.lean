@@ -212,18 +212,18 @@ theorem saved_j0Frame (hN : 224 ≤ N) {gs : Nat} (hg : gs = 0 ∨ 512 + gs ≤ 
 end
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay Ctx St W SP N)
 include L
 
-theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o, (savedR W).Disjoint r := by
+theorem saved_tagFrame (hN : 184 ≤ N) {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o N, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inr (by omega)) (by decide) (by omega)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
+  · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, (Lay.leN hN)⟩)).symm
+  · exact L.w_w (.inr (by decide)) (Lay.leN hN) (Lay.leN hN)
+  · exact L.w_w (.inr (by omega)) (Lay.leN hN) (by omega)
+  · exact L.w_hi (by decide) (Lay.leN hN)
+  · exact (L.stk_w (Lay.leN hN)).symm
 
 end
 

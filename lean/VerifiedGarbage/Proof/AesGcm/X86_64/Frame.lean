@@ -297,6 +297,77 @@ theorem streamVerify_framed :
     (streamVerify_spSafe v) (streamVerify_xdepth v) (streamVerifyPre_local _)
     (streamVerifyPost_local _) verFrameSat_pre
 
+/-- `vg_aes_gcm_stream_finish` over an implementation of `vg_aes_ctr32` that
+needs no working space, in a frame of only the 768 bytes it uses
+(`streamFinish_verified96`). -/
+theorem finFrameSat96_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 792).pre s := by
+  implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Proof.AesGcm.streamFinishRoundsPost, X86_64.abi, X86_64.argRegs] [finFrameSat, finSat] using finFrameSat
+
+theorem streamFinish_framed96 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamFinish v.callees))
+      (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 792) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+    (n := 96) (pre := Spec.Gcm.streamFinishPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.streamFinishRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 784) (streamFinish_verified96 v f) (by decide) (by decide) (by decide)
+    (streamFinish_spSafe v) (streamFinish_xdepth v) (streamFinishPre_local _)
+    (streamFinishPost_local _) finFrameSat96_pre
+
+/-- `vg_aes_gcm_stream_verify` over an implementation of `vg_aes_ctr32` that
+needs no working space, in a frame of the 768 bytes it uses. -/
+theorem verFrameSat96_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 800).pre s := by
+  implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Proof.AesGcm.streamVerifyRoundsPost, X86_64.abi, X86_64.argRegs] [verFrameSat, verSat] using verFrameSat
+
+theorem streamVerify_framed96 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 792 1 (streamVerify v.callees))
+      (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 800) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+    (n := 96) (pre := Spec.Gcm.streamVerifyPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.streamVerifyRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 792) (streamVerify_verified96 v f) (by decide) (by decide) (by decide)
+    (streamVerify_spSafe v) (streamVerify_xdepth v) (streamVerifyPre_local _)
+    (streamVerifyPost_local _) verFrameSat96_pre
+
+/-- `vg_aes_gcm_stream_finish` over implementations of `vg_aes_ctr32` and
+`vg_ghash` that need no working space, in a frame of the 208 bytes it uses
+itself (`streamFinish_verified26`). -/
+theorem finFrameSat26_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 232).pre s := by
+  implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Proof.AesGcm.streamFinishRoundsPost, X86_64.abi, X86_64.argRegs] [finFrameSat, finSat] using finFrameSat
+
+theorem streamFinish_framed26 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (g : GhashFree v.gh.fn.code) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 224 0 (streamFinish v.callees))
+      (Proof.AesGcm.streamFinishRoundsContract X86_64.abi 232) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+    (n := 26) (pre := Spec.Gcm.streamFinishPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.streamFinishRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 224) (streamFinish_verified26 v f g) (by decide) (by decide) (by decide)
+    (streamFinish_spSafe v) (streamFinish_xdepth v) (streamFinishPre_local _)
+    (streamFinishPost_local _) finFrameSat26_pre
+
+/-- `vg_aes_gcm_stream_verify` over implementations of `vg_aes_ctr32` and
+`vg_ghash` that need no working space, in a frame of the 272 bytes it uses
+itself (`streamVerify_verified34`). -/
+theorem verFrameSat34_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 304).pre s := by
+  implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Proof.AesGcm.streamVerifyRoundsPost, X86_64.abi, X86_64.argRegs] [verFrameSat, verSat] using verFrameSat
+
+theorem streamVerify_framed34 (f : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (g : GhashFree v.gh.fn.code) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 296 1 (streamVerify v.callees))
+      (Proof.AesGcm.streamVerifyRoundsContract X86_64.abi 304) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+    (n := 34) (pre := Spec.Gcm.streamVerifyPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.streamVerifyRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 296) (streamVerify_verified34 v f g) (by decide) (by decide) (by decide)
+    (streamVerify_spSafe v) (streamVerify_xdepth v) (streamVerifyPre_local _)
+    (streamVerifyPost_local _) verFrameSat34_pre
+
 /-- A state satisfying `vg_aes_gcm_seal`'s precondition, without the working
 space. -/
 def sealFrameSat : State :=
