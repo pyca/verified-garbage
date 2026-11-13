@@ -63,10 +63,15 @@ packings, and the search spends none of it.
                                         precompiled libraries of those), one
                                         per line: what it needs of the last
                                         build
-  lean_shards.py outputs PLAN SHARD     of the paths on stdin (files under
+  lean_shards.py outputs PLAN SHARD [NEEDED]
+                                        of the paths on stdin (files under
                                         `lean/.lake/build/`, relative to it),
                                         those that are outputs of SHARD's
-                                        modules
+                                        modules; with NEEDED (the file of
+                                        `closure`), none of a module of the
+                                        project that it does not list: one
+                                        the shard cannot have built, whose
+                                        outputs the job unpacked meanwhile
   lean_shards.py times [--observations]  the time of each module a `lake build`
                                         log on stdin built, as JSON; with
                                         --observations, keep native components
@@ -1346,7 +1351,8 @@ def main(args: list[str]) -> int:
         print(f"count={count}")
         print(f"shards={json.dumps([str(i + 1) for i in range(count)])}")
         return 0
-    if len(args) == 3 and args[0] in ("targets", "closure", "outputs"):
+    if (len(args) == 3 and args[0] in ("targets", "closure", "outputs")
+            or len(args) == 4 and args[0] == "outputs"):
         p = read_json(args[1])
         i = shard_index(p, args[2])
         if args[0] == "closure":
@@ -1359,10 +1365,17 @@ def main(args: list[str]) -> int:
                 print(f"+{m}")
         else:
             # Outputs of no module (the precompiled libraries' shared
-            # libraries) are the first shard's.
+            # libraries) are the first shard's, and so are those of a module
+            # the plan gave no shard, which the first shard uploads if it
+            # built it. Not those of a module the shard does not need: it
+            # never builds one, and the job unpacks the last build's while
+            # the shard builds (ci.yml).
+            unpacked = (set(modules()) - set(pathlib.Path(args[3]).read_text().split())
+                        if len(args) == 4 else set())
             for line in sys.stdin:
                 path = line.strip()
-                if path and p["owner"].get(module_of_output(path), 0) == i:
+                module = module_of_output(path)
+                if path and p["owner"].get(module, 0) == i and module not in unpacked:
                     print(path)
         return 0
     if args in (["times"], ["times", "--observations"]):

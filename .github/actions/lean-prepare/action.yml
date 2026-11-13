@@ -19,7 +19,10 @@ inputs:
   modules:
     description: >
       A file of the project's modules (`lean_shards.py closure`) to unpack
-      alone, for a shard; empty for every module.
+      first, for a shard, which starts building once they are unpacked: the
+      others are then unpacked in the background, and
+      `$RUNNER_TEMP/lean-rest.status` holds the exit status of that once it
+      is done. Empty for every module.
     required: false
     default: ""
 
@@ -155,6 +158,30 @@ runs:
       # `--empty-private`: nothing CI runs reads the private data of this
       # project's modules (`ci/lean_cache.py`), half of what restoring writes.
       run: python3 ci/lean_cache.py restore lean --empty-private ${MODULES:+--modules "$MODULES"}
+    # A shard's build reads only `modules`; the rest of the build is read by
+    # the job that assembles it, which checks every module: the last shard
+    # to finish, normally, and which that is no shard knows before it has
+    # built. So each shard unpacks the rest too, in the background, from
+    # here on: while Lean and Mathlib install, which leaves most of the
+    # runner idle, and then at a low priority while the shard builds, rather
+    # than after its build, when the run waits for nothing else (17-21 s).
+    # None of these modules is one the shard's build reads or writes, and
+    # `lean_shards.py outputs` leaves them out of what the shard uploads.
+    # `lean-shard` (ci.yml) waits for the status before it assembles.
+    - name: Unpack the rest of this project's build, in the background
+      if: ${{ inputs.modules != '' && hashFiles('lean/.lake/ltar/index.json') != '' }}
+      shell: bash
+      env:
+        MODULES: ${{ inputs.modules }}
+      run: |
+        (
+          # Not `-e`: a failure must still write the status.
+          set +e
+          nice -n 10 python3 ci/lean_cache.py restore lean --empty-private --except "$MODULES" \
+            > "$RUNNER_TEMP/lean-rest.log" 2>&1
+          echo $? > "$RUNNER_TEMP/lean-rest.status.tmp"
+          mv "$RUNNER_TEMP/lean-rest.status.tmp" "$RUNNER_TEMP/lean-rest.status"
+        ) < /dev/null > /dev/null 2>&1 &
     - uses: ./.github/actions/lean-setup
       id: lean-setup
     - uses: ./.github/actions/lean-mathlib

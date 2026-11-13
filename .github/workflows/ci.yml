@@ -192,7 +192,7 @@ jobs:
         with:
           name: lean-plan
           path: ${{ runner.temp }}
-      # What the shard's sinks import: all it unpacks of the last build.
+      # What the shard's sinks import: all its build needs of the last build.
       - name: List the modules the shard needs
         env:
           SHARD: ${{ matrix.shard }}
@@ -222,8 +222,9 @@ jobs:
             | tee "$RUNNER_TEMP/build.log"
       # What this build wrote for the shard's own modules; Lean's outputs
       # are deterministic, so the shards' outputs agree on the modules they
-      # all import. And how long it took to build each module, for later
-      # plans.
+      # all import. Not what `lean-prepare` unpacked meanwhile, the modules
+      # the shard does not need (`lean-modules`). And how long it took to
+      # build each module, for later plans.
       - name: Collect the outputs of the shard's modules
         env:
           SHARD: ${{ matrix.shard }}
@@ -231,7 +232,7 @@ jobs:
           python3 ../ci/lean_shards.py times --observations < "$RUNNER_TEMP/build.log" > "$RUNNER_TEMP/lean-times-$SHARD.json"
           cd .lake/build
           find . -type f -newer "$RUNNER_TEMP/before-build" -printf '%P\n' \
-            | python3 ../../../ci/lean_shards.py outputs "$RUNNER_TEMP/lean-plan.json" "$SHARD" \
+            | python3 ../../../ci/lean_shards.py outputs "$RUNNER_TEMP/lean-plan.json" "$SHARD" "$RUNNER_TEMP/lean-modules" \
             | tar --zstd -cf "$RUNNER_TEMP/lean-build-$SHARD.tar.zst" -T -
       - uses: ./.github/actions/upload-artifact
         with:
@@ -279,10 +280,23 @@ jobs:
           merge-multiple: true
           path: ${{ runner.temp }}/lean-build
       # The rest of the last build, which the assembly checks too, without
-      # what this shard built over it.
+      # what this shard built over it: `lean-prepare` has been unpacking it
+      # in the background since before the shard's build, so this normally
+      # only reads its status. Before the shards' outputs are added to the
+      # build: the rest holds the last build's outputs of what they built.
       - name: Unpack the rest of the build
         if: ${{ steps.all-uploaded.outputs.all == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
-        run: python3 ../ci/lean_cache.py restore . --empty-private --except "$RUNNER_TEMP/lean-modules"
+        run: |
+          for _ in $(seq 900); do
+            if [ -e "$RUNNER_TEMP/lean-rest.status" ]; then break; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/lean-rest.log"
+          status=$(cat "$RUNNER_TEMP/lean-rest.status")
+          if [ "$status" != 0 ]; then
+            echo "::warning::Unpacking the rest of the build in the background failed ($status): unpacking it again."
+            python3 ../ci/lean_cache.py restore . --empty-private --except "$RUNNER_TEMP/lean-modules"
+          fi
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: ./.github/actions/lean-assemble
         with:

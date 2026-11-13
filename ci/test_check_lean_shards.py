@@ -264,6 +264,34 @@ class NativeRequirements(Project):
             self.assertEqual(shards.main(["targets", str(plan), "1"]), 0)
         self.assertEqual(out.getvalue().splitlines(), ["+VerifiedGarbage.Proof"])
 
+    def test_outputs_are_the_shards_modules_and_never_what_it_does_not_need(self):
+        plan = self.lean / "plan.json"
+        plan.write_text(json.dumps({
+            "targets": [["VerifiedGarbage.Proof"], ["VerifiedGarbage.Other"]],
+            "owner": {"VerifiedGarbage.Proof": 0, "VerifiedGarbage.Other": 1}}))
+        needed = self.lean / "needed"
+        needed.write_text("VerifiedGarbage.Proof\nVerifiedGarbage.Spec.A\n")
+        paths = ["lib/lean/VerifiedGarbage/Proof.olean", "ir/VerifiedGarbage/Proof.c",
+                 "lib/lean/VerifiedGarbage/Other.olean",
+                 # Owned by no shard: the first shard's, if it built them.
+                 "lib/lean/VerifiedGarbage/Spec/A.olean", "lib/lean/VerifiedGarbage/Spec/B.olean",
+                 "lib/libVerifiedGarbage_NativeTCB.so"]
+
+        def outputs(*args):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), mock.patch("sys.stdin", io.StringIO("\n".join(paths) + "\n")):
+                self.assertEqual(shards.main(["outputs", str(plan), *args]), 0)
+            return out.getvalue().splitlines()
+
+        self.assertEqual(outputs("1"), [p for p in paths if "Other" not in p])
+        # `Spec.B` is not among what the shard needs: it did not build it.
+        self.assertEqual(outputs("1", str(needed)),
+                         [p for p in paths if "Other" not in p and "Spec/B" not in p])
+        self.assertEqual(outputs("2"), ["lib/lean/VerifiedGarbage/Other.olean"])
+        # A module the shard owns is one it needs: the file leaves out no more.
+        needed.write_text("VerifiedGarbage.Other\n")
+        self.assertEqual(outputs("2", str(needed)), ["lib/lean/VerifiedGarbage/Other.olean"])
+
     def test_trace_settings_keep_ordinary_proofs_independent(self):
         closure = shards.closures(shards.imports(shards.modules()))
         self.assertEqual(shards.native_trace_modules(closure), {"VerifiedGarbage.Spec.A"})
