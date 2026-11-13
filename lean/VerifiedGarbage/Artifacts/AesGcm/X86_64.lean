@@ -161,12 +161,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
 /-- The prepared artifacts of the implementations `v` whose loops read 16
 prepared powers: by the count, those or the ones on the key context. -/
 def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
-  Spec.Gcm.sealPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := sealCodeF16 v
-    stack := 2624
-    verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r))
-    spSafe := sealCodeF16_spAll v },
+  Spec.Gcm.sealPreparedApi.artifact X86_64.target (Proof.AesGcm.X86_64.sealR16Reg v r),
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := openCodeF16 v

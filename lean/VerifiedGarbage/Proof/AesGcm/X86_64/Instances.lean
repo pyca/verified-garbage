@@ -40,6 +40,10 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Short
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Split
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Gather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
@@ -1365,7 +1369,7 @@ def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flag
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToF16 v) (encFnF16 v)))
 
 def sealFnF16 (v : GcmVariant) (r : R16 v) : Gather.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix, sealCodeF16 v⟩ (sealCodeF16_verified v r)
+  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ "_core", sealCodeF16 v⟩ (sealCodeF16_verified v r)
     (sealCodeF16_spAll v) (sealCodeF16_xdepth v) (sealCodeF16_mx v)
 
 /-- `vg_aes_gcm_seal_split_prepared16` of a variant, on a context whose count is
@@ -1414,5 +1418,40 @@ theorem sealGatherR16_onFlag (v : GcmVariant) (r : R16 v) :
     (Gather.sealGatherFlagged_framed (by decide) (shortFnF16 v r) (initFn v.impl) (aadFn v.impl) (toFnF16 v)
       (finFn v.impl) (splitFnF16 v r) (tlsLong v) true)
     (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))
+
+/-! ## `vg_aes_gcm_seal_prepared` without secret residue
+
+Of a variant whose loops read 16 prepared powers, followed by the clearing
+of its whole stack (`X86_64.Scrub.withScrubAll`); its postcondition reads the
+memory on return only within its buffers. `vg_aes_gcm_seal_gather_prepared`
+calls its code as it is, as the internal
+`vg_aes_gcm_seal_prepared<suffix>_core` (`sealFnF16`). -/
+
+section ScrubSeal
+open VG.X86_64.Scrub
+
+theorem sealPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.sealPreparedContract X86_64.abi stack) (Spec.Gcm.sealPreparedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, data, len, tag], _ =>
+      simp only [Spec.Gcm.sealPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      show _ = (Spec.Aes.bytesAt m₂ data len.toNat, Spec.Aes.bytesAt m₂ tag 16)
+      rw [VG.Proof.AesGcm.X86_64.Scrub.bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _), VG.Proof.AesGcm.X86_64.Scrub.bytesAt_of0 hb.2.2.2.2 (by decide)]
+      exact h key hk
+
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read 16 prepared
+powers, with its whole stack cleared. -/
+def sealR16Reg (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
+  withScrubAll {
+    suffix := v.impl.suffix
+    code := sealCodeF16 v
+    stack := 2624
+    verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r))
+    spSafe := sealCodeF16_spAll v } (sealPreparedOut _)
+
+end ScrubSeal
 
 end VG.Proof.AesGcm.X86_64
