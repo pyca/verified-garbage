@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512ShaNi
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512Avx512
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubAll
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512Scrub
 
 /-! # The implementations of `MdHash` on x86-64 -/
 
@@ -43,29 +45,44 @@ def sha256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.
 
 def sha384 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant384
 
+open Proof.Pbkdf2.Md.X86_64.Sha512 in
+/-- SHA-384 with the AVX2 compression function, whose code the residue
+analysis does not follow: its streaming functions wipe every granule of
+their frame (`StreamFn.scrubAuto`), as do those of SHA-512, SHA-512/224 and
+SHA-512/256 with it. -/
 def sha384Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream384 .avx2)
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha384 .avx2
+    [(fin384Fn .avx2).scrubAuto (fin384Out _), (dig384Fn .avx2).scrubAuto (dig384Out _)]
 
 def sha384ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant384
 
 def sha512 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512
 
+open Proof.Pbkdf2.Md.X86_64.Sha512 in
 def sha512Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream .avx2)
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512 .avx2
+    [(updFn .avx2).scrubAuto (updOut _), (finFn .avx2).scrubAuto (finOut _),
+      (digFn .avx2).scrubAuto (digOut _)]
 
 def sha512ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512
 
 def sha512_224 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_224
 
+open Proof.Pbkdf2.Md.X86_64.Sha512 in
 def sha512_224Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_224 .avx2)
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .avx2
+    [(fin512_224Fn .avx2).scrubAuto (fin512_224Out _),
+      (dig512_224Fn .avx2).scrubAuto (dig512_224Out _)]
 
 def sha512_224ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_224
 
 def sha512_256 : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512.variant512_256
 
+open Proof.Pbkdf2.Md.X86_64.Sha512 in
 def sha512_256Avx2 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx2 (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_256 .avx2)
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 .avx2
+    [(fin512_256Fn .avx2).scrubAuto (fin512_256Out _),
+      (dig512_256Fn .avx2).scrubAuto (dig512_256Out _)]
 
 def sha512_256ShaNi : Proof.Pbkdf2.Md.X86_64.MdHash := Proof.Variants.MdHash.X86_64.Sha512ShaNi.variant512_256
 

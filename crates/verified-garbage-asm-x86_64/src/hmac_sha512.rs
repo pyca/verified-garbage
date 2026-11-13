@@ -340,6 +340,8 @@ pub const VG_HMAC_SHA512_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features 
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -356,7 +358,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_avx2(inner: *mut [u
 call {vg_sha512_finalize_scratch_avx2}
 .base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1DzQQ9vh7AFAADzD39DYPNBD2+HwAUAAPMPf0NwSIndSIPFQLiAAAAAZkgPbsjzD39NQGYP78DzD39FUPMPf0VgQbzAAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPTIntSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAASI2kJCgGAADD"
+.base64 "SIn7SYnPTIntSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4SYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAASI2kJCgGAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkyPn//8X+f4QkGAYAAMX+f4Qk+AUAAMX+f4Qk2AUAAMX+f4QkuAUAAMX+f4QkmAUAAMX+f4QkeAUAAMX+f4QkWAUAAMX+f4QkOAUAAMX+f4QkGAUAAMX+f4Qk+AQAAMX+f4Qk2AQAAMX+f4QkuAQAAMX+f4QkmAQAAMX+f4QkeAQAAMX+f4QkWAQAAMX+f4QkOAQAAMX+f4QkGAQAAMX+f4Qk+AMAAMX+f4Qk2AMAAMX+f4QkuAMAAMX+f4QkmAMAAMX+f4QkeAMAAMX+f4QkWAMAAMX+f4QkOAMAAMX+f4QkGAMAAMX+f4Qk+AIAAMX+f4Qk2AIAAMX+f4QkuAIAAMX+f4QkmAIAAMX+f4QkeAIAAMX+f4QkWAIAAMX+f4QkOAIAAMX+f4QkGAIAAMX+f4Qk+AEAAMX+f4Qk2AEAAMX+f4QkuAEAAMX+f4QkmAEAAMX+f4QkeAEAAMX+f4QkWAEAAMX+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkOAYAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,

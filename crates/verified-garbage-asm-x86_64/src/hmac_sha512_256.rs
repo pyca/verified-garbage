@@ -340,6 +340,8 @@ pub const VG_HMAC_SHA512_256_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Featu
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha512_256I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -356,7 +358,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_256_finalize_avx2(inner: *mu
 call {vg_sha512_finalize_scratch_avx2}
 .base64 "80EPbwQk8w9/A/NBD29EJBDzD39DEPNBD29EJCDzD39DIPNBD29EJDDzD39DMPNBD2+HkAUAAPMPf0NA80EPb4egBQAA8w9/Q1BIid1Ig8VAuIAAAABmSA9uyPMPf00gZg/vwPMPf0Uw8w9/RUDzD39FUPMPf0VgQbygAAAATIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPf31wSInuSInfugEAAABMifk="
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEEmLn2AFAABJi69oBQAATYuncAUAAE2Lr3gFAABNi7eABQAATYu/iAUAAEiNpCQoBgAAww=="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU48w9vRQDzQQ9/RQDzD29FEPNBD39FEEmLn2AFAABJi69oBQAATYuncAUAAE2Lr3gFAABNi7eABQAATYu/iAUAAEiNpCQoBgAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJMj5///F/n+EJBgGAADF/n+EJPgFAADF/n+EJNgFAADF/n+EJLgFAADF/n+EJJgFAADF/n+EJHgFAADF/n+EJFgFAADF/n+EJDgFAADF/n+EJBgFAADF/n+EJPgEAADF/n+EJNgEAADF/n+EJLgEAADF/n+EJJgEAADF/n+EJHgEAADF/n+EJFgEAADF/n+EJDgEAADF/n+EJBgEAADF/n+EJPgDAADF/n+EJNgDAADF/n+EJLgDAADF/n+EJJgDAADF/n+EJHgDAADF/n+EJFgDAADF/n+EJDgDAADF/n+EJBgDAADF/n+EJPgCAADF/n+EJNgCAADF/n+EJLgCAADF/n+EJJgCAADF/n+EJHgCAADF/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJDgGAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,

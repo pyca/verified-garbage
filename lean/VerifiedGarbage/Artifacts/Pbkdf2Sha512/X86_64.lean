@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubAll
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.Cold
@@ -36,11 +37,6 @@ namespace VG.Artifacts.Pbkdf2Sha512.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.X86_64.sha512Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
-    v.I.pbkdf2Api.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.H) 1 v.H.pbkdf2
-      stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.H
-      verified := v.pbkdf2F
-      spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp }]
+    v.I.pbkdf2Api.artifact X86_64.target v.pbkdf2Reg]
 
 end VG.Artifacts.Pbkdf2Sha512.X86_64

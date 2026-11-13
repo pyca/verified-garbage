@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubStream
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubAll
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -47,6 +48,6 @@ def artifacts : List Artifact :=
       spSafe := v.spSafe
       residue := v.residue }) ++
   (VG.Proof.Variants.MdHash.X86_64.sha512_224Variants.map fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
-    v.I.finalizeApi.artifact X86_64.target v.hmacFinReg)
+    v.I.finalizeApi.artifact X86_64.target v.hmacFinAuto)
 
 end VG.Artifacts.HmacSha512_224.X86_64
