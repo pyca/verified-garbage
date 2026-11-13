@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # Taint tracking through stack frames, for returning without residue (x86-64)
@@ -207,27 +208,6 @@ def ubNew (τ : FT) : Instr → Option (Reg × Nat)
   | .cmov .b d (.reg x) =>
     if τ.fl == some (x, d) then (ubOf τ.ub d).map (d, ·) else none
   | _ => none
-
-/-- The memory an instruction may write: its operand and width. -/
-def storeW : Instr → Option (MemOp × Nat)
-  | .store m _ => some (m, 8)
-  | .store32 m _ => some (m, 4)
-  | .store8 m _ => some (m, 1)
-  | .store16 m _ => some (m, 2)
-  | .movdquStore m _ => some (m, 16)
-  | .vmovdquStore .l128 m _ => some (m, 16)
-  | .vmovdquStore .l256 m _ => some (m, 32)
-  | .vmovdqu32Store m _ => some (m, 64)
-  | .evStore m _ | .e5ExtractStore m _ _ => some (m, 32)
-  | .stmxcsr m => some (m, 4)
-  | _ => none
-
-/-- Whether an instruction may write memory: those of `storeW`, and the
-masked stores. -/
-def writesMem (i : Instr) : Bool :=
-  (storeW i).isSome || match i with
-    | .kStore .. | .kStore8 .. => true
-    | _ => false
 
 /-- The bytes `[lo, hi)` of region `ri` that a store through `m` of `w` bytes
 may write, if its base register points into region `ri` and its index

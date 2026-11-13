@@ -5,6 +5,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # x86-64: the calling-convention obligations
@@ -17,11 +18,6 @@ loads MXCSR keeps it, so its proofs show only the other obligations
 @[expose] public section
 
 namespace VG.X86_64
-
-/-- Whether an instruction loads MXCSR. -/
-def loadsMxcsr : Instr → Bool
-  | .ldmxcsr _ => true
-  | _ => false
 
 theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : exec i s = some s') :
     s'.mxcsr = s.mxcsr := by

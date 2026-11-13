@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 public import VerifiedGarbage.Impl.Scrub.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # What code without AVX or AVX-512 instructions keeps (x86-64)
@@ -33,15 +34,6 @@ write (`Exec.vecKeep0R`, `Exec.vecKeep1R`), whatever it does to MXCSR.
 namespace VG.X86_64.Residue
 
 open VG.X86_64
-
-/-- See the module docs. -/
-def _root_.VG.X86_64.Instr.vecLevel : Instr → Nat
-  | .vop _ | .vmovdquLoad .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad ..
-  | .vpmadd52Load .. | .zop _ | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .zbcst ..
-  | .vpbroadcastdZ .. | .zbcstd .. | .kLoad .. | .kLoad8 .. => 1
-  | .vbroadcasti32x4H .. | .eop _ | .evLoad .. | .evMadd52Load .. | .ldmxcsr _
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. => 2
-  | _ => 0
 
 /-- What an instruction of level `l` keeps. -/
 def VKeep (l : Nat) (s s' : State) : Prop :=
@@ -194,9 +186,6 @@ theorem vecLevel_of_writesVec {i : Instr} (hw : Impl.Scrub.X86_64.writesVec i = 
   cases i <;> simp_all [Impl.Scrub.X86_64.writesVec, Instr.vecLevel]
 
 /-! ## The vector registers alone -/
-
-/-- See the module docs. -/
-def _root_.VG.X86_64.Instr.vecLevelR (i : Instr) : Nat := if loadsMxcsr i then 0 else i.vecLevel
 
 theorem loadsMxcsr_eq {i : Instr} (h : loadsMxcsr i = true) : ∃ m, i = .ldmxcsr m := by
   cases i <;> simp_all [loadsMxcsr]

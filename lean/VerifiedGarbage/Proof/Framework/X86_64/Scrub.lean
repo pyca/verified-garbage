@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # Returning without secret residue (x86-64)
@@ -961,12 +962,6 @@ theorem retVal_hi {rb : Nat} (hrb : rb ≤ 32 ∨ rb = 64) (x : BitVec 64) : ret
   · have : rb = 64 := by omega
     subst this; simp only [h0, h1, h2, ↓reduceIte]; exact x.isLt
 
-/-- How `scrub` clears the vector registers, as an instruction level. -/
-def _root_.VG.Impl.Scrub.X86_64.VecLevel.level : VecLevel → Nat
-  | .sse => 0
-  | .avx => 1
-  | .evex => 2
-
 /-! ## The theorem -/
 
 theorem clearedH_keep (v : VecLevel) (w : State) :
@@ -1737,12 +1732,6 @@ def scrubRegAll {api : Api} (r : Registration api target) (v : VecLevel)
   scrubRegE r v (allKs (chunks r.stack)) hd hst h8 (allR_of_all hlv) (mxOk_of_all hlv) hrb hpost (resOk_all _ _ h8)
     (evexReg_all h8 hst hev) hw
 
-/-- The level `scrub` clears the vector registers at for `code`, the lowest
-that covers its instructions. -/
-def levelAll (code : Prog isa) : VecLevel :=
-  if code.all (fun i => decide (i.vecLevel ≤ VecLevel.sse.level)) then .sse
-  else if code.all (fun i => decide (i.vecLevel ≤ VecLevel.avx.level)) then .avx else .evex
-
 /-- `r`, returning without secret residue with every granule of its stack
 wiped (`scrubRegAll`), at the level of its code, if `scrub`'s side conditions
 hold and the clearing needs no CPU feature that `r`'s code does not
@@ -1761,11 +1750,11 @@ def withScrubAll {api : Api} (r : Registration api target)
   if hd : r.code.x86_64Depth ≤ r.stack then
   if hst : r.stack + 8 < 2 ^ 64 then
   if h8 : r.stack % 8 = 0 then
-  if hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true then
+  if hlv : allLevel v.level r.code = true then
   if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
       api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
   if hw : r.written = [] then
-  if hev : v = .evex → 16 ≤ r.stack ∧ r.code.all (fun i => !writesVec i) = false then
+  if hev : v = .evex → 16 ≤ r.stack ∧ noVecWrite r.code = false then
     let r' := scrubRegAll r v hd hst h8 hlv hrb hpost hev hw
     if (Code.requiresDedup isa.requires r'.code).all
         (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -61,85 +62,12 @@ namespace Mx
 
 open VG.X86_64.RTaint (storeW writesMem)
 
-/-- A fact two runs agree on: the low 32 bits of a register, or the 4 bytes
-at `d` from a register. -/
-inductive F where
-  | reg (r : Reg)
-  | slot (b : Reg) (d : Int)
-  deriving DecidableEq
-
-/-- An operand without an index, with a displacement of 32 bits. -/
-def plain (m : MemOp) : Bool := m.index.isNone && decide (-2 ^ 31 ≤ m.disp ∧ m.disp < 2 ^ 31)
-
-def slotOf (m : MemOp) : F := .slot m.base m.disp
-
 def Hold (s₁ s₂ : State) : F → Prop
   | .reg r => (s₁.gpr r).setWidth 32 = (s₂.gpr r).setWidth 32
   | .slot b d => s₁.mem.readW (s₁.gpr b + BitVec.ofInt 64 d) 32 = s₂.mem.readW (s₂.gpr b + BitVec.ofInt 64 d) 32
 
 /-- MXCSR and the facts `fs` agree. -/
 def Inv (fs : List F) (s₁ s₂ : State) : Prop := s₁.mxcsr = s₂.mxcsr ∧ ∀ f ∈ fs, Hold s₁ s₂ f
-
-/-- Whether a fact survives `i`: it writes neither the register nor (or its
-base register) the bytes. -/
-def keep (i : Instr) : F → Bool
-  | .reg r => !Taint.clobbers i r
-  | .slot b d => !Taint.clobbers i b && match storeW i with
-    | some (m, w) => plain m && m.base == b && decide (w ≤ 64) && decide (-2 ^ 31 ≤ d ∧ d < 2 ^ 31) &&
-        decide (m.disp + w ≤ d ∨ d + 4 ≤ m.disp)
-    | none => !writesMem i
-
-/-- The facts `i` establishes, given `fs` before it. -/
-def adds (fs : List F) : Instr → List F
-  | .stmxcsr m => if plain m then [slotOf m] else []
-  | .mov32 r (.imm _) => [.reg r]
-  | .mov32 r (.mem m) => if plain m && fs.contains (slotOf m) then [.reg r] else []
-  | .alu32 .and r (.imm _) => if fs.contains (.reg r) then [.reg r] else []
-  | .store32 m r => if plain m && fs.contains (.reg r) then [slotOf m] else []
-  | _ => []
-
-/-- `ldmxcsr` loads bytes agreed on. -/
-def ldOk (fs : List F) : Instr → Bool
-  | .ldmxcsr m => plain m && fs.contains (slotOf m)
-  | _ => true
-
-def step (fs : List F) (i : Instr) : Option (List F) :=
-  if ldOk fs i then some (adds fs i ++ fs.filter (keep i)) else none
-
-def blk : List F → List Instr → Option (List F)
-  | fs, [] => some fs
-  | fs, i :: is => (step fs i).bind (blk · is)
-
-/-- The facts on registers other than `rsp`, which calls and frames keep. -/
-def regs (fs : List F) : List F := fs.filter fun f => match f with
-  | .reg r => r != .rsp
-  | .slot .. => false
-
-/-- The facts after `c`, given `fs` before it, if every `ldmxcsr` in it
-loads bytes agreed on. A loop's are those after its body from some of `fs`
-that its body keeps: `fs`, less what an iteration and then another drop, or
-none. -/
-def mx : Prog isa → List F → Option (List F)
-  | .block is, fs => blk fs is
-  | .seq x y, fs => (mx x fs).bind (mx y)
-  | .ite _ t e, fs =>
-    match mx t fs, mx e fs with
-    | some a, some b => some (a.filter b.contains)
-    | _, _ => none
-  | .loop b _, fs =>
-    match mx b fs with
-    | none => none
-    | some g₁ =>
-      match mx b (fs.filter g₁.contains) with
-      | none => none
-      | some g₂ =>
-        match mx b ((fs.filter g₁.contains).filter g₂.contains) with
-        | some g₃ =>
-          if ((fs.filter g₁.contains).filter g₂.contains).all g₃.contains then some g₃ else mx b []
-        | none => mx b []
-  | .call _ b, fs => (mx b (regs fs)).map regs
-  | .frame _ b j, fs => (mx b (regs fs)).map fun g => regs (g.filter (keep j))
-  | .icall .., _ => none
 
 theorem inv_sub {fs gs : List F} {s₁ s₂ : State} (h : ∀ f ∈ gs, f ∈ fs) (hi : Inv fs s₁ s₂) : Inv gs s₁ s₂ :=
   ⟨hi.1, fun f hf => hi.2 f (h f hf)⟩
@@ -552,11 +480,6 @@ def scrubRegF {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     notWith := r.notWith
     residue := some ⟨main.2⟩ }
 
-/-- The level `scrubRegF` clears the vector registers at for `code`: as
-`levelFor`, or `evex` for code that writes `zmm16`–`zmm31`. -/
-def levelForE (code : Prog isa) : VecLevel :=
-  if code.all (fun i => decide (i.vecLevelR ≤ VecLevel.avx.level)) then levelFor code else .evex
-
 /-- `r` with every granule of its stack wiped and the vector registers
 cleared at the level `levelForE` of its code, for code that leaves the same
 MXCSR in two runs along the same trace (`hmx`), if `scrubRegF`'s side
@@ -569,13 +492,15 @@ def withScrubAllF {api : Api} (r : Registration api target)
   if hd : r.code.x86_64Depth ≤ r.stack then
   if hst : r.stack + 8 < 2 ^ 64 then
   if h8 : r.stack % 8 = 0 then
-  if hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+  if hlv : allLevelR v.level r.code = true then
   if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
       api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
   if hw : r.written = [] then
-  if hx : v = .evex → r.code.all (fun i => !writesVec i) = false then
+  if hx : v = .evex → noVecWrite r.code = false then
     let r' := scrubRegF r v (allKs (chunks r.stack)) hd hst h8 hlv hmx hrb hpost (resOk_all _ _ h8) hw
-      (fun e x => by unfold xsOf; rw [hx e]; exact mem_xregs x)
+      (fun e x => by
+        have hx' : r.code.all (fun i => !writesVec i) = false := hx e
+        unfold xsOf; rw [hx']; exact mem_xregs x)
     if (Code.requiresDedup isa.requires r'.code).all
         (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
   else r else r else r else r else r else r else r

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # The vectors' upper halves in two runs of the same path (x86-64)
@@ -31,32 +32,6 @@ open VG VG.X86_64
 
 /-- The upper halves of `zmm0`–`zmm15` agree. -/
 def UA (s₁ s₂ : State) : Prop := s₁.ymmHi = s₂.ymmHi ∧ s₁.zmmHi = s₂.zmmHi
-
-/-- Whether the upper halves agree after `i`, given whether they agreed before it. -/
-def stepI (a : Bool) (i : Instr) : Bool :=
-  match i with
-  | .vop .vzeroupper => true
-  | i => a && i.vecLevel == 0
-
-/-- Whether the upper halves agree after `c`, given whether they agreed before it. -/
-def up : Prog isa → Bool → Bool
-  | .block is, a => is.foldl stepI a
-  | .seq x y, a => up y (up x a)
-  | .ite _ t e, a => up t a && up e a
-  | .loop b _, a => up b a && up b true
-  | .call _ b, a => up b a
-  | .frame _ b _, a => up b a
-  | .icall _ _ b n, a => up b a && up n a
-
-/-- The functions `c` may call indirectly. -/
-def inames : Prog isa → List String
-  | .block _ => []
-  | .seq x y => inames x ++ inames y
-  | .ite _ t e => inames t ++ inames e
-  | .loop b _ => inames b
-  | .call _ b => inames b
-  | .frame _ b _ => inames b
-  | .icall _ n b nx => n :: inames b ++ inames nx
 
 theorem exec_ua {i : Instr} {a : Bool} {s₁ s₂ s₁' s₂' : State} (e₁ : exec i s₁ = some s₁')
     (e₂ : exec i s₂ = some s₂') (h : stepI a i = true) (hu : a = true → UA s₁ s₂) : UA s₁' s₂' := by

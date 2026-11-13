@@ -7,6 +7,7 @@ public meta import Lean.Elab.Term
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # The residue analysis decides what `scrub` wipes (x86-64)
@@ -677,13 +678,6 @@ def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat
   | some (τ, _) => keepOf τ.sec (chunks stack)
   | none => []
 
-/-- The level `scrub` clears the vector registers at for `code`: `pxor` if
-nothing in it writes bits 511:128 of a vector register, else `vpxor`
-(`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
-separately). -/
-def levelFor (code : Prog isa) : VecLevel :=
-  if code.all (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) then .sse else .avx
-
 theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
   unfold levelFor; split <;> exact VecLevel.noConfusion
 
@@ -726,7 +720,7 @@ def withScrub {api : Api} (r : Registration api target)
     if hd : r.code.x86_64Depth ≤ r.stack then
     if hst : r.stack + 8 < 2 ^ 64 then
     if h8 : r.stack % 8 = 0 then
-    if hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+    if hlv : allLevelR v.level r.code = true then
     if hmx : (mxClass r.code).isSome = true then
     if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
         api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then

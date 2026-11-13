@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # Stack depth (x86-64)
@@ -19,22 +20,6 @@ write and that many bytes below `rsp` (`Exec.stackFrame`), as
 @[expose] public section
 
 namespace VG
-
-/-- The bytes of stack a frame's push takes. -/
-def X86_64.Instr.frameBytes : X86_64.Instr → Nat
-  | .push rs => 8 * rs.length
-  | .alloc bytes => bytes
-  | _ => 0
-
-/-- The most stack below `rsp` that `c` uses at once, in bytes. -/
-def Code.x86_64Depth : Prog X86_64.isa → Nat
-  | .block _ => 0
-  | .seq a b => max a.x86_64Depth b.x86_64Depth
-  | .ite _ t e => max t.x86_64Depth e.x86_64Depth
-  | .loop b _ => b.x86_64Depth
-  | .call _ b => b.x86_64Depth + 8
-  | .frame i b _ => b.x86_64Depth + i.frameBytes
-  | .icall _ _ b n => max (b.x86_64Depth + 8) n.x86_64Depth
 
 /-- `Code.all p` holds of every instruction. -/
 theorem Code.all_instrs {I C : Type} {p : I → Bool} {c : Code I C} (h : c.all p = true) :

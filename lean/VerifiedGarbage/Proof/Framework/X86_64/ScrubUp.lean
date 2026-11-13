@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # Returning without secret residue: the baseline ISA's callers of AVX code (x86-64)
@@ -263,9 +264,6 @@ path (they are constant time, and the functions' addresses are public,
 end (`UpperLock.lock`), and the clearing at the level `sse`, which needs no
 CPU feature, leaves no residue. -/
 
-/-- The functions the tables `ts` name. -/
-def tableFns (ts : List (String × List FnTable)) : List String := ts.flatMap fun t => t.2.flatMap (·.fns)
-
 theorem contract_pub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {s₁ s₂ : State}
@@ -305,14 +303,6 @@ theorem upperOk_lock {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits
   have hu := (UpperLock.lock a₁ a₂ (r₁ := []) (r₂ := []) (by rw [ht]) (hsy _ _ (contract_pub hp))).2 true hup
     fun _ => ⟨hy, hz⟩
   exact ⟨congrFun hu.1 x, congrFun hu.2 x⟩
-
-/-- The side conditions of `scrubRegUp` that the emitter evaluates: the
-code's instructions are below the level `evex`, its upper halves agree at
-the end if they did at the start, and it calls indirectly only the
-functions of its tables. -/
-def UpOk (code : Prog isa) (tables : List (String × List FnTable)) : Bool :=
-  code.all (fun i => decide (i.vecLevel ≤ 1)) && UpperLock.up code true &&
-    (UpperLock.inames code).all (fun f => decide (f ∈ tableFns tables))
 
 theorem upOk_spec {code : Prog isa} {tables : List (String × List FnTable)} (h : UpOk code tables = true) :
     (∀ i ∈ instrs code, i.vecLevel ≤ 1) ∧ UpperLock.up code true = true ∧

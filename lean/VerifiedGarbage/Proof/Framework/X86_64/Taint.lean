@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Masked
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import Batteries.Data.List.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # Taint tracking for x86-64
@@ -823,23 +824,6 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : 
 
 /-! ### Instructions that write a register -/
 
-/-- The general-purpose register an instruction writes, if it writes exactly
-one (none for stores and SSE instructions, and for `mul` and `mulx`, which
-write two). -/
-def dstOf : Instr → Option Reg
-  | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
-  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
-  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
-  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
-  | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
-  | .vop _
-  | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
-  | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
-  | .stmxcsr _ | .ldmxcsr _
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
-  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => none
-
 /-- An SSE instruction on registers changes only the SSE registers. -/
 theorem XOp.exec_eq (op : XOp) (s : State) : op.exec s = { s with xmm := (op.exec s).xmm } := by
   cases op <;> rfl
@@ -904,16 +888,6 @@ theorem E5Op.exec_eq (op : E5Op) (s : State) :
 theorem Agree.withXmm {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (x₁ x₂ : XReg → BitVec 128) :
     Agree (noX τ) { s₁ with xmm := x₁ } { s₂ with xmm := x₂ } :=
   noX_eq τ ▸ ha.keep ha.rf rfl rfl rfl rfl rfl rfl ha.wf₁.2 ha.wf₂.2 ha.lo noXr
-
-/-- Whether an instruction may write the general-purpose register `r`. -/
-def clobbers (i : Instr) (r : Reg) : Bool :=
-  match i with
-  | .mul _ => r == .rax || r == .rdx
-  | .mulx hi lo _ => r == hi || r == lo
-  -- The push and pop of a frame move `rsp`, and the pop loads `d`.
-  | .push _ | .alloc _ | .free _ => r == .rsp
-  | .pop d _ => r == .rsp || r == d
-  | _ => dstOf i == some r
 
 /-- Changing only the vector registers, which then are all secret. -/
 theorem Agree.withVec {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (x₁ x₂ y₁ y₂ : XReg → BitVec 128)

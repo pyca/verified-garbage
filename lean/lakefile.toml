@@ -146,6 +146,12 @@ precompileModules = true
 # library like `NativeSpec`, since the interpreter runs them an order of
 # magnitude slower. They import only Lean core and `NativeTCB`
 # (`ci/check_lean_speed.py` checks that every such module is here).
+# With them, what the emitter computes of each x86-64 function to scrub it
+# (`Proof/Framework/X86_64/ScrubChecks.lean`, and the code it scrubs with,
+# `Impl/Scrub/X86_64.lean`): passes over the function's code and that of
+# every function it calls, which the registrations run when the emitter
+# evaluates them. Interpreted, they were two thirds of the x86-64 driver's
+# time (`Emit.lean`).
 [[lean_lib]]
 name = "NativeTactics"
 # Writes the audit records of each module (`NativeAuditRecords`).
@@ -162,7 +168,8 @@ globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Frame
   "VerifiedGarbage.Proof.Framework.X86.Reduce", "VerifiedGarbage.Proof.Framework.AArch64.Reduce",
   "VerifiedGarbage.Proof.Framework.Arm.Reduce", "VerifiedGarbage.Proof.Framework.PPC64LE.Reduce",
   "VerifiedGarbage.Proof.MlDsa.DecideAt", "VerifiedGarbage.Impl.NatPairs",
-  "VerifiedGarbage.Impl.AArch64Instrs"]
+  "VerifiedGarbage.Impl.AArch64Instrs",
+  "VerifiedGarbage.Impl.Scrub.X86_64", "VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks"]
 precompileModules = true
 
 # The trusted base, which imports only Lean core: the code the emitter

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 
 /-!
 # x86-64: code that restores MXCSR
@@ -26,24 +27,6 @@ from the same MXCSR then return with the same MXCSR, whatever else differs.
 @[expose] public section
 
 namespace VG.X86_64
-
-/-- `stmxcsr [m]; mov r32, [m]; and r32, 0xFFFF`: MXCSR, but for its
-reserved bits, in `r`. -/
-def mxcsrSave (m : MemOp) (r : Reg := .r11) : List Instr :=
-  [.stmxcsr m, .mov32 r (.mem m), .alu32 .and r (.imm 0xFFFF)]
-
-/-- `mov [m], r32; ldmxcsr [m]`: MXCSR from `r`. -/
-def mxcsrRestore (m : MemOp) (r : Reg := .r11) : List Instr := [.store32 m r, .ldmxcsr m]
-
-/-- The operand and register of a block that may be `mxcsrSave`. -/
-def saveOp : List Instr → Option (MemOp × Reg)
-  | .stmxcsr m :: .mov32 r _ :: _ => some (m, r)
-  | _ => none
-
-/-- The operand of a block that may be `mxcsrRestore`. -/
-def restoreOp : List Instr → Option MemOp
-  | .store32 m _ :: _ => some m
-  | _ => none
 
 /-- Whether `.seq a b` is `mxcsrSave m r`, then code that never writes `r`,
 then `mxcsrRestore m' r`. -/
@@ -235,38 +218,11 @@ theorem abiPreserved_of_ctl {c : Prog isa} (hc : ctlOk c = true) {s s' : State} 
 
 /-! ## MXCSR on return as a function of MXCSR on entry -/
 
-/-- What code leaves in MXCSR: what it held on entry (`keep`), or that but
-for its reserved bits (`mask`, what `mxcsrSave` then `mxcsrRestore` leave). -/
-inductive MxC where
-  | keep
-  | mask
-  deriving DecidableEq
-
-/-- MXCSR after code of class `k`, from `x` on entry. -/
-def MxC.app : MxC → BitVec 32 → BitVec 32
-  | .keep, x => x
-  | .mask, x => x &&& 0xFFFF
-
-/-- The class of code of class `a`, then of class `b`. -/
-def MxC.comp : MxC → MxC → MxC
-  | .keep, .keep => .keep
-  | _, _ => .mask
-
 theorem MxC.app_comp (a b : MxC) (x : BitVec 32) : (a.comp b).app x = b.app (a.app x) := by
   cases a <;> cases b <;> simp [MxC.comp, MxC.app, BitVec.and_assoc]
 
 theorem MxC.app_idem (a : MxC) (x : BitVec 32) : a.app (a.app x) = a.app x := by
   cases a <;> simp [MxC.app, BitVec.and_assoc]
-
-/-- `restores`, computed (with `Code.all`), for the emitter. -/
-def restoresC (a b : Prog isa) : Bool :=
-  match a, b with
-  | .block is, .seq mid (.block js) =>
-    match saveOp is, restoreOp js with
-    | some (m, r), some m' =>
-      is == mxcsrSave m r && js == mxcsrRestore m' r && mid.all fun i => !Taint.clobbers i r
-    | _, _ => false
-  | _, _ => false
 
 theorem restoresC_eq {a b : Prog isa} (h : restoresC a b = true) :
     ∃ m m' r mid, a = .block (mxcsrSave m r) ∧ b = .seq mid (.block (mxcsrRestore m' r)) ∧
@@ -279,28 +235,6 @@ theorem restoresC_eq {a b : Prog isa} (h : restoresC a b = true) :
       exact ⟨_, _, _, _, rfl, rfl, fun i hi => by simpa using Code.all_instrs hm i hi⟩
     · cases h
   · cases h
-
-/-- The class of what `c` leaves in MXCSR, if every path through it leaves
-the same function of MXCSR on entry (see the module docs). -/
-def mxClass : Prog isa → Option MxC
-  | .block is => if is.all (fun i => !loadsMxcsr i) then some .keep else none
-  | .seq a b =>
-    if restoresC a b then some .mask else
-    match mxClass a, mxClass b with
-    | some x, some y => some (x.comp y)
-    | _, _ => none
-  | .ite _ t e =>
-    match mxClass t, mxClass e with
-    | some x, some y => if x = y then some x else none
-    | _, _ => none
-  | .loop b _ => mxClass b
-  | .call _ b => mxClass b
-  | .frame i b j => if !loadsMxcsr i && !loadsMxcsr j then mxClass b else none
-  | .icall i _ b n =>
-    if loadsMxcsr i then none else
-    match mxClass b, mxClass n with
-    | some x, some y => if x = y then some x else none
-    | _, _ => none
 
 theorem mxClass_icall (i : Instr) (n : String) (b nx : Prog isa) : mxClass (.icall i n b nx) =
     if loadsMxcsr i then none else
