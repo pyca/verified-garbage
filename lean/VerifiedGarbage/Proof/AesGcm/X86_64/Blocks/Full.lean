@@ -32,7 +32,7 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
 section
-variable {aligned : Bool} {M : CtxMode} {s : State} (hp : BP M s)
+variable {aligned : Bool} {M : CtxMode} {s : State} {NB : Nat} (hp : BP M s NB)
 include hp
 
 omit hp in
@@ -61,7 +61,7 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
       (∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r) →
       s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) → s₃.rd = s.rd →
       s₃.wr = s.wr → Kept s 0 s₃.mem → Frame [kR' s] s.mem s₃.mem → Post s₃ s₄ → Done s₄)
-    (hsmall : n s < 16 → ∀ st, Mid s 0 0 [] st → WP isa (.seq (.block rest) (tail first second)) st Done)
+    (hsmall : n s < 16 → ∀ st, Mid s NB 0 0 [] st → WP isa (.seq (.block rest) (tail first second)) st Done)
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r) (hk : Kept s 0 s₁.mem)
     (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     WP isa (fullBody piece first second aligned small small4 pieceS dec) s₁ Done := by
@@ -81,7 +81,7 @@ theorem fullBody_ok {small small4 dec : Bool} {piece first second : Prog isa} {p
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide)
     have g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
-      rw [h11₄, g₂, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
+      rw [h11₄, g₂, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s (by have := hp.big; omega)
     have h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
       rw [keepR _ (by decide)]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)|>.symm
     have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₂, hrd]
@@ -127,7 +127,7 @@ theorem stitchEFull_ok {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 
     (g11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (rd₃ : s₃.rd = s.rd)
     (wr₃ : s₃.wr = s.wr) (hk₃ : Kept s 0 s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
     (hP : Gcm.X86_64.Stitch.EPost s₃ s₄) :
-    Mid s (n s) 0 (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s))) s₄ := by
+    Mid s NB (n s) 0 (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s))) s₄ := by
   refine mid_of_post hp (Nat.le_refl _) h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP.data hP.ctr hP.frame hP.gpr hP.rd hP.wr
     fun eH eY _ eD => ?_
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
@@ -144,7 +144,7 @@ theorem stitchDFull_ok {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 
     (g11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (rd₃ : s₃.rd = s.rd)
     (wr₃ : s₃.wr = s.wr) (hk₃ : Kept s 0 s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
     (hP : Gcm.X86_64.Stitch.DPost s₃ s₄) :
-    Mid s (n s) 0 (blocksAt s.mem (D s) (n s)) s₄ := by
+    Mid s NB (n s) 0 (blocksAt s.mem (D s) (n s)) s₄ := by
   refine mid_of_post hp (Nat.le_refl _) h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP.data hP.ctr hP.frame hP.gpr hP.rd hP.wr
     fun eH eY eD _ => ?_
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt

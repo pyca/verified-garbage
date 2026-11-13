@@ -63,14 +63,14 @@ structure Ready (s : State) (q : Nat) (st : State) : Prop where
 abbrev S5 (s : State) : Addr := S s + BitVec.ofNat 64 64
 
 section
-variable {M : CtxMode} {s : State} (hp : BP M s)
+variable {M : CtxMode} {s : State} {NB : Nat} (hp : BP M s NB)
 include hp
 
 theorem cov_k : Covers [kR M s] (s.rd ++ s.wr) := covers_of_mem (by rw [hp.rd]; simp)
 theorem cov_c : Covers [cR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
 theorem cov_y : Covers [yR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
 theorem cov_d : Covers [dR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
-theorem cov_s : Covers [sR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
+theorem cov_s : Covers [sR s NB] s.wr := covers_of_mem (by rw [hp.wr]; simp)
 
 omit hp in
 /-- The data left after `q` blocks is in the data. -/
@@ -78,12 +78,12 @@ theorem dq_sub {q : Nat} (hq : q ≤ n s) : Region.Sub ⟨dq s q, 16 * (n s - q)
   Offset.sub_base _ (by omega)
 
 omit hp in
-theorem s5_sub {k : Nat} (hk : k ≤ 2048) : Region.Sub ⟨S5 s, k⟩ (sR s) := Offset.sub_base _ (by omega)
+theorem s5_sub {k : Nat} (hk : 64 + k ≤ NB) : Region.Sub ⟨S5 s, k⟩ (sR s NB) := Offset.sub_base _ (by omega)
 
 /-- The head of `tail`: `r8` the number of blocks left, `ZF` if none. -/
-theorem tailHead_ok {q : Nat} {ys : List Block} {st : State} (h : Mid s q q ys st) :
+theorem tailHead_ok {q : Nat} {ys : List Block} {st : State} (h : Mid s NB q q ys st) :
     WP isa (.block [.mov .r11 (.mem (at_ .rsp 8)), .mov .r8 (.mem (at_ .r11 argN)), .alu .test .r8 (.reg .r8)])
-      st fun st' => Mid s q q ys st' ∧ st'.zf = some (decide (n s - q = 0)) := by
+      st fun st' => Mid s NB q q ys st' ∧ st'.zf = some (decide (n s - q = 0)) := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have a₀ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 8) 8 := by
     rw [h.rd, h.wr, h.rsp]; exact a_in hp
@@ -94,12 +94,12 @@ theorem tailHead_ok {q : Nat} {ys : List Block} {st : State} (h : Mid s q q ys s
   refine ⟨_, by simp only [argN]; xrun [a₀, hS, r₆, h.kept.n], ?_, by simp only [zf_arithFlags, hz]⟩
   exact h.slots hp (fun r h1 h2 h3 => by simp [gpr_setReg, gpr_arithFlags, h1, h2]) h.kept (Frame.refl _ _) rfl rfl
 
-theorem Mid.ready {q k : Nat} {ys : List Block} {st : State} (h : Mid s q k ys st) : Ready s k st :=
+theorem Mid.ready {q k : Nat} {ys : List Block} {st : State} (h : Mid s NB q k ys st) : Ready s k st :=
   ⟨h.rsp, h.rd, h.wr, h.kept, by rw [keep_a hp h.frame]; rfl⟩
 
 /-- The arguments of `vg_aes_ctr32` on the `n - q` blocks left. -/
-theorem ctrArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
-    WP isa (.block ctrArgs) st fun st' => CtrCall st' (K s) (C s) (dq s q) (S5 s) (R s) (n s - q) ∧
+theorem ctrArgs_ok {cs : Nat} (hcs : 64 + cs ≤ NB) {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
+    WP isa (.block ctrArgs) st fun st' => CtrCall st' (K s) (C s) (dq s q) (S5 s) (R s) (n s - q) cs ∧
       Ready s q st' ∧ (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.mem = st.mem := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have hw := hp.w_d
@@ -114,7 +114,7 @@ theorem ctrArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   have r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
   have hdq : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := dq_sub (by omega)
   have p240 : Region.Sub ⟨K s, 240⟩ (kR M s) := Region.sub_prefix (by have := M.ge; have := M.le; omega)
-  have s48 : Region.Sub ⟨S5 s, 2048⟩ (sR s) := s5_sub (by decide)
+  have s48 : Region.Sub ⟨S5 s, cs⟩ (sR s NB) := s5_sub hcs
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [ctrArgs, argCtx, argRounds, argCtr, argData, argN]
@@ -135,10 +135,10 @@ theorem ctrArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   · simp only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, h.rd, h.wr]
     refine covers_cons (covers_prefix (cov_k hp) (by have := M.ge; have := M.le; omega)) (covers_cons (covers_left (cov_c hp))
       (covers_cons (covers_left (covers_off' (cov_d hp) (by omega) (by omega)))
-        (covers_left (covers_off (cov_s hp) (by decide) (by decide)))))
+        (covers_left (covers_off (cov_s hp) (by omega) hp.nlt))))
   · simp only [wr_setReg, wr_arithFlags, h.wr]
     exact covers_cons (cov_c hp) (covers_cons (covers_off' (cov_d hp) (by omega) (by omega))
-      (covers_off (cov_s hp) (by decide) (by decide)))
+      (covers_off (cov_s hp) (by omega) hp.nlt))
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
 
@@ -152,8 +152,8 @@ theorem n16_lt : n s * 16 < 2 ^ 64 := by
     omega
 
 /-- The arguments of `vg_ghash` on the `n - q` blocks left. -/
-theorem ghArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
-    WP isa (.block ghArgs) st fun st' => GhCall st' (K s + BitVec.ofNat 64 240) (Y s) (dq s q) (S5 s) (n s - q) ∧
+theorem ghArgs_ok {gs : Nat} (hgs : 64 + gs ≤ NB) {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
+    WP isa (.block ghArgs) st fun st' => GhCall st' (K s + BitVec.ofNat 64 240) (Y s) (dq s q) (S5 s) (n s - q) gs ∧
       Ready s q st' ∧ (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.mem = st.mem := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have hw := hp.w_d
@@ -168,7 +168,7 @@ theorem ghArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   have r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
   have hdq : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := dq_sub (by omega)
   have pH : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; have := M.le; omega)
-  have s16 : Region.Sub ⟨S5 s, 256⟩ (sR s) := s5_sub (by decide)
+  have s16 : Region.Sub ⟨S5 s, gs⟩ (sR s NB) := s5_sub hgs
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [ghArgs, argCtx, argY, argData, argN]
@@ -186,9 +186,9 @@ theorem ghArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   · simp only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, h.rd, h.wr]
     refine covers_cons (covers_off (cov_k hp) (by have := M.ge; have := M.le; omega) (by have := M.ge; have := M.le; omega))
       (covers_cons (covers_left (covers_off' (cov_d hp) (by omega) (by omega)))
-      (covers_cons (covers_left (cov_y hp)) (covers_left (covers_off (cov_s hp) (by decide) (by decide)))))
+      (covers_cons (covers_left (cov_y hp)) (covers_left (covers_off (cov_s hp) (by omega) hp.nlt))))
   · simp only [wr_setReg, wr_arithFlags, h.wr]
-    exact covers_cons (cov_y hp) (covers_off (cov_s hp) (by decide) (by decide))
+    exact covers_cons (cov_y hp) (covers_off (cov_s hp) (by omega) hp.nlt)
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
 

@@ -33,75 +33,75 @@ theorem arg_below (SP : Addr) : (⟨SP + BitVec.ofNat 64 8, 8⟩ : Region).Disjo
 
 /-- A region apart from what a call of `vg_aes_ctr32` or `vg_ghash` on the
 blocks left writes. -/
-structure Apart (s : State) (q : Nat) (r : Region) : Prop where
+structure Apart (s : State) (NB q : Nat) (r : Region) : Prop where
   c : r.Disjoint (cR s)
   y : r.Disjoint (yR s)
   d : r.Disjoint ⟨dq s q, 16 * (n s - q)⟩
-  s5 : r.Disjoint ⟨S5 s, 2048⟩
+  s5 : r.Disjoint ⟨S5 s, NB - 64⟩
   t : r.Disjoint (below (SP s) 8)
 
 /-- The calls of `tail`, for `n - q > 0` blocks left after `Mid`. -/
-structure Calls (s : State) (q : Nat) (st st₂ st₃ st₄ st₅ : State) : Prop where
+structure Calls (s : State) (cs gs q : Nat) (st st₂ st₃ st₄ st₅ : State) : Prop where
   m₂ : st₂.mem = st.mem
-  f₃ : Frame [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), ⟨S5 s, 2048⟩, below (SP s) 8] st₂.mem st₃.mem
+  f₃ : Frame [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), ⟨S5 s, cs⟩, below (SP s) 8] st₂.mem st₃.mem
   m₄ : st₄.mem = st₃.mem
-  f₅ : Frame [yR s, (⟨S5 s, 256⟩ : Region), below (SP s) 8] st₄.mem st₅.mem
+  f₅ : Frame [yR s, (⟨S5 s, gs⟩ : Region), below (SP s) 8] st₄.mem st₅.mem
   saved : ∀ r ∈ calleeSaved, st₅.gpr r = st.gpr r
 
 section
-variable {M : CtxMode} {s : State} (hp : BP M s)
+variable {M : CtxMode} {s : State} {NB : Nat} (hp : BP M s NB) {cs gs : Nat}
 include hp
 
 omit hp in
-theorem Apart.ctr {q : Nat} {r : Region} (h : Apart s q r) :
-    ∀ r' ∈ [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), ⟨S5 s, 2048⟩, below (SP s) 8], r.Disjoint r' := by
+theorem Apart.ctr (hcs : 64 + cs ≤ NB) {q : Nat} {r : Region} (h : Apart s NB q r) :
+    ∀ r' ∈ [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), ⟨S5 s, cs⟩, below (SP s) 8], r.Disjoint r' := by
   intro r' hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  exacts [h.c, h.d, h.s5, h.t]
+  exacts [h.c, h.d, h.s5.sub_right (Region.sub_prefix (by omega)), h.t]
 
 omit hp in
-theorem Apart.gh {q : Nat} {r : Region} (h : Apart s q r) :
-    ∀ r' ∈ [yR s, (⟨S5 s, 256⟩ : Region), below (SP s) 8], r.Disjoint r' := by
+theorem Apart.gh (hgs : 64 + gs ≤ NB) {q : Nat} {r : Region} (h : Apart s NB q r) :
+    ∀ r' ∈ [yR s, (⟨S5 s, gs⟩ : Region), below (SP s) 8], r.Disjoint r' := by
   intro r' hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  exacts [h.y, h.s5.sub_right (Region.sub_prefix (by decide)), h.t]
+  exacts [h.y, h.s5.sub_right (Region.sub_prefix (by omega)), h.t]
 
-theorem apart_kR' {q : Nat} (hq : q ≤ n s) : Apart s q (kR' s) where
+theorem apart_kR' {q : Nat} (hq : q ≤ n s) : Apart s NB q (kR' s) where
   c := kR'_disj hp _ (by simp)
   y := kR'_disj hp _ (by simp)
   d := (kR'_disj hp (dR s) (by simp)).sub_right (dq_sub hq)
-  s5 := Offset.base_disjoint (S s) (e := 64) (n := 2048) (k := 48) (by decide) (by decide)
-  t := (hp.t_s.sub_right kR'_sub).symm
+  s5 := Offset.base_disjoint (S s) (e := 64) (n := NB - 64) (k := 48) (by decide) (by have := hp.big; have := hp.w_s; omega)
+  t := (hp.t_s.sub_right (kR'_sub hp)).symm
 
-theorem apart_a {q : Nat} (hq : q ≤ n s) : Apart s q (aR s) where
+theorem apart_a {q : Nat} (hq : q ≤ n s) : Apart s NB q (aR s) where
   c := hp.c_a.symm
   y := hp.y_a.symm
   d := hp.d_a.symm.sub_right (dq_sub hq)
-  s5 := hp.s_a.symm.sub_right (s5_sub (by decide))
+  s5 := hp.s_a.symm.sub_right (s5_sub (by have := hp.big; omega))
   t := arg_below _
 
-theorem apart_ret {q : Nat} (hq : q ≤ n s) : Apart s q ⟨SP s, 8⟩ where
+theorem apart_ret {q : Nat} (hq : q ≤ n s) : Apart s NB q ⟨SP s, 8⟩ where
   c := hp.r_c
   y := hp.r_y
   d := hp.r_d.sub_right (dq_sub hq)
-  s5 := hp.r_s.sub_right (s5_sub (by decide))
+  s5 := hp.r_s.sub_right (s5_sub (by have := hp.big; omega))
   t := ret_below _
 
-theorem apart_k {q : Nat} (hq : q ≤ n s) : Apart s q (kR M s) where
+theorem apart_k {q : Nat} (hq : q ≤ n s) : Apart s NB q (kR M s) where
   c := hp.k_c
   y := hp.k_y
   d := hp.k_d.sub_right (dq_sub hq)
-  s5 := hp.k_s.sub_right (s5_sub (by decide))
+  s5 := hp.k_s.sub_right (s5_sub (by have := hp.big; omega))
   t := hp.t_k.symm
 
 /-- The first `q` blocks are apart from what the calls write. -/
-theorem apart_dq {q : Nat} (hq : q ≤ n s) : Apart s q ⟨D s, 16 * q⟩ where
+theorem apart_dq {q : Nat} (hq : q ≤ n s) : Apart s NB q ⟨D s, 16 * q⟩ where
   c := hp.c_d.symm.sub_left (Region.sub_prefix (by omega))
   y := hp.y_d.symm.sub_left (Region.sub_prefix (by omega))
   d := Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.w_d; omega)
-  s5 := (hp.d_s.sub_left (Region.sub_prefix (by omega))).sub_right (s5_sub (by decide))
+  s5 := (hp.d_s.sub_left (Region.sub_prefix (by omega))).sub_right (s5_sub (by have := hp.big; omega))
   t := hp.t_d.symm.sub_left (Region.sub_prefix (by omega))
 
 omit hp in
@@ -118,7 +118,7 @@ theorem keep_sch {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hd : ∀ 
   have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
   exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge))) (by have := hp.w_k; omega)
 
-theorem wR_k : ∀ r ∈ wR s, (kR M s).Disjoint r := by
+theorem wR_k : ∀ r ∈ wR s NB, (kR M s).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -140,9 +140,9 @@ def EncDone (s s' : State) : Prop := gprPreserved s s' ∧ Proof.AesGcm.encryptB
 def DecDone (s s' : State) : Prop := gprPreserved s s' ∧ Proof.AesGcm.decryptBlocksX86_64.post s s'
 
 /-- `tail` from `Mid s q q ys`: its calls, if any blocks are left. -/
-theorem tail_calls (first second : Prog isa) {q : Nat} {ys : List Block} {st : State} (h : Mid s q q ys st)
-    {Q : State → Prop} (h0 : ∀ st₁, Mid s q q ys st₁ → n s - q = 0 → Q st₁)
-    (hc : ∀ st₁, Mid s q q ys st₁ → q < n s → WP isa (.seq first second) st₁ Q) :
+theorem tail_calls (first second : Prog isa) {q : Nat} {ys : List Block} {st : State} (h : Mid s NB q q ys st)
+    {Q : State → Prop} (h0 : ∀ st₁, Mid s NB q q ys st₁ → n s - q = 0 → Q st₁)
+    (hc : ∀ st₁, Mid s NB q q ys st₁ → q < n s → WP isa (.seq first second) st₁ Q) :
     WP isa (tail first second) st Q := by
   refine WP.seq (WP.mono (tailHead_ok hp h) fun st₁ ⟨M, hz⟩ => ?_)
   refine WP.ite (decide (n s - q = 0)) (by simp only [eval, hz]) (fun e => ?_) (fun e => ?_)
@@ -151,33 +151,33 @@ theorem tail_calls (first second : Prog isa) {q : Nat} {ys : List Block} {st : S
   · exact hc st₁ M (by simp at e; omega)
 
 /-- The data left is apart from what `vg_ghash` writes. -/
-theorem dq_gh {q : Nat} (hq : q ≤ n s) :
-    ∀ r ∈ [yR s, (⟨S5 s, 256⟩ : Region), below (SP s) 8], (⟨dq s q, 16 * (n s - q)⟩ : Region).Disjoint r := by
+theorem dq_gh (hgs : 64 + gs ≤ NB) {q : Nat} (hq : q ≤ n s) :
+    ∀ r ∈ [yR s, (⟨S5 s, gs⟩ : Region), below (SP s) 8], (⟨dq s q, 16 * (n s - q)⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.y_d.symm.sub_left (dq_sub hq)
-  · exact (hp.d_s.sub_left (dq_sub hq)).sub_right (s5_sub (by decide))
+  · exact (hp.d_s.sub_left (dq_sub hq)).sub_right (s5_sub (by have := hp.big; omega))
   · exact hp.t_d.symm.sub_left (dq_sub hq)
 
 /-- `Y` is apart from what `vg_aes_ctr32` writes. -/
-theorem y_ctr {q : Nat} (hq : q ≤ n s) :
-    ∀ r ∈ [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), ⟨S5 s, 2048⟩, below (SP s) 8], (yR s).Disjoint r := by
+theorem y_ctr (hcs : 64 + cs ≤ NB) {q : Nat} (hq : q ≤ n s) :
+    ∀ r ∈ [cR s, (⟨dq s q, 16 * (n s - q)⟩ : Region), ⟨S5 s, cs⟩, below (SP s) 8], (yR s).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hp.c_y.symm
   · exact hp.y_d.sub_right (dq_sub hq)
-  · exact hp.y_s.sub_right (s5_sub (by decide))
+  · exact hp.y_s.sub_right (s5_sub (by have := hp.big; omega))
   · exact hp.t_y.symm
 
 /-- The counter is apart from what `vg_ghash` writes. -/
-theorem c_gh : ∀ r ∈ [yR s, (⟨S5 s, 256⟩ : Region), below (SP s) 8], (cR s).Disjoint r := by
+theorem c_gh (hgs : 64 + gs ≤ NB) : ∀ r ∈ [yR s, (⟨S5 s, gs⟩ : Region), below (SP s) 8], (cR s).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.c_y
-  · exact hp.c_s.sub_right (s5_sub (by decide))
+  · exact hp.c_s.sub_right (s5_sub (by have := hp.big; omega))
   · exact hp.t_c.symm
 
 omit hp in
@@ -185,23 +185,23 @@ omit hp in
 theorem h_sub : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega)
 
 /-- The encryption of the blocks left, from `Mid`. -/
-theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
-    (M : Mid s q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st₁) (hlt : q < n s) :
+theorem encCalls_ok (v : GcmImpl) (F : Fits v cs gs) (hcs : 64 + cs ≤ NB) (hgs : 64 + gs ≤ NB) {q : Nat} {st₁ : State}
+    (M : Mid s NB q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st₁) (hlt : q < n s) :
     WP isa (.seq (ctrCall v.callees.ctr) (ghCall v.callees.gh)) st₁ (EncDone s) := by
   have hq := M.q_le
   have hw := hp.w_d
   have h16 := n16_lt hp
-  refine WP.seq (WP.seq (WP.mono (ctrArgs_ok hp (M.ready hp) hlt) fun st₂ ⟨hc, R₂, sv₂, m₂⟩ =>
-    WP.mono (ctr_call v.ctr hc) fun st₃ g => ?_))
+  refine WP.seq (WP.seq (WP.mono (ctrArgs_ok hp hcs (M.ready hp) hlt) fun st₂ ⟨hc, R₂, sv₂, m₂⟩ =>
+    WP.mono (F.ctr hc) fun st₃ g => ?_))
   have f₃ := g.frame
   rw [R₂.rsp] at f₃
-  have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => (apart_kR' hp hq).ctr r hr)
-    (fun r hr => (apart_a hp hq).ctr r hr) (g.saved _ (by decide)) g.rd g.wr
-  refine WP.seq (WP.mono (ghArgs_ok hp R₃ hlt) fun st₄ ⟨hg, R₄, sv₄, m₄⟩ =>
-    WP.mono (gh_call v.gh hg) fun st₅ g' => ?_)
+  have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => (apart_kR' hp hq).ctr hcs r hr)
+    (fun r hr => (apart_a hp hq).ctr hcs r hr) (g.saved _ (by decide)) g.rd g.wr
+  refine WP.seq (WP.mono (ghArgs_ok hp hgs R₃ hlt) fun st₄ ⟨hg, R₄, sv₄, m₄⟩ =>
+    WP.mono (F.gh hg) fun st₅ g' => ?_)
   have f₅ := g'.frame
   rw [R₄.rsp] at f₅
-  have c : Calls s q st₁ st₂ st₃ st₄ st₅ := ⟨m₂, f₃, m₄, f₅, fun r hr => by
+  have c : Calls s cs gs q st₁ st₂ st₃ st₄ st₅ := ⟨m₂, f₃, m₄, f₅, fun r hr => by
     rw [g'.saved r hr, sv₄ r hr, g.saved r hr, sv₂ r hr]⟩
   -- What the calls compute.
   have hK : Spec.Aes.bytesAt st₂.mem (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt s.mem (K s) (16 * (R s + 1)) := by
@@ -213,47 +213,47 @@ theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
   have hx : blocksAt st₄.mem (dq s q) (n s - q) =
       ctr32 (ciph s) (Nat.repeat inc32 q (cb s)) (blocksAt s.mem (dq s q) (n s - q)) := by rw [m₄]; exact out₃
   have hH : blockAt st₄.mem (K s + BitVec.ofNat 64 240) = hk s := by
-    rw [m₄, blockAt_frame f₃ fun r hr => ((apart_k hp hq).ctr r hr).sub_left (h_sub (s := s)), m₂,
+    rw [m₄, blockAt_frame f₃ fun r hr => ((apart_k hp hq).ctr hcs r hr).sub_left (h_sub (s := s)), m₂,
       blockAt_frame M.frame fun r hr => (wR_k hp r hr).sub_left (h_sub (s := s))]; rfl
   have hY : blockAt st₄.mem (Y s) = ghashFrom (hk s) (y₀ s) (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) := by
-    rw [m₄, blockAt_frame f₃ (y_ctr hp hq), m₂]; exact M.y
+    rw [m₄, blockAt_frame f₃ (y_ctr hp hcs hq), m₂]; exact M.y
   have hfirst : blocksAt st₅.mem (D s) q = ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q) := by
     rw [← M.data]
-    exact blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).gh r hr)) (by omega) |>.trans (by
-      rw [m₄]; exact (blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).ctr r hr)) (by omega)).trans (by rw [m₂]))
+    exact blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).gh hgs r hr)) (by omega) |>.trans (by
+      rw [m₄]; exact (blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).ctr hcs r hr)) (by omega)).trans (by rw [m₂]))
   have hsecond : blocksAt st₅.mem (dq s q) (n s - q) =
       ctr32 (ciph s) (Nat.repeat inc32 q (cb s)) (blocksAt s.mem (dq s q) (n s - q)) := by
-    rw [blocksAt_frame f₅ (dq_gh hp hq) (by omega), hx]
+    rw [blocksAt_frame f₅ (dq_gh hp hgs hq) (by omega), hx]
   have hall : ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s)) =
       ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q) ++
         ctr32 (ciph s) (Nat.repeat inc32 q (cb s)) (blocksAt s.mem (dq s q) (n s - q)) := by
     rw [blocksAt_split s.mem hq, Proof.Gcm.ctr32_append, length_blocksAt]
   refine ⟨⟨fun r hr => by rw [c.saved r hr, M.saved r hr], ?_⟩, ?_, ?_, ?_⟩
   · show st₅.mem.readW (SP s) 64 = s.mem.readW (SP s) 64
-    rw [f₅.readW (Region.contains_self _ _) ((apart_ret hp hq).gh) (by decide), m₄,
-      f₃.readW (Region.contains_self _ _) ((apart_ret hp hq).ctr) (by decide), m₂, keep_r hp M.frame]
+    rw [f₅.readW (Region.contains_self _ _) ((apart_ret hp hq).gh hgs) (by decide), m₄,
+      f₃.readW (Region.contains_self _ _) ((apart_ret hp hq).ctr hcs) (by decide), m₂, keep_r hp M.frame]
   · show blocksAt st₅.mem (D s) (n s) = ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s))
     rw [blocksAt_split st₅.mem hq, hfirst, hsecond, hall]
   · show blockAt st₅.mem (C s) = Nat.repeat inc32 (n s) (cb s)
-    rw [blockAt_frame f₅ (c_gh hp), m₄, g.ctr, hC₂, ← Proof.Gcm.repeat_add, Nat.sub_add_cancel hq]
+    rw [blockAt_frame f₅ (c_gh hp hgs), m₄, g.ctr, hC₂, ← Proof.Gcm.repeat_add, Nat.sub_add_cancel hq]
   · show blockAt st₅.mem (Y s) = ghashFrom (hk s) (y₀ s) (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s)))
     rw [g'.out, hH, hY, hx, ← Proof.Gcm.ghashFrom_append, hall]
 
 /-- The decryption of the blocks left, from `Mid`: hashed, then decrypted. -/
-theorem decCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
-    (M : Mid s q q (blocksAt s.mem (D s) q) st₁) (hlt : q < n s) :
+theorem decCalls_ok (v : GcmImpl) (F : Fits v cs gs) (hcs : 64 + cs ≤ NB) (hgs : 64 + gs ≤ NB) {q : Nat} {st₁ : State}
+    (M : Mid s NB q q (blocksAt s.mem (D s) q) st₁) (hlt : q < n s) :
     WP isa (.seq (ghCall v.callees.gh) (ctrCall v.callees.ctr)) st₁ (DecDone s) := by
   have hq := M.q_le
   have hw := hp.w_d
   have h16 := n16_lt hp
-  refine WP.seq (WP.seq (WP.mono (ghArgs_ok hp (M.ready hp) hlt) fun st₂ ⟨hg, R₂, sv₂, m₂⟩ =>
-    WP.mono (gh_call v.gh hg) fun st₃ g => ?_))
+  refine WP.seq (WP.seq (WP.mono (ghArgs_ok hp hgs (M.ready hp) hlt) fun st₂ ⟨hg, R₂, sv₂, m₂⟩ =>
+    WP.mono (F.gh hg) fun st₃ g => ?_))
   have f₃ := g.frame
   rw [R₂.rsp] at f₃
-  have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => (apart_kR' hp hq).gh r hr)
-    (fun r hr => (apart_a hp hq).gh r hr) (g.saved _ (by decide)) g.rd g.wr
-  refine WP.seq (WP.mono (ctrArgs_ok hp R₃ hlt) fun st₄ ⟨hc, R₄, sv₄, m₄⟩ =>
-    WP.mono (ctr_call v.ctr hc) fun st₅ g' => ?_)
+  have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => (apart_kR' hp hq).gh hgs r hr)
+    (fun r hr => (apart_a hp hq).gh hgs r hr) (g.saved _ (by decide)) g.rd g.wr
+  refine WP.seq (WP.mono (ctrArgs_ok hp hcs R₃ hlt) fun st₄ ⟨hc, R₄, sv₄, m₄⟩ =>
+    WP.mono (F.ctr hc) fun st₅ g' => ?_)
   have f₅ := g'.frame
   rw [R₄.rsp] at f₅
   have hP₂ : blocksAt st₂.mem (dq s q) (n s - q) = blocksAt s.mem (dq s q) (n s - q) := by rw [m₂]; exact M.rest
@@ -261,26 +261,26 @@ theorem decCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}
     rw [m₂, blockAt_frame M.frame fun r hr => (wR_k hp r hr).sub_left (h_sub (s := s))]; rfl
   have hY₂ : blockAt st₂.mem (Y s) = ghashFrom (hk s) (y₀ s) (blocksAt s.mem (D s) q) := by rw [m₂]; exact M.y
   have hK : Spec.Aes.bytesAt st₄.mem (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt s.mem (K s) (16 * (R s + 1)) := by
-    rw [m₄, keep_sch hp f₃ (fun r hr => (apart_k hp hq).gh r hr), m₂]; exact keep_sch hp M.frame (wR_k hp)
+    rw [m₄, keep_sch hp f₃ (fun r hr => (apart_k hp hq).gh hgs r hr), m₂]; exact keep_sch hp M.frame (wR_k hp)
   have hC₄ : blockAt st₄.mem (C s) = Nat.repeat inc32 q (cb s) := by
-    rw [m₄, blockAt_frame f₃ (c_gh hp), m₂]; exact M.ctr
+    rw [m₄, blockAt_frame f₃ (c_gh hp hgs), m₂]; exact M.ctr
   have hD₄ : blocksAt st₄.mem (dq s q) (n s - q) = blocksAt s.mem (dq s q) (n s - q) := by
-    rw [m₄, blocksAt_frame f₃ (dq_gh hp hq) (by omega)]; exact hP₂
+    rw [m₄, blocksAt_frame f₃ (dq_gh hp hgs hq) (by omega)]; exact hP₂
   have out₅ := g'.out
   rw [hK, hC₄, hD₄] at out₅
   have hfirst : blocksAt st₅.mem (D s) q = ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q) := by
-    rw [← M.data, blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).ctr r hr)) (by omega), m₄,
-      blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).gh r hr)) (by omega), m₂]
+    rw [← M.data, blocksAt_frame f₅ (fun r hr => ((apart_dq hp hq).ctr hcs r hr)) (by omega), m₄,
+      blocksAt_frame f₃ (fun r hr => ((apart_dq hp hq).gh hgs r hr)) (by omega), m₂]
   refine ⟨⟨fun r hr => by rw [g'.saved r hr, sv₄ r hr, g.saved r hr, sv₂ r hr, M.saved r hr], ?_⟩, ?_, ?_, ?_⟩
   · show st₅.mem.readW (SP s) 64 = s.mem.readW (SP s) 64
-    rw [f₅.readW (Region.contains_self _ _) ((apart_ret hp hq).ctr) (by decide), m₄,
-      f₃.readW (Region.contains_self _ _) ((apart_ret hp hq).gh) (by decide), m₂, keep_r hp M.frame]
+    rw [f₅.readW (Region.contains_self _ _) ((apart_ret hp hq).ctr hcs) (by decide), m₄,
+      f₃.readW (Region.contains_self _ _) ((apart_ret hp hq).gh hgs) (by decide), m₂, keep_r hp M.frame]
   · show blocksAt st₅.mem (D s) (n s) = ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s))
     rw [blocksAt_split st₅.mem hq, hfirst, out₅, blocksAt_split s.mem hq, Proof.Gcm.ctr32_append, length_blocksAt]; rfl
   · show blockAt st₅.mem (C s) = Nat.repeat inc32 (n s) (cb s)
     rw [g'.ctr, hC₄, ← Proof.Gcm.repeat_add, Nat.sub_add_cancel hq]
   · show blockAt st₅.mem (Y s) = ghashFrom (hk s) (y₀ s) (blocksAt s.mem (D s) (n s))
-    rw [blockAt_frame f₅ (y_ctr hp hq), m₄, g.out, hH, hY₂, hP₂, ← Proof.Gcm.ghashFrom_append,
+    rw [blockAt_frame f₅ (y_ctr hp hcs hq), m₄, g.out, hH, hY₂, hP₂, ← Proof.Gcm.ghashFrom_append,
       ← blocksAt_split s.mem hq]
 
 end

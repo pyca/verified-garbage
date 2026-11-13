@@ -176,7 +176,7 @@ theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = 
 
 /-- What a call of `vg_ghash` needs: the hash subkey at `H`, the accumulator
 at `Y`, `n` blocks at `D` and working space at `S`. -/
-structure GhCall (s : State) (H Y D S : Addr) (n : Nat) : Prop where
+structure GhCall (s : State) (H Y D S : Addr) (n : Nat) (gs : Nat := 256) : Prop where
   rdi : s.gpr .rdi = H
   rsi : s.gpr .rsi = Y
   rdx : s.gpr .rdx = D
@@ -184,23 +184,23 @@ structure GhCall (s : State) (H Y D S : Addr) (n : Nat) : Prop where
   r8 : s.gpr .r8 = S
   n_lt : 16 * n < 2 ^ 64
   hy : (⟨H, 16⟩ : Region).Disjoint ⟨Y, 16⟩
-  hs : (⟨H, 16⟩ : Region).Disjoint ⟨S, 256⟩
+  hs : (⟨H, 16⟩ : Region).Disjoint ⟨S, gs⟩
   yd : (⟨Y, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  ys : (⟨Y, 16⟩ : Region).Disjoint ⟨S, 256⟩
-  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 256⟩
+  ys : (⟨Y, 16⟩ : Region).Disjoint ⟨S, gs⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, gs⟩
   stkH : (below (s.gpr .rsp) 8).Disjoint ⟨H, 16⟩
   stkY : (below (s.gpr .rsp) 8).Disjoint ⟨Y, 16⟩
   stkD : (below (s.gpr .rsp) 8).Disjoint ⟨D, 16 * n⟩
-  stkS : (below (s.gpr .rsp) 8).Disjoint ⟨S, 256⟩
-  reads : Covers ([⟨H, 16⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, 256⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨Y, 16⟩, ⟨S, 256⟩] s.wr
+  stkS : (below (s.gpr .rsp) 8).Disjoint ⟨S, gs⟩
+  reads : Covers ([⟨H, 16⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, gs⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨Y, 16⟩, ⟨S, gs⟩] s.wr
 
 /-- What a call of `vg_ghash` leaves. -/
-structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) : Prop where
+structure GhPost (s : State) (H Y D S : Addr) (n : Nat) (s' : State) (gs : Nat := 256) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨Y, 16⟩, ⟨S, 256⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  frame : Frame [⟨Y, 16⟩, ⟨S, gs⟩, below (s.gpr .rsp) 8] s.mem s'.mem
   out : blockAt s'.mem Y = ghashFrom (blockAt s.mem H) (blockAt s.mem Y) (blocksAt s.mem D n)
 
 theorem GhCall.pre {s : State} {H Y D S : Addr} {n : Nat} (h : GhCall s H Y D S n) :
@@ -311,7 +311,7 @@ theorem gh_relF (g : GhashImpl) (f : GhashFree g.fn.code) {P : State → State �
 
 /-- What a call of `vg_aes_ctr32` needs: the key schedule at `K` for `R`
 rounds, the counter block at `C`, `n` blocks at `D` and working space at `S`. -/
-structure CtrCall (s : State) (K C D S : Addr) (R n : Nat) : Prop where
+structure CtrCall (s : State) (K C D S : Addr) (R n : Nat) (sz : Nat := 2048) : Prop where
   rdi : s.gpr .rdi = K
   rsi : s.gpr .rsi = BitVec.ofNat 64 R
   rdx : s.gpr .rdx = C
@@ -322,23 +322,23 @@ structure CtrCall (s : State) (K C D S : Addr) (R n : Nat) : Prop where
   wrap : D.toNat + 16 * n ≤ 2 ^ 64
   kc : (⟨K, 240⟩ : Region).Disjoint ⟨C, 16⟩
   kd : (⟨K, 240⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  ks : (⟨K, 240⟩ : Region).Disjoint ⟨S, 2048⟩
+  ks : (⟨K, 240⟩ : Region).Disjoint ⟨S, sz⟩
   cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
-  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, sz⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, sz⟩
   stkK : (below (s.gpr .rsp) 8).Disjoint ⟨K, 240⟩
   stkC : (below (s.gpr .rsp) 8).Disjoint ⟨C, 16⟩
   stkD : (below (s.gpr .rsp) 8).Disjoint ⟨D, 16 * n⟩
-  stkS : (below (s.gpr .rsp) 8).Disjoint ⟨S, 2048⟩
-  reads : Covers ([⟨K, 240⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] s.wr
+  stkS : (below (s.gpr .rsp) 8).Disjoint ⟨S, sz⟩
+  reads : Covers ([⟨K, 240⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, sz⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, sz⟩] s.wr
 
 /-- What a call of `vg_aes_ctr32` leaves. -/
-structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop where
+structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) (sz : Nat := 2048) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, sz⟩, below (s.gpr .rsp) 8] s.mem s'.mem
   out : blocksAt s'.mem D n = ctr32 (aesWith R (bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C)
     (blocksAt s.mem D n)
   ctr : blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem C)
@@ -897,5 +897,66 @@ inductive GhashName where
   | scalar
   | pclmul
   | vpclmul
+
+/-! ## Working space of any size
+
+A call given `cs` bytes of working space for `vg_aes_ctr32` and `gs` for
+`vg_ghash` (`CtrCall`, `GhCall` of those sizes): of 2048 and 256 for every
+implementation (`Fits.base`), of any size for those that need none
+(`Fits.free`), whose callers then need not set aside the base sizes. -/
+
+theorem CtrCall.toF {s : State} {K C D S : Addr} {R n cs : Nat} (h : CtrCall s K C D S R n cs) :
+    CtrCallF s K C D S R n :=
+  ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.rounds, h.wrap, h.kc, h.kd, h.cd, h.stkK, h.stkC, h.stkD,
+    (Covers.of_mem fun r hr => by simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]).trans h.reads,
+    (Covers.of_mem fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]).trans h.writes⟩
+
+theorem GhCall.toF {s : State} {H Y D S : Addr} {n gs : Nat} (h : GhCall s H Y D S n gs) :
+    GhCallF s H Y D S n :=
+  ⟨h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.n_lt, h.hy, h.yd, h.stkH, h.stkY, h.stkD,
+    (Covers.of_mem fun r hr => by simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]).trans h.reads,
+    (Covers.of_mem fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]).trans h.writes⟩
+
+/-- The calls `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks` make of `v`'s
+`vg_aes_ctr32` and `vg_ghash`, with `cs` and `gs` bytes of working space. -/
+structure Fits (v : GcmImpl) (cs gs : Nat) : Prop where
+  ctr : ∀ {s : State} {K C D S : Addr} {R n : Nat}, CtrCall s K C D S R n cs →
+    WP isa (.call v.ctr.callee.name v.ctr.callee.code) s (CtrPost s K C D S R n · cs)
+  ctrRel : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ → ∃ K C D S : Addr, ∃ R n : Nat,
+      CtrCall s₁ K C D S R n cs ∧ CtrCall s₂ K C D S R n cs ∧ s₁.gpr .rsp = s₂.gpr .rsp) →
+    RelCT isa P (.call v.ctr.callee.name v.ctr.callee.code) fun _ _ => True
+  gh : ∀ {s : State} {H Y D S : Addr} {n : Nat}, GhCall s H Y D S n gs →
+    WP isa (.call v.gh.fn.name v.gh.fn.code) s (GhPost s H Y D S n · gs)
+  ghRel : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ → ∃ H Y D S : Addr, ∃ n : Nat,
+      GhCall s₁ H Y D S n gs ∧ GhCall s₂ H Y D S n gs ∧ s₁.gpr .rsp = s₂.gpr .rsp) →
+    RelCT isa P (.call v.gh.fn.name v.gh.fn.code) fun _ _ => True
+
+/-- Every implementation, with the working space its base needs. -/
+theorem Fits.base (v : GcmImpl) : Fits v 2048 256 where
+  ctr h := ctr_call v.ctr h
+  ctrRel h := ctr_rel v.ctr h
+  gh h := gh_call v.gh h
+  ghRel h := gh_rel v.gh h
+
+/-- Implementations that need no working space, with any. -/
+theorem Fits.free (v : GcmImpl) (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (fg : GhashFree v.gh.fn.code)
+    (cs gs : Nat) : Fits v cs gs where
+  ctr h := WP.mono (ctr_callF v.ctr fc h.toF) fun _ g => ⟨g.rd, g.wr, g.saved, g.frame.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩, g.out, g.ctr⟩
+  ctrRel h := ctr_relF v.ctr fc fun s₁ s₂ hp => by
+    obtain ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    exact ⟨K, C, D, S, R, n, h₁.toF, h₂.toF, hsp⟩
+  gh h := WP.mono (gh_callF v.gh fg h.toF) fun _ g => ⟨g.rd, g.wr, g.saved, g.frame.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩, g.out⟩
+  ghRel h := gh_relF v.gh fg fun s₁ s₂ hp => by
+    obtain ⟨H, Y, D, S, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    exact ⟨H, Y, D, S, n, h₁.toF, h₂.toF, hsp⟩
 
 end VG.Proof.AesGcm.X86_64
