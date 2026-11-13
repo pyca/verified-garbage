@@ -55,6 +55,9 @@ own changes are rebuilt either way, on top of the restored build.
   code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
   and Thumb, as text), and its assembly file, the text of that code,
   `assembly/<module>.s`, which is not compiled: read the code there.
+  The one exception is a prototype measuring an instruction the ISA model
+  lacks (the `benchmarking` skill): it lives only on a `bench/` branch,
+  is never opened as a PR, and is deleted once measured.
 * **The cryptography is in the verified code, never in Rust.** The Rust
   around a verified function is tested, not proven, so it does only what
   cannot be verified: it checks the API's arguments, lays out buffers and
@@ -77,10 +80,11 @@ own changes are rebuilt either way, on top of the restored build.
   `lake build` and the emitter enforce this (warnings are errors, and
   `#assert_standard_axioms` audits every artifact); never work around it.
 * **Changes to `lean/VerifiedGarbage/TCB/` or `Spec/` are trust changes.**
-  Keep them minimal, call them out explicitly in the PR description, and
-  justify each ISA semantics change by citing the vendor manual (e.g. Intel SDM
-  pseudocode). Never weaken a model, contract or `Verified` to make a proof go
-  through: fix the proof or the code. An instruction outside the target's
+  Keep them minimal (adding an instruction for a measured speedup is fine),
+  call them out explicitly in the PR description, and justify each ISA
+  semantics change by citing the vendor manual (e.g. Intel SDM pseudocode).
+  Never weaken a model, contract or `Verified` to make a proof go through:
+  fix the proof or the code. An instruction outside the target's
   baseline ISA must list the CPU features it needs in the model's
   `requires`, citing the manual (the SDM's "CPUID Feature Flag", the Arm
   ARM's `FEAT_*`).
