@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 meta import VerifiedGarbage.Impl.AesCtr.X86_64.Final
 meta import VerifiedGarbage.Proof.AesCtr.Final
 meta import VerifiedGarbage.Proof.AesCtr.X86_64.Verified
@@ -45,7 +45,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-CTR of a message's last piece on x86-64
@@ -358,7 +358,7 @@ theorem entry_bytes {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ 
   · exact hp.stk_data.symm.sub_left (AesCfb.X86_64.blk_sub s₀)
 
 theorem whole_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
-    WP isa (.call ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) s (Whole AesCtr.ctrMode s₀) := by
+    WP isa (.call ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) s (Whole AesCtr.ctrMode s₀) := by
   obtain ⟨eW, eIv, eB⟩ := entry_bytes hp h
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
   refine WP.call (k := wholeK) (crypt_correct v) (crypt_noSp v) (by rw [crypt_depth v]; decide) (rd := [fSch s₀])
@@ -636,7 +636,7 @@ theorem CPre.sched_big {s₀ : State} (hp : CPre s₀) :
   · exact hp.stk_sch.symm.sub_left hp.sched_sub
 
 theorem tail_call_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : TArgs s₀ s) :
-    WP isa (.call ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) s (TCall s₀) := by
+    WP isa (.call ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) s (TCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   have ef := callEntry_frame s
   have stk : Region.Sub (below (s.gpr .rsp) 8) (fStk s₀) := by rw [h.rsp]; exact AesCfb.X86_64.below8_sub _
@@ -801,7 +801,7 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
 
 theorem final_mid_wp (v : Ctr32Impl) {s₀ : State} (hp : CPre s₀) {s : State} (h : Whole AesCtr.ctrMode s₀ s)
     (hz : s.zf = some (decide (fU s₀ = 0))) :
-    WP isa (.ite .e (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee))) s (Done s₀) := by
+    WP isa (.ite .e (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee))) s (Done s₀) := by
   have ev : isa.eval .e s = some (decide (fU s₀ = 0)) := hz
   by_cases hu : fU s₀ = 0
   · exact WP.ite true (by rw [ev, decide_eq_true hu]) (fun _ => WP.block_nil (done_of_zero h hu))
@@ -943,7 +943,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
         simp only [gpr_setReg, reduceCtorEq, ↓reduceIte, qW, qR, qIv, qD, qL, qS, qSp, fV, qV])
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨final_setup_wp hp, final_setup_wp hp'⟩
   -- The whole blocks.
-  have r₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix) (crypt_correct v) (crypt_ct v)
+  have r₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
     (P := fun a b => Setup s₀ a ∧ Setup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -970,7 +970,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
     fun a b h => ⟨AesCfb.X86_64.final_test_wp h.1, AesCfb.X86_64.final_test_wp h.2⟩
   -- The partial last block.
   have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
-      (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)) fun a b => Done s₀ a ∧ Done s₀' b := by
+      (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)) fun a b => Done s₀ a ∧ Done s₀' b := by
     have hu' : fU s₀' ≠ 0 := qU ▸ hu
     have a₁ := taint_rel (P := fun a b => Whole AesCtr.ctrMode s₀ a ∧ Whole AesCtr.ctrMode s₀' b)
       (F₁ := Loaded (Whole AesCtr.ctrMode s₀) s₀) (F₂ := Loaded (Whole AesCtr.ctrMode s₀') s₀') [.rsp]
@@ -995,7 +995,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
       fun a b h => by
         obtain ⟨⟨w, hw, rfl⟩, ⟨w', hw', rfl⟩⟩ := h
         exact ⟨tail_args_wp hp hw, tail_args_wp hp' hw'⟩
-    have a₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix) (crypt_correct v) (crypt_ct v)
+    have a₃ := (RelCT.callEx (k := wholeK) (n := "vg_aes_ctr" ++ v.suffix ++ "_core") (crypt_correct v) (crypt_ct v)
       (P := fun a b => TArgs s₀ a ∧ TArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb
@@ -1033,7 +1033,7 @@ theorem final_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : ctrFinalX86_64.pre 
     exact a₁.seq (a₂.seq ((a₃.mono (fun _ _ h => h) fun _ _ h => h.2).seq (a₄.seq a₅)))
   have r₅ : RelCT isa (fun a b => (Whole AesCtr.ctrMode s₀ a ∧ a.zf = some (decide (fU s₀ = 0))) ∧
       (Whole AesCtr.ctrMode s₀' b ∧ b.zf = some (decide (fU s₀' = 0))))
-      (.ite .e (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix) (crypt v.callee)))
+      (.ite .e (.block []) (finalTail ("vg_aes_ctr" ++ v.suffix ++ "_core") (crypt v.callee)))
       (fun a b => Done s₀ a ∧ Done s₀' b) := by
     refine RelCT.ite (fun a b h => ?_) ?_ ?_
     · show a.zf = b.zf; rw [h.1.2, h.2.2, qU]
@@ -1080,11 +1080,12 @@ theorem cryptFinal_verified (v : Ctr32Impl) :
 /-! ## With `save` on the stack
 
 The final function has six argument words, so `save` is its first stack
-argument: it runs its code in a frame of 80 bytes (`withStackArgScratchWiped`):
+argument: it runs its code in a frame of 80 bytes (`withStackArgScratch`):
 the quadword standing for the return address, `save`'s address, and `save`'s
 64 bytes (the registers, then the block that held the last output block),
-which it zeroes before returning. The code's calls use 16 bytes below it, so
-96 in all. -/
+which the scrub after it zeroes with the rest of the stack
+(`Proof.Aes.X86_64.FinalScrub.ctrFinalReg`). The code's calls use 16 bytes
+below it, so 96 in all. -/
 
 theorem frameSat_pre : ∃ s, (finalRoundsContract X86_64.abi 96).pre s := by
   implies_sat [finalRoundsContract, Spec.Ctr.aesFinalSig, finalPre, finalPost, X86_64.abi,
@@ -1092,19 +1093,18 @@ theorem frameSat_pre : ∃ s, (finalRoundsContract X86_64.abi 96).pre s := by
 
 theorem cryptFinal_framed (v : Ctr32Impl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWiped 80 0 8 (cryptFinal v.callee v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 80 0 (cryptFinal v.callee v.suffix))
       (finalRoundsContract X86_64.abi 96) :=
-  X86_64.Verified.stackArgScratchWiped (sig := Spec.Ctr.aesFinalSig) (nm := "save") (e := .u64) (n := 8)
+  X86_64.Verified.stackArgScratch (sig := Spec.Ctr.aesFinalSig) (nm := "save") (e := .u64) (n := 8)
     (pre := finalPre X86_64.abi.ptrBits) (post := finalPost X86_64.abi.ptrBits) (wa := false)
     (leak := some (finalLeak X86_64.abi.ptrBits))
-    (stack := 16) (bytes := 80) (words := 8) (cryptFinal_verified v) (by decide) (by decide) (by decide)
-    (cryptFinal_spSafe v) (cryptFinal_xdepth v) (by decide) (finalPre_local _) (finalPost_local _)
-    (finalPost_localOut _) frameSat_pre (finalLeak_local _)
+    (stack := 16) (bytes := 80) (cryptFinal_verified v) (by decide) (by decide) (by decide)
+    (cryptFinal_spSafe v) (cryptFinal_xdepth v) (finalPre_local _) (finalPost_local _) frameSat_pre
+    (finalLeak_local _)
 
 theorem cryptFinal_framed_spSafe (v : Ctr32Impl) :
-    (Impl.StackScratch.X86_64.withStackArgScratchWiped 80 0 8 (cryptFinal v.callee v.suffix)).all
+    (Impl.StackScratch.X86_64.withStackArgScratch 80 0 (cryptFinal v.callee v.suffix)).all
       (fun i => !X86_64.isa.writesSp i) = true :=
-  X86_64.withStackArgScratch_spSafe (by
-    simp only [Code.all, cryptFinal_spSafe v, X86_64.wipeAt_spSafe, Bool.and_self])
+  X86_64.withStackArgScratch_spSafe (cryptFinal_spSafe v)
 
 end VG.Proof.AesCtr.X86_64

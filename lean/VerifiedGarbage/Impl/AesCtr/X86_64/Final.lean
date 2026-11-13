@@ -75,8 +75,10 @@ def final (name : String) (whole : Prog isa) : Prog isa :=
     (.seq (.block [.alu .test .r14 (.reg .r14)]) (.seq (.ite .e (.block []) (finalTail name whole))
       (.seq (.block loadSave) (.block finalRestore))))))
 
-/-- `vg_aes_ctr_final`, calling `vg_aes_ctr` with `vg_aes_ctr32`'s
-implementation `c`, whose callers' names end in `sfx`. -/
-def cryptFinal (c : Ctr32) (sfx : String) : Prog isa := final ("vg_aes_ctr" ++ sfx) (crypt c)
+/-- `vg_aes_ctr_final`, calling `vg_aes_ctr`'s code with `vg_aes_ctr32`'s
+implementation `c`, whose callers' names end in `sfx`, as an internal
+function of its own, `vg_aes_ctr<sfx>_core`: `vg_aes_ctr` also clears what
+it leaves (`Proof.Aes.X86_64.FinalScrub.ctrReg`). -/
+def cryptFinal (c : Ctr32) (sfx : String) : Prog isa := final ("vg_aes_ctr" ++ sfx ++ "_core") (crypt c)
 
 end VG.Impl.AesCtr.X86_64
