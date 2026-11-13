@@ -155,7 +155,10 @@ end Scrub
 
 /-- `variant` before the residue analysis of HMAC's `finalize`. -/
 def unscrubbed : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha256.variant compress with stream := [update, finalize, digest] }
+  { Proof.Pbkdf2.Md.X86_64.Sha256.variant compress
+      (Proof.Pbkdf2.Md.X86_64.Sha256.ownS compress 112 (Or.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112 26
+        Proof.Pbkdf2.Md.X86_64.Sha256.satW112) with
+    stream := [update, finalize, digest] }
 
 /-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
@@ -176,7 +179,10 @@ def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
 
 /-- `variant224` before the residue analysis of HMAC's `finalize`. -/
 def unscrubbed224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha224.variant compress with stream := [finalize224, digest224] }
+  { Proof.Pbkdf2.Md.X86_64.Sha224.variant compress
+      (Proof.Pbkdf2.Md.X86_64.Sha224.ownS compress 112 (Or.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112 26
+        Proof.Pbkdf2.Md.X86_64.Sha224.satW112) with
+    stream := [finalize224, digest224] }
 
 /-- HMAC's `finalize` over `unscrubbed224`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue

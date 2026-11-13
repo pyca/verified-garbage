@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
+public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
@@ -135,6 +136,36 @@ theorem shani_ok : CalleeOk (P := params) md Callee.shani.code :=
   .of_verified ShaNi.compressWide_verified.1 ShaNi.compressWide_verified.2.1
     (by change (instrs Impl.Sha512.X86_64.ShaNi.compress).all _ = true; rw [← Code.allInstrs_eq]; lit_decide)
     (by change Impl.Sha512.X86_64.ShaNi.compress.depth = 0; lit_decide)
+
+/-- `params` with `so` bytes of working space for the compression function
+(`Impl.Pbkdf2.Md.X86_64.Hash.withSo`), for the implementations that use
+less than AVX2's: the code made with it is part of functions that call no
+function made with `params` by name (HMAC's `init` for a key of at most a
+block). -/
+abbrev paramsS (so : Nat) : Impl.MdStream.X86_64.Params := { params with so := so }
+
+theorem taintsS (so : Nat) (h : so = 0 ∨ so = 192) : Taints (paramsS so) := by
+  rcases h with rfl | rfl <;>
+  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, by decide, by decide⟩
+
+/-- An implementation verified with `so` bytes of scratch space, as the code
+made with `paramsS so` calls it. -/
+theorem calleeS {code : Prog isa} (hf : CalleeOk (P := params) md code) {so : Nat}
+    (hv : Verified X86_64.target code (Proof.Sha512.compressWideX86_64S so)) :
+    CalleeOk (P := paramsS so) md code :=
+  ⟨hv.1, hv.2.1, hf.nosp, hf.depth, hf.keeps_rdi, hf.keeps_rcx⟩
+
+/-- The scalar compression function, verified with the scratch space it uses. -/
+theorem scalar_verified192 :
+    Verified X86_64.target Callee.scalar.code (Proof.Sha512.compressWideX86_64S 192) :=
+  Rolled.compress_verified192
+
+/-- The compression function with the SHA512 extension, verified with no
+scratch space, which it does not use. -/
+theorem shani_verified0 : Verified X86_64.target Callee.shani.code (Proof.Sha512.compressWideX86_64S 0) :=
+  ShaNi.compress_verified0
 
 namespace Update
 

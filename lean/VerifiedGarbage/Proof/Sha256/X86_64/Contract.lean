@@ -44,6 +44,28 @@ def compressX86_64 : Contract X86_64.isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
 
+open VG.X86_64 in
+/-- `compressX86_64` with `n` bytes of scratch space: the contract of an
+implementation that uses no more (`compressX86_64` is `compressX86_64S 560`, for the
+implementation that uses the most). -/
+def compressX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 32⟩
+    let blocks : Region := ⟨s.gpr .rsi, 64 * (s.gpr .rdx).toNat⟩
+    let scratch : Region := ⟨s.gpr .rcx, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
+    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint scratch
+  post s s' :=
+    stateAt s'.mem (s.gpr .rdi) =
+      compressBlocks (stateAt s.mem (s.gpr .rdi)) s.mem (s.gpr .rsi) (s.gpr .rdx).toNat
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
+
+theorem compressX86_64_eq : compressX86_64 = compressX86_64S 560 := rfl
+
 open X86_64 in
 /-- x86-64 contract for `vg_sha256_init(state: *mut [u8; 96])` and
 `vg_sha224_init`, which store the initial hash value `iv`: makes the

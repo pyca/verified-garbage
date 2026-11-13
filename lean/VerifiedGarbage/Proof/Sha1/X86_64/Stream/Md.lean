@@ -65,6 +65,21 @@ theorem shani_ok : CalleeOk (P := params) md Callee.shani.code :=
   .of_verified ShaNi.compress_verified.1 ShaNi.compress_verified.2.1
     (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
 
+/-- `params` with no working space for the compression function, for
+`vg_sha1_compress_shani`, which uses none: the code made with it is part of
+the functions that call no function made with `params` by name (HMAC's
+`init` for a key of at most a block). -/
+abbrev params0 : Impl.MdStream.X86_64.Params := { params with so := 0 }
+
+theorem taints0 : Taints params0 :=
+  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, by decide, by decide⟩
+
+theorem shani_ok0 : CalleeOk (P := params0) md Callee.shani.code :=
+  .of_verified ShaNi.compress_verified0.1 ShaNi.compress_verified0.2.1
+    (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
+
 namespace Update
 
 /-- `update` is verified if it never loads MXCSR. -/

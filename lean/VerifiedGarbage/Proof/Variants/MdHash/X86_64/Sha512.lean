@@ -154,6 +154,9 @@ def stream512_224 : List Proof.Pbkdf2.Md.X86_64.StreamFn := [finalize512_224, di
 HMAC's `finalize`. -/
 def unscrubbed384 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha384 compress stream384
+    (Proof.Pbkdf2.Md.X86_64.Sha512.ownS (Proof.Pbkdf2.Md.X86_64.Sha512.sha384OK compress) rfl
+      (Proof.Pbkdf2.Md.X86_64.Sha512.sha384K compress) rfl rfl rfl 192 (.inr rfl)
+      Proof.Sha512.X86_64.Stream.scalar_verified192 (.inr (.inr (.inl rfl))) 36 Proof.Pbkdf2.Md.X86_64.Sha512.sha384_satW192)
 
 /-- HMAC's `finalize` over `unscrubbed384`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
@@ -176,6 +179,9 @@ def variant384 : Proof.Pbkdf2.Md.X86_64.MdHash :=
 HMAC's `finalize`. -/
 def unscrubbed512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512 compress stream
+    (Proof.Pbkdf2.Md.X86_64.Sha512.ownS (Proof.Pbkdf2.Md.X86_64.Sha512.sha512OK compress) rfl
+      (Proof.Pbkdf2.Md.X86_64.Sha512.sha512K compress) rfl rfl rfl 192 (.inr rfl)
+      Proof.Sha512.X86_64.Stream.scalar_verified192 (.inr (.inr (.inr rfl))) 36 Proof.Pbkdf2.Md.X86_64.Sha512.sha512_satW192)
 
 /-- HMAC's `finalize` over `unscrubbed512`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
@@ -198,6 +204,9 @@ def variant512 : Proof.Pbkdf2.Md.X86_64.MdHash :=
 HMAC's `finalize`. -/
 def unscrubbed512_224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 compress stream512_224
+    (Proof.Pbkdf2.Md.X86_64.Sha512.ownS (Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224OK compress) rfl
+      (Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224K compress) rfl rfl rfl 192 (.inr rfl)
+      Proof.Sha512.X86_64.Stream.scalar_verified192 (.inl rfl) 36 Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224_satW192)
 
 /-- HMAC's `finalize` over `unscrubbed512_224`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
@@ -220,6 +229,9 @@ def variant512_224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
 HMAC's `finalize`. -/
 def unscrubbed512_256 : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256 compress stream512_256
+    (Proof.Pbkdf2.Md.X86_64.Sha512.ownS (Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256OK compress) rfl
+      (Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256K compress) rfl rfl rfl 192 (.inr rfl)
+      Proof.Sha512.X86_64.Stream.scalar_verified192 (.inr (.inl rfl)) 36 Proof.Pbkdf2.Md.X86_64.Sha512.sha512_256_satW192)
 
 /-- HMAC's `finalize` over `unscrubbed512_256`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue

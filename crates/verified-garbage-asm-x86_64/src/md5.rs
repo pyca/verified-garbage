@@ -32,11 +32,11 @@ pub(crate) unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 64 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI1kJIhJieBJg8AISYlYQEmJaEhNiWBQTYloWE2JcGBNiXhoSIn7TYnHSInVSYnMSYn1SYPlPw=="
+        r#".base64 "SI1kJMhJieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChIiftNicdIidVJicxJifVJg+U/"
 20:
 .base64 "TYXt"
 je 21f
@@ -115,7 +115,7 @@ call {vg_md5_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYtfQEmLb0hNi2dQTYtvWE2Ld2BNi39oSI1kJHhIjWQkgEiNpCSAAAAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOEiNZCTASI1kJEAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -133,11 +133,11 @@ jne 20b
 /// * `out` must be valid for reads and writes of 16 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 64 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI1kJIhIieFIg8EISIlZQEiJaUhMiWFQTIlpWEyJcWBMiXloSIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SI1kJMhIieFIg8EISIkZSIlpCEyJYRBMiWkYTIlxIEyJeShIiftJic9IidVJifRJifVJg+U/QbmAAAAAQb4AAAAASYP9OA=="
 jae 20f
 jmp 21f
 20:
@@ -196,7 +196,7 @@ jmp 219f
 call {vg_md5_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19ASYtvSE2LZ1BNi29YTYt3YE2Lf2hIjWQkeGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCSASI2kJIAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJix9Ji28ITYtnEE2LbxhNi3cgTYt/KEiNZCQ4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJMBIjWQkQDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )

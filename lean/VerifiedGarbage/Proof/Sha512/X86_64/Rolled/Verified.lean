@@ -36,17 +36,17 @@ open VG VG.X86_64
 /-- The pointers and the count are public; `rdi` and `rcx` point at the
 hash value and the scratch space. -/
 def τW : X86_64.Taint.T :=
-  { regs := .ofList [.rdi, .rsi, .rdx, .rcx], flags := false, lens := [64, 1328],
+  { regs := .ofList [.rdi, .rsi, .rdx, .rcx], flags := false, lens := [64, 192],
     bases := [(.rdi, 0, 0), (.rcx, 1, 0)] }
 
 theorem agreeW {s₁ s₂ : State}
     (hr : ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx], s₁.gpr r = s₂.gpr r)
-    (hw₁ : s₁.wr = [⟨s₁.gpr .rdi, 64⟩, ⟨s₁.gpr .rcx, 1328⟩])
-    (hw₂ : s₂.wr = [⟨s₂.gpr .rdi, 64⟩, ⟨s₂.gpr .rcx, 1328⟩])
-    (hd₁ : Region.Disjoint ⟨s₁.gpr .rdi, 64⟩ ⟨s₁.gpr .rcx, 1328⟩)
-    (hd₂ : Region.Disjoint ⟨s₂.gpr .rdi, 64⟩ ⟨s₂.gpr .rcx, 1328⟩) : taint.Agree τW s₁ s₂ := by
-  have wf : ∀ s : State, s.wr = [⟨s.gpr .rdi, 64⟩, ⟨s.gpr .rcx, 1328⟩] →
-      Region.Disjoint ⟨s.gpr .rdi, 64⟩ ⟨s.gpr .rcx, 1328⟩ → X86_64.Taint.Wf τW s := by
+    (hw₁ : s₁.wr = [⟨s₁.gpr .rdi, 64⟩, ⟨s₁.gpr .rcx, 192⟩])
+    (hw₂ : s₂.wr = [⟨s₂.gpr .rdi, 64⟩, ⟨s₂.gpr .rcx, 192⟩])
+    (hd₁ : Region.Disjoint ⟨s₁.gpr .rdi, 64⟩ ⟨s₁.gpr .rcx, 192⟩)
+    (hd₂ : Region.Disjoint ⟨s₂.gpr .rdi, 64⟩ ⟨s₂.gpr .rcx, 192⟩) : taint.Agree τW s₁ s₂ := by
+  have wf : ∀ s : State, s.wr = [⟨s.gpr .rdi, 64⟩, ⟨s.gpr .rcx, 192⟩] →
+      Region.Disjoint ⟨s.gpr .rdi, 64⟩ ⟨s.gpr .rcx, 192⟩ → X86_64.Taint.Wf τW s := by
     intro s hw hd
     refine ⟨fun _ => ⟨by simp [hw, τW], by simp [hw, hd], by simp [hw]⟩, fun p hp => ?_⟩
     simp only [τW, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -59,19 +59,25 @@ theorem agreeW {s₁ s₂ : State}
   · intro sl h; simp [τW] at h
   · intro sl h; simp [τW] at h
 
-theorem compress_verified :
-    Verified X86_64.target Impl.Sha512.X86_64.Rolled.compress Proof.Sha512.compressWideX86_64 := by
+/-- The compression function, verified with the 192 bytes of scratch space it
+uses. -/
+theorem compress_verified192 :
+    Verified X86_64.target Impl.Sha512.X86_64.Rolled.compress (Proof.Sha512.compressWideX86_64S 192) := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
-  · obtain ⟨t, s', he, h⟩ := correct (Avx2.pre_of s hs)
+  · obtain ⟨t, s', he, h⟩ := correct (Avx2.preN_of 192 s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
   · refine VG.Taint.constantTime (A := taint) τW ?_ (by taint_decide)
     intro s₁ s₂ hp₁ hp₂ ⟨h1, h2, h3, h4⟩
-    have p₁ := Avx2.pre_of s₁ hp₁
-    have p₂ := Avx2.pre_of s₂ hp₂
+    have p₁ := Avx2.preN_of 192 s₁ hp₁
+    have p₂ := Avx2.preN_of 192 s₂ hp₂
     refine agreeW (fun r hr => ?_) p₁.wr p₂.wr p₁.st_scr p₂.st_scr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · refine ⟨Avx2.satState, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    exact Region.disjoint_of_sep (by decide)
+  · exact wideSatS 192 (.inr (.inl rfl))
+
+/-- `compress_verified192`, with the scratch space of the shared contract. -/
+theorem compress_verified :
+    Verified X86_64.target Impl.Sha512.X86_64.Rolled.compress Proof.Sha512.compressWideX86_64 :=
+  compressWideS_widen compress_verified192 (by decide) (wideSatS 1328 (.inr (.inr rfl)))
 
 end VG.Proof.Sha512.X86_64.Rolled

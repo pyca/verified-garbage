@@ -804,7 +804,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     exact blk_word i t ht
   have hin : ∀ n : Nat, n < 4 →
       InRegions (s.rd ++ s.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 :=
-    fun n hn => by rw [hL.rd, hL.wr]; exact Proof.Sha1.X86_64.ShaNi.Pre.in_blk16 hp hi hn
+    fun n hn => by rw [hL.rd, hL.wr]; exact Proof.Sha1.X86_64.ShaNi.in_blk16_of hp.rd hp.nb_lt hi hn
   have hrsi : s.gpr .rsi = blkAddr s₀ i := hL.rsi
   have hrcx : s.gpr .rcx = scr s₀ := hL.rcx
   -- Load the block and the hash value.

@@ -185,6 +185,12 @@ variable (H : Hash)
 /-- The size of the streaming state. -/
 abbrev S : Nat := H.P.N + H.P.B
 
+/-- `H` with `so` bytes of working space for the compression function
+(`Params.so`): its code made for an implementation of the compression
+function that uses less working space than the hash function's slowest
+one, whose working space the functions other code calls by name give it. -/
+def withSo (so : Nat) : Hash := { H with P := { H.P with so := so } }
+
 /-- The streaming `update` and `finalize`. -/
 def updC : Prog isa := MdStream.X86_64.update H.P H.compN H.compC
 def finC : Prog isa := MdStream.X86_64.finalize H.P H.compN H.compC

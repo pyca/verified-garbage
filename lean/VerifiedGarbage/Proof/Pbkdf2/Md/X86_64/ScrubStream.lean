@@ -34,10 +34,12 @@ is part of one (`scrubAllCode_ok`).
 registration file states it. `MdHash.init` is a variant's, and
 `MdHash.initScrubbed` the same with the clearing after each of its two
 branches, every granule of the branch's own frame wiped (`initCodeS`),
-which returns without secret residue: the residue analysis does not follow
-`init` precisely (its key loop stores through an index it cannot bound), and
+which returns without secret residue: no residue analysis is needed, and
 one clearing after both would wipe the larger frame of the branch for long
-keys for every key.
+keys for every key. The frame of the branch for a key of at most a block
+holds only the working space its code uses (`initFrame`), so that is all
+it wipes. `MdHash.initAuto` checks `initScrubbed`'s side conditions when the
+emitter runs, at the lowest level that covers the code.
 -/
 
 @[expose] public section
@@ -157,29 +159,29 @@ theorem hmacInitAnyOut (I : Spec.Hmac.Instance) (hR : Proof.Hmac.ReprLocal I.S) 
 
 /-- `initCode`, each of its two branches followed by the clearing at the
 level `lv`, with every granule of the branch's frame wiped. -/
-def initCodeS (lv : VecLevel) (H : Impl.Pbkdf2.Md.X86_64.Hash) (I : Spec.Hmac.Instance) : Prog isa :=
+def initCodeS (lv : VecLevel) (Ho H : Impl.Pbkdf2.Md.X86_64.Hash) (I : Spec.Hmac.Instance) : Prog isa :=
   Impl.Pbkdf2.Md.X86_64.initEntry I.S.H.blockSize
-    (scrubAllCode lv ((Spec.Hmac.initSig I.S).retBits 64) (16 + hmacFrame I)
-      (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacInit))
+    (scrubAllCode lv ((Spec.Hmac.initSig I.S).retBits 64) (16 + initFrame Ho)
+      (Impl.StackScratch.X86_64.withStackScratch (initFrame Ho) .r8 Ho.hmacInit))
     (scrubAllCode lv ((Spec.Hmac.initSig I.S).retBits 64) (24 + anyFrame I)
       (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame I) .r8 I.initAnyKeyScratch H.hmacInitAny))
 
 /-- `initCodeS` is verified, and returns without secret residue, if `scrub`'s
 side conditions hold of its two branches. -/
 theorem initCodeS_ok (v : MdHash) {lv : VecLevel} (hne : lv ≠ .evex) (hS : v.I.S.stateBytes < 2 ^ 64)
-    (hd₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).x86_64Depth ≤
-      16 + hmacFrame v.I)
+    (hd₁ : (Impl.StackScratch.X86_64.withStackScratch (initFrame v.Ho) .r8 v.Ho.hmacInit).x86_64Depth ≤
+      16 + initFrame v.Ho)
     (hd₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
       v.H.hmacInitAny).x86_64Depth ≤ 24 + anyFrame v.I)
-    (hst : 24 + anyFrame v.I + 8 < 2 ^ 64) (hn : 16 + hmacFrame v.I ≤ 24 + anyFrame v.I)
-    (h8₁ : (16 + hmacFrame v.I) % 8 = 0) (h8₂ : (24 + anyFrame v.I) % 8 = 0)
-    (hl₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).all
+    (hst : 24 + anyFrame v.I + 8 < 2 ^ 64) (hn : 16 + initFrame v.Ho ≤ 24 + anyFrame v.I)
+    (h8₁ : (16 + initFrame v.Ho) % 8 = 0) (h8₂ : (24 + anyFrame v.I) % 8 = 0)
+    (hl₁ : (Impl.StackScratch.X86_64.withStackScratch (initFrame v.Ho) .r8 v.Ho.hmacInit).all
       (fun i => decide (i.vecLevel ≤ lv.level)) = true)
     (hl₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
       v.H.hmacInitAny).all (fun i => decide (i.vecLevel ≤ lv.level)) = true)
     (hrb : (Spec.Hmac.initSig v.I.S).retBits 64 ≤ 32 ∨ (Spec.Hmac.initSig v.I.S).retBits 64 = 64) :
-    Verified target (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I)) ∧
-      NoResidue (initCodeS lv v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I))
+    Verified target (initCodeS lv v.Ho v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I)) ∧
+      NoResidue (initCodeS lv v.Ho v.H v.I) (v.I.initAnyKeyContract abi (24 + anyFrame v.I))
         ((Spec.Hmac.initSig v.I.S).retBits 64) := by
   have s := scrubAllCode_ok (A := abi) ScrubAbi.plain (sig := Spec.Hmac.initSig v.I.S)
     (pre := Spec.Hmac.initPre v.I.S abi.ptrBits) (post := Spec.Hmac.initPost v.I.S abi.ptrBits) (wa := true)
@@ -191,7 +193,7 @@ theorem initCodeS_ok (v : MdHash) {lv : VecLevel} (hne : lv ≠ .evex) (hS : v.I
     initEntry_noResidue s.2 l.2 (by omega) hn v.hBlock⟩
 
 theorem initCodeS_spSafe (v : MdHash) (lv : VecLevel) :
-    (initCodeS lv v.H v.I).all (fun i => !isa.writesSp i) = true := by
+    (initCodeS lv v.Ho v.H v.I).all (fun i => !isa.writesSp i) = true := by
   simp only [initCodeS, Impl.Pbkdf2.Md.X86_64.initEntry, Code.iteCold, Code.all,
     scrubAllCode_spSafe lv _ _ v.hmacShortFSp, scrubAllCode_spSafe lv _ _ v.hmacAnyFSp, Bool.and_true]
   rfl
@@ -215,7 +217,7 @@ structure InitImpl (I : Spec.Hmac.Instance) where
 /-- HMAC's `init` over the variant `v`: `initCode`. -/
 def MdHash.init (v : MdHash) : InitImpl v.I where
   suffix := v.suffix
-  code := initCode v.H v.I
+  code := initCode v.Ho v.H v.I
   verified := v.hmacInitF
   spSafe := v.hmacInitFSp
 
@@ -224,13 +226,13 @@ two branches (`initCodeS`) at the level `lv`, chosen only with the features
 `extra` too: it returns without secret residue. -/
 def MdHash.initScrubbed (v : MdHash) (lv : VecLevel) (extra : List String) (hne : lv ≠ .evex)
     (hS : v.I.S.stateBytes < 2 ^ 64)
-    (hd₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).x86_64Depth ≤
-      16 + hmacFrame v.I)
+    (hd₁ : (Impl.StackScratch.X86_64.withStackScratch (initFrame v.Ho) .r8 v.Ho.hmacInit).x86_64Depth ≤
+      16 + initFrame v.Ho)
     (hd₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
       v.H.hmacInitAny).x86_64Depth ≤ 24 + anyFrame v.I)
-    (hst : 24 + anyFrame v.I + 8 < 2 ^ 64) (hn : 16 + hmacFrame v.I ≤ 24 + anyFrame v.I)
-    (h8₁ : (16 + hmacFrame v.I) % 8 = 0) (h8₂ : (24 + anyFrame v.I) % 8 = 0)
-    (hl₁ : (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.I) .r8 v.H.hmacInit).all
+    (hst : 24 + anyFrame v.I + 8 < 2 ^ 64) (hn : 16 + initFrame v.Ho ≤ 24 + anyFrame v.I)
+    (h8₁ : (16 + initFrame v.Ho) % 8 = 0) (h8₂ : (24 + anyFrame v.I) % 8 = 0)
+    (hl₁ : (Impl.StackScratch.X86_64.withStackScratch (initFrame v.Ho) .r8 v.Ho.hmacInit).all
       (fun i => decide (i.vecLevel ≤ lv.level)) = true)
     (hl₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
       v.H.hmacInitAny).all (fun i => decide (i.vecLevel ≤ lv.level)) = true)
@@ -238,9 +240,37 @@ def MdHash.initScrubbed (v : MdHash) (lv : VecLevel) (extra : List String) (hne 
     InitImpl v.I where
   suffix := v.suffix
   extra := extra
-  code := initCodeS lv v.H v.I
+  code := initCodeS lv v.Ho v.H v.I
   verified := (initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).1
   spSafe := initCodeS_spSafe v lv
   residue := some ⟨(initCodeS_ok v hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb).2⟩
+
+/-- HMAC's `init` over the variant `v`, chosen only with the features `extra`
+too: `MdHash.initScrubbed` at the lowest level that covers its code
+(`levelAll`), if `scrub`'s side conditions hold and the clearing needs no CPU
+feature its code does not; otherwise `MdHash.init`, which the emitter
+refuses unless `ci/residue_allowlist.txt` lists it. -/
+def MdHash.initAuto (v : MdHash) (extra : List String := []) : InitImpl v.I :=
+  let r : InitImpl v.I := { v.init with extra := extra }
+  let lv := levelAll (initCode v.Ho v.H v.I)
+  if hne : lv ≠ .evex then
+  if hS : v.I.S.stateBytes < 2 ^ 64 then
+  if hd₁ : (Impl.StackScratch.X86_64.withStackScratch (initFrame v.Ho) .r8 v.Ho.hmacInit).x86_64Depth ≤
+      16 + initFrame v.Ho then
+  if hd₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
+      v.H.hmacInitAny).x86_64Depth ≤ 24 + anyFrame v.I then
+  if hst : 24 + anyFrame v.I + 8 < 2 ^ 64 then
+  if hn : 16 + initFrame v.Ho ≤ 24 + anyFrame v.I then
+  if h8₁ : (16 + initFrame v.Ho) % 8 = 0 then
+  if h8₂ : (24 + anyFrame v.I) % 8 = 0 then
+  if hl₁ : (Impl.StackScratch.X86_64.withStackScratch (initFrame v.Ho) .r8 v.Ho.hmacInit).all
+      (fun i => decide (i.vecLevel ≤ lv.level)) = true then
+  if hl₂ : (Impl.StackScratch.X86_64.withStackScratchWiped (anyFrame v.I) .r8 v.I.initAnyKeyScratch
+      v.H.hmacInitAny).all (fun i => decide (i.vecLevel ≤ lv.level)) = true then
+  if hrb : (Spec.Hmac.initSig v.I.S).retBits 64 ≤ 32 ∨ (Spec.Hmac.initSig v.I.S).retBits 64 = 64 then
+    let r' := v.initScrubbed lv extra hne hS hd₁ hd₂ hst hn h8₁ h8₂ hl₁ hl₂ hrb
+    if (Code.requiresDedup isa.requires r'.code).all
+        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
+  else r else r else r else r else r else r else r else r else r else r else r
 
 end VG.Proof.Pbkdf2.Md.X86_64

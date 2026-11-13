@@ -139,7 +139,9 @@ end Scrub
 
 /-- `variant` before the residue analysis of HMAC's `finalize`. -/
 def unscrubbed : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { Proof.Pbkdf2.Md.X86_64.Sha1.variant compress with stream := [update, finalize, digest] }
+  { Proof.Pbkdf2.Md.X86_64.Sha1.variant compress
+      (Proof.Pbkdf2.Md.X86_64.Sha1.own0 compress Proof.Sha1.X86_64.Stream.shani_ok0) with
+    stream := [update, finalize, digest] }
 
 /-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
 which wipes the registers and the granules of its stack that the residue
