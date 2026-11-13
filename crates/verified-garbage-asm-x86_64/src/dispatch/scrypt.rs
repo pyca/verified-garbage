@@ -6,7 +6,9 @@
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_scrypt_shani` if the CPU supports its features (`VG_SCRYPT_SHANI_FEATURES`); `vg_scrypt_avx2` if the CPU supports its features (`VG_SCRYPT_AVX2_FEATURES`); or else `vg_scrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_scrypt_shani_sse2` if the CPU supports its features (`VG_SCRYPT_SHANI_SSE2_FEATURES`) and detection does not report `zen5`; `vg_scrypt_avx2_sse2` if the CPU supports its features (`VG_SCRYPT_AVX2_SSE2_FEATURES`) and detection does not report `zen5`; `vg_scrypt_sse2` if detection reports some CPU feature and detection does not report `zen5`; `vg_scrypt_shani` if the CPU supports its features (`VG_SCRYPT_SHANI_FEATURES`); `vg_scrypt_avx2` if the CPU supports its features (`VG_SCRYPT_AVX2_FEATURES`); or else `vg_scrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -30,6 +32,24 @@ pub unsafe fn vg_scrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *con
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
+        if (const { verified_garbage_cpu::target_contains(crate::scrypt::VG_SCRYPT_SHANI_SSE2_FEATURES) }
+            || cpu.contains(crate::scrypt::VG_SCRYPT_SHANI_SSE2_FEATURES))
+            && !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::ZEN5))
+        {
+            return crate::scrypt::vg_scrypt_shani_sse2;
+        }
+        if (const { verified_garbage_cpu::target_contains(crate::scrypt::VG_SCRYPT_AVX2_SSE2_FEATURES) }
+            || cpu.contains(crate::scrypt::VG_SCRYPT_AVX2_SSE2_FEATURES))
+            && !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::ZEN5))
+        {
+            return crate::scrypt::vg_scrypt_avx2_sse2;
+        }
+        if (const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0)
+            && !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::ZEN5))
+        {
+            return crate::scrypt::vg_scrypt_sse2;
+        }
         if const { verified_garbage_cpu::target_contains(crate::scrypt::VG_SCRYPT_SHANI_FEATURES) }
             || cpu.contains(crate::scrypt::VG_SCRYPT_SHANI_FEATURES)
         {

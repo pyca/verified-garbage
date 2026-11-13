@@ -22,17 +22,22 @@ def fillArgs : List Instr :=
 def fillSelect : Prog isa :=
   .ite .e (.block [.mov .rdx (.reg .rbx)]) (.block [])
 
-def fillStep (bm : Prog isa) : Prog isa :=
+def fillStep (n : String) (bm : Prog isa) : Prog isa :=
   .seq (.seq (.block fillArgs) fillSelect) <|
-  .seq (.call "vg_scrypt_blockmix" bm)
+  .seq (.call n bm)
     (.block [.alu .add .rbp (.reg .r14), .alu .sub .r15 (.imm 1)])
 
-def fillWith (bm : Prog isa) : Prog isa := .seq fillInit (.loop (fillStep bm) .ne)
+def fillWith (n : String) (bm : Prog isa) : Prog isa := .seq fillInit (.loop (fillStep n bm) .ne)
 
-def roMixDirectWith (bm : Prog isa) : Prog isa :=
+/-- ROMix with the BlockMix `bm`, emitted as `n`. -/
+def roMixDirectWith (n : String) (bm : Prog isa) : Prog isa :=
   .seq (.block rmPrologue) <| .seq nLoop <| .seq (.block rmSetup) <|
-  .seq (fillWith bm) <| .seq (.block rmMid) <|
-  .seq (.loop (step3 bm) .ne) (.block rmEpilogue)
+  .seq (fillWith n bm) <| .seq (.block rmMid) <|
+  .seq (.loop (step3 n bm) .ne) (.block rmEpilogue)
 
-def roMixDirect : Prog isa := roMixDirectWith Packed.blockMix
+/-- ROMix with the scalar BlockMix (`blockMixFused`). -/
+def roMixDirect : Prog isa := roMixDirectWith "vg_scrypt_blockmix" blockMixFused
+
+/-- ROMix with the SSE2 BlockMix (`Packed`). -/
+def roMixDirectSse2 : Prog isa := roMixDirectWith "vg_scrypt_blockmix_sse2" Packed.blockMix
 end VG.Impl.Scrypt.X86_64
