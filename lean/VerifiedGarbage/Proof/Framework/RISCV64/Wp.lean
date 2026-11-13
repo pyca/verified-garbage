@@ -149,7 +149,3 @@ theorem al8 {b : Addr} (hb : b.toNat % 16 = 0) {d : Nat} (hd : d % 8 = 0) (hd' :
   omega
 
 end VG.RISCV64.Wp
-
-/-- TEMPORARY (to be removed before merging): makes this pull request rebuild what
-imports this module, so that its CI run has shards. -/
-theorem VG.Proof.temporaryProbe5038 : True := trivial
