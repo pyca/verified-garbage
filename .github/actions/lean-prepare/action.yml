@@ -19,8 +19,8 @@ inputs:
   modules:
     description: >
       A file of the project's modules (`lean_shards.py closure`) to unpack
-      first, for a shard, which starts building once they are unpacked: the
-      others are then unpacked in the background, and
+      first, for a shard, whose build reads no other: the others are
+      unpacked in the background, from the end of this action on, and
       `$RUNNER_TEMP/lean-rest.status` holds the exit status of that once it
       is done. Empty for every module.
     required: false
@@ -158,13 +158,20 @@ runs:
       # `--empty-private`: nothing CI runs reads the private data of this
       # project's modules (`ci/lean_cache.py`), half of what restoring writes.
       run: python3 ci/lean_cache.py restore lean --empty-private ${MODULES:+--modules "$MODULES"}
+    - uses: ./.github/actions/lean-setup
+      id: lean-setup
+    - uses: ./.github/actions/lean-mathlib
+      with:
+        mods: ${{ steps.lean-setup.outputs.mods }}
+        cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
+        cache-key: ${{ steps.lean-setup.outputs.cache-key }}
     # A shard's build reads only `modules`; the rest of the build is read by
     # the job that assembles it, which checks every module: the last shard
     # to finish, normally, and which that is no shard knows before it has
-    # built. So each shard unpacks the rest too, in the background, from
-    # here on: while Lean and Mathlib install, which leaves most of the
-    # runner idle, and then at a low priority while the shard builds, rather
-    # than after its build, when the run waits for nothing else (17-21 s).
+    # built. So each shard unpacks the rest too, in the background, at a low
+    # priority while the shard builds, rather than after its build, when the
+    # run waits for nothing else (17-21 s). From here on, not sooner:
+    # started while Mathlib was unpacked, it made that take 16 s, not 5.
     # None of these modules is one the shard's build reads or writes, and
     # `lean_shards.py outputs` leaves them out of what the shard uploads.
     # `lean-shard` (ci.yml) waits for the status before it assembles.
@@ -182,13 +189,6 @@ runs:
           echo $? > "$RUNNER_TEMP/lean-rest.status.tmp"
           mv "$RUNNER_TEMP/lean-rest.status.tmp" "$RUNNER_TEMP/lean-rest.status"
         ) < /dev/null > /dev/null 2>&1 &
-    - uses: ./.github/actions/lean-setup
-      id: lean-setup
-    - uses: ./.github/actions/lean-mathlib
-      with:
-        mods: ${{ steps.lean-setup.outputs.mods }}
-        cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
-        cache-key: ${{ steps.lean-setup.outputs.cache-key }}
     # Saved with the next project build, so publishing can fetch the exact
     # dependency cache without installing Lean to parse the imports again.
     - name: Record the dependency cache key
