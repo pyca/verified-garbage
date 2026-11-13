@@ -342,8 +342,8 @@ theorem stitchToR_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.e
 setup stores. -/
 theorem phase1_ok : PhaseOne := fun {s₀} hp hm =>
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨P, hR, hpw, hK⟩ =>
-    WP.mono (phase1G_ok hp hm (finZ (finP hpw)) 144 (by decide) (by decide)
-      (fun _ h hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
+    WP.mono (phase1G_ok hp hm (finZ (finP hpw)) 48 (by decide) (by decide)
+      (fun _ _ hI hC => bigSTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) hI hC) hR hK)
       fun _ ⟨e, he, hI, hK'⟩ => ⟨P, e, he, hI, hK', finZ (finP hpw)⟩)
 
 end VG.Proof.Gcm.X86_64.StitchZHTo

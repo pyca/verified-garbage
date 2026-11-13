@@ -11,7 +11,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
-open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv bigMinPE)
+open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv)
 open VG.Impl.Gcm.X86_64.StitchZR (powP48)
 open VG.Impl.Gcm.X86_64.StitchZRTo (setupP)
 
@@ -25,8 +25,6 @@ abbrev bodyTo : Prog isa := StitchZH.body true
 abbrev body48To : Prog isa := StitchZH.body48 true
 
 abbrev bigRestTo : Prog isa := StitchZH.bigRest true
-
-abbrev bigPTo : Prog isa := StitchZH.bigP true
 
 /-- The blocks after the last group, as `StitchZH.rem`'s, read at
 `rdx + r8` (`r8` is `src - dst`). -/
@@ -55,8 +53,8 @@ group's hash. -/
 def phase1 : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
-        (.seq (.ite .b (.block []) bigPTo)
+      (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
+        (.seq (.ite .b (.block []) (StitchZH.bigS true))
           (.seq (.block [.alu .cmp .r9 (.imm 32)]) (.ite .b (.block []) (.loop bodyTo .ae))))))
 
 /-- `phase1`, then the `rbp` blocks at `dst` after `src`'s, in place. -/

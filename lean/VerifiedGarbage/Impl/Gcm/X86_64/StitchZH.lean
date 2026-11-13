@@ -64,8 +64,6 @@ def bigRest (ld : Bool := false) : Prog isa :=
   .seq (batch 4 (fun _ => []) false ld) (.seq (batch 8 (fun _ => []) false ld)
     (.seq (.loop (body48 ld) .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
 
-def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (bigRest ld)
-
 /-- At least 48 blocks, the first group encrypted: the powers of 48 blocks,
 then the groups after the first, all but the last hashed. Below
 `StitchZ.bigMinPE` blocks, where `bigRest` is not worth its start and its

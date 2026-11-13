@@ -29,7 +29,7 @@ open VG.Proof.Gcm.X86_64.StitchZ (Ready EInv DInv DInvM DInv.toM FinOk FinOk48 A
 open VG.Proof.Gcm.X86_64.StitchZR (ctx_keep powP48_ok setupP_ok)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
 open VG.Impl.Gcm.X86_64.StitchZ (tab)
-open VG.Impl.Gcm.X86_64.StitchZH (bigP bigDP)
+open VG.Impl.Gcm.X86_64.StitchZH (bigDP)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Spec.Gcm (Block)
 
