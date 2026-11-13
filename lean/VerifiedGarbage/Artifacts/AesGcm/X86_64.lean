@@ -118,37 +118,37 @@ def artifactsR (v : GcmVariant) : List Artifact := [
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
 def artifactsW (v : GcmVariant) : List Artifact := [
-  Spec.Gcm.sealPreparedApi.artifact X86_64.target {
+  Spec.Gcm.sealPreparedApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.scrubIfWork v.impl {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)
     stack := 2624
     verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_of_base (sealSel_framed v.impl Short.shortFacts))
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB) },
-  Spec.Gcm.openPreparedApi.artifact X86_64.target {
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB) } (Proof.AesGcm.X86_64.Scrub.sealPreparedOut _)),
+  Spec.Gcm.openPreparedApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.scrubIfWork v.impl {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees)
     stack := 2632
     verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_of_base (openSel_framed v.impl Short.shortFacts))
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB) },
-  Spec.Gcm.openToPreparedApi.artifact X86_64.target {
+    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB) } (Proof.AesGcm.X86_64.Scrub.openPreparedOut _)),
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.scrubIfWork v.impl {
     suffix := v.impl.suffix
     code := openToCode v
     stack := openToStack v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCode_keyed v)
-    spSafe := openToCode_spAll v },
-  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
+    spSafe := openToCode_spAll v } (Proof.AesGcm.X86_64.Scrub.openToPreparedOut _)),
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.scrubIfWork v.impl {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.impl.callees)
     stack := 2608
     verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_of_base (streamEncrypt_framed v.impl))
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl) },
-  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl) } (Proof.AesGcm.X86_64.Scrub.streamEncryptPreparedOut _)),
+  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.scrubIfWork v.impl {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees)
     stack := 2608
     verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_of_base (streamDecrypt_framed v.impl))
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl) },
-  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl) } (Proof.AesGcm.X86_64.Scrub.streamDecryptPreparedOut _)),
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.scrubIfWork v.impl {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
@@ -156,7 +156,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     stack := 5128
     verified := VG.Proof.AesGcm.Flag.sealGather_keyed (Flag.sealGather_of_base (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
     spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)) }]
+        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)) } (Proof.AesGcm.X86_64.Scrub.sealGatherPreparedOut _))]
 
 /-- The prepared artifacts of the implementations `v` whose loops read 16
 prepared powers: by the count, those or the ones on the key context. -/

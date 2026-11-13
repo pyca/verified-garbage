@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Prepared
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Aes.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
@@ -120,12 +121,12 @@ def initReg (c : Ctr32Impl) : Registration Spec.Gcm.initApi X86_64.target :=
       verified := initCodeF_eq c ▸ initF_framed (gcmOfF c) KeyImpl.aesniFree fc
       spSafe := initCodeF_eq c ▸ VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOfF c)) }
       (initOut _) [] (pubOk_nil _) c.gcmInitRes
-  | none => {
+  | none => withScrubAll {
       suffix := c.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init (gcmOf c).callees)
       stack := 2576
       verified := init_framed (gcmOf c)
-      spSafe := VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOf c)) }
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOf c)) } (initOut _)
 
 /-! ## `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad`
 
@@ -289,12 +290,12 @@ def streamFinishReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.stre
       stack := 792
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed96 (pairOf c n) f)
       spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
-  | none, _ => {
+  | none, _ => withScrubAll {
       suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
       stack := 2584
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed (pairOf c n))
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) }
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
 
 /-- `vg_aes_gcm_stream_verify` over `c` and `n`: in 304 bytes of stack (800
 over `vg_ghash`), all cleared, for an implementation of `vg_aes_ctr32` that
@@ -315,11 +316,106 @@ def streamVerifyReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.stre
       stack := 800
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed96 (pairOf c n) f)
       spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
-  | none, _ => {
+  | none, _ => withScrubAll {
       suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
       stack := 2592
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed (pairOf c n))
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) }
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
+
+/-! ## The functions over implementations that need working space
+
+Over an implementation of `vg_aes_ctr32` or `vg_ghash` that needs working
+space of its own (`Aes.X86_64.Ctr32Impl.free`, `GhashImpl.free`: `none`),
+whose frames keep their 2.5 KB, followed by the clearing of their whole
+stack (`X86_64.Scrub.withScrubAll`): AES or GHASH in software takes far
+longer than the clearing. Their postconditions read the memory on return
+only within their buffers. -/
+
+theorem sealPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.sealPreparedContract X86_64.abi stack) (Spec.Gcm.sealPreparedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, data, len, tag], _ =>
+      simp only [Spec.Gcm.sealPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      show _ = (Spec.Aes.bytesAt m₂ data len.toNat, Spec.Aes.bytesAt m₂ tag 16)
+      rw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _), bytesAt_of0 hb.2.2.2.2 (by decide)]
+      exact h key hk
+
+theorem openPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.openPreparedContract X86_64.abi stack) (Spec.Gcm.openPreparedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, data, len, tag, tl], _ =>
+      simp only [Spec.Gcm.openPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk
+      erw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _)]
+      exact h key hk
+
+theorem streamEncryptPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.streamEncryptPreparedContract X86_64.abi stack)
+      (Spec.Gcm.streamCryptPreparedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, st, al, tl, data, len], _ =>
+      simp only [Spec.Gcm.streamCryptPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk _ _ iv a p hr hA hT
+      obtain ⟨h₁, h₂⟩ := h key hk iv a p hr hA hT
+      exact ⟨Proof.AesGcm.streamRepr_congr (Proof.AesGcm.agree_of hb.2.1) h₁,
+        by erw [bytesAt_of0 hb.2.2 (Nat.le_refl _)]; exact h₂⟩
+
+theorem streamDecryptPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.streamDecryptPreparedContract X86_64.abi stack)
+      (Spec.Gcm.streamCryptPreparedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, st, al, tl, data, len], _ =>
+      simp only [Spec.Gcm.streamCryptPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk _ _ iv a c hr hA hT
+      obtain ⟨h₁, h₂⟩ := h key hk iv a c hr hA hT
+      exact ⟨Proof.AesGcm.streamRepr_congr (Proof.AesGcm.agree_of hb.2.1) h₁,
+        by erw [bytesAt_of0 hb.2.2 (Nat.le_refl _)]; exact h₂⟩
+
+theorem sealGatherPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.sealGatherPreparedContract X86_64.abi stack) (Spec.Gcm.sealGatherPreparedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, src, sc, dst, len, tag], _ =>
+      simp only [Spec.Gcm.sealGatherPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      intro key hk hg
+      show _ = (Spec.Aes.bytesAt m₂ dst len.toNat, Spec.Aes.bytesAt m₂ tag 16)
+      rw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _), bytesAt_of0 hb.2.2.2.2 (by decide)]
+      exact h key hk hg
+
+theorem openToPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.openToPreparedContract X86_64.abi stack) (Spec.Gcm.openToPreparedSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hlen hpre hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, src, len, dst, dl, tag, tl], _ =>
+      simp only [Spec.Gcm.openToPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      have hd : dl.toNat = len.toNat := hpre.2.1
+      intro key hk
+      erw [bytesAt_of0 hb.2.2.2.2.1 (Nat.le_of_eq hd.symm)]
+      exact h key hk
+
+/-- Whether `v` calls an implementation of `vg_aes_ctr32` or `vg_ghash` that
+needs working space of its own. -/
+def _root_.VG.Proof.AesGcm.X86_64.GcmImpl.needsWork (v : GcmImpl) : Bool :=
+  v.ctr.free.isNone || v.gh.free.isNone
+
+/-- `r`, with its whole stack cleared (`X86_64.Scrub.withScrubAll`) if `v`
+needs working space of its own (`GcmImpl.needsWork`); otherwise as it is. -/
+def scrubIfWork {api : Api} (v : GcmImpl) (r : Registration api X86_64.target)
+    (hpost : PostOut r.contract
+      (api.sig.retBits ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
+    Registration api X86_64.target :=
+  if v.needsWork then withScrubAll r hpost else r
 
 end VG.Proof.AesGcm.X86_64.Scrub

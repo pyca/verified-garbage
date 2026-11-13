@@ -532,6 +532,14 @@ pub(crate) mod vg_aes_gcm_stream_finish_aesni_core;
 pub(crate) mod vg_aes_gcm_stream_finish_aesni_pclmul_core;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_finish_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_finish_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_finish_pclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_finish_pclmul_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_finish_vaes_vpclmul_core.rs"]
 pub(crate) mod vg_aes_gcm_stream_finish_vaes_vpclmul_core;
 

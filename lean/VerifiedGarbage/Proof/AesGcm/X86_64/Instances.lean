@@ -334,14 +334,13 @@ def aadFn (v : GcmImpl) : Gather.AadFn :=
     (streamAad_framed v) (X86_64.withStackScratch_spSafe (by decide) (streamAad_spSafe v))
     (Gather.framedS_xdepth (streamAad_xdepth v)) (Gather.framedS_mx (streamAad_mx v))
 
-/-- The instance of `vg_aes_gcm_stream_finish` calling the implementations `v`;
-over an implementation of `vg_aes_ctr32` that needs no working space, as an
-internal function of its own, `vg_aes_gcm_stream_finish<suffix>_core`:
-`vg_aes_gcm_stream_finish` itself then has a frame of its own size and clears
-it (`Scrub.streamFinishReg`). -/
+/-- The instance of `vg_aes_gcm_stream_finish` calling the implementations `v`,
+as an internal function of its own, `vg_aes_gcm_stream_finish<suffix>_core`:
+`vg_aes_gcm_stream_finish` itself clears its frame (`Scrub.streamFinishReg`),
+over an implementation of `vg_aes_ctr32` that needs no working space a frame
+of its own size. -/
 def finFn (v : GcmImpl) : Gather.FinFn :=
-  .ofSpec ⟨Spec.Gcm.streamFinishApi.name ++ v.ctr.suffix ++ v.gh.suffix ++
-      (if v.ctr.free.isSome then "_core" else ""),
+  .ofSpec ⟨Spec.Gcm.streamFinishApi.name ++ v.ctr.suffix ++ v.gh.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)⟩
     (streamFinish_framed v) (X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v))
     (StreamTo.framed_xdepth (streamFinish_xdepth v)) (StreamTo.framed_mx (streamFinish_mx v))
