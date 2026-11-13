@@ -8,6 +8,8 @@ pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: verified_garbage_cpu::Features 
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -35,7 +37,7 @@ call {vg_sha512_finalize_scratch_shani}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCRI////xf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCS4AAAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
@@ -417,6 +419,8 @@ pub const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: verified_garbage_cpu::Features =
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -444,7 +448,7 @@ call {vg_sha512_finalize_scratch_avx2}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCRI////xf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCS4AAAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
@@ -822,9 +826,11 @@ call {vg_ed25519_public_key_expanded}
 }
 
 /// The CPU features `vg_ed25519_verify_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -835,7 +841,7 @@ pub const VG_ED25519_VERIFY_IFMA_FEATURES: verified_garbage_cpu::Features = veri
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx2`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `bmi2`, `adx`, `avx2`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
@@ -853,7 +859,7 @@ call {vg_sha512_finalize_scratch}
 call {vg_ed25519_scalar_reduce}
 .base64 "McBIiUQkIEiJRCQoSIlEJDBIiUQkOEiLvCSgAAAASIu0JIgAAABIieJIi4wkgAAAAA=="
 call {vg_ed25519_verify_equation_ifma}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0Fbww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCRI////xf5/hCSYAAAAxf5/RCR4xf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCS4AAAAicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,

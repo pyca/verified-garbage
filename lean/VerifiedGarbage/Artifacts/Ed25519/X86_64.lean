@@ -16,6 +16,7 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Scrub
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.Sha512Compress.X86_64
@@ -34,7 +35,7 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
     (fs : String)
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode fld win) :
     Artifact :=
-  Spec.Ed25519.verifyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.Ed25519.verifyApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
     stack := 184
