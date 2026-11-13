@@ -304,7 +304,7 @@ theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZH.encR s₀ (EPost s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
     encTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw))
-      48 (by decide) (by decide) (fun _ _ hI hC => bigC_ok hp hpw (fin48P (hk s₀)) hI hC) hR hK)
+      48 (by decide) (by decide) (fun _ _ hI hC => bigS_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) hI hC) hR hK)
 
 /-- `decR`, for any number of blocks from 16 on. -/
 theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
@@ -331,7 +331,7 @@ theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.pr
     WP isa Impl.Gcm.X86_64.StitchZHTo.encR s₀ (Proof.Gcm.X86_64.Stitch.EPostTo s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
     encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw))
-      48 (by decide) (by decide) (fun _ _ hI hC => bigCTo_ok hp hpw (fin48P (hk s₀)) hI hC) hR hK)
+      48 (by decide) (by decide) (fun _ _ hI hC => bigSTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) hI hC) hR hK)
 
 /-- Prepared powers and cached AES keys, out of place, for any number of
 blocks from 16 on. -/

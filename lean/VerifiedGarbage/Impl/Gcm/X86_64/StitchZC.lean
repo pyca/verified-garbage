@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
 # Prepared AVX-512 GCM encryption: each group hashed from registers
 
 `StitchZ.body48` hashes the ciphertext it stored one iteration before,
-loaded back from the output. `bigC` keeps each group's ciphertext instead:
+loaded back from the output. `bigRestC` keeps each group's ciphertext instead:
 once a group is stored, its four registers, byte-reversed, are copied to
 `zmm7`, `zmm1`, `zmm12` and `zmm15` (`copies`, `creg`), and the next group
 hashes them between its rounds (`gqC`), so that no load reads what a store
@@ -26,9 +26,12 @@ As in `StitchZ.body48`, the products of up to three groups are added
 before they are reduced: `body48C` (while at least 48 blocks follow the
 group in the copies), then `body32C` or `body16C` for the two or one
 groups left, each with the powers of its blocks, `H'⁴⁸`–`H'`
-(`StitchZR.powP48`). `bigC` starts from one group encrypted and not yet
-hashed, as `StitchZ.big` does, and leaves one, with the registers as it
-found them (`leave`).
+(`StitchZR.powP48`). `bigRestC` starts from one group encrypted and not
+yet hashed, as `StitchZ.bigRest` does, and leaves one, with the registers
+as it found them (`leave`).
+
+`StitchZH.bigS` runs it for messages of 48 to 143 blocks, and
+`StitchZ.bigRest` for longer ones: see there.
 -/
 
 @[expose] public section
@@ -129,7 +132,8 @@ def enter : List Instr :=
 /-- The reduction constant and the increment back in their registers. -/
 def leave : List Instr := [.vmovdqu32Load .xmm1 (at_ .r11 832), .vmovdqu32Load .xmm15 incAt]
 
-/-- From how many blocks on (`r9`) `bigC` takes the groups after the first. -/
+/-- From how many blocks on (`r9`) the groups after the first are taken
+three at a time, with the powers of 48 blocks (`StitchZH.bigS`). -/
 def bigMinC : BitVec 32 := 48
 
 /-- At least 48 blocks, the first group encrypted and the powers of 48
@@ -141,9 +145,5 @@ def bigRestC (ld : Bool := false) : Prog isa :=
         (.seq (.ite .b (.block []) (body32C ld))
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (body16C ld)) (.block leave))))))
-
-/-- At least 48 blocks, the first group encrypted: the powers of 48 blocks,
-then `bigRestC`. -/
-def bigC (ld : Bool := false) : Prog isa := .seq (.block powP48) (bigRestC ld)
 
 end VG.Impl.Gcm.X86_64.StitchZC

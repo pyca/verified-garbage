@@ -37,7 +37,7 @@ def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq firstTo
       (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
-        (.seq (.ite .b (.block []) (StitchZC.bigC true))
+        (.seq (.ite .b (.block []) (StitchZH.bigS true))
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo))))))
 

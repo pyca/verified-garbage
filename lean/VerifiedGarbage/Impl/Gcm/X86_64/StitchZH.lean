@@ -66,6 +66,19 @@ def bigRest (ld : Bool := false) : Prog isa :=
 
 def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (bigRest ld)
 
+/-- At least 48 blocks, the first group encrypted: the powers of 48 blocks,
+then the groups after the first, all but the last hashed. Below
+`StitchZ.bigMinPE` blocks, where `bigRest` is not worth its start and its
+end (see there), each is hashed from registers between the rounds of the
+next (`StitchZC.bigRestC`), which measured faster there than `body`'s loop
+on Emerald Rapids, Zen 4 and Zen 5. From `bigMinPE` blocks on they are
+hashed from the output, three groups behind (`bigRest`): on Zen 4 and
+Zen 5 that is the faster for long messages (by 3 to 10% at 16 KiB), its
+multiplications never waiting for a group still being encrypted. -/
+def bigS (ld : Bool := false) : Prog isa :=
+  .seq (.block powP48)
+    (.seq (.block [.alu .cmp .r9 (.imm StitchZ.bigMinPE)]) (.ite .b (StitchZC.bigRestC ld) (bigRest ld)))
+
 def bigDP (ix : Bool := false) : Prog isa :=
   .seq (.block powP48) (.seq (.loop (dbody48 ix) .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
 
@@ -182,13 +195,13 @@ def tailR (r : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .e (.block (storeCtr ++ lastG ++ storeY)) r)
 
 /-- Encryption, for any number of blocks from 16 on: from 48 on, the
-groups after the first hashed from registers (`StitchZC.bigC`); the blocks
-after the last group, if any, by `rem`. -/
+groups after the first three at a time (`bigS`); the blocks after the last
+group, if any, by `rem`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq first
       (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
-        (.seq (.ite .b (.block []) StitchZC.bigC)
+        (.seq (.ite .b (.block []) bigS)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem))))))
 

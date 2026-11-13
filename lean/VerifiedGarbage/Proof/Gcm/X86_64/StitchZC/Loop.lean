@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZC
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
@@ -22,6 +23,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Gcm.Short
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
@@ -1332,5 +1334,31 @@ theorem bigRestCM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : 
   -- The registers as the tail takes them.
   exact WP.mono (WP.hkeep leave_keeps (leave_ok hT2 hC₈))
     fun t ⟨hI', hh⟩ => ⟨e'', hI', hK₈.keep hh (hI'.a.keys hp)⟩
+
+/-- After the powers of 48 blocks, as `StitchZH.bigS` takes the groups after
+the first: `bigRestC` below `StitchZ.bigMinPE` blocks, `StitchZH.bigRest`
+from there on (`StitchZH.bigRestM_ok`). -/
+theorem bigSelM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat → Nat → Block}
+    (hf : StitchZ.FinOk (hk s₀) P) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T)
+    (hT2 : ∀ k l, T 2 k l = P k l)
+    {s s₁ : State} (hI : EInvM ix s₀ P 1 s) (hA₁ : AInvM ix s₀ (16 * 1) s₁)
+    (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
+    (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
+    (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s₁) :
+    WP isa (.seq (.block [.alu .cmp .r9 (.imm Impl.Gcm.X86_64.StitchZ.bigMinPE)])
+      (.ite .b (bigRestC ix) (Impl.Gcm.X86_64.StitchZH.bigRest ix))) s₁ fun s' => ∃ e, EInvM ix s₀ P e s' ∧
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  refine WP.seq (WP.mono (WP.hkeep rfl (cmp_ok s₁ Impl.Gcm.X86_64.StitchZ.bigMinPE 144 (by decide)))
+    fun s₂ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
+  have hA₂ : AInvM ix s₀ (16 * 1) s₂ := hA₁.gpr2 (fun r _ _ => by rw [g]) l m rd wr
+  have hC₂ := hCache.keep hh (hA₂.keys hp)
+  rw [hg₁, hI.r9, toNat_ofNat_lt (by omega_using [hn]), toNat_ofNat_lt (by decide)] at hcf
+  refine WP.ite (decide (nb s₀ - 16 * (1 - 1) < 144)) (by simp only [eval, hcf]) (fun _ => ?_) (fun h => ?_)
+  · exact bigRestCM_ok hp hT hT2 hI hA₂ (by rw [m]; exact hv₁) (by rw [m]; exact hm₁) (g.trans hg₁)
+      (fun l' hl' => (l _ _).trans (hl₁ l' hl')) hC₂
+  · exact StitchZH.bigRestM_ok hp hf hT hT2 (by simp at h; omega_using [h]) hI hA₂ (by rw [m]; exact hv₁)
+      (by rw [m]; exact hm₁) (g.trans hg₁) (fun l' hl' => (l _ _).trans (hl₁ l' hl')) hC₂
 
 end VG.Proof.Gcm.X86_64.StitchZC
