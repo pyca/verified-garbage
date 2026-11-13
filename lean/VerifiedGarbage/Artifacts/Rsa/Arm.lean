@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RdTop
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+public import VerifiedGarbage.Proof.Variants.RsaInverse.Arm
 public import VerifiedGarbage.Proof.Bignum.Arm.PrivPreVerified
 
 /-! # RSA (RFC 8017) on ARMv7 -/
@@ -21,10 +22,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PrivPreVerified
 namespace VG.Artifacts.Rsa.Arm
 
 def direct : List Artifact := [
-  Spec.Rsa.crtValuesApi.artifact Arm.target {
-    code := Impl.Rsa.Arm.CrtValues.code
-    stack := 0
-    verified := Proof.Rsa.Arm.CrtValues.crt_values_verified },
   Spec.Rsa.checkKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Rsa.Arm.CheckKey.codeU
@@ -55,6 +52,12 @@ namespace VG.Artifacts.Rsa.Arm
 open VG.Proof.Rsa.Arm
 
 def artifacts : List Artifact :=
+  (VG.Proof.Variants.RsaInverse.Arm.variants.flatMap fun v => [
+    Spec.Rsa.crtValuesApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Rsa.Arm.CrtValues.codeFor v.um
+      stack := 0
+      verified := Proof.Rsa.Arm.CrtValues.crt_values_for_verified v.um }]) ++
   direct ++
   (VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
     Spec.Rsa.publicPrecomputeApi.artifact Arm.target {

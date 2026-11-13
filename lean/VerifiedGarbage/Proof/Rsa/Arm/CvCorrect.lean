@@ -83,10 +83,10 @@ def CvMid (s0 t : State) : Prop := Done s0 t ∧ Spec.Rsa.writtenAll t.mem
     (State.addr (stackArg s0 0), cvPl s0)] (t.gpr .r0)
   ((Spec.Rsa.crtKey (nBytes s0) (pBytes s0) (qBytes s0) (dBytes s0)).map fun v => [v.1, v.2.1, v.2.2])
 
-theorem branches_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (pre : CvPre s0) (hb : Base s0 s) (p0 : s.gpr .r0 = s0.gpr .r0)
+theorem branches_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} {s0 s : State} (pre : CvPre s0) (hb : Base s0 s) (p0 : s.gpr .r0 = s0.gpr .r0)
     (p3 : s.gpr .r3 = s0.gpr .r2)
     (hz : s.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (nBytes s0)) (cvK s0)) :
-    WP isa (.ite .eq valid fail) s (CvMid s0) := by
+    WP isa (.ite .eq (valid um) fail) s (CvMid s0) := by
   refine WP.ite s.z rfl (fun hv => ?_) (fun hv => ?_)
   · rw [hz] at hv
     refine WP.mono (valid_ok hb hv) fun (t : State) ⟨X₁, X₂, V, R₂, R₃, X, h₁, h₂, h₃, h₄, o⟩ => ⟨o.done, ?_⟩
@@ -98,14 +98,15 @@ theorem branches_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 s : State} (pre : CvPre s
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨dp, dq, qi⟩
 
-theorem cv_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {s0 : State} (pre : CvPre s0) : WP isa code s0 (CvPost s0) := by
+theorem cv_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} {s0 : State} (pre : CvPre s0) :
+    WP isa (code um) s0 (CvPost s0) := by
   refine WP.seq (WP.mono (entry_ok pre) fun (s : State) ⟨hb, _, p0, p3, _, hz⟩ =>
     WP.seq (WP.mono (branches_ok pre hb p0 p3 hz) fun (t : State) ⟨ht, w⟩ =>
       WP.mono (restore_ok ht) fun (u : State) ⟨hr, hsp, hm, h0⟩ => ⟨⟨hr, hsp⟩, ?_⟩))
   rw [hm, h0]; exact w
 
-theorem cv_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (s : State) (h : (Spec.Rsa.crtValuesContract abi 0).pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.crtValuesContract abi 0).post s t := by
+theorem cv_contract_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} (s : State) (h : (Spec.Rsa.crtValuesContract abi 0).pre s) :
+    ∃ tr t, Exec isa (code um) s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.crtValuesContract abi 0).post s t := by
   obtain ⟨tr, t, run, ⟨pres, w⟩⟩ := cv_ok (cv_pre s h)
   refine ⟨tr, t, run, pres, ?_⟩
   sig_post [Spec.Rsa.crtValuesContract, Spec.Rsa.crtValuesSig, abi, argRegs, reduceClassify, Loc.val, State.addr]

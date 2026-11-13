@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.CvDivD
 public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 
 import VerifiedGarbage.Proof.Rsa.Arm.CvTaint
 import VerifiedGarbage.Proof.Rsa.Arm.CvTaintW
@@ -95,6 +96,18 @@ theorem piece {F G : State → State → Prop} {c : Prog isa} (rs : List Reg)
   lift fun σ₁ σ₂ p => rel_agree (F := F σ₁) (F' := F σ₂) (argTaint rs 48)
     (fun _ _ h h' => agree p (run _ _ h) (run _ _ h') (regs _ _ _ _ p h h')) hc (hw σ₁) (hw σ₂)
 
+/-- `piece`, for code `taintU` checks: code with `umaal`. -/
+theorem pieceU {F G : State → State → Prop} {c : Prog isa} (rs : List Reg)
+    (hc : ∃ hc, (VG.Taint.check taintU (argTaint rs 48) c hc).isSome = true)
+    (run : ∀ σ s, F σ s → Run σ s)
+    (regs : ∀ σ₁ σ₂ s₁ s₂, PubI σ₁ σ₂ → F σ₁ s₁ → F σ₂ s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
+    (hw : ∀ σ s, F σ s → WP isa c s (G σ)) : RelCT isa (Lift F) c (Lift G) :=
+  lift fun σ₁ σ₂ p => by
+    obtain ⟨_, hc⟩ := hc
+    exact ((RelCT.taint (A := taintU) (argTaint rs 48)
+      (fun s s' h => agree p (run _ _ h.1) (run _ _ h.2) (regs _ _ _ _ p h.1 h.2)) hc).wp
+      fun s s' h => ⟨hw σ₁ s h.1, hw σ₂ s' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+
 /-- A division, from the same geometry in both runs. -/
 theorem divPiece {g : State → VG.Proof.Rsa.Arm.Div.Geometry} {Q : State → State → Prop}
     (hg : ∀ σ₁ σ₂, PubI σ₁ σ₂ → g σ₁ = g σ₂) :
@@ -162,9 +175,9 @@ theorem divPieceW {r : Nat} (T : VG.Proof.Rsa.Arm.KeyDiv.DivTaint aD r aDD aDQ a
     exact ⟨hs.base.pre.w16.1, hs.divPre hM hMl⟩
 
 /-- The checks and values of a balanced key are constant time. -/
-theorem midW_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] :
-    RelCT isa (Lift fun σ s => StA σ s ∧ BalCv σ) midW (Lift MidW) := by
-  rw [show midW = seqs ([[.block (ctx ++ bitOf sPodd aP)], [VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ], chunkW,
+theorem midW_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} :
+    RelCT isa (Lift fun σ s => StA σ s ∧ BalCv σ) (midW um) (Lift MidW) := by
+  rw [show midW um = seqs ([[.block (ctx ++ bitOf sPodd aP)], [VG.Impl.Rsa.Arm.KeyDiv.mulLo aDR aP aQ], chunkW um,
       [VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR2 aDD aDQ aDT aT1],
       [copy aDD aQ, .block (clrLow aDD ++ VG.Impl.Rsa.Arm.KeyDiv.fixTop aDD)],
       [VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR3 aDD aDQ aDT aT1]] : List (List (Prog isa))).flatten from rfl]
@@ -177,8 +190,8 @@ theorem midW_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] :
   refine RelCT.seq (mulPiece (G := fun σ s => (SA σ s ∧
       num s.mem (cvB σ) (cvW σ) aDR = cvP σ * cvQ σ % 2 ^ (32 * cvW σ)) ∧ BalCv σ) (fun _ _ h => h)
     fun _ _ h => WP.mono (mulW_ok h.1 h.2) fun _ h' => ⟨h', h.2⟩) ?_
-  refine RelCT.seq (piece (G := fun σ s => (SW σ (xW σ) s ∧ num s.mem (cvB σ) (cvW σ) aDD = fP σ) ∧ BalCv σ)
-    [.r7, .r8, .r9] chunkW_taint (fun _ _ h => h.1.1.base.run)
+  refine RelCT.seq (pieceU (G := fun σ s => (SW σ (xW σ) s ∧ num s.mem (cvB σ) (cvW σ) aDD = fP σ) ∧ BalCv σ)
+    [.r7, .r8, .r9] (chunkW_taint um) (fun _ _ h => h.1.1.base.run)
     (fun _ _ _ _ p h₁ h₂ => by
       obtain ⟨e7, e8, e9⟩ := ws_regs p h₁.1.1.ws h₂.1.1.ws
       simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -213,7 +226,7 @@ abbrev F7 (σ u : State) : Prop := Base σ u ∧ Ws u (cvB σ) (cvZ σ) (cvW σ)
 abbrev FJ (σ u : State) : Prop := ∃ X₁ X₂, StM σ X₁ X₂ u
 
 /-- Any key's checks: `n` divided by `p`. -/
-theorem midD_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift StA) midD (Lift FJ) := by
+theorem midD_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} : RelCT isa (Lift StA) (midD um) (Lift FJ) := by
   unfold midD
   simp only [seqs]
   refine RelCT.seq (piece (G := F1) [.r7, .r8, .r9] divN_taint (fun _ _ h => h.base.run)
@@ -223,7 +236,7 @@ theorem midD_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift StA) midD (Lift
       rintro r (rfl | rfl | rfl) <;> first | exact e7 | exact e8 | exact e9)
     fun _ _ h => divN_pre_ok h) ?_
   refine RelCT.seq (divPiece (g := gN) fun _ _ p => geom_eq p _ _ _ _) ?_
-  refine RelCT.seq (piece (G := F3) [] checks_taint (fun _ _ h => h.base.run)
+  refine RelCT.seq (pieceU (G := F3) [] (checks_taint um) (fun _ _ h => h.base.run)
     (fun _ _ _ _ _ _ _ _ h => nomatch h) fun _ _ h => ?_) ?_
   · rw [checks_eq]
     exact (wp_seqs_append (by unfold checksA invSetup; simp) (by unfold checksB; simp)).mpr
@@ -237,7 +250,7 @@ theorem midD_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift StA) midD (Lift
   exact (divPiece (g := gQ) fun _ _ p => geom_eq p _ _ _ _).mono (fun _ _ h => h)
     fun _ _ h => Lift.mono (fun _ _ ⟨_, _, h⟩ => ⟨_, _, h.toM⟩) h
 
-theorem valid_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift Base) valid (Lift Done) := by
+theorem valid_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} : RelCT isa (Lift Base) (valid um) (Lift Done) := by
   unfold valid
   simp only [seqs]
   refine RelCT.seq (piece (G := StA) [] loads_taint (fun _ _ h => h.run) (fun _ _ _ _ _ _ _ _ h => nomatch h)
@@ -278,7 +291,7 @@ abbrev FE (σ s : State) : Prop := s = σ ∧ CvPre σ
 abbrev GE (σ u : State) : Prop := Base σ u ∧ u.gpr .r0 = σ.gpr .r0 ∧ u.gpr .r3 = σ.gpr .r2 ∧
   u.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (nBytes σ)) (cvK σ)
 
-theorem code_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift FE) code fun _ _ => True := by
+theorem code_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} : RelCT isa (Lift FE) (code um) fun _ _ => True := by
   refine RelCT.seq (piece (G := GE) [.r0, .r1, .r2, .r3] entry_taint
     (fun _ _ ⟨e, h⟩ => by subst e; exact ⟨h, rfl, rfl, fun _ _ => rfl⟩)
     (fun _ _ _ _ p ⟨e₁, _⟩ ⟨e₂, _⟩ => by
@@ -306,8 +319,8 @@ theorem code_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (Lift FE) code fun _ 
       (fun _ _ _ _ _ _ _ _ h => nomatch h) fun _ _ h => WP.mono (restore_ok h) fun _ _ => trivial).mono
       (fun _ _ h => h) fun _ _ _ => trivial
 
-theorem cv_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : ConstantTime isa (Spec.Rsa.crtValuesContract abi 0).pre
-    (Spec.Rsa.crtValuesContract abi 0).pub code := by
+theorem cv_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] {um : Bool} :
+    ConstantTime isa (Spec.Rsa.crtValuesContract abi 0).pre (Spec.Rsa.crtValuesContract abi 0).pub (code um) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := cv_pre s hs
   have it := cv_pre t ht
@@ -319,6 +332,6 @@ theorem cv_contract_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : ConstantTime isa (Spec.R
     | 0, _ => a0 | 1, _ => a1 | 2, _ => a2 | 3, _ => a3 | 4, _ => a4 | 5, _ => a5
     | 6, _ => a6 | 7, _ => a7 | 8, _ => a8 | 9, _ => a9 | 10, _ => a10 | 11, _ => a11
     | _ + 12, h => absurd h (by omega)
-  exact (code_ct s t tr1 tr2 u v ⟨s, t, ⟨sp, nb, p0, p1, p2, p3, args⟩, ⟨rfl, is⟩, ⟨rfl, it⟩⟩ e1 e2).1
+  exact (code_ct (um := um) s t tr1 tr2 u v ⟨s, t, ⟨sp, nb, p0, p1, p2, p3, args⟩, ⟨rfl, is⟩, ⟨rfl, it⟩⟩ e1 e2).1
 
 end VG.Proof.Rsa.Arm.CrtValues

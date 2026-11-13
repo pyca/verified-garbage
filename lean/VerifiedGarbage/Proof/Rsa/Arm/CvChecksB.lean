@@ -122,8 +122,8 @@ theorem val32_of_lt {m : Mem} {b : Addr} {d k w v : Nat} (hk : k ≤ w) (h : val
   · have : 2 ^ (32 * k) ≤ 2 ^ (32 * k) * hi := Nat.le_mul_of_pos_right _ hp
     omega
 
-theorem checksB_ok [InvLaw] {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
-    WP isa (seqs checksB) s (StD s0 X₁ X₂) := by
+theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : StI s0 X₁ X₂ s) :
+    WP isa (seqs (checksB um)) s (StD s0 X₁ X₂) := by
   have pre := h.base.pre
   have hw := h.ws
   have fit := fun j (hj : j < nArr) => hw.fit64 (j := j) hj
