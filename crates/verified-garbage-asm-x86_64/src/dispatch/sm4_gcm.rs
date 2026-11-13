@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_sm4_gcm_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -28,6 +30,8 @@ pub unsafe fn vg_sm4_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 /// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_seal_vpclmul` if the CPU supports its features (`VG_SM4_GCM_SEAL_VPCLMUL_FEATURES`); `vg_sm4_gcm_seal_pclmul` if the CPU supports its features (`VG_SM4_GCM_SEAL_PCLMUL_FEATURES`); or else `vg_sm4_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -86,6 +90,8 @@ pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 /// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_open_vpclmul` if the CPU supports its features (`VG_SM4_GCM_OPEN_VPCLMUL_FEATURES`); `vg_sm4_gcm_open_pclmul` if the CPU supports its features (`VG_SM4_GCM_OPEN_PCLMUL_FEATURES`); or else `vg_sm4_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -259,6 +265,8 @@ pub unsafe fn vg_sm4_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_encrypt_vpclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES`); `vg_sm4_gcm_stream_encrypt_pclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES`); or else `vg_sm4_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -315,6 +323,8 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_decrypt_vpclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES`); `vg_sm4_gcm_stream_decrypt_pclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES`); or else `vg_sm4_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -368,6 +378,8 @@ pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_finish_vpclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_VPCLMUL_FEATURES`); `vg_sm4_gcm_stream_finish_pclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES`); or else `vg_sm4_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -423,6 +435,8 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_verify_vpclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_VPCLMUL_FEATURES`); `vg_sm4_gcm_stream_verify_pclmul` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES`); or else `vg_sm4_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

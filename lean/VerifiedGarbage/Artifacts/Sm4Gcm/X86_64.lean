@@ -20,11 +20,11 @@ public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
 namespace VG.Artifacts.Sm4Gcm.X86_64
 
 def direct : List Artifact := [
-  Spec.Sm4.Gcm.initApi.artifact X86_64.target {
+  Spec.Sm4.Gcm.initApi.artifact X86_64.target (VG.X86_64.Scrub.withScrubAll {
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rdx Impl.Sm4Gcm.X86_64.init
     stack := 5792
     verified := Proof.Sm4Gcm.X86_64.init_framed
-    spSafe := X86_64.withStackScratch_spSafe_of Proof.Sm4Gcm.X86_64.init_spSafe }]
+    spSafe := X86_64.withStackScratch_spSafe_of Proof.Sm4Gcm.X86_64.init_spSafe } (Proof.AesGcm.X86_64.Scrub.sm4InitOut _))]
 
 end VG.Artifacts.Sm4Gcm.X86_64
 
@@ -38,48 +38,48 @@ open VG.Proof.Sm4Gcm.X86_64
 /-- The artifacts calling the implementation `n` of `vg_ghash`. -/
 def artifacts (n : GhashName) : List Artifact :=
   let v : GcmImpl := { ctr := Ctr32Impl.scalar, key := KeyImpl.scalar, gh := n.impl }
-  [Spec.Sm4.Gcm.sealApi.artifact X86_64.target {
+  [Spec.Sm4.Gcm.sealApi.artifact X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2592 2 (Impl.Sm4Gcm.X86_64.«seal» v.callees)
     stack := 5816
     verified := seal_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) },
-  Spec.Sm4.Gcm.openApi.artifact X86_64.target {
+    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) } (Proof.AesGcm.X86_64.Scrub.sm4SealOut _)),
+  Spec.Sm4.Gcm.openApi.artifact X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (Impl.Sm4Gcm.X86_64.«open» v.callees)
     stack := 5824
     verified := open_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) },
+    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) } (Proof.AesGcm.X86_64.Scrub.sm4OpenOut _)),
   Spec.Sm4.Gcm.streamInitApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.sm4StreamInitReg n),
   Spec.Sm4.Gcm.streamAadApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.sm4StreamAadReg n),
-  Spec.Sm4.Gcm.streamEncryptApi.artifact X86_64.target {
+  Spec.Sm4.Gcm.streamEncryptApi.artifact X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0
       (Impl.Sm4Gcm.X86_64.streamEncrypt v.callees)
     stack := 5800
     verified := streamEncrypt_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v) },
-  Spec.Sm4.Gcm.streamDecryptApi.artifact X86_64.target {
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v) } (Proof.AesGcm.X86_64.Scrub.sm4StreamEncryptOut _)),
+  Spec.Sm4.Gcm.streamDecryptApi.artifact X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0
       (Impl.Sm4Gcm.X86_64.streamDecrypt v.callees)
     stack := 5800
     verified := streamDecrypt_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v) },
-  Spec.Sm4.Gcm.streamFinishApi.artifact X86_64.target {
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v) } (Proof.AesGcm.X86_64.Scrub.sm4StreamDecryptOut _)),
+  Spec.Sm4.Gcm.streamFinishApi.artifact X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
       (Impl.Sm4Gcm.X86_64.streamFinish v.callees)
     stack := 5792
     verified := streamFinish_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v) },
-  Spec.Sm4.Gcm.streamVerifyApi.artifact X86_64.target {
+    spSafe := X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v) } (Proof.AesGcm.X86_64.Scrub.sm4StreamFinishOut _)),
+  Spec.Sm4.Gcm.streamVerifyApi.artifact X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0
       (Impl.Sm4Gcm.X86_64.streamVerify v.callees)
     stack := 5800
     verified := streamVerify_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) }]
+    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) } (Proof.AesGcm.X86_64.Scrub.sm4StreamVerifyOut _))]
 
 end VG.Artifacts.Sm4Gcm.X86_64.Ghash
 
