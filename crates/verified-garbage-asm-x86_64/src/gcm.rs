@@ -11954,6 +11954,8 @@ pub const VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES: verified_garbage_cpu::Features 
 
 /// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of 1032 bytes.
@@ -11969,7 +11971,7 @@ jae 22f
 .base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX4dw=="
 23:
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//McBFMdvD"
 22:
 .base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxf5/h4ABAADF/n+HoAEAAMX+f4fAAQAAxf5/h+ABAADF+Hc="
 jmp 23b
@@ -11981,6 +11983,8 @@ jmp 21b
 }
 
 /// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -11996,7 +12000,7 @@ jae 22f
 .base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAAA="
 23:
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McBFMdvD"
 22:
 .base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA8w9/h4ABAADzD3+HkAEAAPMPf4egAQAA8w9/h7ABAADzD3+HwAEAAPMPf4fQAQAA8w9/h+ABAADzD3+H8AEAAA=="
 jmp 23b

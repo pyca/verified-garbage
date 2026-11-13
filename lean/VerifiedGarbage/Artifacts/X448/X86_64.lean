@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
@@ -18,11 +19,12 @@ namespace VG.Artifacts.X448.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun (v : Impl.Ed448.X86_64.FieldVariant) => [
-    Spec.X448.exchangeApi.artifact X86_64.target {
+    Spec.X448.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := v.suffix
       code := Impl.Xdh.X86_64.exchange ("vg_x448" ++ v.suffix) (Proof.X448.X86_64.code v) 56
       stack := 24
-      verified := Proof.X448.X86_64.Exchange.exchange_variant v },
+      verified := Proof.X448.X86_64.Exchange.exchange_variant v }
+      (Proof.X448.X86_64.exchangeOut _)),
     Spec.X448.x448BaseApi.artifact X86_64.target (Proof.X448.X86_64.baseReg v)]
 
 end VG.Artifacts.X448.X86_64

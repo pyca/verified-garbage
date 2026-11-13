@@ -10,6 +10,8 @@ pub const VG_X448_EXCHANGE_ADX_FEATURES: verified_garbage_cpu::Features = verifi
 ///
 /// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -25,7 +27,7 @@ pub(crate) unsafe extern "sysv64" fn vg_x448_exchange_adx(out: *mut [u8; 56], sc
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x448_adx}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIww=="
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIZg/vwEUx20iNZCTo8w9/RCQITIkcJEiNZCQYicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_x448_adx = sym super::x448::vg_x448_adx::vg_x448_adx,
     )
@@ -80,6 +82,8 @@ jne 23b
 ///
 /// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -94,7 +98,7 @@ pub(crate) unsafe extern "sysv64" fn vg_x448_exchange(out: *mut [u8; 56], scalar
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x448}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIww=="
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIZg/vwEUx20iNZCTo8w9/RCQITIkcJEiNZCQYicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_x448 = sym super::x448::vg_x448::vg_x448,
     )

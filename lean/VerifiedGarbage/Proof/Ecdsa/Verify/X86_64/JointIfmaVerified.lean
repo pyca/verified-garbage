@@ -55,13 +55,11 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.GContract
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.GContract
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -151,22 +149,5 @@ theorem verifyHash_verified_ifma : Verified X86_64.target
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 end
-
-/-- The verifier's postcondition reads the memory on return only within its buffers, whatever tables of
-constants its code takes (`Scrub.withScrubAll`). -/
-theorem verifyHashOut_consts (J : Spec.Ecdsa.Instance) (cs : List (String × List (BitVec 64))) (stack : Nat) :
-    X86_64.Scrub.PostOut (J.verifyHashContract (X86_64.abi.withConsts cs) stack) (J.verifyHashSig.retBits 64) :=
-  X86_64.Scrub.postOut_of_local (X86_64.Scrub.ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen _ h => by
-    obtain ⟨pk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨sg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
-    exact h
 
 end VG.Proof.Ecdsa.Verify.X86_64

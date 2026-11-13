@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P521.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
@@ -114,19 +116,21 @@ namespace VG.Artifacts.EcdsaP521.X86_64
 open VG.Proof.P521.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target {
+  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
       Impl.Ecdsa.Verify.X86_64.jointVerifyP521
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law)
-      hasLaw.inv },
-  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target {
+      hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts)),
+  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
       Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law)
-      hasLaw.inv }] ++
+      hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts))] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP521.X86_64

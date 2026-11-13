@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 97 bytes.
@@ -151,7 +153,7 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHwAcAAEyJj8gHAABMiZfQBwAATImf2AcAAEyJp+AHAABMia/oBwAATIuHoAYAAEyLj6gGAABMi5ewBgAATIufuAYAAEyLp8AGAABMi6/IBgAAQb4AAAAATAOHsAUAAEwTj7gFAABME5fABQAATBOfyAUAAEwTp9AFAABME6/YBQAASYPWAEwrR0BMG09ITBtXUEwbX1hMG2dgTBtvaEmD3gBIGcCJwUiJwkjB4iBIicVI0eVJAchJEdFJEepJEcNJEcRJEcVMiYegBgAATImPqAYAAEyJl7AGAABMiZ+4BgAATImnwAYAAEyJr8gGAABJifS+0AYAALqgBgAAuUADAAA="
 call {vg_p384_mul_mod_p}
-.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFjD"
+.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkoPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJGCJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
         vg_p384_mul_mod_n = sym super::ecdsa_p384::vg_p384_mul_mod_n::vg_p384_mul_mod_n,
@@ -169,6 +171,8 @@ pub const VG_ECDSA_P384_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = ve
 /// ECDSA signature verification over P-384 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 48 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 384 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -315,7 +319,7 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHwAcAAEyJj8gHAABMiZfQBwAATImf2AcAAEyJp+AHAABMia/oBwAATIuHoAYAAEyLj6gGAABMi5ewBgAATIufuAYAAEyLp8AGAABMi6/IBgAAQb4AAAAATAOHsAUAAEwTj7gFAABME5fABQAATBOfyAUAAEwTp9AFAABME6/YBQAASYPWAEwrR0BMG09ITBtXUEwbX1hMG2dgTBtvaEmD3gBIGcCJwUiJwkjB4iBIicVI0eVJAchJEdFJEepJEcNJEcRJEcVMiYegBgAATImPqAYAAEyJl7AGAABMiZ+4BgAATImnwAYAAEyJr8gGAABJifS+0AYAALqgBgAAuUADAAA="
 call {vg_p384_mul_mod_p_adx}
-.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFjD"
+.base64 "TInmTIuH4AIAAEyLj+gCAABMi5fwAgAATIuf+AIAAEyLpwADAABMi68IAwAATCuH0AYAAEwbj9gGAABMG5fgBgAATBuf6AYAAEwbp/AGAABMG6/4BgAASBnAicFIicJIweIgSInFSNHlSQHISRHRSRHqSRHDSRHESRHFTImHYAcAAEyJj2gHAABMiZdwBwAATImfeAcAAEyJp4AHAABMia+IBwAASIuXwAcAAEgLl8gHAABIC5fQBwAASAuX2AcAAEgLl+AHAABIC5foBwAASIP6AUgZ0kiJ1UiLlxAGAABIK1dwSIuXGAYAAEgbV3hIi5cgBgAASBuXgAAAAEiLlygGAABIG5eIAAAASIuXMAYAAEgbl5AAAABIi5c4BgAASBuXmAAAAEgZwEmJxEiLl2AHAABIC5doBwAASAuXcAcAAEgLl3gHAABIC5eABwAASAuXiAcAAEiD+gFIGdJMIeJICepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4eACAAASIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oSI1kJFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkoPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI1kJGCJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_p384_check_point_adx = sym super::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
         vg_p384_mul_mod_n_adx = sym super::ecdsa_p384::vg_p384_mul_mod_n_adx::vg_p384_mul_mod_n_adx,

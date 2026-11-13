@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Impl.EcKey.P521.X86_64
@@ -106,15 +108,17 @@ open VG.Proof.P521.X86_64 (hasLaw)
 
 def artifacts : List Artifact :=
   Compressed.artifacts ++ [
-  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
+  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.EcKey.X86_64.publicKeyP521
     stack := 8
-    verified := Proof.EcKey.X86_64.P521.pk_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv },
-  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
+    verified := Proof.EcKey.X86_64.P521.pk_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P521.inst 8 Impl.Ecdsa.X86_64.p521.combConsts)),
+  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.EcKey.X86_64.publicKeyP521Adx
     stack := 8
-    verified := Proof.EcKey.X86_64.P521.pk_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv }] ++
+    verified := Proof.EcKey.X86_64.P521.pk_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P521.inst 8 Impl.Ecdsa.X86_64.p521.combConsts))] ++
   Validate.artifacts
 
 end VG.Artifacts.EcP521.X86_64

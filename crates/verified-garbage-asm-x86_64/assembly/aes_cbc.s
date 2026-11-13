@@ -14,6 +14,34 @@ vg_aes_cbc_decrypt_vaes_avx512:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -27,6 +55,34 @@ vg_aes_cbc_decrypt_vaes:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -40,6 +96,34 @@ vg_aes_cbc_decrypt_aesni_avx:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -160,6 +244,35 @@ vg_aes_cbc_decrypt_aesni:
 	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -173,6 +286,35 @@ vg_aes_cbc_encrypt_avx:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -186,6 +328,35 @@ vg_aes_cbc_decrypt_avx:
 	call {vg_zeroize_avx_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -199,6 +370,21 @@ vg_aes_cbc_encrypt:
 	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -212,5 +398,20 @@ vg_aes_cbc_decrypt:
 	call {vg_zeroize_core}
 	mov rax, QWORD PTR [rsp]
 	lea rsp, [rsp+16]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-32]
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+32]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

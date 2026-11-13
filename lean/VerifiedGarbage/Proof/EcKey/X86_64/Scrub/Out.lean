@@ -36,6 +36,26 @@ theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n k : Nat} (hk : n ≤ k)
 
 variable (I : Instance) (stack : Nat)
 
+/-- `publicKeyOut` for code that takes tables of constants `cs` (`Scrub.withScrubAll`). -/
+theorem publicKeyOut_consts (cs : List (String × List (BitVec 64))) :
+    PostOut (I.publicKeyContract (X86_64.abi.withConsts cs) stack) (I.publicKeySig.retBits 64) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen hb h => by
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨d, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    simp only [Instance.publicKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hb
+    have e := bytesAt_congr (n := 2 * I.curve.len + 1) (by simp only [Elem.size]; omega) hb.1
+    change match publicKey I.curve (Spec.Weierstrass.ofBytes (bytesAt m d I.curve.len)) with
+      | some (.affine x y) =>
+        r = 1 ∧ bytesAt m₂ out (2 * I.curve.len + 1) = encodePoint (.affine x y)
+      | _ => r = 0 ∧ bytesAt m₂ out (2 * I.curve.len + 1) = List.replicate (2 * I.curve.len + 1) 0
+    rw [e]
+    exact h
+
 theorem publicKeyOut : PostOut (I.publicKeyContract X86_64.abi stack) (I.publicKeySig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
@@ -125,6 +145,22 @@ theorem exchangeOut :
 theorem verifyHashOut (J : Spec.Ecdsa.Instance) :
     PostOut (J.verifyHashContract X86_64.abi stack) (J.verifyHashSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen _ h => by
+    obtain ⟨pk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    exact h
+
+/-- `verifyHashOut` for code that takes tables of constants `cs` (`Scrub.withScrubAll`). -/
+theorem verifyHashOut_consts (J : Spec.Ecdsa.Instance) (cs : List (String × List (BitVec 64))) :
+    PostOut (J.verifyHashContract (X86_64.abi.withConsts cs) stack) (J.verifyHashSig.retBits 64) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen _ h => by
     obtain ⟨pk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
     replace hlen := Nat.succ.inj hlen
     obtain ⟨dg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen

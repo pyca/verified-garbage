@@ -356,6 +356,20 @@ vg_aes_cfb8_encrypt:
 	mov r13, QWORD PTR [r15+2088]
 	mov r14, QWORD PTR [r15+2096]
 	mov r15, QWORD PTR [r15+2104]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -407,5 +421,19 @@ vg_aes_cfb8_decrypt:
 	mov r13, QWORD PTR [r15+2088]
 	mov r14, QWORD PTR [r15+2096]
 	mov r15, QWORD PTR [r15+2104]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
