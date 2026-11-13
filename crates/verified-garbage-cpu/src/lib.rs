@@ -21,7 +21,10 @@ pub use detect::{COMPILED, detected, requested, target_contains};
 /// The bit of each feature detection knows in a [`Features`], by its Rust
 /// `target_feature` name in uppercase: what the generated `_FEATURES`
 /// constants, and the code choosing among implementations, are made of.
-/// (Each target detects and uses only some of them.)
+/// (Each target detects and uses only some of them.) The last bits are no
+/// instructions but microarchitectures ([`TUNING`]), which a registration
+/// may choose an implementation by (its `extra` features) where no
+/// instruction set feature tells apart the CPUs it is faster on.
 pub mod feature {
     pub const SSSE3: u32 = 1 << 0;
     pub const SHA: u32 = 1 << 1;
@@ -47,7 +50,19 @@ pub mod feature {
     pub const DIT: u32 = 1 << 21;
     pub const SB: u32 = 1 << 22;
     pub const AVX512FP16: u32 = 1 << 23;
+    /// AMD's Zen 5 cores (see `detect::decode`): not an instruction set
+    /// feature, so no code needs it ([`TUNING`]).
+    pub const ZEN5: u32 = 1 << 24;
 }
+
+/// The bits of [`feature`] that are microarchitectures, not instruction
+/// set features: no implementation's code needs one (no instruction does),
+/// so choosing an implementation by one, as a registration's `extra`
+/// feature, changes only which of the implementations the CPU can run is
+/// chosen, never whether it can run it. So `VG_CPU_FEATURES` may name one
+/// on any CPU (see `detect.rs`), for the tests to choose those
+/// implementations on every runner.
+pub const TUNING: Features = Features(feature::ZEN5);
 
 /// A set of CPU features.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
