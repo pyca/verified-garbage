@@ -39,23 +39,9 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
 /-- The artifacts calling the implementation `c` of `vg_aes_ctr32` and `n` of
 `vg_ghash`, a pair that a variant of AES-GCM calls (`streamPairs`). -/
-def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact :=
-  let v : GcmImpl :=
-    { ctr := c, key := if c.features.isEmpty then KeyImpl.scalar else KeyImpl.aesni,
-      gh := n.impl }
-  [
-  Spec.Gcm.streamFinishApi.artifact X86_64.target {
-    suffix := c.suffix ++ n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)
-    stack := 2584
-    verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v) },
-  Spec.Gcm.streamVerifyApi.artifact X86_64.target {
-    suffix := c.suffix ++ n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify v.callees)
-    stack := 2592
-    verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) }]
+def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact := [
+  Spec.Gcm.streamFinishApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.streamFinishReg c n),
+  Spec.Gcm.streamVerifyApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.streamVerifyReg c n)]
 
 end VG.Artifacts.AesGcm.X86_64.AesCtr32Ghash
 

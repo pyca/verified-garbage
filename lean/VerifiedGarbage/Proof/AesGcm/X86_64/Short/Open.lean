@@ -286,7 +286,7 @@ theorem openChk_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat
       exact .inr (.inr (.inr (.inr (.inr (Offset.sub W (by decide) (by decide)))))))
     he₇ hrd₇ hwr₇
   rw [hbx₆] at hbx₇
-  refine WP.seq (WP.mono (WP.with_rdwr (cmp_ok L (o := 112) (.inr rfl) he₇ hbx₇ h1 h16 (length_bytesAt _ _ _) hr₇))
+  refine WP.seq (WP.mono (WP.with_rdwr (cmp_ok L (by decide) (o := 112) (.inr rfl) he₇ hbx₇ h1 h16 (length_bytesAt _ _ _) hr₇))
     fun s₈ ⟨⟨he₈, hax₈, f₈⟩, hrd₈, hwr₈⟩ => ?_)
   have S₈ := S₇.keepE dD f₈ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr

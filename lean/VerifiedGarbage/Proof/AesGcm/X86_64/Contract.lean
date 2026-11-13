@@ -170,37 +170,37 @@ def streamDecryptX86_64 : Contract isa where
   pub := streamCryptPub
 
 /-- What `vg_aes_gcm_stream_finish` needs: `(ctx = rdi, rounds = rsi, state = rdx, aad_len = rcx,
-text_len = r8, tag = r9, work = [rsp + 8])`. -/
-def finPre (s : State) : Prop :=
+text_len = r8, tag = r9, work = [rsp + 8])`, with `N` bytes at `work`. -/
+def finPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .rdi, 256⟩
   let st : Region := ⟨s.gpr .rdx, 80⟩
   let tag : Region := ⟨s.gpr .r9, 16⟩
-  let work : Region := ⟨arg s 0, 2560⟩
+  let work : Region := ⟨arg s 0, N⟩
   s.rd = [ctx, args s 1] ∧ s.wr = [st, tag, work] ∧
     ctx.Disjoint st ∧ ctx.Disjoint work ∧ st.Disjoint work ∧ tag.Disjoint st ∧ tag.Disjoint work ∧
     (ret s).Disjoint st ∧ (ret s).Disjoint tag ∧ (ret s).Disjoint work ∧
     (stk s).Disjoint ctx ∧ (stk s).Disjoint st ∧ (stk s).Disjoint tag ∧ (stk s).Disjoint work ∧
     (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + 16 ≤ 2 ^ 64 ∧
-    (arg s 0).toNat + 2560 ≤ 2 ^ 64 ∧ rounds s
+    (arg s 0).toNat + N ≤ 2 ^ 64 ∧ rounds s
 
 /-- What `vg_aes_gcm_stream_verify` needs: `(ctx = rdi, rounds = rsi, state = rdx, aad_len = rcx,
-text_len = r8, tag = r9, tag_len = [rsp + 8], work = [rsp + 16])`. -/
-def verifyPre (s : State) : Prop :=
+text_len = r8, tag = r9, tag_len = [rsp + 8], work = [rsp + 16])`, with `N` bytes at `work`. -/
+def verifyPre (N : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .rdi, 256⟩
   let st : Region := ⟨s.gpr .rdx, 80⟩
   let tag : Region := ⟨s.gpr .r9, (arg s 0).toNat⟩
-  let work : Region := ⟨arg s 1, 2560⟩
+  let work : Region := ⟨arg s 1, N⟩
   s.rd = [ctx, tag, args s 2] ∧ s.wr = [st, work] ∧
     ctx.Disjoint st ∧ ctx.Disjoint work ∧ st.Disjoint work ∧ tag.Disjoint work ∧ work.Disjoint (args s 2) ∧
     (ret s).Disjoint st ∧ (ret s).Disjoint work ∧
     (stk s).Disjoint ctx ∧ (stk s).Disjoint st ∧ (stk s).Disjoint work ∧
     (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 80 ≤ 2 ^ 64 ∧
-    (s.gpr .r9).toNat + (arg s 0).toNat ≤ 2 ^ 64 ∧ (arg s 1).toNat + 2560 ≤ 2 ^ 64 ∧
+    (s.gpr .r9).toNat + (arg s 0).toNat ≤ 2 ^ 64 ∧ (arg s 1).toNat + N ≤ 2 ^ 64 ∧
     (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64 ∧ rounds s
 
-/-- `vg_aes_gcm_stream_finish`. -/
-def streamFinishX86_64 : Contract isa where
-  pre := finPre
+/-- `vg_aes_gcm_stream_finish`, with `N` bytes at `work`. -/
+def streamFinishX86_64 (N : Nat := 2560) : Contract isa where
+  pre := finPre N
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
     let h := ctxH s.mem (s.gpr .rdi)
@@ -211,9 +211,9 @@ def streamFinishX86_64 : Contract isa where
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧
     arg s₁ 0 = arg s₂ 0
 
-/-- `vg_aes_gcm_stream_verify`. -/
-def streamVerifyX86_64 : Contract isa where
-  pre := verifyPre
+/-- `vg_aes_gcm_stream_verify`, with `N` bytes at `work`. -/
+def streamVerifyX86_64 (N : Nat := 2560) : Contract isa where
+  pre := verifyPre N
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
     let h := ctxH s.mem (s.gpr .rdi)

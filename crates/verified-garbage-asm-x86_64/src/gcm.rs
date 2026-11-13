@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -18,12 +20,12 @@ pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vpclmulqdq`, `aes` and `vaes` target features.
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 232 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `aes` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
+        r#".base64 "SI2kJCD///9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
 jmp 21f
 20:
@@ -44,7 +46,7 @@ jmp 23f
 call {vg_ghash_vpclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_vaes}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkGP///8X+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
@@ -52,11 +54,13 @@ call {vg_aes_ctr32_vaes}
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -66,12 +70,12 @@ pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vpclmulqdq`, `aes` and `vaes` target features.
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 304 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `aes` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
+        r#".base64 "SI2kJNj+//9Ii4QkMAEAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
 .base64 "SIP7EQ=="
 jb 22f
@@ -130,7 +134,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk0P7//8X+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJDABAACJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
@@ -144,6 +148,8 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -152,12 +158,12 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 232 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `pclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
+        r#".base64 "SI2kJCD///9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
 jmp 21f
 20:
@@ -178,7 +184,7 @@ jmp 23f
 call {vg_ghash_pclmul}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkGP////MPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AAAADHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -192,6 +198,8 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -200,12 +208,12 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 304 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3`, `pclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
+        r#".base64 "SI2kJNj+//9Ii4QkMAEAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
 .base64 "SIP7EQ=="
 jb 22f
@@ -264,7 +272,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk0P7///MPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJDABAACJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -278,6 +286,8 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: verified_garbage_cpu::Feature
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -286,12 +296,12 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 792 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPD1//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
+        r#".base64 "SI2kJPD8//9IieBIg8AQSIlEJAhIi0QkCEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx0mJ1kmJ/UmJt7AAAABJiY+4AAAATYmHwAAAAE2Jj8gAAABJi5/AAAAASYuHuAAAAEiF2w=="
 je 20f
 jmp 21f
 20:
@@ -312,7 +322,7 @@ jmp 23f
 call {vg_ghash}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAADD"
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBADAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk6Pz///MPf4QkCAMAAPMPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkGAMAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -326,6 +336,8 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: verified_garbage_cpu::Feature
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -334,12 +346,12 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
+        r#".base64 "SI2kJOj8//9Ii4QkIAMAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABIi1wkCEmJn+AAAABMic65AAAAAEiD+wQ="
 jb 20f
 .base64 "SIP7EQ=="
 jb 22f
@@ -398,7 +410,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk4Pz///MPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJCADAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -3070,7 +3082,7 @@ jmp 211f
 210:
 211:
 .base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_vaes_vpclmul}
+call {vg_aes_gcm_stream_finish_vaes_vpclmul_core}
 jmp 29f
 28:
 .base64 "TItcJDBBugAAAABJi0NASIXA"
@@ -3275,7 +3287,7 @@ jmp 280f
 279:
 280:
 .base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_vaes_vpclmul}
+call {vg_aes_gcm_stream_finish_vaes_vpclmul_core}
 jmp 278f
 277:
 .base64 "TItcJDBBugAAAABJi0NASIXA"
@@ -3448,7 +3460,7 @@ jmp 21b
         vg_aes_gcm_stream_init_vpclmul_core = sym super::aes::vg_aes_gcm_stream_init_vpclmul_core::vg_aes_gcm_stream_init_vpclmul_core,
         vg_aes_gcm_stream_aad_vpclmul_core = sym super::aes::vg_aes_gcm_stream_aad_vpclmul_core::vg_aes_gcm_stream_aad_vpclmul_core,
         vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512,
-        vg_aes_gcm_stream_finish_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul,
+        vg_aes_gcm_stream_finish_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_stream_finish_vaes_vpclmul_core::vg_aes_gcm_stream_finish_vaes_vpclmul_core,
         vg_aes_gcm_seal_split_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_split_vaes_vpclmul_avx512::vg_aes_gcm_seal_split_vaes_vpclmul_avx512,
         vg_aes_gcm_seal_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_vaes_vpclmul_avx512::vg_aes_gcm_seal_vaes_vpclmul_avx512,
         vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512,
@@ -5042,7 +5054,7 @@ jmp 211f
 210:
 211:
 .base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_vaes_vpclmul}
+call {vg_aes_gcm_stream_finish_vaes_vpclmul_core}
 jmp 29f
 28:
 .base64 "TItcJDBBugAAAABJi0NASIXA"
@@ -5543,7 +5555,7 @@ jmp 21b
         vg_aes_gcm_stream_init_vpclmul_core = sym super::aes::vg_aes_gcm_stream_init_vpclmul_core::vg_aes_gcm_stream_init_vpclmul_core,
         vg_aes_gcm_stream_aad_vpclmul_core = sym super::aes::vg_aes_gcm_stream_aad_vpclmul_core::vg_aes_gcm_stream_aad_vpclmul_core,
         vg_aes_gcm_stream_encrypt_to_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul,
-        vg_aes_gcm_stream_finish_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul,
+        vg_aes_gcm_stream_finish_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_stream_finish_vaes_vpclmul_core::vg_aes_gcm_stream_finish_vaes_vpclmul_core,
         vg_aes_gcm_seal_split_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_vaes_vpclmul::vg_aes_gcm_seal_split_vaes_vpclmul,
         vg_aes_gcm_seal_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_vaes_vpclmul::vg_aes_gcm_seal_vaes_vpclmul,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
@@ -7306,7 +7318,7 @@ jmp 211f
 210:
 211:
 .base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_aesni_pclmul}
+call {vg_aes_gcm_stream_finish_aesni_pclmul_core}
 jmp 29f
 28:
 .base64 "TItcJDBBugAAAABJi0NASIXA"
@@ -7807,7 +7819,7 @@ jmp 21b
         vg_aes_gcm_stream_init_pclmul_core = sym super::aes::vg_aes_gcm_stream_init_pclmul_core::vg_aes_gcm_stream_init_pclmul_core,
         vg_aes_gcm_stream_aad_pclmul_core = sym super::aes::vg_aes_gcm_stream_aad_pclmul_core::vg_aes_gcm_stream_aad_pclmul_core,
         vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx,
-        vg_aes_gcm_stream_finish_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_finish_aesni_pclmul,
+        vg_aes_gcm_stream_finish_aesni_pclmul_core = sym super::aes::vg_aes_gcm_stream_finish_aesni_pclmul_core::vg_aes_gcm_stream_finish_aesni_pclmul_core,
         vg_aes_gcm_seal_split_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_split_aesni_pclmul_avx::vg_aes_gcm_seal_split_aesni_pclmul_avx,
         vg_aes_gcm_seal_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_aesni_pclmul_avx::vg_aes_gcm_seal_aesni_pclmul_avx,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
@@ -8589,7 +8601,7 @@ jmp 29f
 28:
 29:
 .base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_aesni_pclmul}
+call {vg_aes_gcm_stream_finish_aesni_pclmul_core}
 jmp 27f
 26:
 .base64 "TItcJDBBugAAAABJi0NASIXA"
@@ -8741,7 +8753,7 @@ call {vg_aes_gcm_seal_aesni_pclmul}
         vg_aes_gcm_stream_init_pclmul_core = sym super::aes::vg_aes_gcm_stream_init_pclmul_core::vg_aes_gcm_stream_init_pclmul_core,
         vg_aes_gcm_stream_aad_pclmul_core = sym super::aes::vg_aes_gcm_stream_aad_pclmul_core::vg_aes_gcm_stream_aad_pclmul_core,
         vg_aes_gcm_stream_encrypt_to_aesni_pclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_aesni_pclmul::vg_aes_gcm_stream_encrypt_to_aesni_pclmul,
-        vg_aes_gcm_stream_finish_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_finish_aesni_pclmul,
+        vg_aes_gcm_stream_finish_aesni_pclmul_core = sym super::aes::vg_aes_gcm_stream_finish_aesni_pclmul_core::vg_aes_gcm_stream_finish_aesni_pclmul_core,
         vg_aes_gcm_seal_split_aesni_pclmul = sym super::aes::vg_aes_gcm_seal_split_aesni_pclmul::vg_aes_gcm_seal_split_aesni_pclmul,
         vg_aes_gcm_seal_aesni_pclmul = sym super::aes::vg_aes_gcm_seal_aesni_pclmul::vg_aes_gcm_seal_aesni_pclmul,
     )
@@ -9518,7 +9530,7 @@ jmp 29f
 28:
 29:
 .base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
-call {vg_aes_gcm_stream_finish_aesni}
+call {vg_aes_gcm_stream_finish_aesni_core}
 jmp 27f
 26:
 .base64 "TItcJDBBugAAAABJi0NASIXA"
@@ -9670,7 +9682,7 @@ call {vg_aes_gcm_seal_aesni}
         vg_aes_gcm_stream_init_core = sym super::aes::vg_aes_gcm_stream_init_core::vg_aes_gcm_stream_init_core,
         vg_aes_gcm_stream_aad_core = sym super::aes::vg_aes_gcm_stream_aad_core::vg_aes_gcm_stream_aad_core,
         vg_aes_gcm_stream_encrypt_to_aesni = sym super::aes::vg_aes_gcm_stream_encrypt_to_aesni::vg_aes_gcm_stream_encrypt_to_aesni,
-        vg_aes_gcm_stream_finish_aesni = sym super::gcm::vg_aes_gcm_stream_finish_aesni,
+        vg_aes_gcm_stream_finish_aesni_core = sym super::aes::vg_aes_gcm_stream_finish_aesni_core::vg_aes_gcm_stream_finish_aesni_core,
         vg_aes_gcm_seal_split_aesni = sym super::aes::vg_aes_gcm_seal_split_aesni::vg_aes_gcm_seal_split_aesni,
         vg_aes_gcm_seal_aesni = sym super::aes::vg_aes_gcm_seal_aesni::vg_aes_gcm_seal_aesni,
     )
