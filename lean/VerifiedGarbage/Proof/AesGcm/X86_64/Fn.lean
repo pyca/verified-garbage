@@ -185,17 +185,35 @@ theorem exit_ok {s s₀ : State} {W : Addr} {N : Nat} (h15 : s.gpr .r15 = W) (hs
   · exact hsv (.r15, 168) (by simp [saved])
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay Ctx St W SP N)
 include L
 
-theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFrame St W SP yo, (savedR W).Disjoint r := by
+theorem saved_absFrame {gs : Nat} (hg : gs = 0 ∨ 512 + gs ≤ N) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) :
+    ∀ r ∈ absFrame St W SP yo gs, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
-  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
+  · exact (L.st_w (by omega) (.inr ⟨by decide, L.le⟩)).symm
+  · exact (L.st_w (by decide) (.inr ⟨by decide, L.le⟩)).symm
+  · exact L.w_gh hg (by decide) L.le
+  · exact (L.stk_w L.le).symm
+
+theorem saved_j0Frame (hN : 224 ≤ N) {gs : Nat} (hg : gs = 0 ∨ 512 + gs ≤ N) :
+    ∀ r ∈ j0Frame St W SP gs, (savedR W).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · simpa using (L.st_w (a := 0) (n := 80) (by decide) (.inr ⟨by decide, L.le⟩)).symm
+  · exact L.w_w (.inr (by decide)) L.le L.le
+  · exact L.w_w (.inl (by decide)) L.le (Lay.leN hN)
+  · exact L.w_gh hg (by decide) L.le
+  · exact (L.stk_w L.le).symm
+
+end
+
+section
+variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+include L
 
 theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o, (savedR W).Disjoint r := by
   intro r hr
@@ -207,16 +225,6 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame S
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 
-theorem saved_j0Frame : ∀ r ∈ j0Frame St W SP, (savedR W).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using (L.st_w (a := 0) (n := 80) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
-
 end
 
 theorem ctxH_eq (m : Mem) (p : Addr) : Spec.Gcm.ctxH m p = Spec.Gcm.blockAt m (p + BitVec.ofNat 64 240) := rfl
@@ -225,13 +233,14 @@ theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
   rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
 
 /-- The layout, from disjointness of the context, the state, `W` and the stack. -/
-theorem Lay.of {Ctx St W SP : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
-    (ww : W.toNat + 2560 ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
-    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem Lay.of {Ctx St W SP : Addr} {N : Nat} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
+    (ww : W.toNat + N ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
+    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, N⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, N⟩)
     (kc : (below SP 8).Disjoint ⟨Ctx, 256⟩) (ks : (below SP 8).Disjoint ⟨St, 80⟩)
-    (kw : (below SP 8).Disjoint ⟨W, 2560⟩) : Lay Ctx St W SP :=
-  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)), sW.sub_right (Lay.wSub (by decide)),
-    kc, ks, kw⟩
+    (kw : (below SP 8).Disjoint ⟨W, N⟩) (hN : 176 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    Lay Ctx St W SP N :=
+  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by omega)), sW.sub_right (Lay.wSub (by omega)),
+    kc, ks, kw, hN, hN'⟩
 
 theorem ofNat_lit (n : Nat) : (OfNat.ofNat n : Addr) = BitVec.ofNat 64 n := rfl
 

@@ -316,16 +316,20 @@ def sealFnP (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.powers
     (sealSelP_framed v Short.shortFacts) (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkP))
     (StreamTo.framed_xdepth (sealCode_xdepth v v.blkP)) (StreamTo.framed_mx (sealCode_mx v v.blkP))
 
-/-- The instance of `vg_aes_gcm_stream_init` calling the implementations `v`. -/
+/-- The instance of `vg_aes_gcm_stream_init` calling the implementations `v`,
+as an internal function of its own, `vg_aes_gcm_stream_init<suffix>_core`:
+`vg_aes_gcm_stream_init` itself has a frame of its own size and clears it
+(`Scrub.streamInitReg`). -/
 def initFn (v : GcmImpl) : Gather.InitFn :=
-  .ofSpec ⟨Spec.Gcm.streamInitApi.name ++ v.gh.suffix,
+  .ofSpec ⟨Spec.Gcm.streamInitApi.name ++ v.gh.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackScratch 2568 .r8 (Impl.AesGcm.X86_64.streamInit v.callees)⟩
     (streamInit_framed v) (X86_64.withStackScratch_spSafe (by decide) (streamInit_spSafe v))
     (Gather.framedS_xdepth (streamInit_xdepth v)) (Gather.framedS_mx (streamInit_mx v))
 
-/-- The instance of `vg_aes_gcm_stream_aad` calling the implementations `v`. -/
+/-- The instance of `vg_aes_gcm_stream_aad` calling the implementations `v`,
+as `vg_aes_gcm_stream_aad<suffix>_core` (`Scrub.streamAadReg`). -/
 def aadFn (v : GcmImpl) : Gather.AadFn :=
-  .ofSpec ⟨Spec.Gcm.streamAadApi.name ++ v.gh.suffix,
+  .ofSpec ⟨Spec.Gcm.streamAadApi.name ++ v.gh.suffix ++ "_core",
       Impl.StackScratch.X86_64.withStackScratch 2568 .r9 (Impl.AesGcm.X86_64.streamAad v.callees)⟩
     (streamAad_framed v) (X86_64.withStackScratch_spSafe (by decide) (streamAad_spSafe v))
     (Gather.framedS_xdepth (streamAad_xdepth v)) (Gather.framedS_mx (streamAad_mx v))

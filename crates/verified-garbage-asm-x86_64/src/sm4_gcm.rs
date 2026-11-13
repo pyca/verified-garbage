@@ -297,7 +297,7 @@ jmp 25f
 }
 
 /// The CPU features `vg_sm4_gcm_stream_init_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_INIT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_INIT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
 ///
@@ -305,18 +305,20 @@ pub const VG_SM4_GCM_STREAM_INIT_VPCLMUL_FEATURES: verified_garbage_cpu::Feature
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx` and `vpclmulqdq` target features.
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
+        r#".base64 "SI2kJBj///9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
 je 20f
 .base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
 je 22f
@@ -342,18 +344,20 @@ jmp 21f
 20:
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 21:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkEP///8X+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJPAAAAAxwDHJMdIx9jH/RTHARTHSww=="
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
     )
 }
 
 /// The CPU features `vg_sm4_gcm_stream_aad_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_AAD_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_AAD_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -361,12 +365,12 @@ pub const VG_SM4_GCM_STREAM_AAD_VPCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx` and `vpclmulqdq` target features.
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 192 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
+        r#".base64 "SI2kJEj///9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
 je 20f
 .base64 "SIXb"
 je 22f
@@ -409,7 +413,7 @@ jmp 212f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkQP///8X+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJMAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
     )
@@ -1085,18 +1089,20 @@ pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
+        r#".base64 "SI2kJBj///9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
 je 20f
 .base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
 je 22f
@@ -1122,7 +1128,7 @@ jmp 21f
 20:
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 21:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkEP////MPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJPAAAAAxwDHJMdIx9jH/RTHARTHSww=="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
@@ -1135,18 +1141,20 @@ pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 192 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
+        r#".base64 "SI2kJEj///9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
 je 20f
 .base64 "SIXb"
 je 22f
@@ -1189,7 +1197,7 @@ jmp 212f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkQP////MPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJMAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
@@ -1854,17 +1862,19 @@ jmp 25f
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
+        r#".base64 "SI2kJPj8//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSYnOSYn9SYn0SInVSIP9DA=="
 je 20f
 .base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
 je 22f
@@ -1890,7 +1900,7 @@ jmp 21f
 20:
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 21:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/ARTHbSI2kJPD8///zD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQQAwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
@@ -1900,17 +1910,19 @@ jmp 21f
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
+        r#".base64 "SI2kJPj8//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
 je 20f
 .base64 "SIXb"
 je 22f
@@ -1953,7 +1965,7 @@ jmp 212f
 jmp 21f
 20:
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/ARTHbSI2kJPD8///zD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQQAwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )

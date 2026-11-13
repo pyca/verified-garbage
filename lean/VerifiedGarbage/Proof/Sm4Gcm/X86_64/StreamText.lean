@@ -41,7 +41,7 @@ open VG.Spec.Gcm (Block blockAt zeros padLen ghashInput)
 open VG.Proof.Gcm (Absorbed Ctr xorKs)
 open VG.Proof.AesGcm.X86_64 (GcmImpl Lay Env DataOk absFrame tFrame AbsIn AbsOut FlOut absorb_ok flush_ok
   load_ok load_env ctext ctext_append length_ctext ctext_nil bytesAt_zero abs_frame ctr_frame test_ok eval_e
-  bytesAt_frame blockAt_frame and15 imm_eq and_self_beq toNat_mod16 data_absFrame length_bytesAt bytesAt_add
+  bytesAt_frame blockAt_frame and15 imm_eq and_self_beq toNat_mod16 data_absFrame data_absFrame₀ length_bytesAt bytesAt_add
   WP.with_rdwr)
 
 /-- What `streamText` writes. -/
@@ -307,7 +307,7 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
     have hc₅ : ciphOf s₅.mem Ctx = ciphOf m₀ Ctx := by
       rw [hm₅, ciph_frame ao.frame (ctx_absFrame16 L), hm₃, hc₂]
     have hD₅ : bytesAt s₅.mem D n = bytesAt m₀ D n := by
-      rw [hm₅, bytesAt_frame ao.frame (data_absFrame (yo := 16) (.inr rfl) hd₃.dw.ok) (by omega_arith), hm₃, hD₂]
+      rw [hm₅, bytesAt_frame ao.frame (data_absFrame₀ (yo := 16) (.inr rfl) hd₃.dw.ok) (by omega_arith), hm₃, hD₂]
     refine WP.mono (WP.with_rdwr (crypt_ok L (icb := icb) (P := c₀.length) ⟨he₅, h12₅, hbp₅, hbx₅, hd₅⟩))
       fun s₆ ⟨co, rd₆, wr₆⟩ => ⟨co.env, by rw [rd₆, hrd₅, rd₄, hrd₃, rd₂, hrd₁], by rw [wr₆, hwr₅, wr₄, hwr₃, wr₂, hwr₁],
         (tFrame_st f₂).trans ((hm₃ ▸ absFrame_st ao.frame).trans (hm₅ ▸ crFrame_st co.frame)), fun hy => ⟨?_, ?_, ?_⟩⟩
@@ -360,7 +360,7 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
       exact ctr_frame ao.frame (ctr_absFrame16 L) (hm₅ ▸ C (hC₂ hy))
     · have C := co.out
       rw [hc₃, hm₃, hD₂] at C
-      rw [bytesAt_frame ao.frame (data_absFrame (yo := 16) (.inr rfl) hd₅.dw.ok) (by omega_arith), hm₅]
+      rw [bytesAt_frame ao.frame (data_absFrame₀ (yo := 16) (.inr rfl) hd₅.dw.ok) (by omega_arith), hm₅]
       exact C (hC₂ hy)
 
 end

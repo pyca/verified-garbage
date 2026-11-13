@@ -495,7 +495,7 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
     (ct : (below SP 8).Disjoint ⟨Ctx + BitVec.ofNat 64 272, 16⟩) :
     WP isa aad s (OneAad Ctx W SP H (bytesAt s.mem Np 12) (bytesAt s.mem A al) s.mem) := by
   unfold aad
-  refine WP.seq (WP.mono (WP.with_rdwr (j012_ok L ⟨he, hH, h12, hbp, hN⟩)) fun s₁ ⟨j₁, hrd₁, hwr₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (j012_ok L (gs := 256) ⟨he, hH, h12, hbp, hN⟩)) fun s₁ ⟨j₁, hrd₁, hwr₁⟩ => ?_)
   refine WP.seq (WP.mono (WP.with_rdwr (initState_ok L j₁)) fun s₂ ⟨j₂, hrd₂, hwr₂⟩ => ?_)
   have f₂ := j₂.frame
   have he₂ := j₂.env

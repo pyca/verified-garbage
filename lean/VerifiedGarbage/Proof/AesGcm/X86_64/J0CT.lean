@@ -30,23 +30,24 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
-include L
+variable (v : GcmImpl) {Ctx St W SP : Addr} {N gs : Nat} [G : GhFits v N gs] (L : Lay Ctx St W SP N)
+include G L
 
 /-- The nonce's length is kept at `W + 216`. -/
-def AuxN (Ctx St W SP : Addr) (n : Nat) (s : State) : Prop :=
-  Env Ctx St W SP s ∧ s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
+def AuxN (Ctx St W SP : Addr) (n : Nat) (s : State) (N : Nat := 2560) : Prop :=
+  Env Ctx St W SP s N ∧ s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
 
-omit L in
-theorem j0hashA_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s) :
+omit G in
+theorem j0hashA_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s N)
+    (hN : 224 ≤ N := by decide) :
     WP isa (.block [.mov32 .rax (imm 0), .store (at_ .r14 0) .rax, .store (at_ .r14 8) .rax,
       .store (at_ .r15 auxO) .rbp, .mov32 .rbx (imm 0)]) s fun s₁ =>
-      (∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₁) ∧ AuxN Ctx St W SP n s₁ := by
+      (∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₁ N) ∧ AuxN Ctx St W SP n s₁ N := by
   have he := h.env
   have h14 := he.r14; have h15 := he.r15
   have z₀ := he.perm.stW (show 0 + 8 ≤ 80 by decide)
   have z₁ := he.perm.stW (show 8 + 8 ≤ 80 by decide)
-  have wa := he.perm.wW (show 216 + 8 ≤ 2560 by decide)
+  have wa := he.perm.wW (show 216 + 8 ≤ N from (Lay.leN hN)) L.nlt
   obtain ⟨s₁, run₁, hm₁, hbx₁, hg₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov32 .rax (imm 0), .store (at_ .r14 0) .rax,
       .store (at_ .r14 8) .rax, .store (at_ .r15 auxO) .rbp, .mov32 .rbx (imm 0)] s = some s₁ ∧
       s₁.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n ∧
@@ -57,17 +58,18 @@ theorem j0hashA_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx S
     · simp [gpr_setReg]
     · intro r a b; simp [gpr_setReg, a, b]
     all_goals rfl
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => by
+  have he₁ : Env Ctx St W SP s₁ N := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁
   exact WP.of_runBlock ⟨s₁, run₁, ⟨_, he₁, by rw [hg₁ _ (by decide) (by decide), h.r12],
     by rw [hg₁ _ (by decide) (by decide), h.rbp], by rw [hbx₁]; rfl, h.data.of_eq hrd₁ hwr₁, rfl⟩, he₁, hm₁⟩
 
-omit L in
-theorem auxLens_ok {n : Nat} {s : State} (h : AuxN Ctx St W SP n s) :
+omit G in
+theorem auxLens_ok {n : Nat} {s : State} (h : AuxN Ctx St W SP n s N)
+    (hN : 224 ≤ N := by decide) :
     WP isa (.block [.mov32 .rbx (imm 0), .mov .rbp (.mem (at_ .r15 auxO))]) s fun s₁ =>
-      Env Ctx St W SP s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 0 ∧ s₁.gpr .rbp = BitVec.ofNat 64 n := by
-  have ra := h.1.perm.wR (show 216 + 8 ≤ 2560 by decide)
+      Env Ctx St W SP s₁ N ∧ s₁.gpr .rbx = BitVec.ofNat 64 0 ∧ s₁.gpr .rbp = BitVec.ofNat 64 n := by
+  have ra := h.1.perm.wR (show 216 + 8 ≤ N from (Lay.leN hN)) L.nlt
   obtain ⟨s₁, run₁, hbx, hbp, hg, hrd, hwr⟩ : ∃ s₁, runBlock isa [.mov32 .rbx (imm 0),
       .mov .rbp (.mem (at_ .r15 auxO))] s = some s₁ ∧
       s₁.gpr .rbx = BitVec.ofNat 64 0 ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧
@@ -83,22 +85,22 @@ theorem auxLens_ok {n : Nat} {s : State} (h : AuxN Ctx St W SP n s) :
 
 /-- `J₀` of a nonce of any length but 12, for nonces at the same address, of
 the same length. -/
-theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
-    RelCT isa (fun s₁ s₂ => J0In Ctx St W SP H₁ Np n s₁ ∧ J0In Ctx St W SP H₂ Np n s₂) (j0hash v.callees)
+theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} (hN : 224 ≤ N := by decide) :
+    RelCT isa (fun s₁ s₂ => J0In Ctx St W SP H₁ Np n s₁ N ∧ J0In Ctx St W SP H₂ Np n s₂ N) (j0hash v.callees)
       fun _ _ => True := by
   by_cases hlt : n < 2 ^ 64
   swap
   · exact RelCT.of_false fun _ _ h => hlt h.1.data.lt
   -- After `absorbPad`, the length is still kept.
-  have hA : ∀ s, (∃ H', AbsIn Ctx St W SP 0 H' [] Np n s) ∧ AuxN Ctx St W SP n s →
-      WP isa (absorbPad v.callees 0) s (AuxN Ctx St W SP n) := fun s ⟨⟨_, h⟩, ha⟩ =>
+  have hA : ∀ s, (∃ H', AbsIn Ctx St W SP 0 H' [] Np n s N) ∧ AuxN Ctx St W SP n s N →
+      WP isa (absorbPad v.callees 0) s (AuxN Ctx St W SP n · N) := fun s ⟨⟨_, h⟩, ha⟩ =>
     WP.mono (absorbPad_ok v L (.inl rfl) h rfl) fun _ o => by
       obtain ⟨m, fa, ft⟩ := o.frame
       exact ⟨o.env, by
-        rw [ft.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_tFrame L) (by decide),
-          fa.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_absFrame L) (by decide),
+        rw [ft.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_tFrame L hN G.fit) (by decide),
+          fa.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_absFrame L hN G.fit) (by decide),
           ha.2]⟩
-  have r₀ := rel_wp (rel_taint (P := fun s₁ s₂ => J0In Ctx St W SP H₁ Np n s₁ ∧ J0In Ctx St W SP H₂ Np n s₂)
+  have r₀ := rel_wp (rel_taint (P := fun s₁ s₂ => J0In Ctx St W SP H₁ Np n s₁ N ∧ J0In Ctx St W SP H₂ Np n s₂ N)
       [.r12, .rbp, .r13, .r14, .r15, .rsp] (fun _ _ h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -108,24 +110,24 @@ theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
         · rw [h.1.env.r14, h.2.env.r14]
         · rw [h.1.env.r15, h.2.env.r15]
         · rw [h.1.env.rsp, h.2.env.rsp]) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) (fun s h => j0hashA_ok h) (fun s h => j0hashA_ok h)
+    (fun _ _ h => h) (fun s h => j0hashA_ok L h hN) (fun s h => j0hashA_ok L h hN)
   let PA : State → State → Prop := fun s₁ s₂ => True ∧
-    ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₁) ∧ AuxN Ctx St W SP n s₁) ∧
-    ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₂) ∧ AuxN Ctx St W SP n s₂)
+    ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₁ N) ∧ AuxN Ctx St W SP n s₁ N) ∧
+    ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₂ N) ∧ AuxN Ctx St W SP n s₂ N)
   have a₁ : RelCT isa PA (absorbPad v.callees 0) fun _ _ => True :=
     (RelCT.exists_ fun H₁' => RelCT.exists_ fun H₂' =>
       absorbPad_rel v L (.inl rfl) (H₁ := H₁') (H₂ := H₂') (x₁ := []) (x₂ := []) (D := Np) (n := n) rfl rfl).mono
       (fun s₁ s₂ (h : PA s₁ s₂) => by
         obtain ⟨_, ⟨⟨H₁', h₁⟩, _⟩, ⟨⟨H₂', h₂⟩, _⟩⟩ := h; exact ⟨H₁', H₂', h₁, h₂⟩) fun _ _ h => h
   have r₁ := rel_wp a₁ (fun _ _ h => h.2) hA hA
-  have r₄ := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ AuxN Ctx St W SP n s₁ ∧ AuxN Ctx St W SP n s₂)
+  have r₄ := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ AuxN Ctx St W SP n s₁ N ∧ AuxN Ctx St W SP n s₂ N)
       (c := .block [.mov32 .rbx (imm 0), .mov .rbp (.mem (at_ .r15 auxO))])
       [.r13, .r14, .r15, .rsp] (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.2.1.1, h.2.2.1, fun _ h => by cases h⟩)
       ⟨_, by taint_decide⟩)
-    (fun _ _ h => h.2) (fun s h => auxLens_ok h) (fun s h => auxLens_ok h)
+    (fun _ _ h => h.2) (fun s h => auxLens_ok L h hN) (fun s h => auxLens_ok L h hN)
   have r₅ := (lens_rel v L (yo := 0) (.inl rfl)).mono (P' := fun (s₁ s₂ : State) => True ∧
-      (Env Ctx St W SP s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 0 ∧ s₁.gpr .rbp = BitVec.ofNat 64 n) ∧
-      (Env Ctx St W SP s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 0 ∧ s₂.gpr .rbp = BitVec.ofNat 64 n))
+      (Env Ctx St W SP s₁ N ∧ s₁.gpr .rbx = BitVec.ofNat 64 0 ∧ s₁.gpr .rbp = BitVec.ofNat 64 n) ∧
+      (Env Ctx St W SP s₂ N ∧ s₂.gpr .rbx = BitVec.ofNat 64 0 ∧ s₂.gpr .rbp = BitVec.ofNat 64 n))
     (fun _ _ h => ⟨h.2.1.1, h.2.2.1, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -134,10 +136,10 @@ theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
   exact RelCT.seq r₀ (RelCT.seq r₁ (RelCT.seq r₄ r₅))
 
 /-- `j0`, for nonces at the same address, of the same length. -/
-theorem j0_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
-    RelCT isa (fun s₁ s₂ => J0In Ctx St W SP H₁ Np n s₁ ∧ J0In Ctx St W SP H₂ Np n s₂) (j0 v.callees)
+theorem j0_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} (hN : 224 ≤ N := by decide) :
+    RelCT isa (fun s₁ s₂ => J0In Ctx St W SP H₁ Np n s₁ N ∧ J0In Ctx St W SP H₂ Np n s₂ N) (j0 v.callees)
       fun _ _ => True := by
-  have hag : ∀ s₁ s₂, J0In Ctx St W SP H₁ Np n s₁ ∧ J0In Ctx St W SP H₂ Np n s₂ →
+  have hag : ∀ s₁ s₂, J0In Ctx St W SP H₁ Np n s₁ N ∧ J0In Ctx St W SP H₂ Np n s₂ N →
       ∀ r ∈ [Reg.r12, .rbp, .r13, .r14, .r15, .rsp], s₁.gpr r = s₂.gpr r := fun _ _ h r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -147,8 +149,8 @@ theorem j0_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
     · rw [h.1.env.r14, h.2.env.r14]
     · rw [h.1.env.r15, h.2.env.r15]
     · rw [h.1.env.rsp, h.2.env.rsp]
-  have hC : ∀ {H : Block} (s : State), J0In Ctx St W SP H Np n s →
-      WP isa (.block [.alu .cmp .rbp (imm 12)]) s (fun s₁ => J0In Ctx St W SP H Np n s₁ ∧
+  have hC : ∀ {H : Block} (s : State), J0In Ctx St W SP H Np n s N →
+      WP isa (.block [.alu .cmp .rbp (imm 12)]) s (fun s₁ => J0In Ctx St W SP H Np n s₁ N ∧
         s₁.zf = some (decide (n = 12))) := fun s h => by
     have hlt := h.data.lt
     obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.alu .cmp .rbp (imm 12)] s = some s₁ ∧
@@ -162,14 +164,14 @@ theorem j0_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
     (fun _ _ h => h) (fun s h => hC s h) (fun s h => hC s h)
   let P₀ : State → State → Prop := fun s₁ s₂ => ((∀ r ∈ ([] : List Reg), s₁.gpr r = s₂.gpr r) ∧
       (true = true → s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf ∧ s₁.sf = s₂.sf ∧ s₁.of = s₂.of)) ∧
-      (J0In Ctx St W SP H₁ Np n s₁ ∧ s₁.zf = some (decide (n = 12))) ∧
-      (J0In Ctx St W SP H₂ Np n s₂ ∧ s₂.zf = some (decide (n = 12)))
-  refine RelCT.seq c (RelCT.seq (R := fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂)
+      (J0In Ctx St W SP H₁ Np n s₁ N ∧ s₁.zf = some (decide (n = 12))) ∧
+      (J0In Ctx St W SP H₂ Np n s₂ N ∧ s₂.zf = some (decide (n = 12)))
+  refine RelCT.seq c (RelCT.seq (R := fun s₁ s₂ => Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N)
     (rel_ite_e (P := P₀) (fun _ _ h => (h.1.2 rfl).2.1) ?_ ?_) ?_)
   · let P₁ : State → State → Prop := fun s₁ s₂ => (((∀ r ∈ ([] : List Reg), s₁.gpr r = s₂.gpr r) ∧
       (true = true → s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf ∧ s₁.sf = s₂.sf ∧ s₁.of = s₂.of)) ∧
-      (J0In Ctx St W SP H₁ Np n s₁ ∧ s₁.zf = some (decide (n = 12))) ∧
-      (J0In Ctx St W SP H₂ Np n s₂ ∧ s₂.zf = some (decide (n = 12)))) ∧ s₁.zf = some true
+      (J0In Ctx St W SP H₁ Np n s₁ N ∧ s₁.zf = some (decide (n = 12))) ∧
+      (J0In Ctx St W SP H₂ Np n s₂ N ∧ s₂.zf = some (decide (n = 12)))) ∧ s₁.zf = some true
     have ht : RelCT isa P₁ (.block j012) fun _ _ => True :=
       rel_taint [.r12, .rbp, .r13, .r14, .r15, .rsp] (fun _ _ h => hag _ _ ⟨h.1.2.1.1, h.1.2.2.1⟩)
         ⟨_, by taint_decide⟩
@@ -179,13 +181,13 @@ theorem j0_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
     · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [h12] at this
     let P₂ : State → State → Prop := fun s₁ s₂ => (((∀ r ∈ ([] : List Reg), s₁.gpr r = s₂.gpr r) ∧
       (true = true → s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf ∧ s₁.sf = s₂.sf ∧ s₁.of = s₂.of)) ∧
-      (J0In Ctx St W SP H₁ Np n s₁ ∧ s₁.zf = some (decide (n = 12))) ∧
-      (J0In Ctx St W SP H₂ Np n s₂ ∧ s₂.zf = some (decide (n = 12)))) ∧ s₁.zf = some false
+      (J0In Ctx St W SP H₁ Np n s₁ N ∧ s₁.zf = some (decide (n = 12))) ∧
+      (J0In Ctx St W SP H₂ Np n s₂ N ∧ s₂.zf = some (decide (n = 12)))) ∧ s₁.zf = some false
     have hj : RelCT isa P₂ (j0hash v.callees) fun _ _ => True :=
-      (j0hash_rel v L).mono (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
-    exact (rel_wp hj (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (G₁ := Env Ctx St W SP) (G₂ := Env Ctx St W SP)
-      (fun s h => WP.mono (j0hash_ok v L h h12) fun _ m => m.env)
-      (fun s h => WP.mono (j0hash_ok v L h h12) fun _ m => m.env)).mono (fun _ _ h => h) fun _ _ h => h.2
+      (j0hash_rel v L hN).mono (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
+    exact (rel_wp hj (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (G₁ := (Env Ctx St W SP · N)) (G₂ := (Env Ctx St W SP · N))
+      (fun s h => WP.mono (j0hash_ok v L h h12 hN) fun _ m => m.env)
+      (fun s h => WP.mono (j0hash_ok v L h h12 hN) fun _ m => m.env)).mono (fun _ _ h => h) fun _ _ h => h.2
   · exact rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.1, h.2, fun _ h => by cases h⟩)
       ⟨_, by taint_decide⟩
 

@@ -652,13 +652,15 @@ pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(_dit: verified_garbage_cpu::D
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_init_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_init_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
@@ -706,13 +708,15 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_aad_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_aad_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 784 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {

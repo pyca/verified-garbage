@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
@@ -35,48 +35,49 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom)
 open VG.Proof.Gcm (Absorbed)
 
 /-- The regions `absorb` writes. -/
-abbrev absFrame (St W SP : Addr) (yo : Nat) : List Region :=
-  [⟨St + BitVec.ofNat 64 yo, 16⟩, ⟨St + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 512, 256⟩, below SP 8]
+abbrev absFrame (St W SP : Addr) (yo : Nat) (gs : Nat := 256) : List Region :=
+  [⟨St + BitVec.ofNat 64 yo, 16⟩, ⟨St + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 512, gs⟩, below SP 8]
 
 /-- Before `absorb yo`: GHASH has absorbed `x` (with hash subkey `H`), and
 `r12`, `rbp`, `rbx` hold the data, its length and `len(x) mod 16`. -/
 structure AbsIn (Ctx St W SP : Addr) (yo : Nat) (H : Block) (x : List Byte) (D : Addr) (n : Nat)
-    (s : State) : Prop where
-  env : Env Ctx St W SP s
+    (s : State) (N : Nat := 2560) : Prop where
+  env : Env Ctx St W SP s N
   r12 : s.gpr .r12 = D
   rbp : s.gpr .rbp = BitVec.ofNat 64 n
   rbx : s.gpr .rbx = BitVec.ofNat 64 (x.length % 16)
-  data : DataOk St W SP s D n
+  data : DataOk St W SP s D n N
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
 
 /-- Part of the way: `j` bytes absorbed, from `m₀`. -/
 structure AbsMid (Ctx St W SP : Addr) (yo : Nat) (H : Block) (x : List Byte) (D : Addr) (n : Nat)
-    (m₀ : Mem) (j : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
+    (m₀ : Mem) (j : Nat) (s : State) (N : Nat := 2560) (gs : Nat := 256) : Prop where
+  env : Env Ctx St W SP s N
   le : j ≤ n
   r12 : s.gpr .r12 = D + BitVec.ofNat 64 j
   rbp : s.gpr .rbp = BitVec.ofNat 64 (n - j)
-  data : DataOk St W SP s D n
+  data : DataOk St W SP s D n N
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   abs : Absorbed m₀ (St + BitVec.ofNat 64 yo) (St + BitVec.ofNat 64 32) H x →
     Absorbed s.mem (St + BitVec.ofNat 64 yo) (St + BitVec.ofNat 64 32) H (x ++ bytesAt m₀ D j)
   whole : n - j = 0 ∨ (x.length + j) % 16 = 0
-  frame : Frame (absFrame St W SP yo) m₀ s.mem
+  frame : Frame (absFrame St W SP yo gs) m₀ s.mem
 
 /-- After: everything absorbed, from `x₀` absorbed in `m₀` to `x`. -/
-structure AbsOut (Ctx St W SP : Addr) (yo : Nat) (H : Block) (x₀ x : List Byte) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure AbsOut (Ctx St W SP : Addr) (yo : Nat) (H : Block) (x₀ x : List Byte) (m₀ : Mem) (s : State) (N : Nat := 2560)
+    (gs : Nat := 256) : Prop where
+  env : Env Ctx St W SP s N
   abs : Absorbed m₀ (St + BitVec.ofNat 64 yo) (St + BitVec.ofNat 64 32) H x₀ →
     Absorbed s.mem (St + BitVec.ofNat 64 yo) (St + BitVec.ofNat 64 32) H x
-  frame : Frame (absFrame St W SP yo) m₀ s.mem
+  frame : Frame (absFrame St W SP yo gs) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay Ctx St W SP N) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
 omit L in
-/-- The data is apart from what `absorb` writes. -/
-theorem data_absFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk St W SP s D n) :
+/-- `data_absFrame`, for a working space of the 2560 bytes the other functions take. -/
+theorem data_absFrame₀ {s : State} {D : Addr} {n : Nat} (hd : DataOk St W SP s D n) :
     ∀ r ∈ absFrame St W SP yo, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -86,17 +87,29 @@ theorem data_absFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk St W SP s D 
   · exact hd.w.sub_right (Lay.wSub (by decide))
   · exact hd.stk.symm
 
+omit L in
+/-- The data is apart from what `absorb` writes. -/
+theorem data_absFrame {gs : Nat} (hg : gs = 0 ∨ 512 + gs ≤ N) {s : State} {D : Addr} {n : Nat}
+    (hd : DataOk St W SP s D n N) : ∀ r ∈ absFrame St W SP yo gs, (⟨D, n⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact hd.st.sub_right (Lay.stSub (by omega_arith))
+  · exact hd.st.sub_right (Lay.stSub (by decide))
+  · exact Lay.gh_of_w hg hd.w
+  · exact hd.stk.symm
+
 omit L hyo in
 /-- A write within the buffer is within what `absorb` writes. -/
-theorem buf_absFrame {m m' : Mem} {o k : Nat} (h : Frame [⟨St + BitVec.ofNat 64 (32 + o), k⟩] m m')
-    (hk : o + k ≤ 16) : Frame (absFrame St W SP yo) m m' :=
+theorem buf_absFrame {gs : Nat} {m m' : Mem} {o k : Nat} (h : Frame [⟨St + BitVec.ofNat 64 (32 + o), k⟩] m m')
+    (hk : o + k ≤ 16) : Frame (absFrame St W SP yo gs) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by omega_arith) (by omega_arith)⟩
 
 omit L hyo in
-theorem gh_absFrame {m m' : Mem} (h : Frame [⟨St + BitVec.ofNat 64 yo, 16⟩, ⟨W + BitVec.ofNat 64 512, 256⟩,
-    below SP 8] m m') : Frame (absFrame St W SP yo) m m' :=
+theorem gh_absFrame {gs : Nat} {m m' : Mem} (h : Frame [⟨St + BitVec.ofNat 64 yo, 16⟩, ⟨W + BitVec.ofNat 64 512, gs⟩,
+    below SP 8] m m') : Frame (absFrame St W SP yo gs) m m' :=
   h.mono fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp
@@ -108,14 +121,15 @@ theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
   rw [BitVec.add_assoc, ofNat_add_ofNat]
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+variable (v : GcmImpl) {Ctx St W SP : Addr} {N gs : Nat} [G : GhFits v N gs] (L : Lay Ctx St W SP N) {yo : Nat}
+  (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
 /-- Filling the buffer. -/
 theorem head_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
-    (h : AbsIn Ctx St W SP yo H x D n s) (hn : n ≠ 0) (ho : x.length % 16 ≠ 0) :
+    (h : AbsIn Ctx St W SP yo H x D n s N) (hn : n ≠ 0) (ho : x.length % 16 ≠ 0) :
     WP isa (absorbHead v.callees yo) s
-      (AbsMid Ctx St W SP yo H x D n s.mem (min (16 - x.length % 16) n)) := by
+      (AbsMid Ctx St W SP yo H x D n s.mem (min (16 - x.length % 16) n) · N gs) := by
   have hlt : x.length % 16 < 16 := Nat.mod_lt _ (by decide)
   have hn' := h.data.lt
   have he := h.env
@@ -188,17 +202,17 @@ theorem head_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
     · intro r h₁ h₂ h₃; simp [gpr_setReg, h₁, h₂, h₃]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
-  have he₄ : Env Ctx St W SP s₄ := he.keep (fun r hr => by
+  have he₄ : Env Ctx St W SP s₄ N := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
       rw [hg₄ _ (by decide) (by decide) (by decide),
         hreg _ (by decide) (by decide) (by decide) (by decide) (by decide)]) (hrd₄.trans hrd₃) (hwr₄.trans hwr₃)
-  have hd₄ : DataOk St W SP s₄ D n := h.data.of_eq (hrd₄.trans hrd₃) (hwr₄.trans hwr₃)
+  have hd₄ : DataOk St W SP s₄ D n N := h.data.of_eq (hrd₄.trans hrd₃) (hwr₄.trans hwr₃)
   refine WP.ite (decide (x.length % 16 + k = 16)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · -- The buffer is full: absorbed.
     have h16 : x.length % 16 + k = 16 := by simpa using ht
     refine WP.mono (ghash1_ok v L hyo he₄ .r14 32 (.inl rfl) (P := St + BitVec.ofNat 64 32) (by rw [he₄.r14])
-      (by decide) (L.st_st (.inl (by omega_arith)) (by omega_arith) (by decide)) (L.st_w (by decide) (.inr ⟨by decide, by decide⟩))
+      (by decide) (L.st_st (.inl (by omega_arith)) (by omega_arith) (by decide)) (L.st_gh G.fit (by decide))
       (L.stk_st (by decide)) (covers_left (he₄.perm.stC (by decide)))) fun s₅ g => ?_
     refine ⟨g.env he₄, hkn, by rw [g.saved _ (by decide)]; exact h12, by rw [g.saved _ (by decide)]; exact hbp,
       hd₄.of_eq g.rd g.wr, ?_, ?_, .inr (by omega_arith), ?_⟩
@@ -206,14 +220,14 @@ theorem head_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact L.ctx_st (by decide) (by omega_arith)
-        · exact L.ctx_w (by decide) (by decide)
+        · exact L.ctx_gh G.fit (by decide)
         · exact (L.stk_ctx (by decide)).symm, hm₄, hH3]
     · intro ha
       refine Proof.Gcm.absorb_complete ha (by rw [hdk]; exact h16) (B := bytesAt s₃.mem (St + BitVec.ofNat 64 32) 16) ?_ ?_
       · rw [← h16, hB, ha.2]
       · rw [g.out, hm₄, hY, hH3]; rfl
-    · have f₁ : Frame (absFrame St W SP yo) s.mem s₃.mem := buf_absFrame (yo := yo) (W := W) (SP := SP) fw hk16
-      have f₂ : Frame (absFrame St W SP yo) s₄.mem s₅.mem := gh_absFrame g.frame
+    · have f₁ : Frame (absFrame St W SP yo gs) s.mem s₃.mem := buf_absFrame (yo := yo) (W := W) (SP := SP) fw hk16
+      have f₂ : Frame (absFrame St W SP yo gs) s₄.mem s₅.mem := gh_absFrame g.frame
       rw [← hm₄] at f₁; exact f₁.trans f₂
   · -- Not full: the data is used up.
     have h16 : x.length % 16 + k < 16 := by simp at hf; omega_arith
@@ -259,20 +273,20 @@ theorem wholeSplit_ok (p k : Reg) (hpk : (p = .rdx ∧ k = .rcx) ∨ (p = .rcx �
 
 /-- The whole blocks. -/
 theorem whole_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : AbsMid Ctx St W SP yo H x D n m₀ j s) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
+    (h : AbsMid Ctx St W SP yo H x D n m₀ j s N gs) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
     WP isa (absorbWhole v.callees yo) s
-      (AbsMid Ctx St W SP yo H x D n m₀ (j + 16 * ((n - j) / 16))) := by
+      (AbsMid Ctx St W SP yo H x D n m₀ (j + 16 * ((n - j) / 16)) · N gs) := by
   have hn' := h.data.lt
   have he := h.env
   obtain ⟨s₁, run₁, hdx, hcx, h12, hbp, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ := wholeSplit_ok .rdx .rcx (.inl ⟨rfl, rfl⟩) hn' h.le h.r12 h.rbp
   generalize hnb : (n - j) / 16 = nb at *
   have h16 : 16 * nb ≤ n - j := by omega_arith
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => by
+  have he₁ : Env Ctx St W SP s₁ N := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide) (by decide) (by decide))
     hrd₁ hwr₁
-  have hd₁ : DataOk St W SP s₁ D n := h.data.of_eq hrd₁ hwr₁
+  have hd₁ : DataOk St W SP s₁ D n N := h.data.of_eq hrd₁ hwr₁
   refine WP.ite (decide (nb = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 : nb = 0 := by simpa using ht
     subst h0
@@ -296,14 +310,14 @@ theorem whole_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {
       · intro r h₁ h₂ h₃; simp [gpr_setReg, h₁, h₂, h₃]
       all_goals rfl
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    have he₂ : Env Ctx St W SP s₂ := he₁.keep (fun r hr => by
+    have he₂ : Env Ctx St W SP s₂ N := he₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide)) hrd₂ hwr₂
-    refine WP.mono (ghCall_ok v L hyo he₂ (P := D + BitVec.ofNat 64 j) (n := nb) hdi hsi
-      (by rw [hg₂ _ (by decide) (by decide) (by decide), hdx])
-      (by rw [hg₂ _ (by decide) (by decide) (by decide), hcx]) h8 (by have := hdj.lt; omega_arith)
-      (hdj.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj.w.sub_right (Lay.wSub (by decide))) hdj.stk
-      (by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact hdj.rd)) fun s₃ g => ?_
+    refine WP.mono (G.ok L hyo (P := D + BitVec.ofNat 64 j) (n := nb) ⟨he₂, hdi, hsi,
+      (by rw [hg₂ _ (by decide) (by decide) (by decide), hdx]),
+      (by rw [hg₂ _ (by decide) (by decide) (by decide), hcx]), h8, (by have := hdj.lt; omega_arith),
+      (hdj.st.sub_right (Lay.stSub (by omega_arith))).symm, Lay.gh_of_w G.fit hdj.w, hdj.stk,
+      (by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact hdj.rd)⟩) fun s₃ g => ?_
     have hg₃ : ∀ r, r ≠ .rdx → r ≠ .rcx → r ≠ .rax → r ≠ .r12 → r ≠ .rbp → r ≠ .rdi → r ≠ .rsi → r ≠ .r8 →
         r ∈ calleeSaved → s₃.gpr r = s.gpr r := fun r a b c d e f g' i hr => by
       rw [g.saved r hr, hg₂ r f g' i, hg₁ r a b c d e]
@@ -315,7 +329,7 @@ theorem whole_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact L.ctx_st (by decide) (by omega_arith)
-        · exact L.ctx_w (by decide) (by decide)
+        · exact L.ctx_gh G.fit (by decide)
         · exact (L.stk_ctx (by decide)).symm), hm₂, hm₁]; exact h.hH
     · intro ha
       have ex : x ++ bytesAt m₀ D (j + 16 * nb) = (x ++ bytesAt m₀ D j) ++ bytesAt m₀ (D + BitVec.ofNat 64 j) (16 * nb) := by
@@ -341,8 +355,8 @@ theorem whole_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {
 
 /-- The last bytes, buffered. -/
 theorem tail_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : AbsMid Ctx St W SP yo H x D n m₀ j s) (hj : n - j < 16) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
-    WP isa absorbTail s (AbsOut Ctx St W SP yo H x (x ++ bytesAt m₀ D n) m₀) := by
+    (h : AbsMid Ctx St W SP yo H x D n m₀ j s N gs) (hj : n - j < 16) (hm₀ : bytesAt s.mem D n = bytesAt m₀ D n) :
+    WP isa absorbTail s (AbsOut Ctx St W SP yo H x (x ++ bytesAt m₀ D n) m₀ · N gs) := by
   have hn' := h.data.lt
   have he := h.env
   obtain ⟨s₁, run₁, hcx, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
@@ -355,7 +369,7 @@ theorem tail_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j
     · intro r h₁; simp [gpr_setReg, h₁]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => by
+  have he₁ : Env Ctx St W SP s₁ N := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide)) hrd₁ hwr₁
   refine WP.ite (decide (n - j = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
@@ -412,8 +426,8 @@ theorem tail_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j
 
 omit L hyo in
 theorem AbsIn.keep {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s s' : State}
-    (h : AbsIn Ctx St W SP yo H x D n s) (hg : s'.gpr = s.gpr) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : AbsIn Ctx St W SP yo H x D n s' where
+    (h : AbsIn Ctx St W SP yo H x D n s N) (hg : s'.gpr = s.gpr) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) : AbsIn Ctx St W SP yo H x D n s' N where
   env := h.env.keep (fun r _ => by rw [hg]) hrd hwr
   r12 := by rw [hg]; exact h.r12
   rbp := by rw [hg]; exact h.rbp
@@ -423,13 +437,13 @@ theorem AbsIn.keep {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s s' : Stat
 
 omit L in
 theorem AbsMid.data_eq {H : Block} {x : List Byte} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : AbsMid Ctx St W SP yo H x D n m₀ j s) : bytesAt s.mem D n = bytesAt m₀ D n :=
-  bytesAt_frame h.frame (data_absFrame hyo h.data) (by have := h.data.lt; omega_arith)
+    (h : AbsMid Ctx St W SP yo H x D n m₀ j s N gs) (hg : gs = 0 ∨ 512 + gs ≤ N) : bytesAt s.mem D n = bytesAt m₀ D n :=
+  bytesAt_frame h.frame (data_absFrame hyo hg h.data) (by have := h.data.lt; omega_arith)
 
 /-- `absorb yo`. -/
 theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
-    (h : AbsIn Ctx St W SP yo H x D n s) :
-    WP isa (absorb v.callees yo) s (AbsOut Ctx St W SP yo H x (x ++ bytesAt s.mem D n) s.mem) := by
+    (h : AbsIn Ctx St W SP yo H x D n s N) :
+    WP isa (absorb v.callees yo) s (AbsOut Ctx St W SP yo H x (x ++ bytesAt s.mem D n) s.mem · N gs) := by
   have hn' := h.data.lt
   obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp hn'
   have h₁ := h.keep hg₁ hm₁ hrd₁ hwr₁
@@ -444,7 +458,7 @@ theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
     have h₂ := h₁.keep hg₂ hm₂ hrd₂ hwr₂
     have hm₀ : s₂.mem = s.mem := hm₂.trans hm₁
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    refine WP.seq (WP.mono (Q := fun s' => ∃ j, AbsMid Ctx St W SP yo H x D n s.mem j s')
+    refine WP.seq (WP.mono (Q := fun s' => ∃ j, AbsMid Ctx St W SP yo H x D n s.mem j s' N gs)
       (WP.ite (decide (x.length % 16 = 0)) (eval_e hzf₂) (fun ht => ?_) (fun hf => ?_)) fun s' hj => ?_)
     · have ho : x.length % 16 = 0 := by simpa using ht
       exact WP.block_nil ⟨0, h₂.env, by omega_arith, by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data, h₂.hH,
@@ -452,13 +466,13 @@ theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
     · have := head_ok v L hyo h₂ h0 (by simpa using hf)
       rw [hm₀] at this; exact WP.mono this fun _ h => ⟨_, h⟩
     · obtain ⟨j, hj⟩ := hj
-      refine WP.seq (WP.mono (whole_ok v L hyo hj (hj.data_eq hyo)) fun s'' hj' => ?_)
-      exact tail_ok L hyo hj' (by have := hj.le; omega_arith) (hj'.data_eq hyo)
+      refine WP.seq (WP.mono (whole_ok v L hyo hj (hj.data_eq hyo G.fit)) fun s'' hj' => ?_)
+      exact tail_ok L hyo hj' (by have := hj.le; omega_arith) (hj'.data_eq hyo G.fit)
 
 /-- `absorbHead` alone, for data within the rest of the buffer. -/
 theorem absorbHead_out {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
-    (h : AbsIn Ctx St W SP yo H x D n s) (hn : n ≠ 0) (ho : x.length % 16 ≠ 0) (hle : n ≤ 16 - x.length % 16) :
-    WP isa (absorbHead v.callees yo) s (AbsOut Ctx St W SP yo H x (x ++ bytesAt s.mem D n) s.mem) := by
+    (h : AbsIn Ctx St W SP yo H x D n s N) (hn : n ≠ 0) (ho : x.length % 16 ≠ 0) (hle : n ≤ 16 - x.length % 16) :
+    WP isa (absorbHead v.callees yo) s (AbsOut Ctx St W SP yo H x (x ++ bytesAt s.mem D n) s.mem · N gs) := by
   have e : min (16 - x.length % 16) n = n := Nat.min_eq_right hle
   refine WP.mono (head_ok v L hyo h hn ho) fun s' hm => ?_
   rw [e] at hm
@@ -467,7 +481,7 @@ theorem absorbHead_out {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : Sta
 omit L hyo in
 /-- With nothing buffered, nothing absorbed yet. -/
 theorem AbsIn.mid {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
-    (h : AbsIn Ctx St W SP yo H x D n s) (hx : x.length % 16 = 0) : AbsMid Ctx St W SP yo H x D n s.mem 0 s :=
+    (h : AbsIn Ctx St W SP yo H x D n s N) (hx : x.length % 16 = 0) : AbsMid Ctx St W SP yo H x D n s.mem 0 s N gs :=
   ⟨h.env, Nat.zero_le _, by rw [h.r12]; simp, by rw [h.rbp, Nat.sub_zero], h.data, h.hH,
     fun ha => by simpa [bytesAt] using ha, .inr (by omega_arith), Frame.refl _ _⟩
 

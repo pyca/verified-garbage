@@ -17,7 +17,11 @@ at `W`) and the stack below `SP` used by the calls (`Lay`): the state is
 disjoint from the parts of `W` other than `[16, 96)` (where `seal` and
 `open` keep it), and the context from both. `Perm` says the state may read
 the context and write the state and `W`; `Env` adds the registers that hold
-the three addresses throughout.
+the three addresses throughout. Each takes the size `N` of `W`: 2560 but
+for `stream_init`, `stream_aad`, `stream_finish` and `stream_verify`, which
+need only its first 176 to 272 bytes (`Lay.big`, `Lay.leN`), and the 256 bytes at 512 of
+`vg_ghash`'s working space if their `vg_ghash` touches it (`GhFits`); their
+pieces (`absorb`, `flush`, `lens`, `j0`, `tag`) are proved for any such `N`.
 -/
 
 @[expose] public section
@@ -77,47 +81,52 @@ theorem covers_append {xs ys ts : List Region} (h₁ : Covers xs ts) (h₂ : Cov
 
 /-- The regions: the context, the state and the parts of `W`, and the stack
 below `SP` (8 bytes, for the return addresses of the calls). -/
-structure Lay (Ctx St W SP : Addr) : Prop where
+structure Lay (Ctx St W SP : Addr) (N : Nat := 2560) : Prop where
   cw : Ctx.toNat + 256 ≤ 2 ^ 64
   sw : St.toNat + 80 ≤ 2 ^ 64
-  ww : W.toNat + 2560 ≤ 2 ^ 64
+  ww : W.toNat + N ≤ 2 ^ 64
   cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩
-  cw' : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩
+  cw' : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, N⟩
   sa : (⟨St, 80⟩ : Region).Disjoint ⟨W, 16⟩
-  sb : (⟨St, 80⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, 2464⟩
+  sb : (⟨St, 80⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, N - 96⟩
   kc : (below SP 8).Disjoint ⟨Ctx, 256⟩
   ks : (below SP 8).Disjoint ⟨St, 80⟩
-  kw : (below SP 8).Disjoint ⟨W, 2560⟩
+  kw : (below SP 8).Disjoint ⟨W, N⟩
+  /-- `W` holds at least what every function uses itself, `[0, 176)` (the
+  pieces that use more, `j0`'s `[216, 224)` and `finish`'s and `verify`'s
+  values from 176 on, say so). -/
+  big : 176 ≤ N
+  nlt : N < 2 ^ 64
 
 /-- What a state may access. -/
-structure Perm (Ctx St W : Addr) (s : State) : Prop where
+structure Perm (Ctx St W : Addr) (s : State) (N : Nat := 2560) : Prop where
   ctx : Covers [⟨Ctx, 256⟩] (s.rd ++ s.wr)
   st : Covers [⟨St, 80⟩] s.wr
-  w : Covers [⟨W, 2560⟩] s.wr
+  w : Covers [⟨W, N⟩] s.wr
 
 /-- The registers holding the context, the state, `W` and the stack pointer,
 and what the state may access. -/
-structure Env (Ctx St W SP : Addr) (s : State) : Prop where
+structure Env (Ctx St W SP : Addr) (s : State) (N : Nat := 2560) : Prop where
   r13 : s.gpr .r13 = Ctx
   r14 : s.gpr .r14 = St
   r15 : s.gpr .r15 = W
   rsp : s.gpr .rsp = SP
-  perm : Perm Ctx St W s
+  perm : Perm Ctx St W s N
 
-theorem Perm.of_eq {Ctx St W : Addr} {s s' : State} (h : Perm Ctx St W s) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : Perm Ctx St W s' := by
+theorem Perm.of_eq {Ctx St W : Addr} {N : Nat} {s s' : State} (h : Perm Ctx St W s N) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) : Perm Ctx St W s' N := by
   obtain ⟨a, b, c⟩ := h; exact ⟨by rw [hrd, hwr]; exact a, by rw [hwr]; exact b, by rw [hwr]; exact c⟩
 
 /-- An environment, after code that keeps `r13`–`r15`, `rsp` and the permissions. -/
-theorem Env.keep {Ctx St W SP : Addr} {s s' : State} (h : Env Ctx St W SP s)
+theorem Env.keep {Ctx St W SP : Addr} {N : Nat} {s s' : State} (h : Env Ctx St W SP s N)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : Env Ctx St W SP s' :=
+    (hwr : s'.wr = s.wr) : Env Ctx St W SP s' N :=
   ⟨by rw [hg _ (by simp), h.r13], by rw [hg _ (by simp), h.r14], by rw [hg _ (by simp), h.r15],
     by rw [hg _ (by simp), h.rsp], h.perm.of_eq hrd hwr⟩
 
-theorem Env.of_saved {Ctx St W SP : Addr} {s s' : State} (h : Env Ctx St W SP s)
+theorem Env.of_saved {Ctx St W SP : Addr} {N : Nat} {s s' : State} (h : Env Ctx St W SP s N)
     (hg : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    Env Ctx St W SP s' :=
+    Env Ctx St W SP s' N :=
   h.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide)) hrd hwr
@@ -132,21 +141,21 @@ theorem ctxSub {Ctx : Addr} {d n : Nat} (h : d + n ≤ 256) : Region.Sub ⟨Ctx 
 theorem stSub {St : Addr} {d n : Nat} (h : d + n ≤ 80) : Region.Sub ⟨St + BitVec.ofNat 64 d, n⟩ ⟨St, 80⟩ :=
   Offset.sub_base _ h
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {d n N : Nat} (h : d + n ≤ N) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, N⟩ :=
   Offset.sub_base _ h
 
-theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 2560) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
+theorem bSub {W : Addr} {d n N : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ N) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, N - 96⟩ :=
   Offset.sub _ h₁ (by omega)
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
 
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay Ctx St W SP N)
 include L
 
 /-- Parts of the state and of `W` outside `[16, 96)` are disjoint. -/
-theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 2560)) :
+theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ N)) :
     (⟨St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ := by
   rcases hd with hd | ⟨h₁, h₂⟩
   · exact (L.sa.sub_left (stSub ha)).sub_right (aSub hd)
@@ -156,7 +165,7 @@ theorem ctx_st {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 80) :
     (⟨Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 d, k⟩ :=
   (L.cs.sub_left (ctxSub ha)).sub_right (stSub hd)
 
-theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
+theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ N) :
     (⟨Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   (L.cw'.sub_left (ctxSub ha)).sub_right (wSub hd)
 
@@ -166,8 +175,15 @@ theorem stk_ctx {a n : Nat} (ha : a + n ≤ 256) :
 theorem stk_st {a n : Nat} (ha : a + n ≤ 80) :
     (below SP 8).Disjoint ⟨St + BitVec.ofNat 64 a, n⟩ := L.ks.sub_right (stSub ha)
 
-theorem stk_w {a n : Nat} (ha : a + n ≤ 2560) :
+theorem stk_w {a n : Nat} (ha : a + n ≤ N) :
     (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ := L.kw.sub_right (wSub ha)
+
+/-- What fits in the 176 bytes of `W` every layout has fits in `W`. -/
+theorem le {k : Nat} (h : k ≤ 176 := by decide) : k ≤ N := Nat.le_trans h L.big
+
+omit L in
+/-- What fits in the `m` bytes of `W` a piece needs fits in `W`. -/
+theorem leN {m k : Nat} (hN : m ≤ N) (h : k ≤ m := by decide) : k ≤ N := Nat.le_trans h hN
 
 /-- Parts of the state are disjoint. -/
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
@@ -175,15 +191,52 @@ theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 
   Offset.disjoint _ h (by have := L.sw; omega) (by have := L.sw; omega)
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ N) (hd : d + k ≤ N) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+
+/-! ### `vg_ghash`'s working space: `g` bytes at `W + 512`, `0` or within `W` -/
+
+omit L in
+theorem disj_empty {r : Region} {a : Addr} : r.Disjoint ⟨a, 0⟩ := fun _ _ h => by
+  simp only [Region.Contains] at h; omega
+
+omit L in
+theorem ghSub {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) : Region.Sub ⟨W + BitVec.ofNat 64 512, g⟩ ⟨W, N⟩ := by
+  rcases hg with rfl | h
+  · intro a ha; simp only [Region.Contains] at ha; omega
+  · exact wSub h
+
+omit L in
+/-- What is apart from `W` is apart from `vg_ghash`'s working space. -/
+theorem gh_of_w {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) {r : Region} (h : r.Disjoint ⟨W, N⟩) :
+    r.Disjoint ⟨W + BitVec.ofNat 64 512, g⟩ := h.sub_right (ghSub hg)
+
+/-- Parts of `W` before 512 are apart from `vg_ghash`'s working space. -/
+theorem w_gh {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) {d k : Nat} (h : d + k ≤ 512) (hk : d + k ≤ N) :
+    (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, g⟩ := by
+  rcases hg with rfl | hg
+  · exact disj_empty
+  · exact L.w_w (.inl h) hk hg
+
+theorem st_gh {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) {a n : Nat} (ha : a + n ≤ 80) :
+    (⟨St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, g⟩ := by
+  rcases hg with rfl | hg
+  · exact disj_empty
+  · exact L.st_w ha (.inr ⟨by decide, hg⟩)
+
+theorem ctx_gh {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) {a n : Nat} (ha : a + n ≤ 256) :
+    (⟨Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, g⟩ :=
+  (L.cw'.sub_left (ctxSub ha)).sub_right (ghSub hg)
+
+theorem stk_gh {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) :
+    (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 512, g⟩ := L.kw.sub_right (ghSub hg)
 
 end Lay
 
 namespace Perm
 
-variable {Ctx St W : Addr} {s : State} (P : Perm Ctx St W s)
+variable {Ctx St W : Addr} {s : State} {N : Nat} (P : Perm Ctx St W s N)
 include P
 
 theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (Ctx + BitVec.ofNat 64 d) n :=
@@ -195,11 +248,13 @@ theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (St + BitVec.ofNat 6
 theorem stR {d n : Nat} (h : d + n ≤ 80) : InRegions (s.rd ++ s.wr) (St + BitVec.ofNat 64 d) n :=
   in_left (P.stW h)
 
-theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
-  in_off P.w h (by decide)
+theorem wW {d n : Nat} (h : d + n ≤ N) (hk : N < 2 ^ 64 := by decide) :
+    InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+  in_off P.w h hk
 
-theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
-  in_left (P.wW h)
+theorem wR {d n : Nat} (h : d + n ≤ N) (hk : N < 2 ^ 64 := by decide) :
+    InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+  in_left (P.wW h hk)
 
 theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨Ctx + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_off P.ctx h (by decide)
@@ -207,8 +262,9 @@ theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨Ctx + BitVec.ofNat 64 
 theorem stC {d n : Nat} (h : d + n ≤ 80) : Covers [⟨St + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.st h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
-  covers_off P.w h (by decide)
+theorem wC {d n : Nat} (h : d + n ≤ N) (hk : N < 2 ^ 64 := by decide) :
+    Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  covers_off P.w h hk
 
 end Perm
 

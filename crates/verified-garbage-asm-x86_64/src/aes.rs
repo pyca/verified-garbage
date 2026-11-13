@@ -444,6 +444,18 @@ pub(crate) mod vg_aes_gcm_seal_vaes_vpclmul;
 pub(crate) mod vg_aes_gcm_seal_vaes_vpclmul_avx512;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_aad_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_aad_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_aad_pclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_aad_pclmul_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_aad_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_aad_vpclmul_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_encrypt.rs"]
 pub(crate) mod vg_aes_gcm_stream_encrypt;
 
@@ -510,3 +522,15 @@ pub(crate) mod vg_aes_gcm_stream_encrypt_vaes_vpclmul;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512.rs"]
 pub(crate) mod vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_init_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_init_pclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_init_pclmul_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_init_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_init_vpclmul_core;

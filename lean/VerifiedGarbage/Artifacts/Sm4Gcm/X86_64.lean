@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
@@ -49,20 +50,8 @@ def artifacts (n : GhashName) : List Artifact :=
     stack := 5824
     verified := open_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) },
-  Spec.Sm4.Gcm.streamInitApi.artifact X86_64.target {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
-      (Impl.AesGcm.X86_64.streamInit v.callees)
-    stack := 2576
-    verified := Proof.AesGcm.X86_64.streamInit_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (Proof.AesGcm.X86_64.streamInit_spSafe v) },
-  Spec.Sm4.Gcm.streamAadApi.artifact X86_64.target {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
-      (Impl.AesGcm.X86_64.streamAad v.callees)
-    stack := 2576
-    verified := Proof.AesGcm.X86_64.streamAad_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (Proof.AesGcm.X86_64.streamAad_spSafe v) },
+  Spec.Sm4.Gcm.streamInitApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.sm4StreamInitReg n),
+  Spec.Sm4.Gcm.streamAadApi.artifact X86_64.target (Proof.AesGcm.X86_64.Scrub.sm4StreamAadReg n),
   Spec.Sm4.Gcm.streamEncryptApi.artifact X86_64.target {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0
