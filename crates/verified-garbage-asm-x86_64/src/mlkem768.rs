@@ -82,7 +82,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx512(seed: *const [u8;
 call {vg_mlkem768_keygen_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body_avx512 = sym super::mlkem768::vg_mlkem768_keygen_body_avx512::vg_mlkem768_keygen_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -120,7 +120,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx512(ek: *const [u8;
 call {vg_mlkem768_encaps_h_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body_avx512 = sym super::mlkem768::vg_mlkem768_encaps_h_body_avx512::vg_mlkem768_encaps_h_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -156,7 +156,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx512(ek: *const [u8; 1
 call {vg_mlkem768_encaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body_avx512 = sym super::mlkem768::vg_mlkem768_encaps_body_avx512::vg_mlkem768_encaps_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -190,7 +190,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx512(dk: *const [u8; 2
 call {vg_mlkem768_decaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body_avx512 = sym super::mlkem768::vg_mlkem768_decaps_body_avx512::vg_mlkem768_decaps_body_avx512,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -224,7 +224,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx2(seed: *const [u8; 6
 call {vg_mlkem768_keygen_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body_avx2 = sym super::mlkem768::vg_mlkem768_keygen_body_avx2::vg_mlkem768_keygen_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -262,7 +262,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx2(ek: *const [u8; 1
 call {vg_mlkem768_encaps_h_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body_avx2 = sym super::mlkem768::vg_mlkem768_encaps_h_body_avx2::vg_mlkem768_encaps_h_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -298,7 +298,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx2(ek: *const [u8; 118
 call {vg_mlkem768_encaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body_avx2 = sym super::mlkem768::vg_mlkem768_encaps_body_avx2::vg_mlkem768_encaps_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -332,7 +332,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx2(dk: *const [u8; 240
 call {vg_mlkem768_decaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body_avx2 = sym super::mlkem768::vg_mlkem768_decaps_body_avx2::vg_mlkem768_decaps_body_avx2,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -366,7 +366,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx(seed: *const [u8; 64
 call {vg_mlkem768_keygen_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -404,7 +404,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx(ek: *const [u8; 11
 call {vg_mlkem768_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -440,7 +440,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_avx(ek: *const [u8; 1184
 call {vg_mlkem768_encaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -474,7 +474,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx(dk: *const [u8; 2400
 call {vg_mlkem768_decaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_avx_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
         vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
@@ -504,7 +504,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen(seed: *const [u8; 64], e
 call {vg_mlkem768_keygen_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -538,7 +538,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184],
 call {vg_mlkem768_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -570,7 +570,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m
 call {vg_mlkem768_encaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
@@ -600,7 +600,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps(dk: *const [u8; 2400], c
 call {vg_mlkem768_decaps_body}
 .base64 "SIkEJEiLfCQIvgCAAAA="
 call {vg_zeroize_core}
-.base64 "SIsEJEiNZCQQRTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
         vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,

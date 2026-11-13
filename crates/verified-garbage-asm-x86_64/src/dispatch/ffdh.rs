@@ -157,6 +157,8 @@ pub unsafe fn vg_ffdh_key_generation_init_auto(_dit: verified_garbage_cpu::Dit<'
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_check_public_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_check_public_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES`); `vg_ffdh_check_public_mr_adx` if the CPU supports its features (`VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES`); or else `vg_ffdh_check_public`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -221,6 +223,8 @@ pub unsafe fn vg_ffdh_check_public_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_exchange_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_exchange_exp_ifma` if the CPU supports its features (`VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES`); `vg_ffdh_exchange_mr_adx` if the CPU supports its features (`VG_FFDH_EXCHANGE_MR_ADX_FEATURES`); or else `vg_ffdh_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -291,6 +295,8 @@ pub unsafe fn vg_ffdh_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *m
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_check_private_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_check_private_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES`); `vg_ffdh_check_private_mr_adx` if the CPU supports its features (`VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES`); or else `vg_ffdh_check_private`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -358,6 +364,8 @@ pub unsafe fn vg_ffdh_check_private_auto(_dit: verified_garbage_cpu::Dit<'_>, do
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_derive_public_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_derive_public_exp_ifma` if the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES`); `vg_ffdh_derive_public_mr_adx` if the CPU supports its features (`VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES`); or else `vg_ffdh_derive_public`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `y` must be valid for reads and writes of `y_len` bytes.
@@ -424,6 +432,8 @@ pub unsafe fn vg_ffdh_derive_public_auto(_dit: verified_garbage_cpu::Dit<'_>, y:
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ffdh_check_domain_mr_adx_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES`); `vg_ffdh_check_domain_exp_ifma` if the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES`); `vg_ffdh_check_domain_mr_adx` if the CPU supports its features (`VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES`); or else `vg_ffdh_check_domain`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

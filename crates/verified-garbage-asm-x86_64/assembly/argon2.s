@@ -2824,20 +2824,6 @@ vg_argon2_blake2b_avx512_g_avx512:
 	pop r12
 	pop rbp
 	pop rbx
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -5701,20 +5687,6 @@ vg_argon2_blake2b_avx2_g_avx512:
 	pop r12
 	pop rbp
 	pop rbx
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -8578,20 +8550,6 @@ vg_argon2_blake2b_avx2_g_avx2:
 	pop r12
 	pop rbp
 	pop rbx
-	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
