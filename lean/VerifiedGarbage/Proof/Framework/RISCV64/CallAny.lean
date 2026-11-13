@@ -188,7 +188,3 @@ theorem WP.narrowAny {c : Prog isa} {s : State} {rd wr : List Region} {P : State
   rw [this]; exact hp
 
 end VG.RISCV64
-
-/-- TEMPORARY (to be removed before merging): makes this pull request rebuild what
-imports this module, so that its CI run has shards. -/
-theorem VG.Proof.temporaryProbe5042 : True := trivial
