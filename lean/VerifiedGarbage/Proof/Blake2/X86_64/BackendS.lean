@@ -34,6 +34,9 @@ open VG.Spec.Blake2 (s)
 structure BackendS where
   suffix : String
   features : List String
+  /-- Microarchitectures its dispatcher never chooses it on (`Artifact.notWith`):
+  the cores it is measured slower on than the next implementation. -/
+  notWith : List String := []
   code : Prog isa
   callee : Stream.CalleeOk s code
   verified : Verified X86_64.target code (Proof.Blake2.compressSContract abi)
