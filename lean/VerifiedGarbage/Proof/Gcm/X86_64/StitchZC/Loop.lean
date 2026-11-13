@@ -38,7 +38,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 
 `bigRestCM_ok`: `StitchZC.bigRestC`, from one group encrypted and not yet
 hashed (`StitchZ.EInvM`) to one such (as `StitchZH.bigRestM_ok`). Between
-`enter` and `leave` the invariant is `CInv`: `EInvM` with the last group in
+`enter` and `leave` (`loopsC_ok`) the invariant is `CInv`: `EInvM` with the last group in
 the copies, the powers of 48 blocks and the reduction constant in the
 working space, and the increment there too.
 
@@ -97,7 +97,7 @@ open VG.Proof.Gcm.X86_64.Stitch (nb nr kp pp cp cb dp dR pR bAddr blk ctb ciph s
   in_sub in_sub_int in_rdwr zero_xor_b)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod toNat_ofNat_lt ofNat_sub_ofNat ea_at)
 open VG.Impl.Gcm.X86_64.StitchZ (tab adv)
-open VG.Impl.Gcm.X86_64.StitchZC (creg incAt gqC grpC body48C body32C body16C enter leave bigRestC)
+open VG.Impl.Gcm.X86_64.StitchZC (creg incAt gqC grpC body48C body32C body16C enter leave bigRestC loopsC)
 open VG.Proof.Gcm.X86_64.StitchZ (acc48 acc48_succ inp48 pa yNew48 FinOk48 gRegs48 keepWM adv_ok next48_ok cmp_ok
   EInvM AInvM)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame Keys)
@@ -1276,39 +1276,26 @@ theorem leave_keeps : leave.all Instr.keepsH = true := rfl
 
 /-! ## The groups after the first -/
 
-/-- `bigRestC`, after the powers of 48 blocks are stored (`s₁`): from the
-first group encrypted (`s`), every group but the last hashed. -/
-theorem bigRestCM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat → Nat → Block}
-    {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l)
-    {s s₁ : State} (hI : EInvM ix s₀ P 1 s) (hA₁ : AInvM ix s₀ (16 * 1) s₁)
-    (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
-    (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
-    (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s₁) :
-    WP isa (bigRestC ix) s₁ fun s' => ∃ e, EInvM ix s₀ P e s' ∧
+/-- `loopsC`: from a group in the copies, the groups after it encrypted and
+all but the last hashed, with fewer than 16 blocks left after the last. -/
+theorem loopsC_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {T : Nat → Nat → Nat → Block}
+    (hT : FinOk48 (hk s₀) T) {e₀ : Nat} {s : State} (hI : CInv ix s₀ T e₀ s)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa (loopsC ix) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 32 ∧ CInv ix s₀ T e s' ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
   have hK : ∀ {e : Nat} {t : State}, CInv ix s₀ T e t → Keys (nr s₀) (sch s₀) t := fun h => h.a.keys hp
-  unfold bigRestC
-  -- The copies, and whether there are three more groups.
-  have hent : WP isa (.block (enter ++ ([.alu .cmp .r9 (.imm 64)] : List Instr))) s₁ fun s' =>
-      CInv ix s₀ T 1 s' ∧ s'.cf = some (decide (nb s₀ - 16 * (1 - 1) < 64)) := by
-    rw [WP.block_append_iff]
-    refine WP.mono (enter_ok hp (T := T) (Nat.le_refl 1) hA₁ (by rw [hg₁]; exact hI.rdx)
-      (by rw [hg₁]; exact hr11) hv₁ hm₁) fun s₂ ⟨hA₂, hE₂, hcp₂, hg₂, hl₂⟩ => ?_
-    have g₂ : s₂.gpr = s.gpr := hg₂.trans hg₁
-    exact cmpC_ok ⟨hA₂, Nat.le_refl 1, by rw [g₂]; exact hI.rdx, by rw [g₂]; exact hI.r9,
-      by rw [g₂]; exact hI.rax, fun hi => by rw [g₂]; exact hI.r8 hi,
-      fun r h1 h2 h3 h4 h5 => by rw [g₂]; exact hI.gpr r h1 h2 h3 h4 h5, hE₂, hcp₂,
-      by rw [hl₂ 0 (by decide), hl₁ 0 (by decide)]; exact hI.y,
-      fun l h1 h4 => by rw [hl₂ l h4, hl₁ l h4]; exact hI.y1 l h1 h4⟩ 64 64 (by decide) (by decide)
-  refine WP.seq (WP.mono (WP.hkeep (by decide) hent) fun s₃ ⟨⟨hC₃, hcf₃⟩, hh₃⟩ => ?_)
+  have h1e₀ := hI.one
+  have hle₀ := hI.a.le
+  unfold loopsC
+  -- Whether there are three more groups.
+  refine WP.seq (WP.mono (WP.hkeep (by decide) (cmpC_ok hI 64 64 (by decide) (by decide)))
+    fun s₃ ⟨⟨hC₃, hcf₃⟩, hh₃⟩ => ?_)
   have hK₃ := hCache.keep hh₃ (hK hC₃)
   -- Three groups at a time.
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 64 ∧ CInv ix s₀ T e s' ∧
-      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * (1 - 1) < 64))
-    (by simp only [eval, hcf₃]) (fun h => WP.block_nil ⟨1, by simpa using h, hC₃, hK₃⟩)
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * (e₀ - 1) < 64))
+    (by simp only [eval, hcf₃]) (fun h => WP.block_nil ⟨e₀, by simpa using h, hC₃, hK₃⟩)
     (fun h => loop48C_ok hp hT hC₃ (by simp at h; omega) hK₃)) fun s₄ ⟨e, hex, hC₄, hK₄⟩ => ?_)
   have h1e := hC₄.one
   have hle := hC₄.a.le
@@ -1326,14 +1313,37 @@ theorem bigRestCM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : 
   refine WP.seq (WP.mono (WP.hkeep (by decide) (cmpC_ok hC₆ 32 32 (by decide) (by decide)))
     fun s₇ ⟨⟨hC₇, hcf₇⟩, hh₇⟩ => ?_)
   have hK₇ := hK₆.keep hh₇ (hK hC₇)
-  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, CInv ix s₀ T e s' ∧
-      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * (e' - 1) < 32))
-    (by simp only [eval, hcf₇]) (fun _ => WP.block_nil ⟨e', hC₇, hK₇⟩)
+  exact WP.ite (decide (nb s₀ - 16 * (e' - 1) < 32))
+    (by simp only [eval, hcf₇]) (fun h => WP.block_nil ⟨e', by simpa using h, hC₇, hK₇⟩)
     (fun h => WP.mono (body16C_ok hp hT (by simp at h; omega) hC₇ hK₇)
-      fun _ ⟨hC, hKK⟩ => ⟨e' + 1, hC, hKK⟩)) fun s₈ ⟨e'', hC₈, hK₈⟩ => ?_)
+      fun _ ⟨hC, hKK⟩ => ⟨e' + 1, by omega, hC, hKK⟩)
+
+/-- `bigRestC`, after the powers of 48 blocks are stored (`s₁`): from the
+first group encrypted (`s`), every group but the last hashed. -/
+theorem bigRestCM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat → Nat → Block}
+    {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l)
+    {s s₁ : State} (hI : EInvM ix s₀ P 1 s) (hA₁ : AInvM ix s₀ (16 * 1) s₁)
+    (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
+    (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
+    (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s₁) :
+    WP isa (bigRestC ix) s₁ fun s' => ∃ e, EInvM ix s₀ P e s' ∧
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
+  unfold bigRestC
+  -- The copies.
+  refine WP.seq (WP.mono (WP.hkeep (by decide) (enter_ok hp (T := T) (Nat.le_refl 1) hA₁ (by rw [hg₁]; exact hI.rdx)
+    (by rw [hg₁]; exact hr11) hv₁ hm₁)) fun s₂ ⟨⟨hA₂, hE₂, hcp₂, hg₂, hl₂⟩, hh₂⟩ => ?_)
+  have g₂ : s₂.gpr = s.gpr := hg₂.trans hg₁
+  have hC₂ : CInv ix s₀ T 1 s₂ := ⟨hA₂, Nat.le_refl 1, by rw [g₂]; exact hI.rdx, by rw [g₂]; exact hI.r9,
+    by rw [g₂]; exact hI.rax, fun hi => by rw [g₂]; exact hI.r8 hi,
+    fun r h1 h2 h3 h4 h5 => by rw [g₂]; exact hI.gpr r h1 h2 h3 h4 h5, hE₂, hcp₂,
+    by rw [hl₂ 0 (by decide), hl₁ 0 (by decide)]; exact hI.y,
+    fun l h1 h4 => by rw [hl₂ l h4, hl₁ l h4]; exact hI.y1 l h1 h4⟩
+  refine WP.seq (WP.mono (loopsC_ok hp hT hC₂ (hCache.keep hh₂ (hC₂.a.keys hp))) fun s₈ ⟨e, _, hC₈, hK₈⟩ => ?_)
   -- The registers as the tail takes them.
   exact WP.mono (WP.hkeep leave_keeps (leave_ok hT2 hC₈))
-    fun t ⟨hI', hh⟩ => ⟨e'', hI', hK₈.keep hh (hI'.a.keys hp)⟩
+    fun t ⟨hI', hh⟩ => ⟨e, hI', hK₈.keep hh (hI'.a.keys hp)⟩
 
 /-- After the powers of 48 blocks, as `StitchZH.bigS` takes the groups after
 the first: `bigRestC` below `StitchZ.bigMinPE` blocks, `StitchZH.bigRest`
