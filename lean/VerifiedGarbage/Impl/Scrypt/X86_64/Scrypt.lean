@@ -72,23 +72,28 @@ def pbk2Args : List Instr :=
     .mov .rcx (.mem (sp 64)), times128 .rcx, .mov .r9 (.mem (sp 104)), .mov .rax (.mem (sp 112)),
     .mov .r8 (.mem (sp 88)), .store (sp 0) .rax, .store (sp 8) .r8, .mov32 .r8 (.imm 1)]
 
-/-- ROMix on each block. -/
-def romixLoop : Prog isa :=
-  .loop (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix" roMixDirect) (.block nextBlock))) .ne
+/-- ROMix on each block, with the implementation `romix` of ROMix, named
+`romixName`. -/
+def romixLoop (romixName : String) (romix : Prog isa) : Prog isa :=
+  .loop (.seq (.block romixArgs) (.seq (.call romixName romix) (.block nextBlock))) .ne
 
 /-- A call of the implementation `pbk` of PBKDF2-HMAC-SHA256, named
 `pbkName`, after the moves `args` of its arguments. -/
 def pbkCall (pbkName : String) (pbk : Prog isa) (args : List Instr) : Prog isa :=
   .seq (.block args) (.call pbkName pbk)
 
-/-- The frame's body, with the implementation `pbk` of PBKDF2-HMAC-SHA256,
-named `pbkName`. -/
-def scryptBody (pbkName : String) (pbk : Prog isa) : Prog isa :=
-  .seq (pbkCall pbkName pbk pbk1Args) (.seq (.block cur0) (.seq romixLoop (pbkCall pbkName pbk pbk2Args)))
+/-- The frame's body, with the implementation `romix` of ROMix, named
+`romixName`, and `pbk` of PBKDF2-HMAC-SHA256, named `pbkName`. -/
+def scryptBody (romixName : String) (romix : Prog isa) (pbkName : String) (pbk : Prog isa) :
+    Prog isa :=
+  .seq (pbkCall pbkName pbk pbk1Args)
+    (.seq (.block cur0) (.seq (romixLoop romixName romix) (pbkCall pbkName pbk pbk2Args)))
 
-/-- `vg_scrypt`, calling the implementation `pbk` of PBKDF2-HMAC-SHA256,
-named `pbkName`. -/
-def scrypt (pbkName : String) (pbk : Prog isa) : Prog isa :=
-  .frame (.push [.r9, .r8, .rsi, .rdi, .rax, .rax, .rax]) (scryptBody pbkName pbk) (.pop .rax 7)
+/-- `vg_scrypt`, calling the implementation `romix` of ROMix, named
+`romixName`, and `pbk` of PBKDF2-HMAC-SHA256, named `pbkName`. -/
+def scrypt (romixName : String) (romix : Prog isa) (pbkName : String) (pbk : Prog isa) :
+    Prog isa :=
+  .frame (.push [.r9, .r8, .rsi, .rdi, .rax, .rax, .rax]) (scryptBody romixName romix pbkName pbk)
+    (.pop .rax 7)
 
 end VG.Impl.Scrypt.X86_64

@@ -72,17 +72,17 @@ def nLoop : Prog isa :=
 def rmSetup : List Instr :=
   [.shift .shr .rdx 1, .store (at_ .r13 176) .rdx, .mov .r15 (.reg .rdx), .mov .rbp (.reg .r12)]
 
-/-- `vg_scrypt_blockmix(src, r, dst = b, r, scratch)`. -/
-def blockMixTo (blockMix : Prog isa) (src : List Instr) : Prog isa :=
+/-- `vg_scrypt_blockmix(src, r, dst = b, r, scratch)`, the BlockMix `blockMix` emitted as `n`. -/
+def blockMixTo (n : String) (blockMix : Prog isa) (src : List Instr) : Prog isa :=
   .seq (.block (src ++ ([.mov .rsi (.reg .r14), .shift .shr .rsi 7, .mov .rcx (.reg .rsi),
-    .mov .rdx (.reg .rbx), .mov .r8 (.reg .r13)] : List Instr))) (.call "vg_scrypt_blockmix" blockMix)
+    .mov .rdx (.reg .rbx), .mov .r8 (.reg .r13)] : List Instr))) (.call n blockMix)
 
 /-- Step 2, once: `V[i] = X`, `X = scryptBlockMix (V[i])`. -/
-def step2 (blockMix : Prog isa) : Prog isa :=
+def step2 (n : String) (blockMix : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rcx (.reg .r14),
     .shift .shr .rcx 4]) <|
   .seq copyLoop <|
-  .seq (blockMixTo blockMix [.mov .rdi (.reg .rbp)])
+  .seq (blockMixTo n blockMix [.mov .rdi (.reg .rbp)])
     (.block [.alu .add .rbp (.reg .r14), .alu .sub .r15 (.imm 1)])
 
 /-- Between the steps: the count is `N` again, and `rbp = N - 1`. -/
@@ -94,28 +94,28 @@ def jBlock : List Instr :=
   [.mov .rax (.mem { base := .rbx, index := some .r14, disp := -64 }), .alu .and .rax (.reg .rbp)]
 
 /-- Step 3, once: `j`; `rdx = V[j]`; `T = X xor V[j]`; `X = scryptBlockMix (T)`. -/
-def step3 (blockMix : Prog isa) : Prog isa :=
+def step3 (n : String) (blockMix : Prog isa) : Prog isa :=
   .seq (.block jBlock) <|
   .seq (.block [.mov .rdx (.reg .r12), .mov .rcx (.reg .r14)]) <|
   .seq mulLoop <|
   .seq (.block [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rdx), .mov .r8 (.reg .r13),
     .alu .add .r8 (.imm 192), .mov .rcx (.reg .r14), .shift .shr .rcx 4]) <|
   .seq xorLoop <|
-  .seq (blockMixTo blockMix [.mov .rdi (.reg .r13), .alu .add .rdi (.imm 192)])
+  .seq (blockMixTo n blockMix [.mov .rdi (.reg .r13), .alu .add .rdi (.imm 192)])
     (.block [.alu .sub .r15 (.imm 1)])
 
 /-- Restoring our caller's registers. -/
 def rmEpilogue : List Instr := rmSaved.map fun (r, d) => .mov r (.mem (at_ .r13 d))
 
-def roMixWith (blockMix : Prog isa) : Prog isa :=
+def roMixWith (n : String) (blockMix : Prog isa) : Prog isa :=
   .seq (.block rmPrologue) <|
   .seq nLoop <|
   .seq (.block rmSetup) <|
-  .seq (.loop (step2 blockMix) .ne) <|
+  .seq (.loop (step2 n blockMix) .ne) <|
   .seq (.block rmMid) <|
-  .seq (.loop (step3 blockMix) .ne)
+  .seq (.loop (step3 n blockMix) .ne)
     (.block rmEpilogue)
 
-def roMix : Prog isa := roMixWith Packed.blockMix
+def roMix : Prog isa := roMixWith "vg_scrypt_blockmix" Packed.blockMix
 
 end VG.Impl.Scrypt.X86_64

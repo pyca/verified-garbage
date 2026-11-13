@@ -1815,7 +1815,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅ SHA extensions, AVX2, BMI1, BMI2, SSE2</td>
 
 <td>✅ SHA extensions</td>
 
