@@ -13,6 +13,8 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Ed448.X86_64.Scrub
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
@@ -102,12 +104,13 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 namespace VG.Artifacts.Ed448.X86_64.PublicKey
 
 def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact X86_64.target {
+  Spec.Ed448.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := v.suffix
     code := Impl.Ed448.X86_64.publicKeyFor v
     stack := 104
     verified := Proof.Ed448.X86_64.PublicKey.publicKey_verified (v := v)
-      Proof.Ed448.baseLadder_ok }]
+      Proof.Ed448.baseLadder_ok }
+    (Proof.Ed448.X86_64.Scrub.publicKeyOut _))]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun v => artifactsFor v
@@ -118,13 +121,14 @@ end VG.Artifacts.Ed448.X86_64.PublicKey
 namespace VG.Artifacts.Ed448.X86_64.SignCached
 
 def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  Spec.Ed448.signCachedApi.artifact X86_64.target {
+  Spec.Ed448.signCachedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := v.suffix
     code := Impl.Ed448.X86_64.SignCached.signCachedFor v
     stack := 464
     verified := Proof.Ed448.X86_64.SignCached.signCached_verified
       (Proof.Ed448.X86_64.scalarBaseFor_ok v Proof.Ed448.baseLadder_ok)
-      (Proof.Ed448.X86_64.scalarBaseFor_ct v) }]
+      (Proof.Ed448.X86_64.scalarBaseFor_ct v) }
+    (Proof.Ed448.X86_64.Scrub.signCachedOut _))]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun v => artifactsFor v
@@ -135,13 +139,14 @@ end VG.Artifacts.Ed448.X86_64.SignCached
 namespace VG.Artifacts.Ed448.X86_64.Verify
 
 def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  Spec.Ed448.verifyApi.artifact X86_64.target {
+  Spec.Ed448.verifyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := v.suffix
     code := Impl.Ed448.X86_64.Verify.verifyFor v
     stack := 272
     verified := Proof.Ed448.X86_64.Verify.verify_verified
       (Proof.Ed448.X86_64.verifyEquationFor_ok v Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok)
-      (Proof.Ed448.X86_64.verifyEquationFor_ct v Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok) }]
+      (Proof.Ed448.X86_64.verifyEquationFor_ct v Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok) }
+    (Proof.Ed448.X86_64.Scrub.verifyOut _))]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun v => artifactsFor v
