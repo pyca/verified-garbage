@@ -158,12 +158,10 @@ own changes are rebuilt either way, on top of the restored build.
   apart the CPUs it is faster on may the choice also depend on the
   CPU's microarchitecture, or on the compilation target. A
   microarchitecture bit is detected and no instruction needs it
-  (`verified_garbage_cpu::TUNING`). It names a property of the cores it
-  covers, never a core (`slowvec`: vector integer instructions slower
-  than scalar ones), and its detection lists those cores by family and
-  models, as Linux tells them apart, so another core with the property is
-  a line there. A registration names it as an `extra` feature of the
-  variant it chooses, listed before the variants it beats there. Never
+  (`verified_garbage_cpu::TUNING`). It names cores (`zen5`), never a
+  property they are thought to share, and its detection lists them by
+  family and models, as Linux tells them apart: a choice by it records a
+  measurement on those cores, which another core does not inherit. Never
   use an unrelated instruction set feature as its stand-in where a
   microarchitecture bit can say it.
   `VG_CPU_FEATURES` may name a microarchitecture on any CPU, so that every
