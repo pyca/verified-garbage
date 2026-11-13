@@ -141,33 +141,6 @@ def hashIdsDoc : String :=
     5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, \
     11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`)"
 
-def signApi : Api where
-  module := "rsa_pkcs1_sig"
-  name := "vg_rsa_pkcs1_sign"
-  sig := signSig
-  writeArgs := true
-  contracts := some fun A stack => signContract A stack
-  summary := s!"RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, \
-    as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most \
-    significant first, odd, from 512 to 8192 bits, its first byte not zero), \
-    {Rsa.exponentDoc} and the private key `(p, q, dP, dQ, qInv)` (as \
-    `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 \
-    §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to \
-    `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: \
-    writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros \
-    and returns 0 if `hash` names no hash function, `digest` is not as long as its values, \
-    `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or \
-    `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal \
-    error) if the signature fails the check against `e`, which is the case for no hash \
-    value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it \
-    writes is one `vg_rsa_pkcs1_verify` accepts. {hashIdsDoc}.\n\n\
-    Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: \
-    timing may depend on the pointers, the lengths, `hash` and the contents of `n` and \
-    `e`, not on `digest` or the private key."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
-    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
-
 /-- The summary of `verify` in the documentation of the functions built on it. -/
 def verifySummary : String :=
   s!"RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, \

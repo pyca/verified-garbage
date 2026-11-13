@@ -138,35 +138,6 @@ def signMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         _qinvLen _digest _digestLen _salt _saltLen _scratch _scratchLen _hash _mgf1 m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-/-- `vg_rsa_pss_sign` on every target. -/
-def signMdTableApi : Api where
-  module := "rsa_pss"
-  name := "vg_rsa_pss_sign"
-  sig := signMdTableSig
-  writeArgs := true
-  contracts := some fun A stack => signMdTableContract A stack
-  summary := "RSASSA-PSS signature generation (RFC 8017 §8.1.1) with the hash function of \
-    the table `hash` and MGF1 with that of the table `mgf1`, of a digest of the former, with \
-    the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as \
-    `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most \
-    significant first, odd, from 512 to 8192 bits, its first byte not zero) and \
-    " ++ exponentDoc ++ ", encodes the `digest_len`-byte digest `digest` with the salt `salt` \
-    (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check \
-    against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and \
-    returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than \
-    `⌈(bits of n - 1) / 8⌉ - digest_len - 2`), or the key is refused as \
-    `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if \
-    the result fails the check against `e`, which it does for no digest if \
-    `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh \
-    random bytes for each signature (or empty).\n\n\
-    Contract: `VG.Spec.RsaPss.signMdTableContract`. Constant time but for the public key: \
-    timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which \
-    tables `hash` and `mgf1` are, not on the private key, the digest or the salt."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
-    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.",
-    digestLenSafety] ++ scratchSafety ++ [hashSafety, mgf1Safety]
-
 /-! ## `vg_rsa_pss_verify_precomputed` -/
 
 /-- The parameters of verification: `(n: *const u8, n_len: usize,

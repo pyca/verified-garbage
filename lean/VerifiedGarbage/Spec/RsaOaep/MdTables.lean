@@ -185,34 +185,6 @@ def decryptMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
         _dqLen _qinv _qinvLen _label _labelLen _ct _ctLen _scratch _scratchLen _hash _mgf1 m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-/-- `vg_rsa_oaep_decrypt` on every target. -/
-def decryptMdTablesApi : Api where
-  module := "rsa_oaep"
-  name := "vg_rsa_oaep_decrypt"
-  sig := decryptMdTablesSig
-  writeArgs := true
-  contracts := some fun A stack => decryptMdTablesContract A stack
-  summary := "RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table \
-    `hash` and MGF1 with that of the table `mgf1`, with the private key \
-    `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` \
-    checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to \
-    8192 bits, its first byte not zero) and " ++ exponentDoc ++ ", decrypts the ciphertext \
-    `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result \
-    passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the \
-    start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise \
-    writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the \
-    ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal \
-    error) if RSADP's result fails the check against `e`, which it does for no ciphertext if \
-    `vg_rsa_check_key` accepts the key and `p` and `q` are prime.\n\n\
-    Contract: `VG.Spec.RsaOaep.decryptMdTablesContract`. Constant time but for the public key: \
-    timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which \
-    tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether \
-    its decoding is valid or the message's length."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` and `ct_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
-    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++
-    scratchSafety ++ [hashSafety, mgf1Safety]
-
 /-! ## `vg_rsa_oaep_decrypt_precomputed` -/
 
 /-- The parameters of decryption (`decryptSig`), then `hash` and `mgf1`,

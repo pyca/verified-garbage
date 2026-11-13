@@ -104,39 +104,6 @@ def decryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
         _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen _scratch _scratchLen m =>
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
-def decryptApi : Api where
-  module := "rsa_pkcs1_enc"
-  name := "vg_rsa_pkcs1_decrypt"
-  sig := decryptSig
-  writeArgs := true
-  contracts := some fun A stack => decryptContract A stack
-  summary := s!"RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT \
-    (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the \
-    private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most \
-    significant first, odd, from 512 to 8192 bits, its first byte not zero) and \
-    {exponentDoc}, computes the encoded message `EM` of the ciphertext `input` (`n_len` \
-    bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its \
-    padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the \
-    message is `M`; otherwise it is a message derived from `d` and the ciphertext (the \
-    draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of \
-    `d`), of at most `n_len - 11` bytes, which is the same every time the same key \
-    decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), \
-    after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and \
-    returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, \
-    `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its \
-    check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts \
-    the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used \
-    as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are \
-    `q_len` bytes, and `d` is `d_len` bytes, all most significant first.\n\n\
-    Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: \
-    timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on \
-    the ciphertext, the private key, the validity of the padding, the length of the \
-    message or which message is returned."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` and `input_len` must be `n_len`.",
-    "`e_len` and `d_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
-    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++
-    scratchSafety
-
 /-! ## `vg_rsa_pkcs1_decrypt_precomputed` -/
 
 /-- The parameters of `vg_rsa_pkcs1_decrypt`, then the key's precomputed
