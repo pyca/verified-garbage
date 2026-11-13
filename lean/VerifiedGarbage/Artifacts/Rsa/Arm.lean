@@ -39,6 +39,11 @@ def direct : List Artifact := [
     stack := 56
     verified := Proof.Rsa.Arm.Recover.recover_primes_det_verified },
   Spec.Rsa.privatePrecomputeApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Bignum.Arm.PrivPreFn.codeU
+    stack := 168
+    verified := Proof.Bignum.Arm.privPre_umaal_verified },
+  Spec.Rsa.privatePrecomputeApi.artifact Arm.target {
     code := Impl.Bignum.Arm.PrivPreFn.code
     stack := 168
     verified := Proof.Bignum.Arm.privPre_verified }]
