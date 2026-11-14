@@ -552,6 +552,55 @@ def scrubRegF {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     notWith := r.notWith
     residue := some ⟨main.2⟩ }
 
+/-- `r`, scrubbed as `scrubRegF` does, but with `mxFix` (`scrub`'s `f` at `evex`) at any level `v`,
+for code whose runs need not leave the same MXCSR in two runs along the same trace by its code alone:
+code that keeps MXCSR's control bits only by the contracts of the functions it calls, as one that
+saves MXCSR in a callee-saved register across a call (`Impl.Mcdt.X86_64.mcdtCall`). `mxFix` then
+leaves in MXCSR its control bits alone, which the code keeps (`abiPreserved`). It needs the 16
+bytes of stack `mxFix` uses (`hev`). -/
+def scrubRegX {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
+    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
+    (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
+    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hres : ResOk r.code r.contract r.stack ks (chunks r.stack))
+    (hw : r.written = []) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks)
+    (hev : ∀ p : Addr, (chunks r.stack).sum ≤ p.toNat → EvexOk .evex ks (chunks r.stack) p) :
+    Registration api target :=
+  have main : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .evex) r.contract ∧
+      NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .evex) r.contract
+        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    have hp := hpost
+    have hr := hres
+    rw [e] at hv hp hr ⊢
+    have hrb' := hrb
+    rw [← withMode_ptrBits ((abi.withConsts r.consts).withTables api.sig r.tables) api.pubMode] at hrb' hp ⊢
+    exact Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv (SpSafe.of_all r.spSafe) hd
+      (chunks_sum r.stack) hst (chunks_valid h8)
+      (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun h => absurd rfl h) hrb' hp hr (tailOk_of _ _ _)
+      (xs_of _ _) hxe hev (gs_of _ _)
+  { suffix := r.suffix
+    consts := r.consts
+    tables := r.tables
+    stack := r.stack
+    code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+      (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .evex
+    contract := r.contract
+    verified := main.1
+    ofApi := r.ofApi
+    ofSig := r.ofSig
+    spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
+    written := r.written
+    writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
+    extra := r.extra
+    vendor := r.vendor
+    notWith := r.notWith
+    residue := some ⟨main.2⟩ }
+
 /-- The level `scrubRegF` clears the vector registers at for `code`: as
 `levelFor`, or `evex` for code that writes `zmm16`–`zmm31`. -/
 def levelForE (code : Prog isa) : VecLevel :=
@@ -579,6 +628,32 @@ def withScrubAllF {api : Api} (r : Registration api target)
     if (Code.requiresDedup isa.requires r'.code).all
         (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
   else r else r else r else r else r else r else r
+
+/-- `r` with every granule of its stack wiped, the vector registers cleared at the level
+`levelForE` of its code, and MXCSR's status flags and reserved bits cleared (`scrubRegX`), if its
+side conditions hold and the clearing needs no CPU feature its code does not; otherwise `r` itself.
+For code that loads MXCSR, but restores it only by the contracts of the functions it calls
+(`Impl.Mcdt.X86_64.mcdtCall`), which `withScrubAllR`'s `Mx.mx` cannot follow. -/
+def withScrubAllX {api : Api} (r : Registration api target)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
+    Registration api target :=
+  let v := levelForE r.code
+  if hd : r.code.x86_64Depth ≤ r.stack then
+  if hst : r.stack + 8 < 2 ^ 64 then
+  if h8 : r.stack % 8 = 0 then
+  if h16 : 16 ≤ r.stack then
+  if hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
+      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
+  if hw : r.written = [] then
+  if hx : v = .evex → r.code.all (fun i => !writesVec i) = false then
+    let r' := scrubRegX r v (allKs (chunks r.stack)) hd hst h8 hlv hrb hpost (resOk_all _ _ h8) hw
+      (fun e x => by unfold xsOf; rw [hx e]; exact mem_xregs x)
+      (fun p hp => evexOk_all .evex (fun b hb => (chunks_valid h8 b hb).2.2) (by rw [chunks_sum]; exact h16)
+        (by rw [chunks_sum]; omega) hp)
+    if (Code.requiresDedup isa.requires r'.code).all
+        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
+  else r else r else r else r else r else r else r else r
 
 /-- `r` with every granule of its stack wiped and the vector registers
 cleared at the level `levelForE` of its code (`withScrubAllF`), if every
