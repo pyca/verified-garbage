@@ -289,7 +289,7 @@ partial def lit? (e : Expr) : Option Nat :=
     | HPow.hPow α β _ _ a b =>
       if nat α && nat β then do
         let b ← lit? b
-        if b > 4096 then none else some ((← lit? a) ^ b)
+        if b > 65536 then none else some ((← lit? a) ^ b)
       else none
     | Nat.succ a => do some ((← lit? a) + 1)
     | _ => none
@@ -817,17 +817,20 @@ the kernel computes on numerals at once, where a certificate of `omega`'s costs 
 milliseconds. -/
 def decideClosed (stmt : Expr) : MetaM (Option Expr) := do
   let saved := (← getThe Core.State).messages
-  try
-    let inst ← synthInstance (mkApp (mkConst ``Decidable) stmt)
-    let r ← withAtLeastTransparency .default <| whnf (mkApp2 (mkConst ``Decidable.decide) stmt inst)
-    modifyThe Core.State ({ · with messages := saved })
-    if r.isConstOf ``true then
-      return some (mkApp3 (mkConst ``of_decide_eq_true) stmt inst
-        (mkApp2 (mkConst ``Eq.refl [1]) (mkConst ``Bool) (mkConst ``true)))
-    return none
-  catch _ =>
-    modifyThe Core.State ({ · with messages := saved })
-    return none
+  -- Evaluating here can fail in ways `try … catch` lets through (a power above
+  -- `exponentiation.threshold` is unfolded until the recursion limit), having logged an error.
+  tryCatchRuntimeEx
+    (do
+      let inst ← synthInstance (mkApp (mkConst ``Decidable) stmt)
+      let r ← withAtLeastTransparency .default <| whnf (mkApp2 (mkConst ``Decidable.decide) stmt inst)
+      modifyThe Core.State ({ · with messages := saved })
+      if r.isConstOf ``true then
+        return some (mkApp3 (mkConst ``of_decide_eq_true) stmt inst
+          (mkApp2 (mkConst ``Eq.refl [1]) (mkConst ``Bool) (mkConst ``true)))
+      return none)
+    fun _ => do
+      modifyThe Core.State ({ · with messages := saved })
+      return none
 
 /-- Proves the goal from the facts through a theorem about variables alone:
 `∀ x₁ … xₙ, F₁ → … → Fₖ → G`, with a variable for every term of the goal and the facts
@@ -864,21 +867,20 @@ def close (g : MVarId) (facts : Array Expr) : MetaM Bool := g.withContext do
     | _ =>
       -- in an empty context: the proof may use nothing of this goal's
       let m ← withLCtx {} {} <| mkFreshExprSyntheticOpaqueMVar stmt
-      -- a statement with no variable is evaluated
-      let dec ← if st.vars.isEmpty && fs.isEmpty then decideClosed stmt else pure none
-      if let some pf := dec then
-        m.mvarId!.assign pf
-      else
-        let (_, g₁) ← m.mvarId!.introNP st.vars.size
-        let (hs, g₁) ← g₁.introNP fs.size
-        let lin ← g₁.withContext do
-          match ← VG.Arith.prove? (← instantiateMVars (← g₁.getType)) (hs.map mkFVar) with
-          | some pf => g₁.assign pf; pure true
-          | none => pure false
-        unless lin do
-          if let some g₂ ← g₁.falseOrByContra then
-            g₂.withContext do
-              Lean.Elab.Tactic.Omega.omega (← getLocalHyps).toList g₂
+      let (_, g₁) ← m.mvarId!.introNP st.vars.size
+      let (hs, g₁) ← g₁.introNP fs.size
+      let lin ← g₁.withContext do
+        match ← VG.Arith.prove? (← instantiateMVars (← g₁.getType)) (hs.map mkFVar) with
+        | some pf => g₁.assign pf; pure true
+        | none => pure false
+      unless lin do
+        -- a statement with no variable is evaluated
+        let dec ← if st.vars.isEmpty && fs.isEmpty then decideClosed stmt else pure none
+        if let some pf := dec then
+          m.mvarId!.assign pf
+        else if let some g₂ ← g₁.falseOrByContra then
+          g₂.withContext do
+            Lean.Elab.Tactic.Omega.omega (← getLocalHyps).toList g₂
       mkAuxLemma [] stmt (← instantiateMVars m)
   g.assign (mkAppN (mkConst name) (st.atoms ++ fs.map (·.1)))
   return true
@@ -891,7 +893,8 @@ def tryClose (facts : Array Expr) : TacticM Bool := do
   let saved ← saveState
   let g ← getMainGoal
   let rest := (← getGoals).tail
-  if ← (try Abs.close g facts catch _ => do saved.restore; pure false) then
+  -- whatever goes wrong in there, the caller's own way is still to come
+  if ← tryCatchRuntimeEx (Abs.close g facts) (fun _ => do saved.restore; pure false) then
     setGoals rest
     return true
   return false
