@@ -15,6 +15,8 @@ public import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
+public import VerifiedGarbage.Proof.Sm4.X86_64.CtrFinal
+public import VerifiedGarbage.Spec.Sm4.CtrFinal
 public import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Sm4.CbcScratch
@@ -38,6 +40,8 @@ meta import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalVerified
 meta import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
+meta import VerifiedGarbage.Proof.Sm4.X86_64.CtrFinal
+meta import VerifiedGarbage.Spec.Sm4.CtrFinal
 meta import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
 meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Sm4.CbcScratch
@@ -58,9 +62,11 @@ memory on return only within the buffers (`X86_64.Scrub.PostOut`), as the
 frames that keep their working space on the stack already show
 (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
-`vg_sm4_ctr_final` is not here: its analysis does not succeed. It calls
-`vg_sm4_ctr`'s code as the internal `vg_sm4_ctr_core`
-(`Impl.Sm4.X86_64.ctrFramed`). SM4-GCM calls `vg_sm4_expand_key`'s code as
+`vg_sm4_ctr_final`, whose analysis does not succeed, is followed by
+`Impl.Scrub.X86_64.scrub` with every granule of its stack wiped
+(`X86_64.Scrub.withScrubAll`): it calls `vg_sm4_ctr`'s code as the internal
+`vg_sm4_ctr_core` (`Impl.Sm4.X86_64.ctrFramed`), which restores the
+callee-saved registers from slots of its frame the analysis loses track of. SM4-GCM calls `vg_sm4_expand_key`'s code as
 the internal `vg_sm4_expand_key_core` (`Impl.Sm4Gcm.X86_64.keyFn`).
 -/
 
@@ -107,6 +113,9 @@ theorem ofbFinalOut : PostOut (Spec.Sm4.ofbFinalContract X86_64.abi 3216) (Spec.
 
 theorem ctrOut : PostOut (Spec.Sm4.ctrContract X86_64.abi 3216) (Spec.Sm4.ctrSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrPostOut_local _)
+
+theorem ctrFinalOut : PostOut (Spec.Sm4.ctrFinalContract X86_64.abi 3296) (Spec.Sm4.ctrFinalSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrFinalPostOut_local _)
 
 /-! ## The registrations -/
 
@@ -338,5 +347,11 @@ def ctrReg : Registration Spec.Sm4.ctrApi X86_64.target :=
     stack := 3216
     verified := Proof.Sm4.X86_64.ctr_framed } ctrOut [] (pubOk_nil _) (some ⟨ctrKs, ctrOk⟩)
 
-end VG.Proof.Sm4.X86_64.Scrub
+/-- `vg_sm4_ctr_final`, its whole stack wiped on return. -/
+def ctrFinalReg : Registration Spec.Sm4.ctrFinalApi X86_64.target :=
+  withScrubAll {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 72 .r8 8 Impl.Sm4.X86_64.ctrFinal
+    stack := 3296
+    verified := Proof.Sm4.X86_64.ctrFinal_framed } ctrFinalOut
 
+end VG.Proof.Sm4.X86_64.Scrub
