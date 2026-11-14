@@ -28,7 +28,7 @@ stored there (`zeroKs`); with fewer than 16 blocks `encR` makes no copy
 namespace VG.Impl.Gcm.X86_64.StitchR
 
 open VG.X86_64
-open VG.Impl.Gcm.X86_64.Stitch (aregs storesK pregs setupC first body dbody storeCtr lastG storeY)
+open VG.Impl.Gcm.X86_64.Stitch (aregs storesK pregs setupC first body dbody storeCtr lastG storeY zeroPow)
 open VG.Impl.Aes.X86_64.Vaes (aesK ctrsK)
 open VG.Impl.Gcm.X86_64.StitchZTo (setupCTo)
 
@@ -157,9 +157,6 @@ def zeroKs : Prog isa :=
     (.seq (.block [.alu .cmp .r10 (.imm 129)])
       (.ite .b (.block []) (.block (storesK .r11 (List.replicate 4 .xmm12) 12))))
 
-/-- The copy of the powers at `scratch` the loops read, cleared. -/
-def zeroPow : List Instr :=
-  .vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12) :: storesK .r11 (List.replicate 8 .xmm12) 0
 
 /-- `remPairD` for encryption: blocks `r10 / 16` and the next, read at
 `src + r10`, their keystream added from `r11 + r10 + 768` in `ymm13`, stored

@@ -871,46 +871,18 @@ theorem encSmallC_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8
   WP.seq (WP.mono (setupS_ok hp.base) fun _ hI =>
     remE_ok hp.base (hp.ctxPow h8) (remLawC s₀) (e := 0) hI (by omega_using [hlt]) (by omega_using [h1]))
 
-/-- `zeroPow`: the copy of the powers at `scratch` cleared, which the
-postcondition allows. -/
-theorem zeroPow_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s : State} (h : EPost s₀ s) :
-    WP isa (.block Impl.Gcm.X86_64.StitchR.zeroPow) s (EPost s₀) := by
-  have h11 : s.gpr .r11 = Stitch.pp s₀ := h.gpr _ (by decide) (by decide) (by decide) (by decide)
-  have hwp := hp.wrap_p
-  rw [show Impl.Gcm.X86_64.StitchR.zeroPow = [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)] ++
-    Impl.Gcm.X86_64.Stitch.storesK .r11 (List.replicate 8 .xmm12) 0 from rfl, WP.block_append_iff]
-  refine WP.mono (zero12_ok s) fun s₁ ⟨z₁, k₁, g₁, m₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (Stitch.storesK_ok .r11 (List.replicate 8 .xmm12) 0 s₁ (fun k hk => by
-      rw [wr₁, h.wr, g₁, h11]; exact Stitch.in_sub_int hp.p_in (by simp at hk; omega_using [hk]))
-    (by rw [g₁, h11]; simp; omega_using [hwp])) fun s₂ ⟨sv, fr, g₂, rd₂, wr₂, l₂⟩ => ?_
-  rw [g₁, h11, m₁, Nat.mul_zero, BitVec.add_zero, show 32 * (List.replicate 8 XReg.xmm12).length = 256 by simp] at fr
-  have F : Frame [Stitch.pR s₀] s.mem s₂.mem := fr.sub fun r hr => ⟨Stitch.pR s₀, List.mem_singleton_self _, by
-    simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
-  have keep : ∀ p, Region.Disjoint ⟨p, 16⟩ (Stitch.pR s₀) → Spec.Gcm.blockAt s₂.mem p = Spec.Gcm.blockAt s.mem p :=
-    fun p hd => VG.Proof.Aes.X86_64.AesNi.blockAt_frame F fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hd
-  have hbl : Spec.Gcm.blocksAt s₂.mem (Stitch.dp s₀) (nb s₀) = Spec.Gcm.blocksAt s.mem (Stitch.dp s₀) (nb s₀) := by
-    simp only [Spec.Gcm.blocksAt]
-    exact List.map_congr_left fun k hk => keep _
-      (hp.d_p.sub_left (Offset.sub_base _ (by simp at hk; omega_using [hk])))
-  exact ⟨by rw [hbl]; exact h.data, by rw [keep _ hp.p_c.symm]; exact h.ctr,
-    by rw [keep _ hp.p_y.symm, hbl]; exact h.y,
-    h.frame.trans (F.sub fun r hr => ⟨Stitch.pR s₀, by simp, by simp at hr; subst hr; exact fun _ h => h⟩),
-    fun q h1 h2 h3 h4 => by rw [g₂, g₁]; exact h.gpr q h1 h2 h3 h4, by rw [rd₂, rd₁]; exact h.rd,
-    by rw [wr₂, wr₁]; exact h.wr⟩
-
 /-- Encryption of a group or more: the loops, as `Stitch.enc`, then the copy
 of the powers cleared. -/
 theorem encBig_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 16 np) (h8 : 8 ≤ np) :
     WP isa (.seq (.block Impl.Gcm.X86_64.StitchR.setup) (.seq Impl.Gcm.X86_64.Stitch.first
       (.seq (.block [.alu .cmp .r9 (.imm 32)]) (.seq (.ite .b (.block []) (.loop Impl.Gcm.X86_64.Stitch.body .ae))
-        (.seq (Impl.Gcm.X86_64.StitchR.tailE [] .rdx) (.block Impl.Gcm.X86_64.StitchR.zeroPow)))))) s₀ (EPost s₀) := by
+        (.seq (Impl.Gcm.X86_64.StitchR.tailE [] .rdx) (.block Impl.Gcm.X86_64.Stitch.zeroPow)))))) s₀ (EPost s₀) := by
   refine WP.seq (WP.mono (setup_ok hp h8) fun s ⟨P, hR, hpw⟩ => ?_)
   refine WP.seq (WP.mono (Stitch.first_ok hp.base hR) fun s₂ hI₂ => ?_)
   refine WP.seq (WP.mono (Stitch.cmpE_ok hI₂) fun s₃ ⟨hI₃, hcf⟩ => ?_)
   refine WP.seq (WP.mono (loopER_ok hp.base (finE hpw) hI₃ hcf) fun s₄ ⟨e, hlt, hI₄⟩ => ?_)
   exact WP.seq (WP.mono (tailER_ok hp.base (hp.ctxPow h8) (finE hpw) (remLawC s₀) hlt hI₄) fun s₅ h₅ =>
-    zeroPow_ok hp.base h₅)
+    Stitch.zeroPow_ok hp.base h₅)
 
 /-- `encR`: the encryption of any number of blocks from 1 on. -/
 theorem encR_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 ≤ np := by decide) :

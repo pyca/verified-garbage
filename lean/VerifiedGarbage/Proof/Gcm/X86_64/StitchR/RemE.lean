@@ -250,21 +250,6 @@ theorem remSetupC_ok (s : State) {r : Nat} (h1 : 1 ≤ r) (h15 : r ≤ 15)
   · rw [g' q h1 h2, g₃, f₂.gpr, g₁ q h1]
   · rw [z', z₃, f₂.zlane x (by simp [hx]) l hl, z₁]
 
-/-- `vpxor xmm12, xmm12, xmm12`, which clears `ymm12`. -/
-theorem zero12_ok (s : State) :
-    WP isa (.block [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)]) s fun s' =>
-      (∀ l < 2, s'.lane .xmm12 l = 0) ∧ (∀ x, x ≠ .xmm12 → ∀ l < 2, s'.lane x l = s.lane x l) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, Option.some.injEq, exists_eq_left']
-  refine ⟨fun l hl => ?_, fun x h l hl => ?_, rfl, rfl, rfl, rfl⟩
-  · have z : ((if l = 0 then 0#128 else 0) : BitVec 128) = 0 := ite_self _
-    rw [← State.zlane_lt2 _ _ hl]
-    simp only [VOp.exec, State.zlane_setV128 _ _ _ _ _ (show l < 4 by omega_arith), VBinOp.sse, Pclmul.eval_pxor,
-      BitVec.xor_self, ite_true, z]
-  · rw [← State.zlane_lt2 _ _ hl, ← State.zlane_lt2 _ _ hl]
-    simp only [VOp.exec, State.zlane_setV128 _ _ _ _ _ (show l < 4 by omega_arith), h, ite_false]
-
 /-- `zeroKs`: the keystream `remE` stored at `r11 + 256`, of eight blocks, or
 sixteen if `r > 8` (`r10 = 16 r`), cleared. -/
 theorem zeroKs_ok {s : State} {r : Nat} (h15 : r ≤ 15) (h10 : s.gpr .r10 = BitVec.ofNat 64 (16 * r))
@@ -294,7 +279,7 @@ theorem zeroKs_ok {s : State} {r : Nat} (h15 : r ≤ 15) (h10 : s.gpr .r10 = Bit
   rw [show (.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12) :: Impl.Gcm.X86_64.Stitch.storesK .r11 (List.replicate 4 .xmm12) 8 :
       List Instr) = [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)] ++ Impl.Gcm.X86_64.Stitch.storesK .r11 (List.replicate 4 .xmm12) 8
     from rfl, WP.block_append_iff]
-  refine WP.mono (zero12_ok s) fun s₁ ⟨z₁, k₁, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (Stitch.zero12_ok s) fun s₁ ⟨z₁, k₁, g₁, m₁, rd₁, wr₁⟩ => ?_
   refine WP.mono (stK 8 s₁ (by decide) (by rw [g₁]) wr₁ z₁) fun s₂ ⟨v₂, f₂, g₂, rd₂, wr₂, l₂⟩ => ?_
   rw [m₁] at f₂
   refine WP.seq (WP.mono (StitchZH.cmp10_ok s₂ 129 129 (by decide)) fun s₃ ⟨c₃, g₃, l₃, m₃, rd₃, wr₃⟩ => ?_)

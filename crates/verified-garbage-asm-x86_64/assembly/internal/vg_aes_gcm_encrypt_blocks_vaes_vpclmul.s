@@ -903,6 +903,15 @@ vg_aes_gcm_encrypt_blocks_vaes_vpclmul:
 	vpshufb xmm2, xmm2, xmm0
 	vmovdqu XMMWORD PTR [rcx], xmm2
 	vzeroupper
+	vpxor xmm12, xmm12, xmm12
+	vmovdqu YMMWORD PTR [r11], ymm12
+	vmovdqu YMMWORD PTR [r11+32], ymm12
+	vmovdqu YMMWORD PTR [r11+64], ymm12
+	vmovdqu YMMWORD PTR [r11+96], ymm12
+	vmovdqu YMMWORD PTR [r11+128], ymm12
+	vmovdqu YMMWORD PTR [r11+160], ymm12
+	vmovdqu YMMWORD PTR [r11+192], ymm12
+	vmovdqu YMMWORD PTR [r11+224], ymm12
 	jmp 21f
 20:
 21:
