@@ -1456,7 +1456,7 @@ callee (from 512) it spills the powers and keystream in:
 64-byte-aligned base, which lies 64 to 127 bytes in, and
 `vg_aes_gcm_encrypt_blocks_vaes_vpclmul`'s 256 from 64. -/
 def sealKs : List Nat :=
-  (List.range 8).map (64 + 16 * ·) ++ (List.range 36).map (576 + 16 * ·)
+  (List.range 72).map (16 * ·)
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read 16 prepared
 powers, with the stack it writes cleared over VAES (`sealSel`). -/

@@ -10368,10 +10368,24 @@ vg_aes_gcm_seal_prepared_vaes_vpclmul:
 	vmovdqu YMMWORD PTR [rsp+640], ymm0
 	vmovdqu YMMWORD PTR [rsp+608], ymm0
 	vmovdqu YMMWORD PTR [rsp+576], ymm0
+	vmovdqu YMMWORD PTR [rsp+544], ymm0
+	vmovdqu YMMWORD PTR [rsp+512], ymm0
+	vmovdqu YMMWORD PTR [rsp+480], ymm0
+	vmovdqu YMMWORD PTR [rsp+448], ymm0
+	vmovdqu YMMWORD PTR [rsp+416], ymm0
+	vmovdqu YMMWORD PTR [rsp+384], ymm0
+	vmovdqu YMMWORD PTR [rsp+352], ymm0
+	vmovdqu YMMWORD PTR [rsp+320], ymm0
+	vmovdqu YMMWORD PTR [rsp+288], ymm0
+	vmovdqu YMMWORD PTR [rsp+256], ymm0
+	vmovdqu YMMWORD PTR [rsp+224], ymm0
+	vmovdqu YMMWORD PTR [rsp+192], ymm0
 	vmovdqu YMMWORD PTR [rsp+160], ymm0
 	vmovdqu YMMWORD PTR [rsp+128], ymm0
 	vmovdqu YMMWORD PTR [rsp+96], ymm0
 	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
 	lea rsp, [rsp+2624]
 	xor eax, eax
 	xor ecx, ecx
