@@ -128,7 +128,12 @@ structure PreC (s : State) : Prop where
 theorem preC_of {s : State} (h : (Proof.RsaKeyGen.keyContract RISCV64.abi).pre s) : PreC s := by
   sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_ten, List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨sp16, sp2, hrd, hwr, nd, np, nq, ndp, ndq, nqi, ne, ns, na, dp, dq, ddp, ddq, dqi, de, ds, da, pq, pdp, pdq, pqi, pe, ps, pa, qdp, qdq, qqi, qe, qs, qa, dpdq, dpqi, dpe, dps, dpa, dqqi, dqe, dqs, dqa, qie, qis, qia, es, sa, wn, wd, wp, wq, wdp, wdq, wqi, we, ws, ⟨p32, p512, p8⟩, hn, hd, hq, hdp, hdq, hqi, e1, e2, hs, al⟩ := h
+  sig_split h
+  rename_i sp16 sp2 hrd hwr nd np nq ndp ndq nqi ne ns na dp dq ddp ddq dqi de ds da pq pdp pdq pqi pe ps pa qdp
+    qdq qqi qe qs qa dpdq dpqi dpe dps dpa dqqi dqe dqs dqa qie qis qia es sa wn wd wp wq wdp wdq wqi we ws
+    h_p32_p512_p8 hn hd hq hdp hdq hqi e1 e2 hs
+  have al := h
+  obtain ⟨p32, p512, p8⟩ := h_p32_p512_p8
   exact ⟨sp16, sp2, hrd, hwr, nd, np, nq, ndp, ndq, nqi, ne, ns, na, dp, dq, ddp, ddq, dqi, de, ds, da, pq, pdp, pdq, pqi, pe, ps, pa, qdp, qdq, qqi, qe, qs, qa, dpdq, dpqi, dpe, dps, dpa, dqqi, dqe, dqs, dqa, qie, qis, qia, es, sa, wn, wd, wp, wq, wdp, wdq, wqi, we, ws, p32, p512, p8, hn, hd, hq, hdp, hdq, hqi, e1, e2, hs, al⟩
 
 /-! ## The working space -/

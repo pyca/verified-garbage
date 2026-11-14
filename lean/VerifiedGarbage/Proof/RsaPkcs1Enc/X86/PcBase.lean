@@ -139,9 +139,10 @@ theorem ep_lay (s : State) :
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argSlots,
     argVal, argBytes, stackBelow] at h
-  obtain ⟨hsp, hsa, hrd, hwr, oN, oE, oM, oP, oS, oR, oA, nS, nA, eS, eA, mS, mA, pS, pA, sR, sA, rA,
-    rO, rN, rE, rM, rP, rS, rR, rAr, kO, kN, kE, kM, kP, kS, kR, kA, fO, fN, fE, fM, fP, fS, fR,
-    kv, olk, el1, elK, mlK, plK, slK, rlK⟩ := h
+  sig_split h
+  rename_i hsp hsa hrd hwr oN oE oM oP oS oR oA nS nA eS eA mS mA pS pA sR sA rA rO rN rE rM rP rS rR rAr kO kN
+    kE kM kP kS kR kA fO fN fE fM fP fS fR kv olk el1 elK mlK plK slK
+  have rlK := h
   simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kN kE kM kP kS kR kA
   have a1 : arg s 1 = arg s 3 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oN oE oM oP oS oR oA rO kO fO

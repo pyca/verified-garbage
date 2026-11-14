@@ -103,10 +103,12 @@ theorem dPreP_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptPrecomputedContract a
   sig_pre [Spec.RsaPkcs1Enc.decryptPrecomputedContract, Spec.RsaPkcs1Enc.decryptPrecomputedSig,
     Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq, List.range,
     List.range.loop] at h
-  obtain ⟨sp16, sp1, sp2, hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oP, oa, mn, me, md, mi, mp, mq,
-    mdp, mdq, mqi, ms, mP, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sP, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp,
-    kdq, kqi, ks, kP, ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩, h1, hi, e1, e2, d1, d2,
-    p1, p2, q1, q2, h8, h12, h10, hs, hpl, hyp, mal, al, alP⟩ := h
+  sig_split h
+  rename_i sp16 sp1 sp2 hrd hwr om on oe od oi op oq odp odq oqi os oP oa mn me md mi mp mq mdp mdq mqi ms mP ma
+    ns es ds is ps qs dps dqs qis sP sa ko km kn ke kd ki kp kq kdp kdq kqi ks kP ka wo wm wn we wd wi wp wq wdp
+    wdq wqi ws wP h_k1_k2 h1 hi e1 e2 d1 d2 p1 p2 q1 q2 h8 h12 h10 hs hpl hyp mal al
+  have alP := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact ⟨⟨sp16, sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os,
     oa, mn, me, md, mi, mp, mq, mdp, mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke,
     kd, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, hi, e1,

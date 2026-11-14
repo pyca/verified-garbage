@@ -372,16 +372,16 @@ macro "signP_pre" " at " h:ident : tactic => `(tactic| (
 theorem preS_ofP {tsH tsG : List FnTable} {s : State} (h : (signPSpec tsH tsG).pre s) {H : Spec.Mgf1.Hash}
     (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H) : PreS true H.len s := by
   signP_pre at h
-  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oP, oth, otg, oa, ns, es,
-    ps, qs, dps, dqs, qis, dgs, sls, sP, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kP, kth, ktg,
-    ka, wo, wn, we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc, wP, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7,
-    h5, hs, hpl, hk, hl, als, al14, al15, alP⟩ := h
+  sig_split h
+  rename_i spal sp1 sp2 _ _ _ hrd hwr on oe op oq odp odq oqi odg osl os oP oth otg oa ns es ps qs dps dqs qis
+    dgs sls sP sth stg sa ko kn ke kp kq kdp kdq kqi kdg ksl ks kP kth ktg ka wo wn we wp wq wdp wdq wqi wdg wsl
+    wsc wP wth wtg k1 k2 ok e1 e2 p1 p2 q1 q2 h3 h7 h5 hs hpl hk hl als al14 al15
   have hl := hl H hH
   rw [hl] at hrd odg dgs kdg wdg
   exact ⟨spal, sp1, sp2, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps, qs, dps,
     dqs, qis, dgs, sls, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kth, ktg, ka, wo, wn, we, wp,
     wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, als, al14, al15,
-    fun _ => ⟨oP, sP, kP, wP, hpl, sp2, alP, fun _ => hk⟩⟩
+    fun _ => ⟨oP, sP, kP, wP, hpl, sp2, h, fun _ => hk⟩⟩
 
 /-- The tables, as the variant's contract gives them. -/
 theorem spec_tabSP {tsH tsG : List FnTable} {s : State} (h : (signPSpec tsH tsG).pre s) :

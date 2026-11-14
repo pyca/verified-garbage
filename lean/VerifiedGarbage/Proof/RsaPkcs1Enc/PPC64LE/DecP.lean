@@ -41,11 +41,15 @@ theorem dPreP_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptPrecomputedContract a
     Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, stackArgs_seventeen, List.append_eq] at h
   simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
     Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, om, on, ⟨oe, od, oi, op, oq, odp, odq, oqi, os, oP, oa, mn, me, md, mi, mp, mq, mdp,
-    mdq, mqi, ms, mP, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sP, sa⟩,
-    ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka,
-    wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩, h4, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,
-    h10, hs, hpl, hyp⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr om on hio ko km kn ke kd ki kp kq kdp kdq kqi ks kP ka wo wm wn we wd wi wp wq wdp wdq
+    wqi ws wP h_k1_k2 h4 hi e1 e2 d1 d2 p1 p2 q1 q2 h8 h12 h10 hs hpl
+  have hyp := h
+  sig_split hio
+  rename_i oe od oi op oq odp odq oqi os oP oa mn me md mi mp mq mdp mdq mqi ms mP ma ns es ds is ps qs dps dqs
+    qis sP
+  have sa := hio
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact ⟨⟨sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn,
     me, md, mi, mp, mq, mdp, mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp,
     kq, kdp, kdq, kqi, ks, ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, hi, e1, e2, d1, d2, p1,

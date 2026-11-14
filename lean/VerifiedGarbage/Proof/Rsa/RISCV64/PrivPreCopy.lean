@@ -57,9 +57,12 @@ theorem preP_ofP {s : State} (h : (Proof.Rsa.privateCheckedPrecomputedContract R
   sig_pre [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, RISCV64.abi, RISCV64.argRegs, stackArgs_fourteen, List.append_eq, List.range,
     List.range.loop] at h
-  obtain ⟨sp16, sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oP, oa, ns, es, is, ps, qs, dps, dqs,
-    qis, sP, sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, wP,
-    ⟨k1, k2⟩, h1, h7, e1, e2, p1, p2, q1, q2, h5, h9, h7', hs, hpl, hk, al, alP⟩ := h
+  sig_split h
+  rename_i sp16 sp1 sp2 hrd hwr on oe oi op oq odp odq oqi os oP oa ns es is ps qs dps dqs qis sP sa ko kn ke ki
+    kp kq kdp kdq kqi ks kP ka wo wn we wi wp wq wdp wdq wqi ws wP h_k1_k2 h1 h7 e1 e2 p1 p2 q1 q2 h5 h9 h7' hs
+    hpl hk al
+  have alP := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact ⟨⟨sp16, sp1, by omega_using [sp2], hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs,
     qis, sa, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1,
     h7, e1, e2, p1, p2, q1, q2, h5, h9, h7', hs, al⟩, ⟨oP, sP, kP, wP, hpl, sp2, hk, alP⟩⟩

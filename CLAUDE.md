@@ -442,7 +442,8 @@ lemmas and tactics to use; read it before writing a proof:
   not by naming it in `simp`, which copies its `match`'s equation lemmas into
   every module.
 * **Elaboration:** ascribe instruction-list literals next to `++`; use
-  `with_reducible assumption`; import `Proof/Framework/PowLit.lean` for
+  `with_reducible assumption`; split a precondition of many facts with
+  `sig_split` and `rename_i`, not one `obtain`; import `Proof/Framework/PowLit.lean` for
   numeral exponents; prefer simprocs to `simp (config := {decide := true})`
   on expensive facts; put tactic modules that import only core in
   `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`) out of

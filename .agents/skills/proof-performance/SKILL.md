@@ -178,6 +178,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   each failed match; use `with_reducible assumption`, or name the hypothesis
   (`ci/check_lean_speed.py` rejects a bare `assumption` after `<;>` or in
   `first`).
+* **A hypothesis of many facts:** `obtain ⟨a₁, …, a₁₀₀⟩ := h` on a
+  contract's evaluated precondition does a `cases` for every name, each in
+  a context one fact larger: 4 to 12 s for the hundred facts of an RSA
+  contract. `sig_split h` (`Proof/Framework/SigEval.lean`) asserts every
+  conjunct in one step, and `rename_i` names them, in the conjunction's
+  order: 0.3 s. The last conjunct keeps the name `h`; a conjunct that is
+  itself a conjunction gets a name, and its own `obtain` or `sig_split`.
 * **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
   of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral

@@ -64,7 +64,7 @@ theorem entryStart_wp {c : Cx} {s : State} (Ar : Args c s) (hA : Ads c s.mem s) 
           s4 := by rw [K₂.s4, En.s4, Nat.mul_zero, BitVec.add_zero]
           s5 := by rw [K₂.s5, En.s5, Nat.sub_zero]
           frame := f₂
-          acc := by rw [d₂, List.take_zero]; rfl }
+          acc := by rw [d₂, List.take_zero, Spec.Siv.s2vAcc, List.foldl_nil] }
 
 /-- The entry and S2V's first state in two runs. -/
 theorem entryStart_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (A₁ : Args c σ₁) (A₂ : Args c σ₂)

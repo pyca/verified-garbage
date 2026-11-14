@@ -124,9 +124,11 @@ names: the seed has its length. -/
 theorem preO_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encSpec ts).pre s)
     (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) : PreO H.len s := by
   enc_pre at h
-  obtain ⟨sp1, sp2, -, -, -, hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st,
-    sa, ko, kn, ke, kl, km, ksd, ksc, kp, ktl, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wtl, wt, ⟨k1, k2⟩, ok, e1, e2,
-    hs, hp, hl⟩ := h
+  sig_split h
+  rename_i sp1 sp2 _ _ _ hrd hwr on oe ol om osd osc op otl ot oa ns es ls ms sds sp stl st sa ko kn ke kl km
+    ksd ksc kp ktl kt ka wo wn we wl wm wsd wsc wp wtl wt h_k1_k2 ok e1 e2 hs hp
+  have hl := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   have hl := hl H hH
   rw [hl] at hrd osd sds ksd wsd
   exact ⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st, sa,
