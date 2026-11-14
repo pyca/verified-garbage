@@ -3685,7 +3685,7 @@ j 22f
 .insn 2, 0x6129
 .insn 2, 0x8082
 .option pop",
-        vg_miller_rabin_round = sym crate::rsa_keygen::vg_miller_rabin_round::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
         VG_RSA_KEYGEN_TRIAL32 = sym crate::consts::VG_RSA_KEYGEN_TRIAL32,
     )
 }

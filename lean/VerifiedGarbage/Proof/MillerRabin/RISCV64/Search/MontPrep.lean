@@ -26,8 +26,9 @@ As on PPC64LE (`Proof/MillerRabin/PPC64LE/Search/MontPrep.lean`):
 header word 7, `R² mod N` in array 1, `R mod N` in array 9 (by way of array
 6), `N − R mod N` in array 10, and Miller–Rabin's exponent in array 27
 (`expSetup_ok`), `R = 2^(64 w)`, given a computation of `R² mod N` and
-`−N⁻¹` (`R2Ok`); `montPrepHi_ok` with `Precompute.r2` (`r2Inv_ok`), for `N`
-above `2^(64 (w − 1))`.
+`−N⁻¹` (`R2Ok`); `montPrep_ok` with `r2Any` (`128 w` doublings, then
+Newton's iteration, `r2Any_ok`) and `montPrepHi_ok` with `Precompute.r2`
+(`r2Inv_ok`), for `N` above `2^(64 (w − 1))`.
 -/
 
 @[expose] public section
@@ -43,6 +44,76 @@ open VG.Proof.RsaKeyGen (mrE mrA)
 open VG.Impl.Bignum.RISCV64.PublicChecked (base montOp)
 
 /-! ## `R² mod N` and `−N⁻¹` -/
+
+/-- `r2Any`: `x := 2^(128 w) mod N` in array 1 by `128 w` doublings of 1,
+and `t1 := −N⁻¹ mod 2⁶⁴`: for any odd `N ≥ 3` in array 0. -/
+theorem r2Any_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
+    (h2 : s.gpr .a2 = off B (slot w 1)) (h5 : s.gpr .a5 = off B (slot w 2)) (h6 : s.gpr .a6 = off B (slot w 3))
+    (h7 : s.gpr .a7 = off B (slot w 0)) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hw : 2 ≤ w) (hw' : w ≤ 128) (hZ : slot w 8 ≤ Z)
+    (hN3 : 3 ≤ wordsVal s.mem B (slot w 0) w) (hodd : wordsVal s.mem B (slot w 0) w % 2 = 1) :
+    WP isa r2Any s fun t =>
+      (wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % wordsVal s.mem B (slot w 0) w ∧
+        ((word s.mem B (slot w 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0) ∧
+      Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep r2Regs s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
+  have hh : hdrBytes = 256 := rfl
+  have hlow : (word s.mem B (slot w 0)).toNat % 2 = 1 := by
+    rw [fios_wordsVal_pred _ _ _ (show 1 ≤ w by omega)] at hodd
+    omega
+  generalize hNd : wordsVal s.mem B (slot w 0) w = N at hN3 hodd ⊢
+  unfold r2Any
+  -- `x := 1`.
+  have hb3 : WP isa (.block [.addi .t3 .a2 0]) s fun t =>
+      (t.gpr .t3 = off B (slot w 1) ∧ t.mem = s.mem) ∧ Keep [.t3] s t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [h2, BitVec.add_zero]
+  refine WP.seq (WP.mono hb3 fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (zeroWords_ok (hs.congr k1.2.2) a3 ((k1.gpr (by decide)).trans ht0) (by omega) (by omega)
+    (slot_al8 w 1) (by omega)) fun s₂ ⟨⟨_, z2, o2⟩, k2⟩ => ?_)
+  have k12 := k1.trans k2
+  have hs₂ := hs.congr k12.2.2
+  have hst : WP isa (.block [.li .s0 1, .store .d .s0 .a2 0, .shift .sll .d .a1 .t0 7]) s₂ fun t =>
+      (t.mem = s₂.mem.writeW (off B (slot w 1)) (1 : BitVec 64) ∧ t.gpr .a1 = BitVec.ofNat 64 (128 * w)) ∧ Keep [.s0, .a1] s₂ t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [exec_li (show imm12 1 by decide), (k12.gpr (by decide)).trans h2, (k12.gpr (by decide)).trans ht0,
+      hs₂.st (show slot w 1 + 8 ≤ Z by omega), hs₂.al8 (show slot w 1 + 8 ≤ Z by omega) (slot_al8 w 1),
+      BitVec.add_zero]
+    refine ⟨rfl, ?_⟩
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+    omega
+  refine WP.seq (WP.mono hst fun s₃ ⟨⟨m3, a1⟩, k3⟩ => ?_)
+  have k13 := k12.trans k3
+  have hw1 : Outside B (slot w 1) 8 s₂.mem s₃.mem := by rw [m3]; exact writeW_outside _ _ _ (by omega)
+  have o13 : Outside B (slot w 1) (24 * (w + 2)) s.mem s₃.mem := by
+    rw [← m1]; exact (o2.mono (o' := slot w 1) (n' := 24 * (w + 2)) (Nat.le_refl _) (by omega)).trans
+      (hw1.mono (o' := slot w 1) (n' := 24 * (w + 2)) (Nat.le_refl _) (by omega))
+  have n3 : wordsVal s₃.mem B (slot w 0) w = N := by rw [Outside.wordsVal o13 (by omega) (by omega), hNd]
+  have w3 : word s₃.mem B (slot w 0) = word s.mem B (slot w 0) := Outside.word o13 (by omega) (by omega)
+  have x3 : wordsVal s₃.mem B (slot w 1) w = 2 ^ 0 % N := by
+    rw [Nat.pow_zero, Nat.mod_eq_of_lt (by omega), fios_wordsVal_pred _ _ _ (show 1 ≤ w by omega), m3,
+      word_writeW_self, Outside.wordsVal (writeW_outside s₂.mem B (d := slot w 1) (1 : BitVec 64) (by omega))
+        (d := slot w 1 + 8) (k := w - 1) (Or.inr (Nat.le_refl _)) (by omega)]
+    have hz : wordsVal s₂.mem B (slot w 1 + 8) (w - 1) = 0 := by
+      refine Pub.wsv_zero fun i hi => ?_
+      rw [show slot w 1 + 8 + 8 * i = slot w 1 + 8 * (i + 1) by omega]; exact z2 (i + 1) (by omega)
+    rw [hz]; rfl
+  -- The doublings.
+  have hs₃ := hs.congr k13.2.2
+  refine WP.seq (WP.mono (r2Dbl_ok hs₃ ((k13.gpr (by decide)).trans h5) ((k13.gpr (by decide)).trans h6)
+    ((k13.gpr (by decide)).trans h7) ((k13.gpr (by decide)).trans h2) ((k13.gpr (by decide)).trans ht0) (by omega)
+    (by omega) (by omega) n3 (by omega) x3 a1 (by omega) (by omega)) fun s₄ ⟨x4, o4, k4⟩ => ?_)
+  have k14 := k13.trans k4
+  have o14 := o13.trans o4
+  have w4 : word s₄.mem B (slot w 0) = word s.mem B (slot w 0) := Outside.word o14 (by omega) (by omega)
+  -- `−N⁻¹`.
+  refine WP.mono (minv_ok (hs.congr k14.2.2) ((k14.gpr (by decide)).trans h7) (slot_al8 w 0) (by omega)
+    (by rw [w4]; exact hlow)) fun t ⟨⟨it, mt⟩, kt⟩ => ⟨⟨?_, by rw [← w4]; exact it⟩, by rw [mt]; exact o14,
+      (k14.trans kt).mono (by decide)⟩
+  rw [mt, x4, Nat.zero_add]
 
 /-- `Precompute.r2`, with `−N⁻¹` in `t1`: `r2_ok`, which keeps the inverse
 `minv` leaves through the squares. -/
@@ -85,11 +156,11 @@ theorem r2Inv_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
 
 /-! ## `montPrepWith` -/
 
-/-- What `montPrepWith` changes: header word 7, arrays 1–3, 6–7, 9–10 and 27. -/
+/-- What `montPrep` changes: header word 7, arrays 1–3, 6–7, 9–10 and 27. -/
 def mpRanges (w : Nat) : List (Nat × Nat) :=
   [(56, 8), (slot w 1, 24 * (w + 2)), (slot w 6, 16 * (w + 2)), (slot w 9, 16 * (w + 2)), (slot w aE, 8 * (w + 2))]
 
-/-- The registers `montPrepWith` writes. -/
+/-- The registers `montPrep` writes. -/
 def mpRegs : List Reg :=
   [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
 
@@ -103,6 +174,16 @@ def R2Ok (r2c : Prog isa) (P : Nat → Nat → Prop) : Prop :=
     WP isa r2c s fun t => (A t.mem B w 1 = 2 ^ (128 * w) % N ∧
       ((word s.mem B (slot w 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0) ∧
       Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep r2Regs s t
+
+theorem r2Any_r2Ok : R2Ok r2Any fun _ _ => True := by
+  intro s B Z w N h h2 h5 h6 hN hodd hN3 _
+  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have hZ := h.hZ
+  have hw := h.hw
+  refine WP.mono (r2Any_ok h.hs h2 h5 h6 h.a7 h.t0 (by omega) h.hw' (by simp only [es] at hZ ⊢; omega)
+    (by rw [show wordsVal s.mem B (slot w 0) w = A s.mem B w 0 from rfl, hN]; exact hN3)
+    (by rw [show wordsVal s.mem B (slot w 0) w = A s.mem B w 0 from rfl, hN]; exact hodd))
+    fun t ⟨⟨r, i⟩, o, k⟩ => ⟨⟨by rw [A, r, show wordsVal s.mem B (slot w 0) w = A s.mem B w 0 from rfl, hN], i⟩, o, k⟩
 
 theorem r2_r2Ok : R2Ok Impl.Bignum.RISCV64.Precompute.r2 fun w N => 2 ^ (64 * (w - 1)) < N := by
   intro s B Z w N h h2 h5 h6 hN hodd _ hNt
@@ -330,7 +411,19 @@ theorem montPrepWith_ok {r2c : Prog isa} {P : Nat → Nat → Prop} (hr2 : R2Ok 
   · exact ((((((((k03.trans k₄).trans k₅).trans k₆).trans k₇).trans k811).trans k₁₂).trans
       ((k₁₃.trans k₁₄).trans kE))).mono (by decide)
 
-/-- `montPrepWith_ok` for `montPrepHi`, for `N` above `2^(64 (w − 1))`. -/
+theorem montPrep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn : A s.mem B w 0 = N)
+    (hodd : N % 2 = 1) (hN3 : 3 ≤ N) :
+    WP isa montPrep s fun t =>
+      (Env t B Z w ∧ A t.mem B w 0 = N ∧
+        ((word t.mem B (slot w 0)).toNat * (word t.mem B 56).toNat + 1) % 2 ^ 64 = 0 ∧
+        ((word t.mem B (slot w 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0 ∧
+        A t.mem B w 1 = 2 ^ (64 * w) * 2 ^ (64 * w) % N ∧ A t.mem B w 9 = 2 ^ (64 * w) % N ∧
+        A t.mem B w 10 = N - 2 ^ (64 * w) % N ∧ A t.mem B w aE = mrE N ∧
+        t.mem.readW (off B (slot w aE + 8 * w)) 64 = BitVec.twoPow 64 (mrA N % 64) ∧
+        Outs B (mpRanges w) s.mem t.mem) ∧ Keep mpRegs s t :=
+  montPrepWith_ok r2Any_r2Ok h hn hodd hN3 trivial
+
+/-- `montPrep_ok` for `montPrepHi`, for `N` above `2^(64 (w − 1))`. -/
 theorem montPrepHi_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn : A s.mem B w 0 = N)
     (hodd : N % 2 = 1) (hN3 : 3 ≤ N) (hNt : 2 ^ (64 * (w - 1)) < N) :
     WP isa montPrepHi s fun t =>
