@@ -49,6 +49,7 @@ def ifma : BlocksImpl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_ifma"
   features := Impl.Poly1305.X86_64.Blocks.features .ifma
+  update := some ifmaUpdate
 
 end BlocksImpl
 
