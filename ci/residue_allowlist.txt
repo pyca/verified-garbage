@@ -72,11 +72,8 @@ x86_64 vg_aes_gcm_stream_finish
 x86_64 vg_aes_gcm_stream_finish_pclmul
 x86_64 vg_aes_gcm_stream_verify
 x86_64 vg_aes_gcm_stream_verify_pclmul
-x86_64 vg_aes_ocb_init
-x86_64 vg_aes_ocb_open
 x86_64 vg_aes_ocb_open_aesni
 x86_64 vg_aes_ocb_open_vaes
-x86_64 vg_aes_ocb_seal
 x86_64 vg_aes_ocb_seal_aesni
 x86_64 vg_aes_ocb_seal_vaes
 x86_64 vg_aes_siv_decrypt_aesni
