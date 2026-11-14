@@ -29,7 +29,7 @@ abbrev cbA (W : Addr) : Addr := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48
 abbrev yA (W : Addr) : Addr := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16
 
 section
-variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {M : Gcm.X86_64.Stitch.CtxMode}
+variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {M : Gcm.X86_64.Stitch.CtxMode} {NB : Nat}
 include L
 
 /-- The length kept, apart from what the call reads. -/
@@ -74,11 +74,11 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
     (hframe : ∀ s₂, ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s₂ fun s₄ =>
         (∀ r ∈ calleeSaved, s₄.gpr r = s₂.gpr r) ∧ s₄.rd = s₂.rd ∧ s₄.wr = s₂.wr ∧
-        Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s₂.mem s₄.mem ∧ Out s₂ s₄)
+        Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16) NB) s₂.mem s₄.mem ∧ Out s₂ s₄)
     (h0 : n / 16 = 0 → ∀ s₁, s₁.mem = s.mem.writeW (W + BitVec.ofNat 64 192) (BitVec.ofNat 64 n) → Out s s₁)
     (hout : ∀ s₂ s₄ s₅, s₂.mem = s.mem.writeW (W + BitVec.ofNat 64 192) (BitVec.ofNat 64 n) → Out s₂ s₄ →
-      Frame [⟨W + BitVec.ofNat 64 200, 16⟩] s₄.mem s₅.mem → Out s s₅) :
-    WP isa (oneBlocks f) s fun s' => ObPost Ctx W SP D n s s' ∧ Out s s' := by
+      Frame [⟨W + BitVec.ofNat 64 200, 16⟩] s₄.mem s₅.mem → Out s s₅) (hNB : 448 + NB ≤ 2560 := by decide) :
+    WP isa (oneBlocks f) s fun s' => ObPost Ctx W SP D n s s' NB ∧ Out s s' := by
   have hn : n < 2 ^ 64 := h.data.ok.lt
   have he := h.env
   obtain ⟨e176, e200, e208, -, -, -, -, -, f192⟩ := w192_eqs L h (BitVec.ofNat 64 n)
@@ -87,7 +87,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
   have t₁ : s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 n := by rw [m₁, Mem.readW_writeW_self64]
-  have hf₁ : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s₁.mem := by
+  have hf₁ : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16) NB) s.mem s₁.mem := by
     rw [m₁]; exact f192.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..
   refine WP.ite (decide (n / 16 = 0)) (by simp only [eval, z₁]) (fun hz => ?_) (fun hz => ?_)
   · simp only [decide_eq_true_eq] at hz
@@ -112,7 +112,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
       rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₄ wr₄
     have kp : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
         s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
-      rw [fr₄.readW (Region.contains_self _ _) (ob_slots L h.data.ok.w (by omega) h.t_w h₁ h₂) (by decide), m₂]
+      rw [fr₄.readW (Region.contains_self _ _) (ob_slots L h.data.ok.w (by omega) h.t_w h₁ h₂ hNB) (by decide), m₂]
     have hd₄ : s₄.mem.readW (W + BitVec.ofNat 64 200) 64 = D := by rw [kp 200 (by decide) (by decide), hd₁]
     have hl₄ : s₄.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n := by
       rw [kp 208 (by decide) (by decide), m₁, e208, h.len]
@@ -164,10 +164,11 @@ theorem ob_after {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W S
     blockAt_frame hf (one (by simp only [cbA, yA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide)))⟩
 
 /-- `oneBlocks` of the encrypting function. -/
-theorem oneBlocksE_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) :
-    WP isa (oneBlocks B.enc) s fun s' => ObPost Ctx W SP D n s s' ∧ OutE Ctx W R D (n / 16) s s' := by
+theorem oneBlocksE_ok (B : BlkFn M NB) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s)
+    (hNB : 448 + NB ≤ 2560 := by decide) :
+    WP isa (oneBlocks B.enc) s fun s' => ObPost Ctx W SP D n s s' NB ∧ OutE Ctx W R D (n / 16) s s' := by
   obtain ⟨-, -, -, eK, eC, eY, eB, eH, -⟩ := w192_eqs L h (BitVec.ofNat 64 n)
-  refine oneBlocks_core L _ h (fun s₂ hi => obFrameE_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
+  refine oneBlocks_core L _ h (fun s₂ hi => obFrameE_ok L B hi hNB) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_) hNB
   · rw [OutE, hz, m₁, eC, eY]; exact ⟨rfl, rfl, rfl⟩
   · obtain ⟨a₁, a₂, a₃⟩ := ob_after L h f
     obtain ⟨o₁, o₂, o₃⟩ := o
@@ -175,10 +176,11 @@ theorem oneBlocksE_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (
     exact ⟨a₁.trans o₁, a₂.trans o₂, by rw [a₃, a₁]; exact o₃⟩
 
 /-- `oneBlocks` of the decrypting function. -/
-theorem oneBlocksD_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) :
-    WP isa (oneBlocks B.dec) s fun s' => ObPost Ctx W SP D n s s' ∧ OutD Ctx W R D (n / 16) s s' := by
+theorem oneBlocksD_ok (B : BlkFn M NB) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s)
+    (hNB : 448 + NB ≤ 2560 := by decide) :
+    WP isa (oneBlocks B.dec) s fun s' => ObPost Ctx W SP D n s s' NB ∧ OutD Ctx W R D (n / 16) s s' := by
   obtain ⟨-, -, -, eK, eC, eY, eB, eH, -⟩ := w192_eqs L h (BitVec.ofNat 64 n)
-  refine oneBlocks_core L _ h (fun s₂ hi => obFrameD_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
+  refine oneBlocks_core L _ h (fun s₂ hi => obFrameD_ok L B hi hNB) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_) hNB
   · rw [OutD, hz, m₁, eC, eY]; exact ⟨rfl, rfl, rfl⟩
   · obtain ⟨a₁, a₂, a₃⟩ := ob_after L h f
     obtain ⟨o₁, o₂, o₃⟩ := o

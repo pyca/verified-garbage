@@ -178,7 +178,7 @@ theorem ofOpen {s : State} (hp : Proof.AesGcm.openPre M.len s) (hok : M.ok s.mem
 end CtxExt
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {NB : Nat}
 include L
 
 /-- What the frame of the call needs. -/
@@ -202,14 +202,15 @@ structure ObIn (M : CtxMode) (Ctx St W SP : Addr) (R : Nat) (D : Addr) (n q : Na
   ext : CtxExt M Ctx St W SP D n s
 
 /-- The regions the call writes. -/
-abbrev obFrame (St W SP D : Addr) (q : Nat) : List Region :=
+abbrev obFrame (St W SP D : Addr) (q : Nat) (NB : Nat := 2112) : List Region :=
   [⟨St + BitVec.ofNat 64 48, 16⟩, ⟨St + BitVec.ofNat 64 16, 16⟩,
-    ⟨D, q * 16⟩, ⟨W + BitVec.ofNat 64 448, 2112⟩, below SP 24]
+    ⟨D, q * 16⟩, ⟨W + BitVec.ofNat 64 448, NB⟩, below SP 24]
 
 /-- The call, from the frame's push. -/
-theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
+theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s)
+    (hNB : 448 + NB ≤ 2560 := by decide) :
     BlkCall M (pushed [.rax] s) Ctx (St + BitVec.ofNat 64 48)
-      (St + BitVec.ofNat 64 16) D (W + BitVec.ofNat 64 448) R q := by
+      (St + BitVec.ofNat 64 16) D (W + BitVec.ofNat 64 448) R q NB := by
   have hsp := h.env.rsp
   have psp : (pushed [.rax] s).gpr .rsp = SP - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
   have e24 : SP - BitVec.ofNat 64 8 - 16 = SP - BitVec.ofNat 64 24 := by rw [← Offset.sub_add_eq]; rfl
@@ -222,7 +223,7 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
   have hw := h.data.ok.wrap
   have hq := h.q_le
   have qd : Region.Sub ⟨D, q * 16⟩ ⟨D, n⟩ := Region.sub_prefix (by omega_arith)
-  have sS : Region.Sub ⟨W + BitVec.ofNat 64 448, 2112⟩ ⟨W, 2560⟩ := Lay.wSub (by decide)
+  have sS : Region.Sub ⟨W + BitVec.ofNat 64 448, NB⟩ ⟨W, 2560⟩ := Lay.wSub (by omega)
   have sC : Region.Sub ⟨St + BitVec.ofNat 64 48, 16⟩ ⟨St, 80⟩ := Lay.stSub (by decide)
   have sY : Region.Sub ⟨St + BitVec.ofNat 64 16, 16⟩ ⟨St, 80⟩ := Lay.stSub (by decide)
   have tS : Region.Sub ⟨(pushed [.rax] s).gpr .rsp - 16, 24⟩ (below SP 24) := by
@@ -237,9 +238,9 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
     by rw [psp]; exact harg, h.rounds, h.ext.w, ?_, ?_, by omega_arith, by rw [toN 448 (by decide)]; omega_arith, ?_,
     h.ext.cs.sub_right sC, h.ext.cs.sub_right sY, h.ext.cd.sub_right qd, h.ext.cw.sub_right sS,
     L.st_st (.inr (by decide)) (by decide) (by decide), (h.data.ok.st.sub_right (Lay.stSub (by decide))).symm.sub_right qd,
-    L.st_w (by decide) (.inr ⟨by decide, by decide⟩),
+    L.st_w (by omega) (.inr ⟨by omega, by omega⟩),
     (h.data.ok.st.sub_right (Lay.stSub (by decide))).symm.sub_right qd,
-    L.st_w (by decide) (.inr ⟨by decide, by decide⟩), (h.data.ok.w.sub_left qd).sub_right sS,
+    L.st_w (by omega) (.inr ⟨by omega, by omega⟩), (h.data.ok.w.sub_left qd).sub_right sS,
     h.ext.ct.sub_left tS, (h.t_s.sub_left tS).sub_right sC, (h.t_s.sub_left tS).sub_right sY,
     (h.t_d.sub_left tS).sub_right qd, (h.t_w.sub_left tS).sub_right sS, ?_, ?_, ?_⟩
   · rw [toS 48 (by decide)]; omega_arith
@@ -260,14 +261,14 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
     · exact h.env.perm.stC (by decide)
     · exact h.env.perm.stC (by decide)
     · exact Blocks.covers_prefix h.data.wr (by omega_arith)
-    · exact h.env.perm.wC (by decide)
+    · exact h.env.perm.wC (by omega)
   · simp only [pushed_wr, hsp]
     refine Covers.trans ?_ (covers_cons_r _ (Covers.refl _))
     refine covers_cons ?_ (covers_cons ?_ (covers_cons ?_ ?_))
     · exact h.env.perm.stC (by decide)
     · exact h.env.perm.stC (by decide)
     · exact Blocks.covers_prefix h.data.wr (by omega_arith)
-    · exact h.env.perm.wC (by decide)
+    · exact h.env.perm.wC (by omega)
   · have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
     obtain ⟨hf, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
     rw [hsp] at hf
@@ -277,7 +278,7 @@ theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h 
 
 /-- What the frame's push writes is apart from what the call reads. -/
 theorem ObIn.push_eqs {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
-    Frame (obFrame St W SP D q) s.mem (pushed [.rax] s).mem ∧
+    Frame (obFrame St W SP D q NB) s.mem (pushed [.rax] s).mem ∧
     bytesAt (pushed [.rax] s).mem Ctx (16 * (R + 1)) = bytesAt s.mem Ctx (16 * (R + 1)) ∧
     blockAt (pushed [.rax] s).mem (St + BitVec.ofNat 64 48) =
       blockAt s.mem (St + BitVec.ofNat 64 48) ∧
@@ -306,10 +307,10 @@ theorem ObIn.push_eqs {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State}
 /-- The registers, permissions and memory after the frame of a call. -/
 theorem ObIn.popped {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s s₃ : State} (h : ObIn M Ctx St W SP R D n q s)
     (bp : BlkPost (pushed [.rax] s) (St + BitVec.ofNat 64 48)
-      (St + BitVec.ofNat 64 16) D (W + BitVec.ofNat 64 448) q s₃) :
+      (St + BitVec.ofNat 64 16) D (W + BitVec.ofNat 64 448) q s₃ NB) :
     s₃.gpr .rsp = (pushed [.rax] s).gpr .rsp ∧ s₃.wr = (pushed [.rax] s).wr ∧
     (∀ r ∈ calleeSaved, (popped .rax 1 s₃).gpr r = s.gpr r) ∧ (popped .rax 1 s₃).rd = s.rd ∧
-    (popped .rax 1 s₃).wr = s.wr ∧ Frame (obFrame St W SP D q) s.mem (popped .rax 1 s₃).mem := by
+    (popped .rax 1 s₃).wr = s.wr ∧ Frame (obFrame St W SP D q NB) s.mem (popped .rax 1 s₃).mem := by
   have hsp := h.env.rsp
   have psp : (pushed [.rax] s).gpr .rsp = SP - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
   have r₃ := bp.saved _ (by decide : Reg.rsp ∈ calleeSaved)
@@ -318,7 +319,7 @@ theorem ObIn.popped {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s s₃ : Sta
     · subst hr'; rw [popped_rsp, r₃, psp, hsp]; exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), bp.saved r hr, pushed_gpr _ _ hr']
   · rw [popped_mem]
-    refine (ObIn.push_eqs L h).1.trans (bp.frame.sub fun r hr => ?_)
+    refine (ObIn.push_eqs L h (NB := NB)).1.trans (bp.frame.sub fun r hr => ?_)
     simp only [BlkCall.wr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ⟨_, by simp [obFrame], fun _ h => h⟩
@@ -332,10 +333,11 @@ theorem ObIn.popped {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s s₃ : Sta
       rw [psp, e]; exact Region.sub_prefix (by decide)
 
 /-- The frame of the call of `vg_aes_gcm_encrypt_blocks`. -/
-theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
+theorem obFrameE_ok {M : CtxMode} (B : BlkFn M NB) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s)
+    (hNB : 448 + NB ≤ 2560 := by decide) :
     WP isa (.frame (.push [.rax]) (.call B.enc.name B.enc.code) (.pop .rax 1)) s fun s₄ =>
       (∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r) ∧ s₄.rd = s.rd ∧ s₄.wr = s.wr ∧
-      Frame (obFrame St W SP D q) s.mem s₄.mem ∧
+      Frame (obFrame St W SP D q NB) s.mem s₄.mem ∧
       blocksAt s₄.mem D q = ctr32 (aesWith R (bytesAt s.mem Ctx (16 * (R + 1))))
         (blockAt s.mem (St + BitVec.ofNat 64 48)) (blocksAt s.mem D q) ∧
       blockAt s₄.mem (St + BitVec.ofNat 64 48) =
@@ -344,8 +346,8 @@ theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
         (blockAt s.mem (St + BitVec.ofNat 64 16)) (blocksAt s₄.mem D q) := by
   have hsp := h.env.rsp
   have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
-  obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h (NB := NB)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h hNB)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂
@@ -354,10 +356,11 @@ theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
     by rw [popped_mem]; exact o₃⟩
 
 /-- The frame of the call of `vg_aes_gcm_decrypt_blocks`. -/
-theorem obFrameD_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
+theorem obFrameD_ok {M : CtxMode} (B : BlkFn M NB) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s)
+    (hNB : 448 + NB ≤ 2560 := by decide) :
     WP isa (.frame (.push [.rax]) (.call B.dec.name B.dec.code) (.pop .rax 1)) s fun s₄ =>
       (∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r) ∧ s₄.rd = s.rd ∧ s₄.wr = s.wr ∧
-      Frame (obFrame St W SP D q) s.mem s₄.mem ∧
+      Frame (obFrame St W SP D q NB) s.mem s₄.mem ∧
       blocksAt s₄.mem D q = ctr32 (aesWith R (bytesAt s.mem Ctx (16 * (R + 1))))
         (blockAt s.mem (St + BitVec.ofNat 64 48)) (blocksAt s.mem D q) ∧
       blockAt s₄.mem (St + BitVec.ofNat 64 48) =
@@ -366,8 +369,8 @@ theorem obFrameD_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat}
         (blockAt s.mem (St + BitVec.ofNat 64 16)) (blocksAt s.mem D q) := by
   have hsp := h.env.rsp
   have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega_arith
-  obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h (NB := NB)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h hNB)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂
@@ -396,26 +399,27 @@ structure ObPre (M : CtxMode) (Ctx W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (
 
 /-- What `oneBlocks` leaves, but its result: the data left kept, and the
 regions written. -/
-structure ObPost (Ctx W SP : Addr) (D : Addr) (n : Nat) (s s' : State) : Prop where
+structure ObPost (Ctx W SP : Addr) (D : Addr) (n : Nat) (s s' : State) (NB : Nat := 2112) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s'
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  frame : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s'.mem
+  frame : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16) NB) s.mem s'.mem
   tlen : s'.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 n
   dat : s'.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 (16 * (n / 16))
   len : s'.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (n % 16)
 
 /-- The slots of `W` that `oneBlocks` reads are apart from what its call writes. -/
 theorem ob_slots {D : Addr} {n q : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hq : q * 16 ≤ n)
-    (t_w : (below SP 24).Disjoint ⟨W, 2560⟩) {d : Nat} (h₁ : 176 ≤ d) (h₂ : d + 8 ≤ 240) :
-    ∀ r ∈ obFrame (W + BitVec.ofNat 64 16) W SP D q, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
+    (t_w : (below SP 24).Disjoint ⟨W, 2560⟩) {d : Nat} (h₁ : 176 ≤ d) (h₂ : d + 8 ≤ 240) {NB : Nat}
+    (hNB : 448 + NB ≤ 2560 := by decide) :
+    ∀ r ∈ obFrame (W + BitVec.ofNat 64 16) W SP D q NB, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   intro r hr
   simp only [obFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
   · rw [add_ofNat_assoc]; exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
   · exact (hD.sub_left (Region.sub_prefix hq)).symm.sub_left (Lay.wSub (by omega_arith)) |>.symm |> fun h => h.symm
-  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by omega)
   · exact (t_w.sub_right (Lay.wSub (by omega_arith))).symm
 
 end
