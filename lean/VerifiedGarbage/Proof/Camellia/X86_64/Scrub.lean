@@ -16,6 +16,8 @@ public import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbFinalVerified
 public import VerifiedGarbage.Proof.Camellia.X86_64.CtrVerified
+public import VerifiedGarbage.Proof.Camellia.X86_64.CtrFinal
+public import VerifiedGarbage.Spec.Camellia.CtrFinal
 import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Camellia.CbcScratch
 import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -41,6 +43,8 @@ meta import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 meta import VerifiedGarbage.Proof.Camellia.X86_64.FbFinalVerified
 meta import VerifiedGarbage.Proof.Camellia.X86_64.CtrVerified
+meta import VerifiedGarbage.Proof.Camellia.X86_64.CtrFinal
+meta import VerifiedGarbage.Spec.Camellia.CtrFinal
 meta import VerifiedGarbage.Proof.Camellia.Scratch
 meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 meta import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -62,9 +66,12 @@ memory on return only within the buffers (`X86_64.Scrub.PostOut`), as the
 frames that keep their working space on the stack already show
 (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
-`vg_camellia_ctr_final` is not here: its analysis does not succeed. It
-calls `vg_camellia_ctr`'s code as the internal `vg_camellia_ctr_core`
-(`Impl.Camellia.X86_64.ctrFramed`).
+`vg_camellia_ctr_final`, whose analysis does not succeed, is followed by
+`Impl.Scrub.X86_64.scrub` with every granule of its stack wiped
+(`X86_64.Scrub.withScrubAll`): it calls `vg_camellia_ctr`'s code as the
+internal `vg_camellia_ctr_core` (`Impl.Camellia.X86_64.ctrFramed`), which
+restores the callee-saved registers from slots of its frame the analysis
+loses track of.
 -/
 
 @[expose] public section
@@ -230,6 +237,18 @@ theorem ctrOut (stack : Nat) : PostOut (ctrContract X86_64.abi stack) (ctrSig.re
       show ∀ key, KeySchedule m sch _ key → Spec.Cbc.blocksAt m₂ dt _ = _ ∧ Spec.Aes.bytesAt m₂ ct 16 = _
       intro key hk
       rw [cbcBlocksAt_of hb.2.2 (len_le ln 16), aesBytesAt_of (n := 16) hb.2.1 (Nat.le_refl _)]
+      exact h key hk
+
+theorem ctrFinalOut (stack : Nat) :
+    PostOut (ctrFinalContract X86_64.abi stack) (ctrFinalSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, ct, dt, ln], _ =>
+      simp only [ctrFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq] at hb
+      show ∀ key, KeySchedule m sch _ key → Spec.Aes.bytesAt m₂ dt _ = _ ∧ Spec.Aes.bytesAt m₂ ct 16 = _
+      intro key hk
+      rw [aesBytesAt_of hb.2.2 (len_le1 ln), aesBytesAt_of (n := 16) hb.2.1 (Nat.le_refl _)]
       exact h key hk
 
 /-! ## The registrations -/
@@ -462,5 +481,11 @@ def ctrReg : Registration Spec.Camellia.ctrApi X86_64.target :=
     stack := 3288
     verified := Proof.Camellia.X86_64.ctr_framed } (ctrOut _) [] (pubOk_nil _) (some ⟨ctrKs, ctrOk⟩)
 
-end VG.Proof.Camellia.X86_64.Scrub
+/-- `vg_camellia_ctr_final`, its whole stack wiped on return. -/
+def ctrFinalReg : Registration Spec.Camellia.ctrFinalApi X86_64.target :=
+  withScrubAll {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 72 .r9 8 Impl.Camellia.X86_64.ctrFinal
+    stack := 3368
+    verified := Proof.Camellia.X86_64.ctrFinal_framed } (ctrFinalOut _)
 
+end VG.Proof.Camellia.X86_64.Scrub
