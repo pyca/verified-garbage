@@ -8,16 +8,21 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealLeaves
 
 /-!
-# AES-GCM on x86-64: what the VAES blocks functions leave in `scratch`
+# AES-GCM on x86-64: what the VAES functions leave in their working space
 
 Untrusted: everything here is checked by Lean. The two
 `vg_aes_gcm_encrypt_blocks` that `vg_aes_gcm_seal_prepared_vaes_vpclmul`
 calls, for the key context of `vg_aes_gcm_init` (`GcmImpl.blkB`) and for one
 of `vg_aes_gcm_prepare16` (`blkR16`), leave in their `scratch` a function of
 their arguments (`BlkLeaves`): the arguments kept in its first 48 bytes
-(`keptW`), zeros where their loops wrote, and elsewhere what was there.
+(`keptW`), zeros where their loops wrote, and elsewhere what was there. So
+the two codes of `vg_aes_gcm_seal_prepared_vaes_vpclmul` (`sealCodeF16`)
+leave in `work` from byte 96 on a function of their argument registers and
+stack arguments (`sealP16_vaes_leaves`, `seal_vaes_leaves`, from
+`seal_leaves`).
 -/
 
 @[expose] public section
@@ -133,5 +138,43 @@ theorem blkR16_vaes_leaves : BlkLeaves (blkR16 VG.Proof.Variants.AesGcm.X86_64.V
         (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.free.get rfl) _
         (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.free.get rfl) (ℓ := 512) (by decide)
         fun s₃ h₃ => stitchR_pieceL h₃
+
+/-! ## `vg_aes_gcm_seal_prepared_vaes_vpclmul` -/
+
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+/-- The code of `vg_aes_gcm_seal_prepared_vaes_vpclmul` for a key context of
+`vg_aes_gcm_prepare16` (inside `withStackArgScratch 2600 3` in
+`sealCodeF16`): what it leaves in `work` (`[rsp + 32]`) from byte 96 on is a
+function of its argument registers and stack arguments (`sealL`). -/
+theorem sealP16_vaes_leaves :
+    ∃ L : (Reg → BitVec 64) → (Nat → BitVec 64) → Addr → Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.sealX86_64M Gcm.X86_64.Stitch.CtxMode.prepared16).pre s →
+        Exec isa (variant.impl.sealCodeP (variant.impl.withBlk (blkR16 variant))) s t s' →
+        ∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
+          s'.mem x = (L s.gpr (fun i => stackArg s i) x).getD (s.mem x) := by
+  have hs : variant.impl.short = false := rfl
+  have hf : variant.impl.fin = false := rfl
+  unfold GcmImpl.sealCodeP
+  simp only [hs, hf, Bool.false_eq_true, ↓reduceIte]
+  exact seal_leaves _ (blkR16 variant) blkR16_vaes_leaves (variant.impl.gh.free.get rfl)
+    (variant.impl.ctr.free.get rfl)
+
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+/-- The code of `vg_aes_gcm_seal_prepared_vaes_vpclmul` for the key context of
+`vg_aes_gcm_init` (inside `withStackArgScratch 2600 3` in `sealCodeF16`):
+what it leaves in `work` (`[rsp + 32]`) from byte 96 on is a function of its
+argument registers and stack arguments (`sealL`). -/
+theorem seal_vaes_leaves :
+    ∃ L : (Reg → BitVec 64) → (Nat → BitVec 64) → Addr → Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.sealX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+        Exec isa (variant.impl.sealCode variant.impl.callees) s t s' →
+        ∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
+          s'.mem x = (L s.gpr (fun i => stackArg s i) x).getD (s.mem x) := by
+  have hs : variant.impl.short = false := rfl
+  have hf : variant.impl.fin = false := rfl
+  unfold GcmImpl.sealCode
+  simp only [hs, hf, Bool.false_eq_true, ↓reduceIte]
+  exact seal_leaves _ variant.impl.blkB blkB_vaes_leaves (variant.impl.gh.free.get rfl)
+    (variant.impl.ctr.free.get rfl)
 
 end VG.Proof.AesGcm.X86_64

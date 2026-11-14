@@ -341,14 +341,16 @@ theorem be64Store_ok (s : State) (r : Reg) (_hr : r ≠ .rax) (o : Nat) (ho : o 
   · intro r' hr'; simp [gpr_setReg, hr']
   all_goals rfl
 
-/-- The lengths block of `rbx` and `rbp` bytes, absorbed. -/
-theorem lens_ok {H : Block} {s : State} (he : Env Ctx St W SP s N)
+/-- The lengths block of `rbx` and `rbp` bytes, absorbed, and left in `T`. -/
+theorem lens_okL {H : Block} {s : State} (he : Env Ctx St W SP s N)
     (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) :
-    WP isa (lens v.callees yo) s fun s' => Env Ctx St W SP s' N ∧
+    WP isa (lens v.callees yo) s fun s' => (Env Ctx St W SP s' N ∧
       blockAt s'.mem (Ctx + BitVec.ofNat 64 240) = H ∧
       blockAt s'.mem (St + BitVec.ofNat 64 yo) = ghashFrom H (blockAt s.mem (St + BitVec.ofNat 64 yo))
         [Spec.Gcm.ofBytes (lensBlock (s.gpr .rbx).toNat (s.gpr .rbp).toNat)] ∧
-      Frame (tFrame St W SP yo gs) s.mem s'.mem := by
+      Frame (tFrame St W SP yo gs) s.mem s'.mem) ∧
+      s'.mem.readW (W + BitVec.ofNat 64 96) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbx).toNat)) ∧
+      s'.mem.readW (W + BitVec.ofNat 64 104) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbp).toNat)) := by
   obtain ⟨s₁, run₁, hm₁, hg₁, hrd₁, hwr₁⟩ := be64Store_ok s .rbx (by decide) tO L.le he.r15 he.perm.w L.nlt
   have he₁ : Env Ctx St W SP s₁ N := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -375,7 +377,22 @@ theorem lens_ok {H : Block} {s : State} (he : Env Ctx St W SP s N)
   refine WP.mono (ghash1_ok v L hyo he₂ .r15 96 (.inr rfl) (P := W + BitVec.ofNat 64 96) (by rw [he₂.r15])
     (by decide) (L.st_w (by omega_arith) (.inr ⟨by decide, L.le⟩)) (L.w_gh G.fit (by decide) L.le)
     (L.stk_w L.le) (covers_left (he₂.perm.wC L.le L.nlt))) fun s₃ g => ?_
-  refine ⟨g.env he₂, ?_, ?_, ?_⟩
+  have dT : ∀ d, 96 ≤ d → d + 8 ≤ 112 → ∀ r ∈ [⟨St + BitVec.ofNat 64 yo, 16⟩, ⟨W + BitVec.ofNat 64 512, gs⟩,
+      below SP 8], (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (L.st_w (by omega_arith) (.inr ⟨h₁, L.le (by omega_arith)⟩)).symm
+    · exact L.w_gh G.fit (by omega_arith) (L.le (by omega_arith))
+    · exact (L.stk_w (L.le (by omega_arith))).symm
+  have e104 : W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 = W + BitVec.ofNat 64 104 := add_ofNat_assoc ..
+  refine ⟨⟨g.env he₂, ?_, ?_, ?_⟩, ?_, ?_⟩
+  rotate_left 3
+  · have hsep : Mem.Sep (W + BitVec.ofNat 64 96) (64 / 8) (W + BitVec.ofNat 64 104) (64 / 8) :=
+      Offset.sep _ (.inl (by decide)) (by decide) (by decide)
+    rw [g.frame.readW (Region.contains_self _ _) (dT 96 (by decide) (by decide)) (by decide), hm, e104,
+      Mem.readW_writeW_sep hsep (by decide), Mem.readW_writeW_self64]
+  · rw [g.frame.readW (Region.contains_self _ _) (dT 104 (by decide) (by decide)) (by decide), hm, e104,
+      Mem.readW_writeW_self64]
   · rw [blockAt_frame g.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -388,6 +405,16 @@ theorem lens_ok {H : Block} {s : State} (he : Env Ctx St W SP s N)
   · refine (fT.sub fun r hr => ?_).trans (gh_tFrame g.frame)
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+
+/-- The lengths block of `rbx` and `rbp` bytes, absorbed. -/
+theorem lens_ok {H : Block} {s : State} (he : Env Ctx St W SP s N)
+    (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) :
+    WP isa (lens v.callees yo) s fun s' => Env Ctx St W SP s' N ∧
+      blockAt s'.mem (Ctx + BitVec.ofNat 64 240) = H ∧
+      blockAt s'.mem (St + BitVec.ofNat 64 yo) = ghashFrom H (blockAt s.mem (St + BitVec.ofNat 64 yo))
+        [Spec.Gcm.ofBytes (lensBlock (s.gpr .rbx).toNat (s.gpr .rbp).toNat)] ∧
+      Frame (tFrame St W SP yo gs) s.mem s'.mem :=
+  WP.mono (lens_okL v L hyo he hH) fun _ h => h.1
 
 end
 
