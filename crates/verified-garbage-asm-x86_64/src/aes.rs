@@ -396,6 +396,10 @@ pub(crate) mod vg_aes_gcm_seal_aesni_pclmul_avx;
 pub(crate) mod vg_aes_gcm_seal_pclmul;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_prepared_vaes_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_prepared_vaes_vpclmul_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_split.rs"]
 pub(crate) mod vg_aes_gcm_seal_split;
 
