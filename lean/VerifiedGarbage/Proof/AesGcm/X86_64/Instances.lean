@@ -2457,6 +2457,8 @@ theorem sPreM_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreM Proof.Gcm
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
   ok := h.ok.2.2 h.ok.1
+  c_k := h.c_k.sub_right (sub_1024 _)
+  y_k := h.y_k.sub_right (sub_1024 _)
 
 theorem sPreTo_ofFlagged {s₀ : VG.X86_64.State} (h : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.flagged s₀) : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared s₀ :=
   { h with
@@ -2774,6 +2776,8 @@ theorem sPreM_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat}
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
   ok := h.ok.2.1 h.ok.1
+  c_k := h.c_k.sub_right (sub_1024 _)
+  y_k := h.y_k.sub_right (sub_1024 _)
 
 theorem sPreTo_ofFlagged16 {s₀ : VG.X86_64.State} (h : SPreTo (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) s₀) :
     SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 s₀ :=

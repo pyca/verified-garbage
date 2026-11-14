@@ -1481,13 +1481,15 @@ theorem Start.spre : SPre t := by
 
 theorem Start.spreM : SPreM M t := by
   have hp := h.pre
-  refine ⟨h.spre, by rw [h.rd, h.wr, h.kp_eq]; exact hp.k_in, by rw [h.kp_eq]; exact hp.wrap_k, ?_, ?_, ?_⟩
+  refine ⟨h.spre, by rw [h.rd, h.wr, h.kp_eq]; exact hp.k_in, by rw [h.kp_eq]; exact hp.wrap_k, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [kMR, Stitch.dR, h.dp_eq, h.nb_eq, h.kp_eq]; exact hp.k_o.symm
   · simp only [kMR, Stitch.pR, h.pp_eq, h.kp_eq]; exact hp.k_p.symm
   · rw [h.kp_eq]
     exact M.frame h.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst r
       exact hp.k_p.sub_right (Start.slotR (s₀ := s₀))) hp.wrap_k hp.ok
+  · simp only [kMR, Stitch.cR, h.kp_eq, h.cp_eq]; exact hp.k_c.symm
+  · simp only [kMR, Stitch.yR, h.kp_eq, h.yp_eq]; exact hp.k_y.symm
 
 end
 

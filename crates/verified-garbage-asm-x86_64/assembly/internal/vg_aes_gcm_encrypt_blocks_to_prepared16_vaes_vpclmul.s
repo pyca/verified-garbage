@@ -730,9 +730,9 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul:
 	add r10, r10
 	add r10, r10
 	add r10, r10
-	mov rax, r11
-	add rax, 256
-	sub rax, r10
+	mov rax, rdi
+	add rax, 224
+	add rax, r10
 	cmp r10, 129
 	jb 223f
 	mov r10, rsi
@@ -1048,6 +1048,7 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul:
 	vpxor xmm10, xmm10, xmm10
 	test r9, 1
 	je 237f
+	add rax, 32
 	vmovdqu xmm13, XMMWORD PTR [r8+r10*1]
 	vmovdqu xmm12, XMMWORD PTR [r11+r10*1+768]
 	vpxor xmm13, xmm13, xmm12
@@ -1064,6 +1065,7 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul:
 	vpxor xmm9, xmm9, xmm11
 	vpclmulqdq xmm11, xmm13, xmm12, 16
 	vpxor xmm9, xmm9, xmm11
+	sub rax, 64
 	add r10, 16
 	sub r9, 1
 	cmp r9, 16
@@ -1089,6 +1091,7 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul:
 	vpxor ymm9, ymm9, ymm11
 	vpclmulqdq ymm11, ymm13, ymm12, 16
 	vpxor ymm9, ymm9, ymm11
+	sub rax, 64
 	add r10, 32
 	sub r9, 2
 	cmp r9, 16
@@ -1111,6 +1114,20 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul:
 	vpxor xmm2, xmm10, xmm9
 	vpxor xmm2, xmm2, xmm11
 	add r11, 512
+	vpxor xmm12, xmm12, xmm12
+	vmovdqu YMMWORD PTR [r11+256], ymm12
+	vmovdqu YMMWORD PTR [r11+288], ymm12
+	vmovdqu YMMWORD PTR [r11+320], ymm12
+	vmovdqu YMMWORD PTR [r11+352], ymm12
+	cmp r10, 129
+	jb 242f
+	vmovdqu YMMWORD PTR [r11+384], ymm12
+	vmovdqu YMMWORD PTR [r11+416], ymm12
+	vmovdqu YMMWORD PTR [r11+448], ymm12
+	vmovdqu YMMWORD PTR [r11+480], ymm12
+	jmp 243f
+242:
+243:
 	vpshufb xmm2, xmm2, xmm0
 	vmovdqu XMMWORD PTR [rcx], xmm2
 	vzeroupper
@@ -1248,16 +1265,16 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul:
 	mov r11, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [r11+40]
 	test rcx, rcx
-	je 242f
+	je 244f
 	mov rsi, QWORD PTR [r11+32]
 	mov rdi, QWORD PTR [r11+48]
 	mov r10d, 0
-244:
+246:
 	movdqu xmm0, XMMWORD PTR [rsi+r10*1]
 	movdqu XMMWORD PTR [rdi+r10*1], xmm0
 	add r10, 16
 	sub rcx, 1
-	jne 244b
+	jne 246b
 	mov r11, QWORD PTR [rsp+24]
 	mov rdi, QWORD PTR [r11]
 	mov rsi, QWORD PTR [r11+8]
@@ -1269,8 +1286,8 @@ vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul:
 	push rax
 	call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
 	pop rax
-	jmp 243f
-242:
-243:
+	jmp 245f
+244:
+245:
 	ret
 	.p2align 6

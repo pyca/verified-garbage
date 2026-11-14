@@ -107,14 +107,17 @@ theorem spreM_of {s₃ : State} {q lo : Nat} (h16 : lo ≤ q) (hqn' : q ≤ n s)
   have pd : Region.Sub ⟨D s, 16 * q⟩ (dR s) := Region.sub_prefix hqn
   have ps : Region.Sub ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ (sR s) := Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega_arith)
   have ek : s₃.gpr .rdi = K s := hg _ (by simp [argRegs])
-  refine ⟨spre_of hp h16 hqn' h9 hg h11 hrd hwr, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  refine ⟨spre_of hp h16 hqn' h9 hg h11 hrd hwr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   simp only [Gcm.X86_64.Stitch.kp, Gcm.X86_64.Stitch.kMR, Gcm.X86_64.Stitch.dR, Gcm.X86_64.Stitch.pR,
+    Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.cp, Gcm.X86_64.Stitch.yp,
     Gcm.X86_64.Stitch.dp, Gcm.X86_64.Stitch.nb, Gcm.X86_64.Stitch.pp, ek, h11, hq, hrd, hwr,
-    show s₃.gpr .r8 = D s from hg _ (by simp [argRegs])]
+    show s₃.gpr .r8 = D s from hg _ (by simp [argRegs]), show s₃.gpr .rdx = C s from hg _ (by simp [argRegs]),
+    show s₃.gpr .rcx = Y s from hg _ (by simp [argRegs])]
   exacts [⟨kR M s, by rw [hp.rd]; simp, Region.contains_self _ _⟩, hp.w_k, hp.k_d.symm.sub_left pd,
     hp.k_s.symm.sub_left ps,
     M.frame hf₃ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub) hp.w_k hp.ok]
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub) hp.w_k hp.ok,
+    hp.k_c.symm, hp.k_y.symm]
 
 /-- The hash subkey is apart from `scratch`'s slots. -/
 theorem kR'_disj' : (⟨K s + 240, 16⟩ : Region).Disjoint (kR' s) :=
