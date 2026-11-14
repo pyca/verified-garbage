@@ -6,7 +6,6 @@ public meta import Lean.Elab.SyntheticMVars
 public meta import Lean.Meta.Closure
 public meta import Lean.Meta.Tactic.Assert
 public meta import Lean.Meta.Tactic.Clear
-public meta import Lean.Meta.Offset
 
 /-!
 # `omega` in large contexts
