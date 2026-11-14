@@ -172,6 +172,47 @@ theorem zeroPow_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s : State} (h 
     fun q h1 h2 h3 h4 => by rw [g₂, g₁]; exact h.gpr q h1 h2 h3 h4, by rw [rd₂, rd₁]; exact h.rd,
     by rw [wr₂, wr₁]; exact h.wr⟩
 
+/-- What interleaved loops leave in their working space, from `s₀` to `s`,
+beyond what they compute: nothing written but the counter, `Y`, the data
+and the first `ℓ` bytes of the working space, of which those `zf` names (for
+the number of blocks) are cleared and the others as they were. -/
+def PieceL (ℓ : Nat) (zf : Nat → Nat → Bool) (s₀ s : State) : Prop :=
+  Frame [cR s₀, yR s₀, dR s₀, ⟨pp s₀, ℓ⟩] s₀.mem s.mem ∧
+    ∀ i < ℓ, s.mem (pp s₀ + BitVec.ofNat 64 i) = if zf (nb s₀) i then 0 else s₀.mem (pp s₀ + BitVec.ofNat 64 i)
+
+/-- `PieceL`, from a state with the same registers and memory. -/
+theorem PieceL.congr {ℓ : Nat} {zf : Nat → Nat → Bool} {s s₀ t : State} (h : PieceL ℓ zf s t)
+    (g : s.gpr = s₀.gpr) (m : s.mem = s₀.mem) : PieceL ℓ zf s₀ t := by
+  unfold PieceL cR yR dR pp nb cp yp dp at *
+  rw [g, m] at h
+  exact h
+
+/-- Byte `j` of a 128-bit little-endian read. -/
+theorem byte_readW128 (m : Mem) (a : Addr) {j : Nat} (hj : j < 16) :
+    m (a + BitVec.ofNat 64 j) = (m.readW a 128).extractLsb' (8 * j) 8 := by
+  rw [← Mem.extractLsb'_read m a hj]; rfl
+
+/-- `zeroPow`: the 256 bytes at `scratch` cleared, nothing else written. -/
+theorem zeroPow_zero {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s : State} (h11 : s.gpr .r11 = Stitch.pp s₀)
+    (hwr : s.wr = s₀.wr) :
+    WP isa (.block Impl.Gcm.X86_64.Stitch.zeroPow) s fun s' =>
+      Frame [⟨Stitch.pp s₀, 256⟩] s.mem s'.mem ∧ ∀ i < 256, s'.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) = 0 := by
+  have hwp := hp.wrap_p
+  rw [show Impl.Gcm.X86_64.Stitch.zeroPow = [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)] ++
+    Impl.Gcm.X86_64.Stitch.storesK .r11 (List.replicate 8 .xmm12) 0 from rfl, WP.block_append_iff]
+  refine WP.mono (zero12_ok s) fun s₁ ⟨z₁, _, g₁, m₁, _, wr₁⟩ => ?_
+  refine WP.mono (Stitch.storesK_ok .r11 (List.replicate 8 .xmm12) 0 s₁ (fun k hk => by
+      rw [wr₁, hwr, g₁, h11]; exact Stitch.in_sub_int hp.p_in (by simp at hk; omega_using [hk]))
+    (by rw [g₁, h11]; simp; omega_using [hwp])) fun s₂ ⟨sv, fr, _, _, _, _⟩ => ?_
+  rw [g₁, h11, m₁, Nat.mul_zero, BitVec.add_zero, show 32 * (List.replicate 8 XReg.xmm12).length = 256 by simp] at fr
+  refine ⟨fr, fun i hi => ?_⟩
+  have v := sv (i / 32) (by simp; omega_using [hi]) ((i % 32) / 16) (by omega_using [])
+  rw [g₁, h11, List.getElem_replicate, z₁ _ (by omega_using [])] at v
+  rw [show Stitch.pp s₀ + BitVec.ofNat 64 i = Stitch.pp s₀ + BitVec.ofNat 64 (32 * (0 + i / 32) + 16 * (i % 32 / 16)) +
+      BitVec.ofNat 64 (i % 16) by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using [],
+    byte_readW128 s₂.mem _ (j := i % 16) (by omega_using []), v]
+  simp
+
 /-- `zeroPow` after the decryption: the copy of the powers cleared, which the
 postcondition allows. -/
 theorem zeroPowD_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s : State} (h : DPost s₀ s) :

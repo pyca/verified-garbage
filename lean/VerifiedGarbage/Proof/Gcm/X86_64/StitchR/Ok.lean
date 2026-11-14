@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -809,9 +809,10 @@ theorem _root_.VG.Proof.Gcm.X86_64.Stitch.EPost.congr {s s₀ t : State} (h : EP
 
 /-- `setupS`, then `r9` raised by 16: the state `remE` starts from, the
 blocks after no group. -/
-theorem setupS_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
-    WP isa (.block (Impl.Gcm.X86_64.StitchR.setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr))) s₀
-      (EInvR s₀ (fun k l => s₀.mem.readW (Stitch.pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128) 0) := by
+theorem setupS_okF {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
+    WP isa (.block (Impl.Gcm.X86_64.StitchR.setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr))) s₀ fun s =>
+      EInvR s₀ (fun k l => s₀.mem.readW (Stitch.pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128) 0 s ∧
+        s.mem = s₀.mem := by
   simp only [Impl.Gcm.X86_64.StitchR.setupS, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (Pclmul.const_ok .xmm0 _ s₀ (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
@@ -843,6 +844,7 @@ theorem setupS_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
   have gs : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r10 → r ≠ .r9 → s₆.gpr r = s₀.gpr r := fun r h1 h2 h3 h9 => by
     rw [g₆ r h9, gk r h1 h2 h3, g₄ r h1]
   have hm : s₆.mem = s₀.mem := by rw [m₆, m₅, mm₄]
+  refine ⟨?_, hm⟩
   exact
     { a := ⟨Nat.zero_le _, fun l hl => by rw [l6 _ _ hl, c14 l hl, g₄ _ (by decide), mm₄, Nat.zero_add],
         fun l hl => by rw [l6 _ _ hl, lk _ (by decide) (by decide) (by decide) (by decide) l hl]; exact m0 l hl,
@@ -861,6 +863,11 @@ theorem setupS_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
       m1 := fun l hl => by rw [l6 _ _ hl, lk _ (by decide) (by decide) (by decide) (by decide) l hl]; exact m1 l hl
       y := by rw [l6 _ _ (by decide), y0, g₄ _ (by decide), mm₄]; simp [ghashFrom]
       y1 := by rw [l6 _ _ (by decide)]; exact y1 }
+
+theorem setupS_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) :
+    WP isa (.block (Impl.Gcm.X86_64.StitchR.setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr))) s₀
+      (EInvR s₀ (fun k l => s₀.mem.readW (Stitch.pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128) 0) :=
+  WP.mono (setupS_okF hp) fun _ h => h.1
 
 /-- Encryption of fewer blocks than a group: no copy of the powers, all of
 them by `remE`. -/
@@ -929,5 +936,173 @@ theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encTo
 
 theorem setupFinN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) : SetupFin np hn := fun hp =>
   WP.mono (setupTo_ok hp h8) fun _ ⟨P, hR, hpw⟩ => ⟨P, hR, finE hpw⟩
+
+/-! ## What `encR` leaves in its working space -/
+
+/-- The bytes of its working space that `encR` clears, of `n` blocks (from 1
+on): the copy of the powers, with at least 16, and the keystream of the
+blocks after the last group, 128 bytes at `256`, or 256 if more than 8. -/
+def zeroR (n i : Nat) : Bool :=
+  (decide (16 ≤ n) && decide (i < 256)) ||
+    (decide (n % 16 ≠ 0) && decide (256 ≤ i) && (decide (i < 384) || decide (8 < n % 16)))
+
+/-- `setup_ok`, and what the setup writes: the powers, at `scratch`. -/
+theorem setup_okF {s₀ : State} {lo np : Nat} (hp : SPrePrepared s₀ lo np) (h8 : 8 ≤ np := by decide) :
+    WP isa (.block Impl.Gcm.X86_64.StitchR.setup) s₀ fun s => ∃ P, Ready s₀ P s ∧
+      (∀ k < 8, ∀ l < 2, x * φ (P k l) = φ (hk s₀) ^ (16 - 2 * k - l)) ∧
+      Frame [⟨Stitch.pp s₀, 256⟩] s₀.mem s.mem := by
+  simp only [Impl.Gcm.X86_64.StitchR.setup, List.append_assoc]
+  rw [WP.block_append_iff]
+  exact WP.mono (StitchZR.setupGP_ok hp h8) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ =>
+    WP.mono (Stitch.setupT_okF hp.base l0 l1 g₁ m₁ rd₁ wr₁) fun _ ⟨hR, f⟩ =>
+      ⟨_, hR, fun k hk l hl => by rw [pw k hk l hl]; exact x_φ_hInvF _ _, f⟩
+
+/-- A byte of the working space is apart from the counter, `Y` and the data. -/
+theorem notIn_p {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {i : Nat} (hi : i < 1024) :
+    ∀ r ∈ [Stitch.cR s₀, Stitch.yR s₀, Stitch.dR s₀], ¬ r.Contains (Stitch.pp s₀ + BitVec.ofNat 64 i) 1 := by
+  have hwp := hp.wrap_p
+  have hxP : (Stitch.pR s₀).Contains (Stitch.pp s₀ + BitVec.ofNat 64 i) 1 :=
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
+  intro r hr hc
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact hp.p_c _ hxP hc
+  · exact hp.p_y _ hxP hc
+  · exact hp.d_p _ hc hxP
+
+/-- Byte `i` of the working space is not in its first `k`, nor in the `k'`
+from `d` on, if `i` is not. -/
+theorem notIn_off (p : Addr) {d k i : Nat} (hk : d + k ≤ 2 ^ 64) (hi : i < 2 ^ 64) (h : ¬ (d ≤ i ∧ i < d + k)) :
+    ¬ (⟨p + BitVec.ofNat 64 d, k⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 := fun hc => by
+  change (p + BitVec.ofNat 64 i - (p + BitVec.ofNat 64 d)).toNat < k at hc
+  rw [Offset.lt_iff _ _ hk, Mem.sub_ofNat_toNat _ hi] at hc
+  exact h hc
+
+theorem notIn_base (p : Addr) {k i : Nat} (hi : i < 2 ^ 64) (h : k ≤ i) :
+    ¬ (⟨p, k⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 := fun hc => by
+  change (p + BitVec.ofNat 64 i - p).toNat + 1 ≤ k at hc
+  rw [Mem.sub_ofNat_toNat _ hi] at hc
+  omega_arith
+
+/-- What `encR` writes, all of it in its first 512 bytes of working space. -/
+theorem frame512 {s₀ : State} :
+    ∀ r ∈ [⟨Stitch.pp s₀ + BitVec.ofNat 64 256, 256⟩, ⟨Stitch.pp s₀, 256⟩, Stitch.cR s₀, Stitch.yR s₀, Stitch.dR s₀],
+      ∃ r' ∈ [Stitch.cR s₀, Stitch.yR s₀, Stitch.dR s₀, (⟨Stitch.pp s₀, 512⟩ : Region)], Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact ⟨⟨Stitch.pp s₀, 512⟩, by simp, Offset.sub_base _ (by decide)⟩
+  · exact ⟨⟨Stitch.pp s₀, 512⟩, by simp, Region.sub_prefix (by decide)⟩
+  · exact ⟨Stitch.cR s₀, by simp, fun _ h => h⟩
+  · exact ⟨Stitch.yR s₀, by simp, fun _ h => h⟩
+  · exact ⟨Stitch.dR s₀, by simp, fun _ h => h⟩
+
+/-- Encryption of fewer blocks than a group, and what it leaves in its
+working space. -/
+theorem encSmallC_okL {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 ≤ np) (h1 : 1 ≤ nb s₀)
+    (hlt : nb s₀ < 16) :
+    WP isa (.seq (.block (Impl.Gcm.X86_64.StitchR.setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr)))
+      (Impl.Gcm.X86_64.StitchR.remE .rdx)) s₀ fun s => EPost s₀ s ∧ Stitch.PieceL 512 zeroR s₀ s := by
+  have hwp := hp.base.wrap_p
+  refine WP.seq (WP.mono (setupS_okF hp.base) fun s ⟨hI, hm⟩ => ?_)
+  refine WP.mono (remE_okF hp.base (hp.ctxPow h8) (remLawC s₀) (e := 0) hI (by omega_using [hlt])
+    (by omega_using [h1])) fun s' ⟨h, f, b⟩ => ⟨h, ?_, fun i hi => ?_⟩
+  · rw [hm] at f
+    exact (f.sub fun r hr => frame512 r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h <;> simp [h]))
+  · by_cases h256 : i < 256
+    · have hz : zeroR (nb s₀) i = false := by
+        simp only [zeroR, Bool.or_eq_false_iff, Bool.and_eq_false_iff, decide_eq_false_iff_not]; omega_arith
+      simp only [hz, Bool.false_eq_true, ↓reduceIte]
+      rw [f _ fun r hr => ?_, hm]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact notIn_p hp.base (by omega_arith) _ (by simp)
+      · exact notIn_p hp.base (by omega_arith) _ (by simp)
+      · exact notIn_p hp.base (by omega_arith) _ (by simp)
+      · exact notIn_off _ (by decide) (by omega_arith) (by omega_arith)
+    · have b' := b (i - 256) (by omega_arith)
+      rw [show 256 + (i - 256) = i by omega_arith, hm] at b'
+      rw [b']
+      have e : (i - 256 < 128 ∨ 8 < nb s₀ - 16 * 0) ↔ zeroR (nb s₀) i = true := by
+        simp only [zeroR, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; omega_arith
+      by_cases hz : i - 256 < 128 ∨ 8 < nb s₀ - 16 * 0
+      · simp only [hz, e.mp hz, ↓reduceIte]
+      · have hz' : zeroR (nb s₀) i = false := by
+          cases h : zeroR (nb s₀) i
+          · rfl
+          · exact absurd (e.mpr h) hz
+        simp only [hz, hz', Bool.false_eq_true, ↓reduceIte]
+
+/-- Encryption of a group or more, and what it leaves in its working space:
+the copy of the powers cleared, and `remE`'s keystream if any. -/
+theorem encBig_okL {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 16 np) (h8 : 8 ≤ np) :
+    WP isa (.seq (.block Impl.Gcm.X86_64.StitchR.setup) (.seq Impl.Gcm.X86_64.Stitch.first
+      (.seq (.block [.alu .cmp .r9 (.imm 32)]) (.seq (.ite .b (.block []) (.loop Impl.Gcm.X86_64.Stitch.body .ae))
+        (.seq (Impl.Gcm.X86_64.StitchR.tailE [] .rdx) (.block Impl.Gcm.X86_64.Stitch.zeroPow)))))) s₀
+      fun s => EPost s₀ s ∧ Stitch.PieceL 512 zeroR s₀ s := by
+  have hwp := hp.base.wrap_p
+  have h16 := hp.base.nb16
+  refine WP.seq (WP.mono (setup_okF hp h8) fun s ⟨P, hR, hpw, f₁⟩ => ?_)
+  refine WP.seq (WP.mono (Stitch.first_okF hp.base hR) fun s₂ ⟨hI₂, f₂⟩ => ?_)
+  refine WP.seq (WP.mono (Stitch.cmpE_okF hI₂) fun s₃ ⟨⟨hI₃, hcf⟩, m₃⟩ => ?_)
+  refine WP.seq (WP.mono (loopER_okF hp.base (finE hpw) hI₃ hcf) fun s₄ ⟨⟨e, hlt, hI₄⟩, f₄⟩ => ?_)
+  have h1e := hI₄.one
+  have hle := hI₄.a.le
+  refine WP.seq (WP.mono (tailER_okF hp.base (hp.ctxPow h8) (finE hpw) (remLawC s₀) hlt hI₄)
+    fun s₅ ⟨h₅, f₅, b₅⟩ => ?_)
+  have h11 : s₅.gpr .r11 = Stitch.pp s₀ := h₅.gpr _ (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (Stitch.wp_and (Stitch.zeroPow_ok hp.base h₅) (Stitch.zeroPow_zero hp.base h11 h₅.wr))
+    fun s₆ ⟨h₆, f₆, z₆⟩ => ⟨h₆, ?_, fun i hi => ?_⟩
+  · rw [m₃] at f₄
+    have F : Frame [⟨Stitch.pp s₀ + BitVec.ofNat 64 256, 256⟩, ⟨Stitch.pp s₀, 256⟩, Stitch.cR s₀, Stitch.yR s₀,
+        Stitch.dR s₀] s₀.mem s₆.mem := by
+      have m1 : ∀ r ∈ [(⟨Stitch.pp s₀, 256⟩ : Region)], r ∈ [⟨Stitch.pp s₀ + BitVec.ofNat 64 256, 256⟩,
+          ⟨Stitch.pp s₀, 256⟩, Stitch.cR s₀, Stitch.yR s₀, Stitch.dR s₀] := fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; simp
+      have m2 : ∀ r ∈ [Stitch.dR s₀], r ∈ [⟨Stitch.pp s₀ + BitVec.ofNat 64 256, 256⟩,
+          ⟨Stitch.pp s₀, 256⟩, Stitch.cR s₀, Stitch.yR s₀, Stitch.dR s₀] := fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; simp
+      exact ((((f₁.mono m1).trans (f₂.mono m2)).trans (f₄.mono m2)).trans (f₅.mono fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> simp)).trans (f₆.mono m1)
+    exact F.sub (frame512)
+  · by_cases h256 : i < 256
+    · have hz : zeroR (nb s₀) i = true := by
+        simp only [zeroR, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; omega_arith
+      simp only [hz, ↓reduceIte]; exact z₆ i h256
+    · have k6 : s₆.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) = s₅.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) :=
+        f₆ _ fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact notIn_base _ (by omega_arith) (by omega_arith)
+      have nD : ∀ r ∈ [Stitch.dR s₀], ¬ r.Contains (Stitch.pp s₀ + BitVec.ofNat 64 i) 1 := fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact notIn_p hp.base (by omega_arith) _ (by simp)
+      have k4 : s₄.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) = s₀.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) := by
+        rw [f₄ _ nD, m₃, f₂ _ nD, f₁ _ fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact notIn_base _ (by omega_arith) (by omega_arith)]
+      have b' := b₅ (i - 256) (by omega_arith)
+      rw [show 256 + (i - 256) = i by omega_arith, k4] at b'
+      rw [k6, b']
+      have e' : (nb s₀ ≠ 16 * e ∧ (i - 256 < 128 ∨ 8 < nb s₀ - 16 * e)) ↔ zeroR (nb s₀) i = true := by
+        simp only [zeroR, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; omega_arith
+      by_cases hz : nb s₀ ≠ 16 * e ∧ (i - 256 < 128 ∨ 8 < nb s₀ - 16 * e)
+      · simp only [hz, e'.mp hz, ↓reduceIte, ne_eq, not_false_eq_true, true_and]
+      · have hz' : zeroR (nb s₀) i = false := by
+          cases h : zeroR (nb s₀) i
+          · rfl
+          · exact absurd (e'.mpr h) hz
+        simp only [hz, hz', Bool.false_eq_true, ↓reduceIte]
+
+/-- `encR`, and what it leaves in its working space (`zeroR`). -/
+theorem encR_okL {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 ≤ np := by decide) :
+    WP isa Impl.Gcm.X86_64.StitchR.encR s₀ fun s => EPost s₀ s ∧ Stitch.PieceL 512 zeroR s₀ s := by
+  refine zeroTail_ok (Rdy := fun s => s.gpr = s₀.gpr ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr)
+    (fun _ _ ⟨g, m, rd, wr⟩ g' _ m' rd' wr' => ⟨g'.trans g, m'.trans m, rd'.trans rd, wr'.trans wr⟩)
+    (fun _ ⟨g, _⟩ => by rw [g]) (fun hlt s ⟨g, m, rd, wr⟩ => ?_) (fun h16 s ⟨g, m, rd, wr⟩ => ?_) ⟨rfl, rfl, rfl, rfl⟩
+  · have hn : nb s = nb s₀ := by simp only [nb, g]
+    exact WP.mono (encSmallC_okL (hp.congr g m rd wr) h8 (by rw [hn]; exact hp.base.nb16) (by rw [hn]; exact hlt))
+      fun t ⟨ht, hl⟩ => ⟨ht.congr g m rd wr, hl.congr g m⟩
+  · have hn : nb s = nb s₀ := by simp only [nb, g]
+    exact WP.mono (encBig_okL ({ hp.congr g m rd wr with base := (hp.congr g m rd wr).base.ofLe (by rw [hn]; exact h16) }) h8)
+      fun t ⟨ht, hl⟩ => ⟨ht.congr g m rd wr, hl.congr g m⟩
 
 end VG.Proof.Gcm.X86_64.StitchR
