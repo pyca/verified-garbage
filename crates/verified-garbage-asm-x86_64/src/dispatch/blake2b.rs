@@ -28,7 +28,7 @@ pub unsafe fn vg_blake2b_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blake2b_update_avx512` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX512_FEATURES`); `vg_blake2b_update_avx2` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX2_FEATURES`); or else `vg_blake2b_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blake2b_update_avx512` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX512_FEATURES`) and detection does not report `zen5`; `vg_blake2b_update_avx2` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX2_FEATURES`) and detection does not report `zen5`; or else `vg_blake2b_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -49,13 +49,15 @@ pub unsafe fn vg_blake2b_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES) }
-            || cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES)
+        if (const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX512_FEATURES))
+            && !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::ZEN5))
         {
             return crate::blake2b::vg_blake2b_update_avx512;
         }
-        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES) }
-            || cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES)
+        if (const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_UPDATE_AVX2_FEATURES))
+            && !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::ZEN5))
         {
             return crate::blake2b::vg_blake2b_update_avx2;
         }
@@ -84,7 +86,7 @@ pub unsafe fn vg_blake2b_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state:
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blake2b_finalize_avx512` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX512_FEATURES`); `vg_blake2b_finalize_avx2` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX2_FEATURES`); or else `vg_blake2b_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blake2b_finalize_avx512` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX512_FEATURES`) and detection does not report `zen5`; `vg_blake2b_finalize_avx2` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX2_FEATURES`) and detection does not report `zen5`; or else `vg_blake2b_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -106,13 +108,15 @@ pub unsafe fn vg_blake2b_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, stat
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES) }
-            || cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES)
+        if (const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX512_FEATURES))
+            && !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::ZEN5))
         {
             return crate::blake2b::vg_blake2b_finalize_avx512;
         }
-        if const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES) }
-            || cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES)
+        if (const { verified_garbage_cpu::target_contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES) }
+            || cpu.contains(crate::blake2b::VG_BLAKE2B_FINALIZE_AVX2_FEATURES))
+            && !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::ZEN5))
         {
             return crate::blake2b::vg_blake2b_finalize_avx2;
         }
