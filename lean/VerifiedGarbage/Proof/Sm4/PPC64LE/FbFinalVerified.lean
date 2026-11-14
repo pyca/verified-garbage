@@ -99,11 +99,13 @@ theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (finalCont
 
 theorem cfbEncryptFinal_correct (s : State) (hs : (finalContract encPost).pre s) :
     ∃ t s', Exec isa cfbEncryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract encPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbEncFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
+  WP.mono (Proof.Modes.PPC64LE.cfbEncFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs))
+    fun _ h => by simp only [Modes.cipher_ser] at h; exact h
 
 theorem cfbDecryptFinal_correct (s : State) (hs : (finalContract decPost).pre s) :
     ∃ t s', Exec isa cfbDecryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract decPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbDecFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
+  WP.mono (Proof.Modes.PPC64LE.cfbDecFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs))
+    fun _ h => by simp only [Modes.cipher_ser] at h; exact h
 
 /-! ## Constant time -/
 
@@ -185,7 +187,8 @@ def ofbPost (s s' : State) : Prop :=
 
 theorem ofbFinal_correct (s : State) (hs : (finalContract ofbPost).pre s) :
     ∃ t s', Exec isa ofbFinal s t s' ∧ abiPreserved s s' ∧ (finalContract ofbPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ofbFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
+  WP.mono (Proof.Modes.PPC64LE.ofbFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs))
+    fun _ h => by simp only [Modes.cipher_ser] at h; exact h
 
 theorem ofbFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub ofbFinal :=

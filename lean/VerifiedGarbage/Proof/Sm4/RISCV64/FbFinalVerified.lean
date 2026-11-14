@@ -91,17 +91,17 @@ theorem keyArgsF_of {post : State → State → Prop} {s : State} (h : (finalCon
 theorem cfbEncryptFinal_correct (s : State) (hs : (finalContract encFinalPost).pre s) :
     ∃ t s', Exec isa cfbEncryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract encFinalPost).post s s' :=
   WP.mono (Proof.Modes.RISCV64.cfbEncFinal_wp (dirCoreSpec .encrypt) (seqPreF_of hs) (keyArgsF_of hs))
-    fun _ ⟨h1, h2, _⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2, _⟩ => ⟨h1, by simp only [cipher_enc] at h2; exact h2⟩
 
 theorem cfbDecryptFinal_correct (s : State) (hs : (finalContract decFinalPost).pre s) :
     ∃ t s', Exec isa cfbDecryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract decFinalPost).post s s' :=
   WP.mono (Proof.Modes.RISCV64.cfbDecFinal_wp (dirCoreSpec .encrypt) (seqPreF_of hs) (keyArgsF_of hs))
-    fun _ ⟨h1, h2, _⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2, _⟩ => ⟨h1, by simp only [cipher_enc] at h2; exact h2⟩
 
 theorem ofbFinal_correct (s : State) (hs : (finalContract ofbFinalPost).pre s) :
     ∃ t s', Exec isa ofbFinal s t s' ∧ abiPreserved s s' ∧ (finalContract ofbFinalPost).post s s' :=
   WP.mono (Proof.Modes.RISCV64.ofbFinal_wp (dirCoreSpec .encrypt) (seqPreF_of hs) (keyArgsF_of hs))
-    fun _ ⟨h1, h2, _⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2, _⟩ => ⟨h1, by simp only [cipher_enc] at h2; exact h2⟩
 
 /-! ## Constant time -/
 

@@ -426,7 +426,9 @@ lemmas and tactics to use; read it before writing a proof:
   `Region.disjoint_of_sep (by decide)`.
 * **Unfolding:** close goals about symbolic memory or hash values with
   explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
-  `first | rfl | …`; never `rfl`, `decide` or `change` on a goal holding a
+  `first | rfl | …`; rewrite with a lemma where a hypothesis and the goal
+  differ by a definition, rather than leave `exact` or `fun _ h => h` to
+  unify them; never `rfl`, `decide` or `change` on a goal holding a
   large concrete value, which `generalize` does not hide from the kernel
   (abstract it with `obtain`); rewrite tables' regions with
   `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`

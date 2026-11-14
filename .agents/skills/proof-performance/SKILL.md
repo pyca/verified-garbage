@@ -197,6 +197,20 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
   slower.
+* **An equality the elaborator finds by evaluating:** `rfl`, and an
+  `exact h` or `fun _ h => h` whose type differs from the goal's, have the
+  elaborator unify the two, and it may unfold the wrong thing first.
+  `(Serial.coreSpec .encrypt).cipher k = Spec.Sm4.cipher k` differs by a
+  projection of a structure and a `match` on the direction, but the
+  elaborator unfolded the cipher on both sides and evaluated the
+  `Vector.ofFn` of its sixteen input bytes, 3 s a time and several times a
+  proof: fifteen proofs of one to three lines (SM4 and SEED's modes on
+  PPC64LE and RISC-V) took 353 s between them, and the kernel no time at
+  all. State such an equality once, proved by unfolding exactly what
+  differs (`simp only [Serial.coreSpec, dirCipher]`) or by `kernel_rfl`, and
+  rewrite a hypothesis with it before `exact`
+  (`fun _ h => by simp only [cipher_ser] at h; exact h`). A proof of a few
+  lines that elaborates for seconds, with no kernel time, is this.
 * **`generalize` does not hide a value from the kernel:** the proof term
   `generalize` (and `revert`) builds is an application of the new goal's
   proof to the value, which `instantiateMVars` beta-reduces, so the kernel
