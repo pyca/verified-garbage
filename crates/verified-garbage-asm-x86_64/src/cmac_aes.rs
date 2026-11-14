@@ -10,18 +10,20 @@ pub const VG_CMAC_AES_ABSORB_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPj2//9JieFJg8EISYmZgAgAAEmJqYgIAABNiaGQCAAATYmpmAgAAE2JsaAIAABNibmoCAAASIn7SIn1SYnNTYnGTYnPSIXS"
+        r#".base64 "SI1kJMhJieFJg8EISYHpgAgAAEmJmYAIAABJiamICAAATYmhkAgAAE2JqZgIAABNibGgCAAATYm5qAgAAEiJ+0iJ9UmJzU2Jxk2Jz0iF0g=="
 je 20f
 .base64 "SInQSIPoAUiD4A9Ig8AB"
 jmp 21f
@@ -66,7 +68,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAADD"
+.base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI1kJDhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkuPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkSDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
     )

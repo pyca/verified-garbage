@@ -25,7 +25,7 @@ namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64 VG.Impl.CmacAes.Stream.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (UpdateImpl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl UpdateFree)
 
 theorem init_xdepth (v : Ctr32Impl) : (init v.expand v.callee v.suffix).x86_64Depth ≤ 16 := by
   simp only [init, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth, v.noStack, v.expandNoStack]
@@ -39,6 +39,11 @@ theorem initF_xdepth (v : Ctr32Impl) : (initF ekF v.callee v.suffix).x86_64Depth
 theorem absorb_xdepth (v : UpdateImpl) : (absorb v.callee).x86_64Depth ≤ 16 := by
   have := v.xdepth
   simp only [absorb, absorbPre, absorbPost, held, fill, copy, chain1, chain2, Code.x86_64Depth, Nat.max_le]
+  omega
+
+theorem absorbF_xdepth (v : UpdateImpl) : (absorbF v.callee).x86_64Depth ≤ 16 := by
+  have := absorb_xdepth v
+  simp only [absorbF, Code.x86_64Depth, Nat.max_le]
   omega
 
 theorem finish_xdepth (v : Ctr32Impl) : (finish v.callee v.suffix).x86_64Depth ≤ 16 := by
@@ -66,6 +71,11 @@ working space (and with no data). -/
 def absorbFrameSat : State := { absorbSat with wr := [⟨0x1000, 304⟩] }
 
 theorem absorbFrameSat_pre : ∃ s, (Spec.Cmac.aesAbsorbContract X86_64.abi 2328).pre s := by
+  implies_sat [Spec.Cmac.aesAbsorbContract, Spec.Cmac.aesAbsorbSig, Spec.Cmac.aesAbsorbPre,
+    Spec.Cmac.aesAbsorbPost, X86_64.abi, X86_64.argRegs] [absorbFrameSat, absorbSat]
+    using absorbFrameSat
+
+theorem absorbFrameSatF_pre : ∃ s, (Spec.Cmac.aesAbsorbContract X86_64.abi 72).pre s := by
   implies_sat [Spec.Cmac.aesAbsorbContract, Spec.Cmac.aesAbsorbSig, Spec.Cmac.aesAbsorbPre,
     Spec.Cmac.aesAbsorbPost, X86_64.abi, X86_64.argRegs] [absorbFrameSat, absorbSat]
     using absorbFrameSat
@@ -116,6 +126,19 @@ theorem absorb_framed (v : UpdateImpl) :
     (post := Spec.Cmac.aesAbsorbPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 2312) (absorb_verified v) (by decide) (by decide) (by decide) (absorb_spSafe v)
     (absorb_xdepth v) absorbFrameSat_pre
+
+/-- `absorb_framed`, over an implementation of `vg_cmac_aes_update` that
+needs no working space (`absorbF`): a frame of the 48 bytes of the registers
+saved, after the 8 that stand for the return address. -/
+theorem absorbF_framed (v : UpdateImpl) (f : UpdateFree v.callee) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 56 .r9 (absorbF v.callee))
+      (Spec.Cmac.aesAbsorbContract X86_64.abi 72) :=
+  X86_64.Verified.stackScratch (sig := Spec.Cmac.aesAbsorbSig) (nm := "scratch") (e := .u64)
+    (n := 6) (pre := Spec.Cmac.aesAbsorbPre X86_64.abi.ptrBits)
+    (post := Spec.Cmac.aesAbsorbPost X86_64.abi.ptrBits) (wa := false) (stack := 16)
+    (bytes := 56) (absorbF_verified v f) (by decide) (by decide) (by decide) (absorbF_spSafe v)
+    (absorbF_xdepth v) absorbFrameSatF_pre
 
 theorem finish_framed (v : Ctr32Impl) :
     Verified X86_64.target
