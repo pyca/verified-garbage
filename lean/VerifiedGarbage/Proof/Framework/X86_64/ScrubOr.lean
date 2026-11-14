@@ -115,10 +115,23 @@ def regs (fs : List F) : List F := fs.filter fun f => match f with
   | .reg r => r != .rsp
   | .slot .. => false
 
+/-- Whether nothing in `c` drops the fact `f`: every instruction keeps it,
+and `c` calls nothing and has no frame unless `f` is one `regs` keeps. -/
+def kept (f : F) : Prog isa → Bool
+  | .block is => is.all (keep · f)
+  | .seq x y => kept f x && kept f y
+  | .ite _ t e => kept f t && kept f e
+  | .loop b _ => kept f b
+  | .call _ b => !(regs [f]).isEmpty && kept f b
+  | .frame _ b j => !(regs [f]).isEmpty && kept f b && keep j f
+  | .icall .. => false
+
 /-- The facts after `c`, given `fs` before it, if every `ldmxcsr` in it
-loads bytes agreed on. A loop's are those after its body from some of `fs`
-that its body keeps: `fs`, less what an iteration and then another drop, or
-none. -/
+loads bytes agreed on. A loop's are those after its body from those of `fs`
+that nothing in its body drops (`kept`), which runs the body once however
+deep its loops are nested: not those an iteration drops and establishes
+again, which are among the facts after the body all the same unless they
+were established from themselves. -/
 def mx : Prog isa → List F → Option (List F)
   | .block is, fs => blk fs is
   | .seq x y, fs => (mx x fs).bind (mx y)
@@ -127,16 +140,9 @@ def mx : Prog isa → List F → Option (List F)
     | some a, some b => some (a.filter b.contains)
     | _, _ => none
   | .loop b _, fs =>
-    match mx b fs with
+    match mx b (fs.filter (kept · b)) with
+    | some g => if (fs.filter (kept · b)).all g.contains then some g else none
     | none => none
-    | some g₁ =>
-      match mx b (fs.filter g₁.contains) with
-      | none => none
-      | some g₂ =>
-        match mx b ((fs.filter g₁.contains).filter g₂.contains) with
-        | some g₃ =>
-          if ((fs.filter g₁.contains).filter g₂.contains).all g₃.contains then some g₃ else mx b []
-        | none => mx b []
   | .call _ b, fs => (mx b (regs fs)).map regs
   | .frame _ b j, fs => (mx b (regs fs)).map fun g => regs (g.filter (keep j))
   | .icall .., _ => none
@@ -326,21 +332,16 @@ def LoopOk : Prog isa → List F → List F → Prop
 theorem loopOk_of {b : Prog isa} {c : Cond} {fs g : List F} (h : mx (.loop b c) fs = some g) :
     LoopOk (.loop b c) fs g := by
   simp only [mx] at h
-  have hn : ∀ g', mx b [] = some g' → LoopOk (.loop b c) fs g' := fun g' h' => ⟨[], rfl, h', rfl⟩
   split at h
-  · cases h
-  · split at h
+  · rename_i g' hg
+    split at h
+    · rename_i hs
+      cases h
+      refine ⟨_, ?_, hg, hs⟩
+      simp only [List.all_eq_true, List.contains_iff_mem, List.mem_filter]
+      exact fun _ h => h.1
     · cases h
-    · split at h
-      · rename_i g₃ h₃
-        split at h
-        · rename_i hs
-          cases h
-          refine ⟨_, ?_, h₃, hs⟩
-          simp only [List.all_eq_true, List.contains_iff_mem, List.mem_filter]
-          exact fun _ h => h.1.1
-        · exact hn _ h
-      · exact hn _ h
+  · cases h
 
 theorem call_mx {s s₁ : State} (h : isa.call s = some s₁) : s₁.mxcsr = s.mxcsr := by
   simp only [isa, call, Option.some.injEq] at h; subst h; rfl
